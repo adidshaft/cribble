@@ -26,8 +26,27 @@ struct CribbleApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var appearanceObserver: NSObjectProtocol?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        AppIconManager.applyForSystemAppearance()
+
+        appearanceObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                AppIconManager.applyForSystemAppearance()
+            }
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let appearanceObserver {
+            DistributedNotificationCenter.default().removeObserver(appearanceObserver)
+        }
     }
 }

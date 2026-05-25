@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @State private var showingAIProviderSheet = false
@@ -38,12 +37,6 @@ struct ContentView: View {
         }
         .onChange(of: settings.fileSortMode) { _, newMode in
             library.refresh(sortMode: newMode)
-        }
-        .onAppear {
-            AppIconManager.apply(for: colorScheme)
-        }
-        .onChange(of: colorScheme) { _, newScheme in
-            AppIconManager.apply(for: newScheme)
         }
         .sheet(isPresented: $showingAIProviderSheet) {
             AIProviderSheet { provider in

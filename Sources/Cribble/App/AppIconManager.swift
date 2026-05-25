@@ -3,8 +3,8 @@ import SwiftUI
 
 @MainActor
 enum AppIconManager {
-    static func apply(for colorScheme: ColorScheme) {
-        let resourceName = colorScheme == .dark ? "AppIconDark" : "AppIconLight"
+    static func applyForSystemAppearance() {
+        let resourceName = isSystemDarkMode ? "AppIconDark" : "AppIconLight"
         guard let url = Bundle.module.url(forResource: resourceName, withExtension: "png"),
               let image = NSImage(contentsOf: url)
         else {
@@ -13,5 +13,10 @@ enum AppIconManager {
 
         image.isTemplate = false
         NSApp.applicationIconImage = image
+    }
+
+    private static var isSystemDarkMode: Bool {
+        let bestMatch = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        return bestMatch == .darkAqua
     }
 }

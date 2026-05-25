@@ -19,7 +19,7 @@ APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
-APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-clean-light.icns"
+APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 
 cd "$ROOT_DIR"
 

@@ -14,7 +14,7 @@ APP_MACOS="$APP_CONTENTS/MacOS"
 APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
-APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-clean-light.icns"
+APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 
 cd "$ROOT_DIR"
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true

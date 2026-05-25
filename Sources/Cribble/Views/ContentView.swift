@@ -129,7 +129,7 @@ private struct OpenInMenu: View {
                 Label("Open in Finder", systemImage: "folder")
             }
         } label: {
-            Label("Open in", systemImage: "square.and.arrow.up")
+            Label("Open in", systemImage: "square.and.pencil")
         }
         .buttonStyle(.glass)
         .disabled(library.selectedDocument == nil)
@@ -137,11 +137,11 @@ private struct OpenInMenu: View {
     }
 
     private var editorApplications: [EditorApplication] {
-        guard let documentURL = library.selectedDocument?.url else { return [] }
+        guard library.selectedDocument != nil else { return [] }
 
-        var urls = NSWorkspace.shared.urlsForApplications(toOpen: documentURL)
+        var urls: [URL] = []
         if let configuredURL = settings.editorApplicationURL {
-            urls.insert(configuredURL, at: 0)
+            urls.append(configuredURL)
         }
 
         urls.append(contentsOf: CommonEditorApplication.installedURLs())
@@ -149,9 +149,6 @@ private struct OpenInMenu: View {
         return urls
             .map(\.standardizedFileURL)
             .uniqued()
-            .filter { url in
-                url != NSWorkspace.shared.urlForApplication(toOpen: documentURL)
-            }
             .map(EditorApplication.init(url:))
             .sorted { lhs, rhs in
                 lhs.rank < rhs.rank || (lhs.rank == rhs.rank && lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending)
@@ -183,27 +180,34 @@ private enum CommonEditorApplication {
     static func rank(for url: URL) -> Int {
         let name = url.deletingPathExtension().lastPathComponent.lowercased()
         if name.contains("visual studio code") || name == "code" { return 0 }
-        if name.contains("obsidian") { return 1 }
-        if name.contains("textedit") { return 2 }
-        if name.contains("xcode") { return 3 }
-        if name.contains("terminal") { return 4 }
-        if name.contains("android studio") { return 5 }
+        if name.contains("cursor") { return 1 }
+        if name.contains("obsidian") { return 2 }
+        if name.contains("typora") { return 3 }
+        if name.contains("marked") { return 4 }
+        if name.contains("macdown") { return 5 }
+        if name.contains("zed") { return 6 }
+        if name.contains("sublime") { return 7 }
+        if name.contains("textmate") { return 8 }
+        if name.contains("nova") { return 9 }
+        if name.contains("textedit") { return 10 }
+        if name.contains("xcode") { return 11 }
         return 10
     }
 
     private static let commonBundleIdentifiers = [
         "com.microsoft.VSCode",
+        "com.microsoft.VSCodeInsiders",
         "com.todesktop.230313mzl4w4u92",
-        "com.todesktop.230313mzl4w4u92.ShipIt",
+        "com.cursor.Cursor",
         "md.obsidian",
+        "abnerworks.Typora",
+        "com.brettterpstra.marked2",
+        "com.uranusjr.macdown",
+        "dev.zed.Zed",
         "com.apple.TextEdit",
         "com.apple.dt.Xcode",
-        "com.apple.Terminal",
-        "com.google.android.studio",
-        "com.jetbrains.intellij",
-        "com.jetbrains.AppCode",
         "com.sublimetext.4",
-        "com.github.atom",
+        "com.sublimetext.3",
         "com.panic.Nova",
         "com.macromates.TextMate"
     ]

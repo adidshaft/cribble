@@ -115,13 +115,17 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
-    func renderedMarkdownForSelectedDocument() -> String {
+    func renderedMarkdownForSelectedDocument(includeInlineLinkedFiles: Bool = false) -> String {
         guard let selectedDocument else { return "" }
         let displayMarkdown = MarkdownDisplayPreprocessor.prepare(
             selectedDocument.rawMarkdown,
             documentTitle: selectedDocument.title
         )
-        return WikiLinkParser.renderForMarkdown(displayMarkdown, index: linkIndex)
+        let renderedMarkdown = WikiLinkParser.renderForMarkdown(displayMarkdown, index: linkIndex)
+        guard includeInlineLinkedFiles, let inlineLinks = inlineLinkedFilesMarkdown() else {
+            return renderedMarkdown
+        }
+        return "\(inlineLinks)\n\n\(renderedMarkdown)"
     }
 
     func linkedFilesForSelectedDocument() -> [LinkedFileSummary] {
@@ -149,6 +153,17 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    func inlineLinkedFilesMarkdown() -> String? {
+        let links = linkedFilesForSelectedDocument()
+        guard !links.isEmpty else { return nil }
+
+        let linkedText = links
+            .map { "[\(escapeMarkdownInline($0.title))](\(internalLinkURL(for: $0).absoluteString))" }
+            .joined(separator: " · ")
+
+        return "**Linked files:** \(linkedText)"
+    }
+
     func handleOpenURL(_ url: URL) -> OpenURLAction.Result {
         guard url.scheme == "cribble" else {
             NSWorkspace.shared.open(url)
@@ -165,6 +180,24 @@ final class MarkdownLibraryStore: ObservableObject {
 
         select(url: URL(fileURLWithPath: path))
         return .handled
+    }
+
+    private func internalLinkURL(for link: LinkedFileSummary) -> URL {
+        var components = URLComponents()
+        components.scheme = "cribble"
+        components.host = "open"
+        components.queryItems = [
+            URLQueryItem(name: "path", value: link.url.path),
+            URLQueryItem(name: "anchor", value: link.anchor)
+        ].compactMap { $0.value == nil ? nil : $0 }
+        return components.url ?? URL(string: "cribble://unresolved")!
+    }
+
+    private func escapeMarkdownInline(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "[", with: "\\[")
+            .replacingOccurrences(of: "]", with: "\\]")
     }
 
     func openSelectedInEditor(settings: AppSettings) {

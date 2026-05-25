@@ -8,6 +8,7 @@ struct ReaderView: View {
     var body: some View {
         Group {
             if let document = library.selectedDocument {
+                let linkedFiles = library.linkedFilesForSelectedDocument()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         Text(document.title)
@@ -16,13 +17,13 @@ struct ReaderView: View {
                             .textSelection(.enabled)
 
                         if settings.showLinkedFileCards {
-                            LinkedFilesStrip(links: library.linkedFilesForSelectedDocument()) { link in
+                            LinkedFilesStrip(links: linkedFiles) { link in
                                 library.select(url: link.url)
                             }
                         }
 
                         StructuredText(
-                            markdown: library.renderedMarkdownForSelectedDocument(),
+                            markdown: library.renderedMarkdownForSelectedDocument(includeInlineLinkedFiles: true),
                             baseURL: document.url.deletingLastPathComponent(),
                             syntaxExtensions: [.math]
                         )
@@ -76,31 +77,56 @@ struct ReaderView: View {
 private struct LinkedFilesStrip: View {
     let links: [LinkedFileSummary]
     let onSelect: (LinkedFileSummary) -> Void
+    @State private var isExpanded = false
 
     var body: some View {
         if !links.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "text.book.closed")
-                        .foregroundStyle(.secondary)
-                    Text("Linked files")
-                        .font(.custom("Roobert", size: 14))
-                        .fontWeight(.semibold)
-                    Rectangle()
-                        .fill(.secondary.opacity(0.55))
-                        .frame(width: 1, height: 14)
-                }
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 10)], alignment: .leading, spacing: 10) {
-                    ForEach(links) { link in
-                        Button {
-                            onSelect(link)
-                        } label: {
-                            LinkedFileCard(link: link)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Open \(link.title)")
+                Button {
+                    withAnimation(.snappy(duration: 0.18)) {
+                        isExpanded.toggle()
                     }
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 12)
+
+                        Image(systemName: "text.book.closed")
+                            .foregroundStyle(.secondary)
+
+                        Text("Linked files")
+                            .font(.custom("Roobert", size: 14))
+                            .fontWeight(.semibold)
+
+                        Text("\(links.count)")
+                            .font(.custom("Monaco", size: 10))
+                            .fontWeight(.bold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .glassEffect(.regular, in: Capsule())
+
+                        Spacer(minLength: 0)
+                    }
+                }
+                .buttonStyle(.plain)
+                .help(isExpanded ? "Collapse linked files" : "Expand linked files")
+
+                if isExpanded {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 10)], alignment: .leading, spacing: 10) {
+                        ForEach(links) { link in
+                            Button {
+                                onSelect(link)
+                            } label: {
+                                LinkedFileCard(link: link)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open \(link.title)")
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
             .padding(12)

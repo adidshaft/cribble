@@ -15,6 +15,12 @@ struct ReaderView: View {
                             .fontWeight(.semibold)
                             .textSelection(.enabled)
 
+                        if settings.showLinkedFileCards {
+                            LinkedFilesStrip(links: library.linkedFilesForSelectedDocument()) { link in
+                                library.select(url: link.url)
+                            }
+                        }
+
                         StructuredText(
                             markdown: library.renderedMarkdownForSelectedDocument(),
                             baseURL: document.url.deletingLastPathComponent(),
@@ -63,6 +69,82 @@ struct ReaderView: View {
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
             }
+        }
+    }
+}
+
+private struct LinkedFilesStrip: View {
+    let links: [LinkedFileSummary]
+    let onSelect: (LinkedFileSummary) -> Void
+
+    var body: some View {
+        if !links.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "text.book.closed")
+                        .foregroundStyle(.secondary)
+                    Text("Linked files")
+                        .font(.custom("Roobert", size: 14))
+                        .fontWeight(.semibold)
+                    Rectangle()
+                        .fill(.secondary.opacity(0.55))
+                        .frame(width: 1, height: 14)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 10)], alignment: .leading, spacing: 10) {
+                    ForEach(links) { link in
+                        Button {
+                            onSelect(link)
+                        } label: {
+                            LinkedFileCard(link: link)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Open \(link.title)")
+                    }
+                }
+            }
+            .padding(12)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+        }
+    }
+}
+
+private struct LinkedFileCard: View {
+    let link: LinkedFileSummary
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.blue)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(link.title)
+                    .font(.custom("Roobert", size: 13))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(link.subtitle)
+                    .font(.custom("Monaco", size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 6)
+
+            Text("MD")
+                .font(.custom("Monaco", size: 10))
+                .fontWeight(.bold)
+                .foregroundStyle(.pink)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .background {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.primary.opacity(0.045))
         }
     }
 }

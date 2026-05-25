@@ -29,6 +29,9 @@ struct SettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
+
+                Toggle("Show linked file cards", isOn: $settings.showLinkedFileCards)
+                    .help("Show a compact linked-files strip above each Markdown document")
             }
 
             Section("External Editor") {

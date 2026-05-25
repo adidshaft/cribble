@@ -5,6 +5,13 @@ enum AIProvider: String, CaseIterable, Identifiable {
     case claude = "Claude"
 
     var id: String { rawValue }
+
+    var lowestModelName: String {
+        switch self {
+        case .codex: "gpt-5.5"
+        case .claude: "haiku"
+        }
+    }
 }
 
 struct AIService {
@@ -19,7 +26,11 @@ struct AIService {
             output = try await run(
                 executable: "/usr/bin/env",
                 arguments: [
-                    "codex", "exec",
+                    "codex",
+                    "--ask-for-approval", "never",
+                    "-c", "model_reasoning_effort=\"low\"",
+                    "exec",
+                    "--model", provider.lowestModelName,
                     "-C", folderURL.path,
                     "--skip-git-repo-check",
                     "--sandbox", "read-only",
@@ -29,6 +40,7 @@ struct AIService {
                     prompt
                 ],
                 currentDirectory: folderURL,
+                provider: provider,
                 outputFile: outputFile
             )
         case .claude:
@@ -37,16 +49,18 @@ struct AIService {
                 arguments: [
                     "claude",
                     "--print",
-                    "--bare",
                     "--no-session-persistence",
-                    "--permission-mode", "dontAsk",
+                    "--model", provider.lowestModelName,
+                    "--effort", "low",
+                    "--permission-mode", "plan",
                     "--tools=Read,Grep,Glob",
                     "--allowedTools=Read,Grep,Glob",
                     "--output-format", "text",
                     "--",
                     prompt
                 ],
-                currentDirectory: folderURL
+                currentDirectory: folderURL,
+                provider: provider
             )
         }
 
@@ -57,6 +71,7 @@ struct AIService {
         executable: String,
         arguments: [String],
         currentDirectory: URL,
+        provider: AIProvider,
         outputFile: URL? = nil
     ) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
@@ -83,7 +98,11 @@ struct AIService {
             }
 
             if process.terminationStatus != 0 {
-                throw AIServiceError.commandFailed(error.isEmpty ? output : error)
+                throw AIServiceError.commandFailed(Self.friendlyFailureMessage(
+                    for: provider,
+                    output: output,
+                    error: error
+                ))
             }
 
             return finalOutput?.isEmpty == false ? finalOutput ?? output : output
@@ -106,6 +125,19 @@ struct AIService {
             .uniquedStrings()
             .joined(separator: ":")
         return environment
+    }
+
+    private static func friendlyFailureMessage(for provider: AIProvider, output: String, error: String) -> String {
+        let rawMessage = error.isEmpty ? output : error
+        guard provider == .claude, rawMessage.localizedCaseInsensitiveContains("401") else {
+            return rawMessage
+        }
+
+        return """
+        Claude is installed but its local authentication failed with 401 Invalid authentication credentials. Run `claude auth status` and `claude auth login` in Terminal, then try AI Link Notes again.
+
+        \(rawMessage)
+        """
     }
 
     private static let prompt = """

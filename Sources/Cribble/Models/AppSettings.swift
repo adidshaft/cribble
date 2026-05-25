@@ -11,6 +11,10 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(fileSortMode.rawValue, forKey: Keys.fileSortMode) }
     }
 
+    @Published var showLinkedFileCards: Bool {
+        didSet { UserDefaults.standard.set(showLinkedFileCards, forKey: Keys.showLinkedFileCards) }
+    }
+
     @Published var editorApplicationURL: URL? {
         didSet { UserDefaults.standard.set(editorApplicationURL?.path, forKey: Keys.editorApplicationPath) }
     }
@@ -20,6 +24,7 @@ final class AppSettings: ObservableObject {
         readerFontScale = scale == 0 ? 1.0 : scale
         let sortMode = UserDefaults.standard.string(forKey: Keys.fileSortMode).flatMap(FileSortMode.init(rawValue:))
         fileSortMode = sortMode ?? .name
+        showLinkedFileCards = UserDefaults.standard.object(forKey: Keys.showLinkedFileCards) as? Bool ?? true
         if let path = UserDefaults.standard.string(forKey: Keys.editorApplicationPath), !path.isEmpty {
             editorApplicationURL = URL(fileURLWithPath: path)
         } else {
@@ -73,6 +78,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let readerFontScale = "readerFontScale"
         static let fileSortMode = "fileSortMode"
+        static let showLinkedFileCards = "showLinkedFileCards"
         static let editorApplicationPath = "editorApplicationPath"
     }
 }

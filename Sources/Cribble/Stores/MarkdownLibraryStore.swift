@@ -124,6 +124,31 @@ final class MarkdownLibraryStore: ObservableObject {
         return WikiLinkParser.renderForMarkdown(displayMarkdown, index: linkIndex)
     }
 
+    func linkedFilesForSelectedDocument() -> [LinkedFileSummary] {
+        guard let selectedDocument, let linkIndex else { return [] }
+
+        var seen = Set<URL>()
+        return selectedDocument.outboundLinks.compactMap { link in
+            let resolved = linkIndex.resolve(link)
+            guard let targetURL = resolved.targetURL, seen.insert(targetURL).inserted else {
+                return nil
+            }
+
+            let targetDocument = documents.first { $0.url == targetURL }
+            let title = link.label.isEmpty ? targetDocument?.title ?? targetURL.deletingPathExtension().lastPathComponent : link.label
+            let folderName = targetURL.deletingLastPathComponent().lastPathComponent
+            let subtitle = resolved.anchor.map { "#\($0)" } ?? folderName
+
+            return LinkedFileSummary(
+                id: targetURL,
+                title: title,
+                subtitle: subtitle,
+                url: targetURL,
+                anchor: resolved.anchor
+            )
+        }
+    }
+
     func handleOpenURL(_ url: URL) -> OpenURLAction.Result {
         guard url.scheme == "cribble" else {
             NSWorkspace.shared.open(url)
@@ -161,7 +186,7 @@ final class MarkdownLibraryStore: ObservableObject {
         guard let rootURL = activeRootURL else { return }
         isRunningAI = true
         pendingDiff = nil
-        statusMessage = "Asking \(provider.rawValue) to suggest links..."
+        statusMessage = "Asking \(provider.rawValue) \(provider.lowestModelName) to suggest links..."
 
         Task {
             do {
@@ -170,6 +195,7 @@ final class MarkdownLibraryStore: ObservableObject {
                 statusMessage = diff.isEmpty ? "No link changes suggested" : "Review suggested link changes"
             } catch {
                 errorMessage = error.localizedDescription
+                statusMessage = "AI linking failed"
             }
             isRunningAI = false
         }
@@ -189,6 +215,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func cancelPendingDiff() {
         pendingDiff = nil
+        statusMessage = "AI link changes discarded"
     }
 
     private func rootNode(for rootURL: URL, sortMode: FileSortMode) throws -> MarkdownNode {

@@ -11,8 +11,13 @@ struct SidebarView: View {
                 .padding(.vertical, 8)
 
             if library.filteredNodes.isEmpty {
-                ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
-                    .padding(.vertical, 24)
+                VStack {
+                    Spacer()
+                    ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
+                        .padding(.vertical, 24)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(library.filteredNodes, children: \.childNodes, selection: $library.selectedURL) { node in
                     SidebarRow(node: node)
@@ -21,6 +26,7 @@ struct SidebarView: View {
                 .listStyle(.sidebar)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Cribble")
         .onChange(of: library.selectedURL) { _, newValue in
             library.select(url: newValue)

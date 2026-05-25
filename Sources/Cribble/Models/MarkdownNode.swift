@@ -22,4 +22,8 @@ struct MarkdownNode: Identifiable, Hashable {
     var selectableURL: URL {
         readmeURL ?? url
     }
+
+    var childNodes: [MarkdownNode]? {
+        kind == .folder ? children : nil
+    }
 }

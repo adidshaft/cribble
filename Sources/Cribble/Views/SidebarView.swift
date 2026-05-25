@@ -10,17 +10,16 @@ struct SidebarView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
 
-            List(selection: $library.selectedURL) {
-                if library.filteredNodes.isEmpty {
-                    ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
-                        .padding(.vertical, 24)
-                } else {
-                    ForEach(library.filteredNodes) { node in
-                        SidebarNodeView(node: node)
-                    }
+            if library.filteredNodes.isEmpty {
+                ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
+                    .padding(.vertical, 24)
+            } else {
+                List(library.filteredNodes, children: \.childNodes, selection: $library.selectedURL) { node in
+                    SidebarRow(node: node)
+                        .tag(Optional(node.url))
                 }
+                .listStyle(.sidebar)
             }
-            .listStyle(.sidebar)
         }
         .navigationTitle("Cribble")
         .onChange(of: library.selectedURL) { _, newValue in
@@ -71,27 +70,6 @@ private struct SidebarControls: View {
 
                 Spacer(minLength: 0)
             }
-        }
-    }
-}
-
-private struct SidebarNodeView: View {
-    let node: MarkdownNode
-
-    var body: some View {
-        switch node.kind {
-        case .folder:
-            DisclosureGroup {
-                ForEach(node.children) { child in
-                    SidebarNodeView(node: child)
-                }
-            } label: {
-                SidebarRow(node: node)
-            }
-            .tag(Optional(node.url))
-        case .markdown:
-            SidebarRow(node: node)
-                .tag(Optional(node.url))
         }
     }
 }

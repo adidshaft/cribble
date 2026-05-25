@@ -1,98 +1,177 @@
 # Cribble
 
-Cribble is a native macOS Markdown reader for folder-based note libraries. It is
-for people who already write in plain `.md` files, but want a calmer, richer,
-more connected reading surface than Finder, a code editor, or a full writing
-app.
+Cribble is a native macOS 26 Markdown reader for folder-based note libraries.
+It is built for people who already write in plain `.md` files, but want a
+calmer, richer, more connected place to read them than Finder, a code editor, or
+a full writing app.
 
-The product idea is simple: keep Markdown editing outside Cribble, and make
-Cribble the best place to read, browse, connect, and understand a local folder
-of notes.
+The product idea is simple: keep editing outside Cribble, and make Cribble the
+best Mac-native surface for reading, browsing, connecting, and understanding a
+local folder of notes.
 
-## Product Idea
+## Product Vision
 
 Cribble treats every folder as a small knowledge space. Folders become shelves,
-`README.md` files become folder landing pages, and Markdown files become readable
-documents with native navigation. The app should feel like a Mac-native library:
-quiet, fast, legible, and deeply respectful of the files on disk.
+`README.md` files become folder landing pages, and Markdown files become
+beautiful reading documents with native navigation.
 
-The app has three core jobs:
+The app is intentionally read-only. Your source files stay ordinary Markdown on
+disk. When you want to edit, Cribble sends the current file to the app you
+choose, such as VS Code, Xcode, Obsidian, TextEdit, Terminal, or the system
+default app.
 
-- **Read beautifully:** render Markdown with strong typography, rich code
-  blocks, tables, task states, images, links, and math without turning the app
-  into an editor.
-- **Navigate locally:** preserve folder structure, open folder `README.md`
-  pages, resolve wiki links, and make cross-file reading feel natural.
-- **Connect notes safely:** use a local installed AI tool to suggest links
-  between files, then show a patch preview before anything is written.
+Cribble should feel like a Mac library: quiet, legible, fast, local, and deeply
+respectful of the user's files.
 
-## Product Principles
+## Core Ideas
 
-- **Local first:** Cribble reads folders in place and does not upload or sync
-  documents by itself.
-- **Reader only:** Markdown is edited in the user's chosen editor. Cribble
-  should never become an accidental writing surface.
-- **Plain files stay plain:** generated structure should be ordinary Markdown,
-  especially folder-level `README.md` files.
-- **Preview before mutation:** AI can suggest changes, but the user reviews and
-  applies patches.
-- **System native:** the interface should follow macOS defaults, system theme,
-  sidebar behavior, toolbars, settings, and Liquid Glass-era materials.
+- **Read beautifully:** render Markdown with strong typography, tables, task
+  states, code blocks, images, links, and math without adding an editor surface.
+- **Navigate locally:** preserve the folder tree, open folder `README.md` files,
+  resolve wiki links, and make cross-file reading feel natural.
+- **Connect notes safely:** use local Codex or Claude CLIs to suggest links, then
+  show a native patch preview before any file is changed.
+- **Stay native:** use macOS sidebars, toolbars, menus, Settings, system theme,
+  and Liquid Glass-era materials instead of custom heavy chrome.
 
-## Target Workflows
+## Current Features
 
-- Open several Markdown folders and keep them available across launches.
-- Click a folder to read its `README.md` as a landing page.
-- Read rich notes with tables, checkboxes, code, images, math, and internal
-  links.
-- Sort files inside folders by name, created date, or last updated date.
-- Adjust reader text size from very compact to presentation-friendly.
-- Open the current file in a configured external editor.
-- Ask Codex or Claude to analyze the local folder and suggest sparse wiki links
-  between existing files.
+- Opens local folders in place and shows only folders plus `.md` files.
+- Keeps multiple opened folders in a persistent sidebar library.
+- Creates a `README.md` for every imported folder that does not already have one.
+- Opens a folder's `README.md` automatically when the folder is selected.
+- Sorts files inside folders by name, creation date, or last updated date.
+- Auto-reloads Markdown files when they change on disk.
+- Renders rich Markdown with Textual, including task markers, code blocks,
+  tables, relative images, links, and LaTeX math.
+- Uses Roobert for reading typography and Monaco for monospaced text.
+- Provides XXS-to-XXL reader text sizing.
+- Supports wiki links such as `[[Home]]`, `[[Note#Heading]]`, and
+  `[[Note|Label]]`.
+- Shows linked files inline in the document and as a collapsible linked-files
+  panel.
+- Opens the current file with a toolbar `Open in` menu, including detected
+  eligible apps, the default app, and Finder reveal.
+- Offers preview-first AI linking with local Codex or Claude, using the lowest
+  configured model for each provider.
+- Ships as a signed, notarized macOS DMG for local distribution.
 
-## Future Ideas
+## Reading Workflow
 
-- Back/forward navigation history for reading paths.
-- Outline/table-of-contents navigation for the current document.
-- Per-folder reading preferences and sort defaults.
-- Better unresolved-link views with suggested target files.
-- Optional graph view for local file relationships.
-- Export a connected reading bundle without changing source files.
-- Quick Look extension for Markdown previews.
-- AppleScript or URL-scheme hooks so other tools can open a note at a heading.
+1. Open one or more folders from the sidebar.
+2. Browse folders and Markdown files in the native tree.
+3. Click a folder to read its `README.md` landing page.
+4. Click a note to read rendered Markdown.
+5. Follow wiki links or relative `.md` links inside the reader.
+6. Use `Open in` when you want to edit the file elsewhere.
 
-## Run
+Cribble never adds an in-app Markdown editor. That boundary is deliberate: the
+app is a reader and connector, not a writing surface.
+
+## Link Workflow
+
+Cribble resolves explicit wiki links by filename, title, H1, aliases, keywords,
+tags, and relative paths where possible. Resolved links navigate inside the app.
+Web links open externally.
+
+Linked notes appear in two places:
+
+- **Inline:** a compact `Linked files:` line appears in the document flow.
+- **Panel:** a collapsible card grid can be expanded when you want a more visual
+  overview of connected notes.
+
+## AI Link Notes
+
+Cribble can ask a locally installed AI tool to suggest sparse, high-confidence
+wiki links between existing files.
+
+Supported providers:
+
+- Codex CLI
+- Claude CLI
+
+The AI command runs in planning/read-only mode and is asked to return unified
+diff output only. Cribble parses that diff into a native preview sheet. Applying
+the patch verifies source lines before writing; canceling writes nothing.
+
+No AI command is allowed to directly mutate files in v1.
+
+## Design Direction
+
+Cribble aims for a quiet, native macOS 26 reading experience:
+
+- sidebar-first library navigation
+- compact toolbar actions
+- system theme awareness
+- Liquid Glass materials where they help
+- restrained card use
+- readable line lengths on wide screens
+- polished behavior across small, medium, and large windows
+
+## Run Locally
 
 ```sh
 ./script/build_and_run.sh
 ```
 
-The same command is wired into the Codex app Run action. You can also open
-`Cribble.xcworkspace` in Xcode; the workspace contains the Swift package.
+You can also open `Cribble.xcworkspace` in Xcode. The workspace contains the
+Swift package.
+
+## Test
+
+```sh
+swift test
+```
+
+The tests cover folder scanning, sort behavior, wiki-link parsing, link-index
+resolution, Markdown display preparation, and unified-diff parsing/apply logic.
 
 ## Release
 
 Current version: `1.0.0`
 
 ```sh
-./script/package_release.sh
+./script/package_release.sh 1.0.0
 ```
 
-The release script builds a signed release app bundle, wraps it in
-`releases/Cribble-1.0.0.dmg`, signs the DMG, and writes a SHA-256 checksum.
-For fully seamless external distribution, use a Developer ID Application
-certificate and notarize the DMG.
+The release script:
 
-## Features
+- builds the Swift package in release mode
+- creates `Cribble.app`
+- signs with Developer ID
+- creates `releases/Cribble-1.0.0.dmg`
+- signs the DMG
+- writes a SHA-256 checksum
 
-- Opens a local folder in place and shows only folders plus `.md` files.
-- Keeps opened folders in a persistent library.
-- Creates a `README.md` for every imported folder that does not already have one.
-- Renders rich Markdown with Textual, Roobert body text, and Monaco code.
-- Supports wiki links such as `[[Home]]`, `[[Note#Heading]]`, and `[[Note|Label]]`.
-- Supports relative images, tables, richer task markers, and LaTeX math via Textual.
-- Keeps folder opening, refresh, and file sorting in the sidebar where the library lives.
-- Includes XXS-to-XXL reader text sizing and light/dark app icons that follow system appearance.
-- Opens the selected file in a configured external editor.
-- Offers a preview-first AI linking workflow using local Codex or Claude CLIs.
+For public sharing, submit the DMG to Apple's notary service and staple the
+ticket:
+
+```sh
+xcrun notarytool submit releases/Cribble-1.0.0.dmg --keychain-profile cribble-notary --wait
+xcrun stapler staple releases/Cribble-1.0.0.dmg
+```
+
+Latest release:
+
+https://github.com/adidshaft/cribble/releases/tag/v1.0.0
+
+## Product Roadmap
+
+- Back and forward navigation history for reading paths.
+- In-document search and heading outline navigation.
+- Better unresolved-link views with suggested targets.
+- Optional graph view for local file relationships.
+- Per-folder reading preferences.
+- Quick Look extension for Markdown previews.
+- Exportable connected reading bundles.
+- URL-scheme or AppleScript hooks for opening notes from other tools.
+
+## Principles
+
+- **Local first:** Cribble reads folders in place and does not upload or sync
+  documents by itself.
+- **Reader only:** editing belongs in the user's chosen editor.
+- **Plain files stay plain:** generated structure should remain ordinary
+  Markdown.
+- **Preview before mutation:** AI suggestions are patches the user reviews.
+- **System native:** the app should feel like it belongs on macOS.

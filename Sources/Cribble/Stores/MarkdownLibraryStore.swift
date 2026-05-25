@@ -201,18 +201,32 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func openSelectedInEditor(settings: AppSettings) {
-        guard let selectedDocument else { return }
-        guard let editorURL = settings.editorApplicationURL else {
-            errorMessage = "Choose an editor in Settings before opening files externally."
-            return
+        guard selectedDocument != nil else { return }
+        if let editorURL = settings.editorApplicationURL {
+            openSelectedDocument(with: editorURL)
+        } else {
+            openSelectedDocumentWithDefaultApp()
         }
+    }
 
+    func openSelectedDocumentWithDefaultApp() {
+        guard let selectedDocument else { return }
+        NSWorkspace.shared.open(selectedDocument.url)
+    }
+
+    func openSelectedDocument(with applicationURL: URL) {
+        guard let selectedDocument else { return }
         let configuration = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.open([selectedDocument.url], withApplicationAt: editorURL, configuration: configuration) { [weak self] _, error in
+        NSWorkspace.shared.open([selectedDocument.url], withApplicationAt: applicationURL, configuration: configuration) { [weak self] _, error in
             if let error {
                 Task { @MainActor in self?.errorMessage = error.localizedDescription }
             }
         }
+    }
+
+    func revealSelectedDocumentInFinder() {
+        guard let selectedDocument else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([selectedDocument.url])
     }
 
     func runAILinking(provider: AIProvider) {

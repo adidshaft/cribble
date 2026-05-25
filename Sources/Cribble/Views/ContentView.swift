@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -17,13 +18,7 @@ struct ContentView: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 TextSizeMenu()
 
-                Button {
-                    library.openSelectedInEditor(settings: settings)
-                } label: {
-                    Label("Open in Editor", systemImage: "square.and.pencil")
-                }
-                .disabled(library.selectedDocument == nil)
-                .help("Open the selected Markdown file in your configured editor")
+                OpenInMenu()
 
                 Button {
                     showingAIProviderSheet = true
@@ -100,6 +95,118 @@ private struct TextSizeMenu: View {
         .buttonStyle(.glass)
         .help("Change reader text size from XXS to XXL")
     }
+}
+
+private struct OpenInMenu: View {
+    @EnvironmentObject private var library: MarkdownLibraryStore
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        Menu {
+            Button {
+                library.openSelectedDocumentWithDefaultApp()
+            } label: {
+                Label("Default app", systemImage: "app")
+            }
+
+            ForEach(editorApplications) { app in
+                Button {
+                    library.openSelectedDocument(with: app.url)
+                } label: {
+                    Label {
+                        Text(app.name)
+                    } icon: {
+                        Image(nsImage: app.icon)
+                    }
+                }
+            }
+
+            Divider()
+
+            Button {
+                library.revealSelectedDocumentInFinder()
+            } label: {
+                Label("Open in Finder", systemImage: "folder")
+            }
+        } label: {
+            Label("Open in", systemImage: "square.and.arrow.up")
+        }
+        .buttonStyle(.glass)
+        .disabled(library.selectedDocument == nil)
+        .help("Open the selected Markdown file in another app or reveal it in Finder")
+    }
+
+    private var editorApplications: [EditorApplication] {
+        guard let documentURL = library.selectedDocument?.url else { return [] }
+
+        var urls = NSWorkspace.shared.urlsForApplications(toOpen: documentURL)
+        if let configuredURL = settings.editorApplicationURL {
+            urls.insert(configuredURL, at: 0)
+        }
+
+        urls.append(contentsOf: CommonEditorApplication.installedURLs())
+
+        return urls
+            .map(\.standardizedFileURL)
+            .uniqued()
+            .filter { url in
+                url != NSWorkspace.shared.urlForApplication(toOpen: documentURL)
+            }
+            .map(EditorApplication.init(url:))
+            .sorted { lhs, rhs in
+                lhs.rank < rhs.rank || (lhs.rank == rhs.rank && lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending)
+            }
+    }
+}
+
+private struct EditorApplication: Identifiable {
+    let id: URL
+    let url: URL
+    let name: String
+    let icon: NSImage
+    let rank: Int
+
+    init(url: URL) {
+        self.id = url
+        self.url = url
+        self.name = url.deletingPathExtension().lastPathComponent
+        self.icon = NSWorkspace.shared.icon(forFile: url.path)
+        self.rank = CommonEditorApplication.rank(for: url)
+    }
+}
+
+private enum CommonEditorApplication {
+    static func installedURLs() -> [URL] {
+        commonBundleIdentifiers.compactMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }
+    }
+
+    static func rank(for url: URL) -> Int {
+        let name = url.deletingPathExtension().lastPathComponent.lowercased()
+        if name.contains("visual studio code") || name == "code" { return 0 }
+        if name.contains("obsidian") { return 1 }
+        if name.contains("textedit") { return 2 }
+        if name.contains("xcode") { return 3 }
+        if name.contains("terminal") { return 4 }
+        if name.contains("android studio") { return 5 }
+        return 10
+    }
+
+    private static let commonBundleIdentifiers = [
+        "com.microsoft.VSCode",
+        "com.todesktop.230313mzl4w4u92",
+        "com.todesktop.230313mzl4w4u92.ShipIt",
+        "md.obsidian",
+        "com.apple.TextEdit",
+        "com.apple.dt.Xcode",
+        "com.apple.Terminal",
+        "com.google.android.studio",
+        "com.jetbrains.intellij",
+        "com.jetbrains.AppCode",
+        "com.sublimetext.4",
+        "com.github.atom",
+        "com.panic.Nova",
+        "com.macromates.TextMate"
+    ]
 }
 
 private struct DiffSheetItem: Identifiable {

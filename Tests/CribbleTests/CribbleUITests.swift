@@ -81,11 +81,19 @@ final class CribbleUITests: XCTestCase {
 
     func testRemovingFolderOnlyRemovesItFromCribble() throws {
         let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
         let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
         let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderBookmarks")
         defaults.removeObject(forKey: "folderPaths")
         defaults.removeObject(forKey: "lastFolderPath")
         defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
             if let oldFolderPaths {
                 defaults.set(oldFolderPaths, forKey: "folderPaths")
             } else {
@@ -119,6 +127,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.nodes.isEmpty)
         XCTAssertNil(store.selectedDocument)
         XCTAssertEqual(defaults.stringArray(forKey: "folderPaths") ?? [], [])
+        XCTAssertEqual(defaults.array(forKey: "folderBookmarks") as? [Data] ?? [], [])
     }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {

@@ -19,6 +19,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private var documents: [MarkdownDocument] = []
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
+    private var securityScopedRoots: Set<URL> = []
 
     init() {
         restoreFolders()
@@ -62,6 +63,7 @@ final class MarkdownLibraryStore: ObservableObject {
     func openFolder(_ url: URL, sortMode: FileSortMode) {
         currentSortMode = sortMode
         let standardized = url.standardizedFileURL
+        startAccessingFolder(standardized)
         if !rootURLs.contains(standardized) {
             rootURLs.append(standardized)
             persistFolders()
@@ -86,6 +88,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let removedSelectedDocument = selectedURL?.isSameFileOrDescendant(of: standardized) ?? false
         rootURLs.removeAll { $0.standardizedFileURL == standardized }
         persistFolders()
+        stopAccessingFolder(standardized)
 
         if removedSelectedDocument {
             selectedURL = nil
@@ -329,14 +332,18 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private func restoreFolders() {
+        let bookmarkedURLs = restoreBookmarkedFolders()
         let paths = UserDefaults.standard.stringArray(forKey: Keys.folderPaths)
         let legacyPath = UserDefaults.standard.string(forKey: Keys.legacyLastFolderPath)
-        rootURLs = (paths ?? legacyPath.map { [$0] } ?? [])
+        let pathURLs = (paths ?? legacyPath.map { [$0] } ?? [])
             .map { URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL }
+
+        rootURLs = (bookmarkedURLs + pathURLs)
             .filter { FileManager.default.fileExists(atPath: $0.path) }
             .uniqued()
 
         if !rootURLs.isEmpty {
+            rootURLs.forEach(startAccessingFolder)
             persistFolders()
             refresh()
             startMonitoring()
@@ -345,6 +352,63 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private func persistFolders() {
         UserDefaults.standard.set(rootURLs.map(\.path), forKey: Keys.folderPaths)
+        let bookmarks = rootURLs.compactMap { url in
+            try? url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        }
+        UserDefaults.standard.set(bookmarks, forKey: Keys.folderBookmarks)
+    }
+
+    private func restoreBookmarkedFolders() -> [URL] {
+        let bookmarks = UserDefaults.standard.array(forKey: Keys.folderBookmarks) as? [Data] ?? []
+        return bookmarks.compactMap { bookmark in
+            var isStale = false
+            if let url = try? URL(
+                resolvingBookmarkData: bookmark,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            ).standardizedFileURL {
+                startAccessingFolder(url)
+                return url
+            }
+
+            if let url = try? URL(
+                resolvingBookmarkData: bookmark,
+                options: [],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            ).standardizedFileURL {
+                startAccessingFolder(url)
+                return url
+            }
+
+            return nil
+        }
+    }
+
+    private func startAccessingFolder(_ url: URL) {
+        let standardized = url.standardizedFileURL
+        guard !securityScopedRoots.contains(standardized) else { return }
+        if standardized.startAccessingSecurityScopedResource() {
+            securityScopedRoots.insert(standardized)
+        }
+    }
+
+    private func stopAccessingFolder(_ url: URL) {
+        let standardized = url.standardizedFileURL
+        guard securityScopedRoots.remove(standardized) != nil else { return }
+        standardized.stopAccessingSecurityScopedResource()
+    }
+
+    private func stopAccessingAllFolders() {
+        for url in securityScopedRoots {
+            url.stopAccessingSecurityScopedResource()
+        }
+        securityScopedRoots.removeAll()
     }
 
     private func documentURL(for url: URL) -> URL? {
@@ -407,6 +471,7 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private enum Keys {
+        static let folderBookmarks = "folderBookmarks"
         static let folderPaths = "folderPaths"
         static let legacyLastFolderPath = "lastFolderPath"
     }

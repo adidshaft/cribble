@@ -37,6 +37,7 @@ struct ReaderView: View {
                             .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * settings.readerFontScale))
                             .textual.imageAttachmentLoader(.image(relativeTo: document.url.deletingLastPathComponent()))
                             .textual.textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: 840, alignment: .leading)
                     .padding(.horizontal, 42)

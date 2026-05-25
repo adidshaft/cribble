@@ -28,15 +28,27 @@ final class AppSettings: ObservableObject {
     }
 
     func increaseFontSize() {
-        readerFontScale = min(1.6, readerFontScale + 0.05)
+        let current = ReaderFontSizePreset.closest(to: readerFontScale)
+        guard let index = ReaderFontSizePreset.allCases.firstIndex(of: current),
+              index < ReaderFontSizePreset.allCases.index(before: ReaderFontSizePreset.allCases.endIndex)
+        else { return }
+        readerFontScale = ReaderFontSizePreset.allCases[index + 1].scale
     }
 
     func decreaseFontSize() {
-        readerFontScale = max(0.75, readerFontScale - 0.05)
+        let current = ReaderFontSizePreset.closest(to: readerFontScale)
+        guard let index = ReaderFontSizePreset.allCases.firstIndex(of: current), index > 0 else {
+            return
+        }
+        readerFontScale = ReaderFontSizePreset.allCases[index - 1].scale
     }
 
     func resetFontSize() {
-        readerFontScale = 1.0
+        readerFontScale = ReaderFontSizePreset.medium.scale
+    }
+
+    func setFontSize(_ preset: ReaderFontSizePreset) {
+        readerFontScale = preset.scale
     }
 
     func chooseEditor() {

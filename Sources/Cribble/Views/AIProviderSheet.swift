@@ -23,6 +23,7 @@ struct AIProviderSheet: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    .help("Run \(provider.rawValue) locally and preview suggested Markdown link changes")
                 }
             }
 
@@ -32,9 +33,11 @@ struct AIProviderSheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
+                .help("Close without running AI linking")
             }
         }
         .padding(24)
         .frame(width: 440)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
     }
 }

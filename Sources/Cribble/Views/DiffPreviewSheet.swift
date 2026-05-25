@@ -31,14 +31,18 @@ struct DiffPreviewSheet: View {
             HStack {
                 Button("Cancel", role: .cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
+                    .help("Discard the suggested AI patch")
                 Spacer()
                 Button("Apply Changes", action: onApply)
                     .keyboardShortcut(.defaultAction)
                     .disabled(diff.isEmpty)
+                    .buttonStyle(.glassProminent)
+                    .help("Apply the reviewed Markdown link changes")
             }
         }
         .padding(22)
         .frame(width: 760, height: 560)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
@@ -67,7 +71,7 @@ private struct DiffFileView: View {
                 }
             }
             .padding(10)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 

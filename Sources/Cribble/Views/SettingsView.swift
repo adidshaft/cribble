@@ -8,10 +8,20 @@ struct SettingsView: View {
             Section("Reading") {
                 HStack {
                     Text("Text size")
-                    Slider(value: $settings.readerFontScale, in: 0.85...1.35, step: 0.05)
+                    Slider(value: $settings.readerFontScale, in: 0.65...1.65, step: 0.05)
+                        .help("Fine-tune reader text size")
                     Text("\(Int(settings.readerFontScale * 100))%")
                         .foregroundStyle(.secondary)
                         .frame(width: 48, alignment: .trailing)
+                }
+
+                Picker("Text size preset", selection: Binding(
+                    get: { ReaderFontSizePreset.closest(to: settings.readerFontScale) },
+                    set: { settings.setFontSize($0) }
+                )) {
+                    ForEach(ReaderFontSizePreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
                 }
 
                 Picker("Sort files by", selection: $settings.fileSortMode) {
@@ -31,8 +41,10 @@ struct SettingsView: View {
                     }
                     Spacer()
                     Button("Choose...", action: settings.chooseEditor)
+                        .help("Choose the app Cribble uses for external Markdown editing")
                     Button("Clear", action: settings.resetEditor)
                         .disabled(settings.editorApplicationURL == nil)
+                        .help("Clear the configured external editor")
                 }
             }
         }

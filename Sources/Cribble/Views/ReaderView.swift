@@ -39,6 +39,7 @@ struct ReaderView: View {
                 .environment(\.openURL, OpenURLAction { url in
                     library.handleOpenURL(url)
                 })
+                .backgroundExtensionEffect()
                 .navigationTitle(document.title)
             } else {
                 WelcomeView()
@@ -58,7 +59,9 @@ struct ReaderView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(.regularMaterial)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 10)
+                .padding(.bottom, 8)
             }
         }
     }
@@ -75,7 +78,7 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(14)
         }
-        .background(.quaternary.opacity(0.55), in: RoundedRectangle(cornerRadius: 7))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
         .textual.blockSpacing(.init(top: 8, bottom: 18))
     }
 }
@@ -94,6 +97,8 @@ private struct WelcomeView: View {
                 library.chooseFolder(sortMode: settings.fileSortMode)
             }
             .controlSize(.large)
+            .buttonStyle(.glassProminent)
+            .help("Open a Markdown folder and keep it in the sidebar")
         }
     }
 }

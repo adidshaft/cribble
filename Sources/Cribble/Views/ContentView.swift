@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @State private var showingAIProviderSheet = false
@@ -15,43 +16,7 @@ struct ContentView: View {
         .searchable(text: $library.searchText, placement: .toolbar, prompt: "Search files")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    library.chooseFolder(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Open Folder", systemImage: "folder.badge.plus")
-                }
-
-                Button {
-                    library.refresh(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-                .disabled(!library.hasFolders)
-
-                Menu {
-                    Picker("Sort Files", selection: $settings.fileSortMode) {
-                        ForEach(FileSortMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                } label: {
-                    Label("Sort Files", systemImage: "arrow.up.arrow.down")
-                }
-                .disabled(!library.hasFolders)
-
-                Menu {
-                    Button("Smaller", systemImage: "textformat.size.smaller") {
-                        settings.decreaseFontSize()
-                    }
-                    Button("Larger", systemImage: "textformat.size.larger") {
-                        settings.increaseFontSize()
-                    }
-                    Button("Reset", systemImage: "arrow.counterclockwise") {
-                        settings.resetFontSize()
-                    }
-                } label: {
-                    Label("Text Size", systemImage: "textformat.size")
-                }
+                TextSizeMenu()
 
                 Button {
                     library.openSelectedInEditor(settings: settings)
@@ -59,6 +24,7 @@ struct ContentView: View {
                     Label("Open in Editor", systemImage: "square.and.pencil")
                 }
                 .disabled(library.selectedDocument == nil)
+                .help("Open the selected Markdown file in your configured editor")
 
                 Button {
                     showingAIProviderSheet = true
@@ -66,10 +32,18 @@ struct ContentView: View {
                     Label("AI Link Notes", systemImage: "sparkles")
                 }
                 .disabled(!library.hasFolders || library.isRunningAI)
+                .buttonStyle(.glass)
+                .help("Ask a local AI tool to suggest wiki links with a patch preview")
             }
         }
         .onChange(of: settings.fileSortMode) { _, newMode in
             library.refresh(sortMode: newMode)
+        }
+        .onAppear {
+            AppIconManager.apply(for: colorScheme)
+        }
+        .onChange(of: colorScheme) { _, newScheme in
+            AppIconManager.apply(for: newScheme)
         }
         .sheet(isPresented: $showingAIProviderSheet) {
             AIProviderSheet { provider in
@@ -99,6 +73,39 @@ struct ContentView: View {
         .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
         .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
         .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+    }
+}
+
+private struct TextSizeMenu: View {
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        Menu {
+            Picker("Text Size", selection: Binding(
+                get: { ReaderFontSizePreset.closest(to: settings.readerFontScale) },
+                set: { settings.setFontSize($0) }
+            )) {
+                ForEach(ReaderFontSizePreset.allCases) { preset in
+                    Text(preset.title).tag(preset)
+                }
+            }
+
+            Divider()
+
+            Button("Smaller", systemImage: "textformat.size.smaller") {
+                settings.decreaseFontSize()
+            }
+            Button("Reset", systemImage: "arrow.counterclockwise") {
+                settings.resetFontSize()
+            }
+            Button("Larger", systemImage: "textformat.size.larger") {
+                settings.increaseFontSize()
+            }
+        } label: {
+            Label("Text Size", systemImage: "textformat.size")
+        }
+        .buttonStyle(.glass)
+        .help("Change reader text size from XXS to XXL")
     }
 }
 

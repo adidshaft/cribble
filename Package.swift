@@ -20,6 +20,9 @@ let package = Package(
             dependencies: [
                 .product(name: "Textual", package: "textual"),
                 .product(name: "Markdown", package: "swift-markdown")
+            ],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(

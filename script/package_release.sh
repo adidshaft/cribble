@@ -6,7 +6,7 @@ BUNDLE_ID="com.cribble.reader"
 MIN_SYSTEM_VERSION="26.0"
 VERSION="${1:-$(<VERSION)}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
-SIGN_IDENTITY="${SIGN_IDENTITY:-Apple Distribution: Aman Pandey (JP4HU7X6G7)}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Aman Pandey (JP4HU7X6G7)}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT_DIR/releases"

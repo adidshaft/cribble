@@ -1,6 +1,7 @@
 .DS_Store
 .build/
 dist/
+releases/
 DerivedData/
 *.xcuserstate
 Cribble_App_Icon_Exports/

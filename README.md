@@ -71,6 +71,19 @@ The app has three core jobs:
 The same command is wired into the Codex app Run action. You can also open
 `Cribble.xcworkspace` in Xcode; the workspace contains the Swift package.
 
+## Release
+
+Current version: `1.0.0`
+
+```sh
+./script/package_release.sh
+```
+
+The release script builds a signed release app bundle, wraps it in
+`releases/Cribble-1.0.0.dmg`, signs the DMG, and writes a SHA-256 checksum.
+For fully seamless external distribution, use a Developer ID Application
+certificate and notarize the DMG.
+
 ## Features
 
 - Opens a local folder in place and shows only folders plus `.md` files.

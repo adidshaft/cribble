@@ -78,6 +78,48 @@ final class CribbleUITests: XCTestCase {
         store.searchText = "Cherry"
         XCTAssertTrue(store.filteredNodes.isEmpty)
     }
+
+    func testRemovingFolderOnlyRemovesItFromCribble() throws {
+        let defaults = UserDefaults.standard
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderPaths")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defer {
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = rootURL.appendingPathComponent("Note.md")
+        try "# Note\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore()
+        store.openFolder(rootURL, sortMode: .name)
+        XCTAssertEqual(store.rootURLs, [rootURL.standardizedFileURL])
+        XCTAssertNotNil(store.selectedDocument)
+
+        store.removeSelectedFolder()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: noteURL.path))
+        XCTAssertTrue(store.rootURLs.isEmpty)
+        XCTAssertTrue(store.nodes.isEmpty)
+        XCTAssertNil(store.selectedDocument)
+        XCTAssertEqual(defaults.stringArray(forKey: "folderPaths") ?? [], [])
+    }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {
         // Strip duplicate document title

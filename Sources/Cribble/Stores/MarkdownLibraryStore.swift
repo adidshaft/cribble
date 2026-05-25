@@ -31,8 +31,13 @@ final class MarkdownLibraryStore: ObservableObject {
     var activeRootURL: URL? {
         guard let selectedURL else { return rootURLs.first }
         return rootURLs.first { root in
-            selectedURL.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path)
+            selectedURL.isSameFileOrDescendant(of: root)
         } ?? rootURLs.first
+    }
+
+    var selectedRootURL: URL? {
+        guard let selectedURL else { return nil }
+        return rootURLs.first { selectedURL.isSameFileOrDescendant(of: $0) }
     }
 
     var filteredNodes: [MarkdownNode] {
@@ -63,6 +68,42 @@ final class MarkdownLibraryStore: ObservableObject {
         }
         refresh(sortMode: sortMode)
         startMonitoring()
+    }
+
+    func isImportedRoot(_ url: URL) -> Bool {
+        rootURLs.contains(url.standardizedFileURL)
+    }
+
+    func removeSelectedFolder() {
+        guard let selectedRootURL else { return }
+        removeFolder(selectedRootURL)
+    }
+
+    func removeFolder(_ url: URL) {
+        let standardized = url.standardizedFileURL
+        guard rootURLs.contains(standardized) else { return }
+
+        let removedSelectedDocument = selectedURL?.isSameFileOrDescendant(of: standardized) ?? false
+        rootURLs.removeAll { $0.standardizedFileURL == standardized }
+        persistFolders()
+
+        if removedSelectedDocument {
+            selectedURL = nil
+            selectedDocument = nil
+        }
+
+        guard !rootURLs.isEmpty else {
+            monitor.stop()
+            nodes = []
+            documents = []
+            linkIndex = nil
+            statusMessage = "Removed \(standardized.lastPathComponent)"
+            return
+        }
+
+        refresh(sortMode: currentSortMode, keepStatusQuiet: true)
+        startMonitoring()
+        statusMessage = "Removed \(standardized.lastPathComponent)"
     }
 
     func refresh(sortMode: FileSortMode? = nil, keepStatusQuiet: Bool = false) {
@@ -368,5 +409,13 @@ final class MarkdownLibraryStore: ObservableObject {
     private enum Keys {
         static let folderPaths = "folderPaths"
         static let legacyLastFolderPath = "lastFolderPath"
+    }
+}
+
+private extension URL {
+    func isSameFileOrDescendant(of rootURL: URL) -> Bool {
+        let path = standardizedFileURL.path
+        let rootPath = rootURL.standardizedFileURL.path
+        return path == rootPath || path.hasPrefix(rootPath + "/")
     }
 }

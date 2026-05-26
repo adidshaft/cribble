@@ -4,7 +4,9 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var diagnostics: DiagnosticsCenter
     @State private var showingAIProviderSheet = false
+    @State private var showingDiagnosticsReport = false
 
     var body: some View {
         NavigationSplitView {
@@ -39,6 +41,12 @@ struct ContentView: View {
                 library.runAILinking(provider: provider, mode: mode)
             }
         }
+        .sheet(isPresented: $showingDiagnosticsReport) {
+            DiagnosticsReportSheet(
+                report: diagnostics.makeReport(library: library, settings: settings),
+                onCopy: { diagnostics.copyReport(library: library, settings: settings) }
+            )
+        }
         .sheet(item: Binding(
             get: { library.pendingDiff.map(DiffSheetItem.init(diff:)) },
             set: { if $0 == nil { library.cancelPendingDiff() } }
@@ -53,6 +61,10 @@ struct ContentView: View {
             get: { library.errorMessage != nil },
             set: { if !$0 { library.errorMessage = nil } }
         )) {
+            Button("Copy Report") {
+                diagnostics.copyReport(library: library, settings: settings)
+                library.errorMessage = nil
+            }
             Button("OK", role: .cancel) {}
         } message: {
             Text(library.errorMessage ?? "")
@@ -61,6 +73,8 @@ struct ContentView: View {
         .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
         .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
         .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+        .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
+        .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
     }
 }
 

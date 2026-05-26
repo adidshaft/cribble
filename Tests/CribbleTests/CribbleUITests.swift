@@ -249,6 +249,61 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.folderURLForAI(mode: .suggestLinks), rootURL.standardizedFileURL)
         XCTAssertTrue(store.selectedDocument?.isEssentiallyEmptyReadme == true)
     }
+
+    func testRelativeMarkdownLinksNavigateInsideCribble() throws {
+        let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "folderDisplayNames")
+        defaults.removeObject(forKey: "folderPaths")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldDisplayNames {
+                defaults.set(oldDisplayNames, forKey: "folderDisplayNames")
+            } else {
+                defaults.removeObject(forKey: "folderDisplayNames")
+            }
+
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RelativeLink-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let readmeURL = rootURL.appendingPathComponent("README.md")
+        let guideURL = rootURL.appendingPathComponent("Guide File.md")
+        try "# Home\n[Guide](Guide%20File.md#intro)\n".write(to: readmeURL, atomically: true, encoding: .utf8)
+        try "# Guide\nBody\n".write(to: guideURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore()
+        store.openFolder(rootURL, sortMode: .name)
+        store.select(url: readmeURL)
+
+        _ = store.handleOpenURL(URL(string: "Guide%20File.md#intro")!)
+
+        XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, guideURL.standardizedFileURL)
+    }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {
         // Strip duplicate document title

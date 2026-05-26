@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Textual
 
@@ -198,7 +199,7 @@ private struct LinkedFilesCardPanel: View {
             .help(isExpanded ? "Collapse linked files" : "Expand linked files")
 
             if isExpanded {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 10)], alignment: .leading, spacing: 10) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 14)], alignment: .leading, spacing: 14) {
                     ForEach(links) { link in
                         Button {
                             onSelect(link)
@@ -206,6 +207,9 @@ private struct LinkedFilesCardPanel: View {
                             LinkedFileCard(link: link)
                         }
                         .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
+                        .pointingHandOnHover()
                         .help("Open \(link.title)")
                     }
                 }
@@ -248,7 +252,8 @@ private struct LinkedFileCard: View {
                 .foregroundStyle(.pink)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
         .contentShape(RoundedRectangle(cornerRadius: 8))
         .background {
             RoundedRectangle(cornerRadius: 8)
@@ -270,6 +275,34 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
         }
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
         .textual.blockSpacing(.init(top: 8, bottom: 18))
+    }
+}
+
+private struct PointingHandOnHoverModifier: ViewModifier {
+    @State private var didPushCursor = false
+
+    func body(content: Content) -> some View {
+        content.onHover { isHovering in
+            if isHovering, !didPushCursor {
+                NSCursor.pointingHand.push()
+                didPushCursor = true
+            } else if !isHovering, didPushCursor {
+                NSCursor.pop()
+                didPushCursor = false
+            }
+        }
+        .onDisappear {
+            if didPushCursor {
+                NSCursor.pop()
+                didPushCursor = false
+            }
+        }
+    }
+}
+
+private extension View {
+    func pointingHandOnHover() -> some View {
+        modifier(PointingHandOnHoverModifier())
     }
 }
 

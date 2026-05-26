@@ -11,8 +11,20 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var selectedRenderedMarkdown: String = ""
     @Published var selectedLinkedFiles: [LinkedFileSummary] = []
     @Published var searchText = ""
-    @Published var statusMessage: String?
-    @Published var errorMessage: String?
+    @Published var statusMessage: String? {
+        didSet {
+            if let statusMessage {
+                DiagnosticsCenter.shared.record(level: .info, message: statusMessage)
+            }
+        }
+    }
+    @Published var errorMessage: String? {
+        didSet {
+            if let errorMessage {
+                DiagnosticsCenter.shared.record(level: .error, message: errorMessage)
+            }
+        }
+    }
     @Published var isRunningAI = false
     @Published var pendingDiff: UnifiedDiff?
     @Published var pendingDiffError: String?
@@ -276,11 +288,30 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func handleOpenURL(_ url: URL) -> OpenURLAction.Result {
-        guard url.scheme == "cribble" else {
-            NSWorkspace.shared.open(url)
+        if url.scheme == "cribble" {
+            return handleCribbleURL(url)
+        }
+
+        if let internalURL = internalMarkdownURL(for: url) {
+            select(url: internalURL)
             return .handled
         }
 
+        if url.isFileURL, url.pathExtension.lowercased() == "md" {
+            errorMessage = "No matching Markdown file found for that link."
+            return .handled
+        }
+
+        if url.scheme == nil, url.pathExtension.lowercased() == "md" {
+            errorMessage = "No matching Markdown file found for that link."
+            return .handled
+        }
+
+        NSWorkspace.shared.open(url)
+        return .handled
+    }
+
+    private func handleCribbleURL(_ url: URL) -> OpenURLAction.Result {
         guard url.host == "open",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let path = components.queryItems?.first(where: { $0.name == "path" })?.value
@@ -291,6 +322,31 @@ final class MarkdownLibraryStore: ObservableObject {
 
         select(url: URL(fileURLWithPath: path))
         return .handled
+    }
+
+    private func internalMarkdownURL(for url: URL) -> URL? {
+        guard url.pathExtension.lowercased() == "md" else { return nil }
+
+        let candidate: URL
+        if url.isFileURL {
+            candidate = url.standardizedFileURL
+        } else if url.scheme == nil, let selectedDocument {
+            let relativePath = URLComponents(url: url, resolvingAgainstBaseURL: false)?.path ?? url.relativeString
+            candidate = selectedDocument.url
+                .deletingLastPathComponent()
+                .appendingPathComponent(relativePath.removingPercentEncoding ?? relativePath)
+                .standardizedFileURL
+        } else {
+            return nil
+        }
+
+        guard FileManager.default.fileExists(atPath: candidate.path),
+              rootURLs.contains(where: { candidate.isSameFileOrDescendant(of: $0) })
+        else {
+            return nil
+        }
+
+        return candidate
     }
 
     func openSelectedInEditor(settings: AppSettings) {

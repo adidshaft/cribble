@@ -31,7 +31,13 @@ struct CribbleApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appearanceObserver: NSObjectProtocol?
 
+    override init() {
+        SPMBundleAccessorFix.ensureInstalled()
+        super.init()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        SPMBundleAccessorFix.ensureInstalled()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
         AppIconManager.applyForSystemAppearance()

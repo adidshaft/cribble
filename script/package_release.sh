@@ -63,39 +63,8 @@ resolve_executable() {
 SLICE_BINARIES=()
 LAST_BUILD_DIR=""
 for ARCH in $ARCHS; do
-  # First build: generates the SwiftPM `Bundle.module` accessor sources under
-  # each `<Target>.build/DerivedSources/resource_bundle_accessor.swift`.
   swift build -c release --arch "$ARCH"
   ARCH_BUILD_DIR="$(swift build -c release --arch "$ARCH" --show-bin-path)"
-
-  # Patch every generated accessor so it looks under `Contents/Resources/`
-  # (which `Bundle.main.resourceURL` yields inside a wrapped .app) instead of
-  # the .app root (which `Bundle.main.bundleURL` yields). For a plain CLI run
-  # both URLs resolve to the executable's containing directory, so this
-  # remains compatible with `swift run`.
-  ACCESSORS=()
-  while IFS= read -r ACCESSOR; do
-    ACCESSORS+=("$ACCESSOR")
-  done < <(find "$ARCH_BUILD_DIR" -path '*/DerivedSources/resource_bundle_accessor.swift' -type f)
-
-  if (( ${#ACCESSORS[@]} == 0 )); then
-    echo "error: no resource_bundle_accessor.swift files found under $ARCH_BUILD_DIR" >&2
-    exit 1
-  fi
-
-  for ACCESSOR in "${ACCESSORS[@]}"; do
-    if /usr/bin/grep -q 'Bundle.main.resourceURL ?? Bundle.main.bundleURL' "$ACCESSOR"; then
-      continue
-    fi
-    /usr/bin/sed -i '' \
-      's#Bundle\.main\.bundleURL\.appendingPathComponent#(Bundle.main.resourceURL ?? Bundle.main.bundleURL).appendingPathComponent#g' \
-      "$ACCESSOR"
-    /usr/bin/touch "$ACCESSOR"
-  done
-
-  # Second build: recompiles the patched accessors and re-links the binary.
-  swift build -c release --arch "$ARCH"
-
   ARCH_BINARY="$(resolve_executable "$ARCH_BUILD_DIR" "$ARCH")"
   /usr/bin/lipo "$ARCH_BINARY" -verify_arch "$ARCH"
   SLICE_BINARIES+=("$ARCH_BINARY")
@@ -135,10 +104,12 @@ if (( ${#RESOURCE_BUNDLES[@]} == 0 )); then
   exit 1
 fi
 
-# Place SPM resource bundles where the patched `Bundle.module` accessor looks:
-# `Bundle.main.resourceURL.appendingPathComponent("<bundle>.bundle")`, which
-# resolves to `Cribble.app/Contents/Resources/<bundle>.bundle` for a wrapped
-# .app. See the accessor patch above for the matching read side.
+# Bundles live in the standard Contents/Resources/ location (codesign-happy).
+# SwiftPM's generated Bundle.module accessor looks at `<.app>/<bundle>.bundle`
+# (the .app root) but that's outside the macOS bundle layout that codesign
+# accepts, so we instead install a runtime swizzle in
+# Sources/Cribble/Support/SPMBundleAccessorFix.swift that redirects those
+# lookups into Contents/Resources/ where the bundles actually are.
 for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 done

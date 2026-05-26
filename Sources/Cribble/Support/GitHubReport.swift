@@ -58,6 +58,7 @@ enum GitHubReport {
 
         ## Diagnostic report
         The full report has also been copied to your clipboard. If this section looks cut off, paste the clipboard contents here.
+        If the report lists a latest macOS crash file, attach that `.crash` or `.ips` file to this issue too.
 
         \(trimmed(report))
         """

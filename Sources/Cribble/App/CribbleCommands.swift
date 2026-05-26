@@ -7,6 +7,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.showDiagnosticsAction) private var showDiagnostics
     @FocusedValue(\.copyDiagnosticsAction) private var copyDiagnostics
+    @FocusedValue(\.revealCrashReportAction) private var revealCrashReport
     @FocusedValue(\.reportIssueAction) private var reportIssue
     @FocusedValue(\.openPullRequestAction) private var openPullRequest
     @FocusedValue(\.navigateBackAction) private var navigateBack
@@ -64,6 +65,9 @@ struct CribbleCommands: Commands {
                 .keyboardShortcut("c", modifiers: [.command, .option])
                 .disabled(copyDiagnostics == nil)
 
+            Button("Reveal Latest Crash Report", action: { revealCrashReport?() })
+                .disabled(revealCrashReport == nil)
+
             Divider()
 
             Button("Report Issue on GitHub", action: { reportIssue?() })
@@ -96,6 +100,10 @@ private struct ShowDiagnosticsActionKey: FocusedValueKey {
 }
 
 private struct CopyDiagnosticsActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct RevealCrashReportActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -152,6 +160,11 @@ extension FocusedValues {
     var copyDiagnosticsAction: (() -> Void)? {
         get { self[CopyDiagnosticsActionKey.self] }
         set { self[CopyDiagnosticsActionKey.self] = newValue }
+    }
+
+    var revealCrashReportAction: (() -> Void)? {
+        get { self[RevealCrashReportActionKey.self] }
+        set { self[RevealCrashReportActionKey.self] = newValue }
     }
 
     var reportIssueAction: (() -> Void)? {

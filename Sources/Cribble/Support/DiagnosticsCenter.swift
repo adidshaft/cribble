@@ -7,15 +7,20 @@ final class DiagnosticsCenter: ObservableObject {
 
     @Published private(set) var events: [DiagnosticEvent] = []
     @Published private(set) var previousSessionDidNotCloseCleanly = false
+    @Published private(set) var latestCrashReport: CrashReportFile?
 
     private let defaults = UserDefaults.standard
     private let maxEvents = 80
+    private let maxCrashReportCharacters = 24_000
 
     private init() {
         events = loadEvents()
+        latestCrashReport = Self.findLatestCrashReport()
     }
 
     func markLaunch() {
+        latestCrashReport = Self.findLatestCrashReport()
+
         if defaults.bool(forKey: Keys.sessionActive) && launchedRecently() {
             // Only warn when the previous session looks like it was still
             // alive recently. Normal shutdowns (system restart, force quit
@@ -27,6 +32,13 @@ final class DiagnosticsCenter: ObservableObject {
                 level: .error,
                 message: "Previous Cribble session did not close cleanly. This may indicate a crash or force quit."
             )
+
+            if let latestCrashReport {
+                record(
+                    level: .error,
+                    message: "Latest macOS crash report: \(latestCrashReport.url.path)"
+                )
+            }
         }
 
         defaults.set(true, forKey: Keys.sessionActive)
@@ -63,6 +75,8 @@ final class DiagnosticsCenter: ObservableObject {
     }
 
     func makeReport(library: MarkdownLibraryStore?, settings: AppSettings?) -> String {
+        latestCrashReport = Self.findLatestCrashReport()
+
         let bundle = Bundle.main
         let appVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
@@ -76,6 +90,8 @@ final class DiagnosticsCenter: ObservableObject {
         let eventLines = events.isEmpty
             ? "No recorded diagnostic events."
             : events.map { "- \($0.formatted)" }.joined(separator: "\n")
+
+        let crashReportSection = latestCrashReportSection()
 
         return """
         # Cribble Diagnostic Report
@@ -104,6 +120,8 @@ final class DiagnosticsCenter: ObservableObject {
 
         ## Recent Events
         \(eventLines)
+
+        \(crashReportSection)
         """
     }
 
@@ -112,6 +130,114 @@ final class DiagnosticsCenter: ObservableObject {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
         record(level: .info, message: "Diagnostic report copied to clipboard.")
+    }
+
+    @discardableResult
+    func copyLatestCrashReport() -> Bool {
+        latestCrashReport = Self.findLatestCrashReport()
+        guard let latestCrashReport,
+              let content = try? String(contentsOf: latestCrashReport.url, encoding: .utf8)
+        else {
+            return false
+        }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(content, forType: .string)
+        record(level: .info, message: "Latest macOS crash report copied to clipboard.")
+        return true
+    }
+
+    @discardableResult
+    func revealLatestCrashReportInFinder() -> Bool {
+        latestCrashReport = Self.findLatestCrashReport()
+        guard let latestCrashReport else { return false }
+        NSWorkspace.shared.activateFileViewerSelecting([latestCrashReport.url])
+        record(level: .info, message: "Revealed latest macOS crash report in Finder.")
+        return true
+    }
+
+    private func latestCrashReportSection() -> String {
+        guard let latestCrashReport else {
+            return """
+            ## Latest macOS Crash Report
+            No Cribble crash report was found in ~/Library/Logs/DiagnosticReports.
+            """
+        }
+
+        let content = (try? String(contentsOf: latestCrashReport.url, encoding: .utf8)) ?? ""
+        let excerpt: String
+        if content.isEmpty {
+            excerpt = "[Crash report exists, but Cribble could not read its text content.]"
+        } else if content.count > maxCrashReportCharacters {
+            let endIndex = content.index(content.startIndex, offsetBy: maxCrashReportCharacters)
+            excerpt = String(content[..<endIndex]) + "\n\n[Crash report truncated in diagnostic report. Use Reveal Crash File to send the full file.]"
+        } else {
+            excerpt = content
+        }
+
+        return """
+        ## Latest macOS Crash Report
+        - File: \(latestCrashReport.url.lastPathComponent)
+        - Path: \(latestCrashReport.url.path)
+        - Modified: \(Self.timestamp(latestCrashReport.modifiedAt))
+        - Size: \(latestCrashReport.formattedSize)
+
+        ```text
+        \(excerpt)
+        ```
+        """
+    }
+
+    nonisolated static func findLatestCrashReport(
+        processName: String = "Cribble",
+        fileManager: FileManager = .default
+    ) -> CrashReportFile? {
+        crashReportDirectories(fileManager: fileManager)
+            .flatMap { crashReports(in: $0, processName: processName, fileManager: fileManager) }
+            .max { $0.modifiedAt < $1.modifiedAt }
+    }
+
+    nonisolated static func crashReports(
+        in directory: URL,
+        processName: String = "Cribble",
+        fileManager: FileManager = .default
+    ) -> [CrashReportFile] {
+        guard let urls = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return urls.compactMap { url in
+            let name = url.lastPathComponent
+            guard name.hasPrefix(processName),
+                  url.pathExtension == "crash" || url.pathExtension == "ips"
+            else {
+                return nil
+            }
+
+            let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey])
+            guard values?.isRegularFile != false else { return nil }
+
+            return CrashReportFile(
+                url: url,
+                modifiedAt: values?.contentModificationDate ?? Date.distantPast,
+                size: values?.fileSize ?? 0
+            )
+        }
+    }
+
+    private nonisolated static func crashReportDirectories(fileManager: FileManager) -> [URL] {
+        var directories: [URL] = []
+
+        if let library = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first {
+            directories.append(library.appendingPathComponent("Logs/DiagnosticReports", isDirectory: true))
+        }
+
+        directories.append(URL(fileURLWithPath: "/Library/Logs/DiagnosticReports", isDirectory: true))
+        return directories
     }
 
     private func persistEvents() {
@@ -138,6 +264,16 @@ final class DiagnosticsCenter: ObservableObject {
         static let sessionActive = "diagnosticSessionActive"
         static let lastLaunchTime = "diagnosticLastLaunchTime"
         static let lastCleanTerminationTime = "diagnosticLastCleanTerminationTime"
+    }
+}
+
+struct CrashReportFile: Equatable {
+    let url: URL
+    let modifiedAt: Date
+    let size: Int
+
+    var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
     }
 }
 

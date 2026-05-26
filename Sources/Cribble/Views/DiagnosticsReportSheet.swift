@@ -3,11 +3,15 @@ import SwiftUI
 
 struct DiagnosticsReportSheet: View {
     let report: String
+    let crashReport: CrashReportFile?
     let onCopy: () -> Void
+    let onCopyCrashReport: () -> Bool
+    let onRevealCrashReport: () -> Bool
     let onReportIssue: () -> Void
     let onOpenPullRequest: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var didCopy = false
+    @State private var didCopyCrashReport = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -15,7 +19,7 @@ struct DiagnosticsReportSheet: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Diagnostic Report")
                         .font(.title2.weight(.semibold))
-                    Text("Copy this report when Cribble crashes, gets stuck, or behaves strangely.")
+                    Text(crashReportStatus)
                         .foregroundStyle(.secondary)
                 }
 
@@ -36,6 +40,10 @@ struct DiagnosticsReportSheet: View {
                     Label("Copied", systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else if didCopyCrashReport {
+                    Label("Crash report copied", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -51,6 +59,25 @@ struct DiagnosticsReportSheet: View {
                     Label("Open PR", systemImage: "arrow.triangle.pull")
                 }
                 .help("Open GitHub's pull request flow and copy this report")
+
+                Button {
+                    if onRevealCrashReport() {
+                        didCopy = false
+                    }
+                } label: {
+                    Label("Reveal Crash File", systemImage: "doc.badge.magnifyingglass")
+                }
+                .disabled(crashReport == nil)
+                .help("Reveal the latest Cribble .crash or .ips file in Finder")
+
+                Button {
+                    didCopyCrashReport = onCopyCrashReport()
+                    didCopy = false
+                } label: {
+                    Label("Copy Crash File", systemImage: "doc.text")
+                }
+                .disabled(crashReport == nil)
+                .help("Copy the full latest Cribble crash report to the clipboard")
 
                 Button {
                     onReportIssue()
@@ -73,5 +100,13 @@ struct DiagnosticsReportSheet: View {
         .padding(22)
         .frame(width: 760, height: 560)
         .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var crashReportStatus: String {
+        guard let crashReport else {
+            return "Copy this report when Cribble crashes, gets stuck, or behaves strangely."
+        }
+
+        return "Latest crash file found: \(crashReport.url.lastPathComponent). Reveal it and send it with the report."
     }
 }

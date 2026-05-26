@@ -22,6 +22,7 @@ struct ContentView: View {
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
+            .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
             .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
             .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
             .focusedSceneValue(\.navigateBackAction, { library.navigateBack() })
@@ -73,7 +74,10 @@ struct ContentView: View {
             .sheet(isPresented: $showingDiagnosticsReport) {
                 DiagnosticsReportSheet(
                     report: diagnostics.makeReport(library: library, settings: settings),
+                    crashReport: diagnostics.latestCrashReport,
                     onCopy: { diagnostics.copyReport(library: library, settings: settings) },
+                    onCopyCrashReport: { diagnostics.copyLatestCrashReport() },
+                    onRevealCrashReport: { diagnostics.revealLatestCrashReportInFinder() },
                     onReportIssue: { reportIssueOnGitHub() },
                     onOpenPullRequest: { openPullRequestOnGitHub() }
                 )

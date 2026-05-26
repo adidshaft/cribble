@@ -29,6 +29,18 @@ echo "== Code signature =="
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
 echo
+echo "== Resource bundles =="
+REQUIRED_RESOURCE_BUNDLES=(
+  "Cribble_Cribble.bundle"
+  "swiftui-math_SwiftUIMath.bundle"
+  "textual_Textual.bundle"
+)
+for bundle in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
+  /bin/test -d "$APP_PATH/Contents/Resources/$bundle"
+  echo "$bundle"
+done
+
+echo
 echo "== Gatekeeper app assessment =="
 /usr/sbin/spctl -a -vv --type execute "$APP_PATH"
 
@@ -53,6 +65,9 @@ DEVICE="$(/usr/bin/hdiutil attach "$DMG_PATH" -readonly -noverify -noautoopen -m
 /bin/test -d "$MOUNT_DIR/Cribble.app"
 /bin/test -L "$MOUNT_DIR/Applications"
 /bin/test -f "$MOUNT_DIR/.background/background.png"
+for bundle in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
+  /bin/test -d "$MOUNT_DIR/Cribble.app/Contents/Resources/$bundle"
+done
 /bin/ls -la "$MOUNT_DIR"
 
 echo

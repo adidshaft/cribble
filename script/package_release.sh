@@ -40,13 +40,33 @@ cd "$ROOT_DIR"
 rm -rf "$STAGE_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES" "$OUT_DIR"
 
+resolve_executable() {
+  local build_dir="$1"
+  local arch="$2"
+  if [[ -x "$build_dir/$APP_NAME" ]]; then
+    printf '%s\n' "$build_dir/$APP_NAME"
+    return
+  fi
+
+  local found
+  found="$(find "$ROOT_DIR/.build" -path '*/release/'"$APP_NAME" -type f -perm -111 -exec sh -c '/usr/bin/lipo "$1" -verify_arch "$2" >/dev/null 2>&1 && printf "%s\n" "$1"' sh {} "$arch" \; -quit)"
+  if [[ -n "$found" ]]; then
+    printf '%s\n' "$found"
+    return
+  fi
+
+  echo "error: release executable '$APP_NAME' for arch '$arch' not found under $build_dir or $ROOT_DIR/.build" >&2
+  exit 1
+}
+
 SLICE_BINARIES=()
 LAST_BUILD_DIR=""
 for ARCH in $ARCHS; do
   swift build -c release --arch "$ARCH"
   ARCH_BUILD_DIR="$(swift build -c release --arch "$ARCH" --show-bin-path)"
-  /usr/bin/lipo "$ARCH_BUILD_DIR/$APP_NAME" -verify_arch "$ARCH"
-  SLICE_BINARIES+=("$ARCH_BUILD_DIR/$APP_NAME")
+  ARCH_BINARY="$(resolve_executable "$ARCH_BUILD_DIR" "$ARCH")"
+  /usr/bin/lipo "$ARCH_BINARY" -verify_arch "$ARCH"
+  SLICE_BINARIES+=("$ARCH_BINARY")
   LAST_BUILD_DIR="$ARCH_BUILD_DIR"
 done
 
@@ -71,17 +91,34 @@ else
   echo "warning: app icon not found at $APP_ICON_SOURCE — shipping default Swift icon" >&2
 fi
 
-# The SPM-generated resource bundle holds AppIconLight.png / AppIconDark.png
-# that AppIconManager loads via Bundle.module. If it's missing the app falls
-# back to a generic icon — fail loudly here so we don't ship that silently.
-RESOURCE_BUNDLE="$BUILD_DIR/Cribble_Cribble.bundle"
-if [[ -d "$RESOURCE_BUNDLE" ]]; then
-  cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
-else
-  echo "error: SPM resource bundle not found at $RESOURCE_BUNDLE" >&2
-  echo "       AppIconManager.applyForSystemAppearance() needs Bundle.module to exist." >&2
+# Copy every SwiftPM resource bundle produced by the linked package graph.
+# `Bundle.module` accessors fatalError when their bundle is missing on a
+# clean machine, so copying only Cribble_Cribble.bundle can crash features
+# supplied by dependencies such as Textual and SwiftUIMath.
+shopt -s nullglob
+RESOURCE_BUNDLES=("$BUILD_DIR"/*.bundle)
+shopt -u nullglob
+if (( ${#RESOURCE_BUNDLES[@]} == 0 )); then
+  echo "error: no SPM resource bundles found in $BUILD_DIR" >&2
   exit 1
 fi
+
+for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
+  cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
+done
+
+REQUIRED_RESOURCE_BUNDLES=(
+  "Cribble_Cribble.bundle"
+  "swiftui-math_SwiftUIMath.bundle"
+  "textual_Textual.bundle"
+)
+
+for REQUIRED_BUNDLE in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
+  if [[ ! -d "$APP_RESOURCES/$REQUIRED_BUNDLE" ]]; then
+    echo "error: required SPM resource bundle missing from app: $REQUIRED_BUNDLE" >&2
+    exit 1
+  fi
+done
 
 cat >"$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -106,6 +143,8 @@ cat >"$INFO_PLIST" <<PLIST
   <string>$BUILD_NUMBER</string>
   <key>LSMinimumSystemVersion</key>
   <string>$MIN_SYSTEM_VERSION</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>
@@ -114,7 +153,13 @@ cat >"$INFO_PLIST" <<PLIST
 </plist>
 PLIST
 
+/usr/bin/xattr -cr "$APP_BUNDLE"
+find "$APP_BUNDLE" -name '._*' -delete
+
 /usr/bin/codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_BUNDLE"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+/usr/bin/xattr -cr "$APP_BUNDLE"
+find "$APP_BUNDLE" -name '._*' -delete
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
 rm -rf "$DMG_ROOT" "$DMG_MOUNT"

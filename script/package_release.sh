@@ -27,6 +27,7 @@ APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION.dmg"
 RW_DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION-rw.dmg"
+APP_NOTARY_ZIP="$OUT_DIR/$APP_NAME-$VERSION-app-notary.zip"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 PYTHON_DEPS="$OUT_DIR/python-deps"
@@ -163,6 +164,17 @@ chmod -R u+w "$APP_BUNDLE"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 find "$APP_BUNDLE" -name '._*' -delete
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+
+if [[ -n "$NOTARY_PROFILE" ]]; then
+  rm -f "$APP_NOTARY_ZIP"
+  /usr/bin/ditto -c -k --keepParent "$APP_BUNDLE" "$APP_NOTARY_ZIP"
+  echo "Submitting app bundle to Apple notary service via profile '$NOTARY_PROFILE'..."
+  /usr/bin/xcrun notarytool submit "$APP_NOTARY_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+  echo "Stapling notary ticket to app bundle..."
+  /usr/bin/xcrun stapler staple "$APP_BUNDLE"
+  /usr/bin/xcrun stapler validate "$APP_BUNDLE"
+  rm -f "$APP_NOTARY_ZIP"
+fi
 
 rm -rf "$DMG_ROOT" "$DMG_MOUNT"
 mkdir -p "$DMG_BACKGROUND_DIR" "$DMG_MOUNT"

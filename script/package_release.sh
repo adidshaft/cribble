@@ -153,11 +153,13 @@ cat >"$INFO_PLIST" <<PLIST
 </plist>
 PLIST
 
+chmod -R u+w "$APP_BUNDLE"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 find "$APP_BUNDLE" -name '._*' -delete
 
 /usr/bin/codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_BUNDLE"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+chmod -R u+w "$APP_BUNDLE"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 find "$APP_BUNDLE" -name '._*' -delete
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"

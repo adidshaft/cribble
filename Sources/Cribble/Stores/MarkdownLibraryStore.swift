@@ -8,6 +8,8 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var nodes: [MarkdownNode] = []
     @Published var selectedURL: URL?
     @Published var selectedDocument: MarkdownDocument?
+    @Published var selectedRenderedMarkdown: String = ""
+    @Published var selectedLinkedFiles: [LinkedFileSummary] = []
     @Published var searchText = ""
     @Published var statusMessage: String?
     @Published var errorMessage: String?
@@ -20,6 +22,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
     private var securityScopedRoots: Set<URL> = []
+    private var renderTask: Task<Void, Never>?
 
     init() {
         restoreFolders()
@@ -141,6 +144,9 @@ final class MarkdownLibraryStore: ObservableObject {
         guard let url else {
             selectedURL = nil
             selectedDocument = nil
+            selectedRenderedMarkdown = ""
+            selectedLinkedFiles = []
+            renderTask?.cancel()
             return
         }
 
@@ -149,44 +155,68 @@ final class MarkdownLibraryStore: ObservableObject {
 
         guard let documentURL else {
             selectedDocument = nil
+            selectedRenderedMarkdown = ""
+            selectedLinkedFiles = []
             return
         }
 
+        if selectedDocument?.url != documentURL {
+            selectedRenderedMarkdown = ""
+            selectedLinkedFiles = []
+        }
+
         do {
-            selectedDocument = try loader.load(url: documentURL)
+            let document = try loader.load(url: documentURL)
+            selectedDocument = document
+            scheduleRender(for: document)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func renderedMarkdownForSelectedDocument(includeInlineLinkedFiles: Bool = false) -> String {
-        guard let selectedDocument else { return "" }
-        let displayMarkdown = MarkdownDisplayPreprocessor.prepare(
-            selectedDocument.rawMarkdown,
-            documentTitle: selectedDocument.title
-        )
-        let renderedMarkdown = WikiLinkParser.renderForMarkdown(displayMarkdown, index: linkIndex)
-        guard includeInlineLinkedFiles, let inlineLinks = inlineLinkedFilesMarkdown() else {
-            return renderedMarkdown
+    private func scheduleRender(for document: MarkdownDocument) {
+        renderTask?.cancel()
+        let index = linkIndex
+        let documentsSnapshot = documents
+        renderTask = Task.detached(priority: .userInitiated) { [weak self] in
+            let preprocessed = MarkdownDisplayPreprocessor.prepare(
+                document.rawMarkdown,
+                documentTitle: document.title
+            )
+            if Task.isCancelled { return }
+            let rendered = WikiLinkParser.renderForMarkdown(preprocessed, index: index)
+            if Task.isCancelled { return }
+            let linkedFiles = MarkdownLibraryStore.linkedFiles(
+                for: document,
+                index: index,
+                allDocuments: documentsSnapshot
+            )
+            if Task.isCancelled { return }
+            await MainActor.run {
+                guard let self else { return }
+                guard self.selectedDocument?.url == document.url else { return }
+                self.selectedRenderedMarkdown = rendered
+                self.selectedLinkedFiles = linkedFiles
+            }
         }
-        return "\(inlineLinks)\n\n\(renderedMarkdown)"
     }
 
-    func linkedFilesForSelectedDocument() -> [LinkedFileSummary] {
-        guard let selectedDocument, let linkIndex else { return [] }
-
+    nonisolated private static func linkedFiles(
+        for document: MarkdownDocument,
+        index: LinkIndex?,
+        allDocuments: [MarkdownDocument]
+    ) -> [LinkedFileSummary] {
+        guard let index else { return [] }
         var seen = Set<URL>()
-        return selectedDocument.outboundLinks.compactMap { link in
-            let resolved = linkIndex.resolve(link)
+        return document.outboundLinks.compactMap { link in
+            let resolved = index.resolve(link)
             guard let targetURL = resolved.targetURL, seen.insert(targetURL).inserted else {
                 return nil
             }
-
-            let targetDocument = documents.first { $0.url == targetURL }
+            let targetDocument = allDocuments.first { $0.url == targetURL }
             let title = link.label.isEmpty ? targetDocument?.title ?? targetURL.deletingPathExtension().lastPathComponent : link.label
             let folderName = targetURL.deletingLastPathComponent().lastPathComponent
             let subtitle = resolved.anchor.map { "#\($0)" } ?? folderName
-
             return LinkedFileSummary(
                 id: targetURL,
                 title: title,
@@ -195,17 +225,6 @@ final class MarkdownLibraryStore: ObservableObject {
                 anchor: resolved.anchor
             )
         }
-    }
-
-    func inlineLinkedFilesMarkdown() -> String? {
-        let links = linkedFilesForSelectedDocument()
-        guard !links.isEmpty else { return nil }
-
-        let linkedText = links
-            .map { "[\(escapeMarkdownInline($0.title))](\(internalLinkURL(for: $0).absoluteString))" }
-            .joined(separator: " · ")
-
-        return "**Linked files:** \(linkedText)"
     }
 
     func handleOpenURL(_ url: URL) -> OpenURLAction.Result {
@@ -224,24 +243,6 @@ final class MarkdownLibraryStore: ObservableObject {
 
         select(url: URL(fileURLWithPath: path))
         return .handled
-    }
-
-    private func internalLinkURL(for link: LinkedFileSummary) -> URL {
-        var components = URLComponents()
-        components.scheme = "cribble"
-        components.host = "open"
-        components.queryItems = [
-            URLQueryItem(name: "path", value: link.url.path),
-            URLQueryItem(name: "anchor", value: link.anchor)
-        ].compactMap { $0.value == nil ? nil : $0 }
-        return components.url ?? URL(string: "cribble://unresolved")!
-    }
-
-    private func escapeMarkdownInline(_ value: String) -> String {
-        value
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "[", with: "\\[")
-            .replacingOccurrences(of: "]", with: "\\]")
     }
 
     func openSelectedInEditor(settings: AppSettings) {
@@ -273,20 +274,29 @@ final class MarkdownLibraryStore: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([selectedDocument.url])
     }
 
-    func runAILinking(provider: AIProvider) {
+    func runAILinking(provider: AIProvider, mode: AIMode) {
         guard let rootURL = activeRootURL else { return }
         isRunningAI = true
         pendingDiff = nil
-        statusMessage = "Asking \(provider.rawValue) \(provider.lowestModelName) to suggest links..."
+        let actionLabel = mode == .updateReadme ? "rewrite the folder README" : "suggest links"
+        statusMessage = "Asking \(provider.rawValue) \(provider.lowestModelName) to \(actionLabel)..."
 
         Task {
             do {
-                let diff = try await AIService().generateLinkPatch(provider: provider, folderURL: rootURL)
+                let diff = try await AIService().generateLinkPatch(
+                    provider: provider,
+                    mode: mode,
+                    folderURL: rootURL
+                )
                 pendingDiff = diff
-                statusMessage = diff.isEmpty ? "No link changes suggested" : "Review suggested link changes"
+                if diff.isEmpty {
+                    statusMessage = mode == .updateReadme ? "No README changes suggested" : "No link changes suggested"
+                } else {
+                    statusMessage = mode == .updateReadme ? "Review README changes" : "Review suggested link changes"
+                }
             } catch {
                 errorMessage = error.localizedDescription
-                statusMessage = "AI linking failed"
+                statusMessage = "AI request failed"
             }
             isRunningAI = false
         }

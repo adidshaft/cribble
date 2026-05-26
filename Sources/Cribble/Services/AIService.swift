@@ -14,9 +14,39 @@ enum AIProvider: String, CaseIterable, Identifiable {
     }
 }
 
+enum AIMode: String, CaseIterable, Identifiable {
+    case suggestLinks
+    case updateReadme
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .suggestLinks: "Suggest Wiki Links"
+        case .updateReadme: "Update README"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .suggestLinks:
+            "Insert sparse, high-confidence wiki links across existing notes."
+        case .updateReadme:
+            "Rewrite the folder README with a short gist and a table of contents."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .suggestLinks: "link"
+        case .updateReadme: "doc.text.below.ecg"
+        }
+    }
+}
+
 struct AIService {
-    func generateLinkPatch(provider: AIProvider, folderURL: URL) async throws -> UnifiedDiff {
-        let prompt = Self.prompt
+    func generateLinkPatch(provider: AIProvider, mode: AIMode, folderURL: URL) async throws -> UnifiedDiff {
+        let prompt = Self.prompt(for: mode)
         let output: String
 
         switch provider {
@@ -51,12 +81,10 @@ struct AIService {
                     "--print",
                     "--no-session-persistence",
                     "--model", provider.lowestModelName,
-                    "--effort", "low",
                     "--permission-mode", "plan",
-                    "--tools=Read,Grep,Glob",
-                    "--allowedTools=Read,Grep,Glob",
+                    "--allowedTools", "Read Grep Glob",
                     "--output-format", "text",
-                    "--",
+                    "--add-dir", folderURL.path,
                     prompt
                 ],
                 currentDirectory: folderURL,
@@ -140,8 +168,27 @@ struct AIService {
         """
     }
 
-    private static let prompt = """
+    private static func prompt(for mode: AIMode) -> String {
+        switch mode {
+        case .suggestLinks:
+            return suggestLinksPrompt
+        case .updateReadme:
+            return updateReadmePrompt
+        }
+    }
+
+    private static let suggestLinksPrompt = """
     Analyze only visible .md files in this folder tree. Suggest sparse, high-confidence wiki links between existing Markdown files. Do not invent files. Do not rewrite prose except to add meaningful [[Wiki Links]] where a note clearly references another note, title, alias, keyword, or tag. Output a unified diff only. Do not include explanation, Markdown fences, or commentary. Do not run editing commands or write files.
+    """
+
+    private static let updateReadmePrompt = """
+    Analyze every visible .md file in this folder (non-recursive root level first; if README.md sits at the root, only the root level matters). Produce or update README.md so that:
+
+    1. The very top of README.md has a section titled "## Contents" that lists every other .md file in the same folder as a bullet point with a relative Markdown link. Use the document H1 title if present, otherwise the filename without extension. Sort alphabetically by display title. Do not include README.md itself.
+    2. Immediately below the table of contents, add or refresh a "## Gist" section. For each linked file, add one short bullet (one or two sentences max) summarising what that file is about, based only on the file's actual content. Do not invent details.
+    3. Preserve any existing prose in README.md that is not the Contents or Gist sections. Place Contents first, then Gist, then the pre-existing prose. If there is no pre-existing prose, the README may just contain Contents and Gist.
+
+    Output a single unified diff against README.md (and only README.md). Do not modify any other files. Do not include explanation, Markdown fences, or commentary. If README.md does not exist, emit a diff that creates it. Use standard unified diff format with `--- a/README.md` / `+++ b/README.md` headers and `@@` hunks.
     """
 }
 

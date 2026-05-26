@@ -34,9 +34,9 @@ struct ContentView: View {
             library.refresh(sortMode: newMode)
         }
         .sheet(isPresented: $showingAIProviderSheet) {
-            AIProviderSheet { provider in
+            AIProviderSheet { provider, mode in
                 showingAIProviderSheet = false
-                library.runAILinking(provider: provider)
+                library.runAILinking(provider: provider, mode: mode)
             }
         }
         .sheet(item: Binding(

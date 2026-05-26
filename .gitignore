@@ -2,6 +2,7 @@
 .build/
 dist/
 releases/
+appstore-build/
 DerivedData/
 *.xcuserstate
 Cribble_App_Icon_Exports/

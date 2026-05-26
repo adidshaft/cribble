@@ -44,9 +44,15 @@ the app goes on sale.
 
 - The app has no in-app paywall and no in-app purchases.
 - App Store Connect is open in Chrome at `https://appstoreconnect.apple.com/apps`.
+- The App Store Connect macOS app record exists: `Cribble: Markdown KB Manager`, App Store ID `6773317549`.
+- The bundle ID `com.cribble.reader` is registered in Certificates, Identifiers & Profiles.
+- `script/package_app_store.sh` creates an App Store-style `.pkg` candidate in `appstore-build/`.
+- The `.app` signs successfully with `Apple Distribution: Aman Pandey (JP4HU7X6G7)`.
+- A signed App Store upload package still needs a Mac App Store installer signing identity; `productbuild` requires an installer signing identity, not an application signing identity.
 - `Cribble.xcworkspace` currently reports no Xcode schemes, so Xcode archive/upload is not ready from this workspace yet.
 - Installed signing identities include `Apple Distribution: Aman Pandey (JP4HU7X6G7)` and `Developer ID Application: Aman Pandey (JP4HU7X6G7)`.
 - The Transporter command-line helper is not installed; `xcrun iTMSTransporter` asks to install Transporter from the Mac App Store.
+- Metadata is drafted and partly entered in App Store Connect. Saving is currently blocked by the required App Review contact phone number.
 
 Apple's current upload options are Xcode, Swift Playgrounds, `altool`, or
 Transporter. The first App Store Connect step is to create the macOS app record;

@@ -24,6 +24,8 @@ final class MarkdownLibraryStore: ObservableObject {
     private var currentSortMode: FileSortMode = .name
     private var securityScopedRoots: Set<URL> = []
     private var renderTask: Task<Void, Never>?
+    private var pendingDiffRootURL: URL?
+    private var pendingDiffMode: AIMode?
 
     init() {
         restoreFolders()
@@ -320,9 +322,11 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func runAILinking(provider: AIProvider, mode: AIMode) {
-        guard let rootURL = activeRootURL else { return }
+        guard let folderURL = folderURLForAI(mode: mode) else { return }
         isRunningAI = true
         pendingDiff = nil
+        pendingDiffRootURL = folderURL
+        pendingDiffMode = mode
         let actionLabel = mode == .updateReadme ? "rewrite the folder README" : "suggest links"
         statusMessage = "Asking \(provider.rawValue) \(provider.lowestModelName) to \(actionLabel)..."
 
@@ -331,7 +335,7 @@ final class MarkdownLibraryStore: ObservableObject {
                 let diff = try await AIService().generateLinkPatch(
                     provider: provider,
                     mode: mode,
-                    folderURL: rootURL
+                    folderURL: folderURL
                 )
                 pendingDiff = diff
                 if diff.isEmpty {
@@ -342,18 +346,23 @@ final class MarkdownLibraryStore: ObservableObject {
             } catch {
                 errorMessage = error.localizedDescription
                 statusMessage = "AI request failed"
+                pendingDiffRootURL = nil
+                pendingDiffMode = nil
             }
             isRunningAI = false
         }
     }
 
     func applyPendingDiff() {
-        guard let rootURL = activeRootURL, let pendingDiff else { return }
+        guard let rootURL = pendingDiffRootURL ?? activeRootURL, let pendingDiff else { return }
         do {
             try DiffApplier().apply(pendingDiff, rootURL: rootURL)
+            let appliedMode = pendingDiffMode
             self.pendingDiff = nil
+            self.pendingDiffRootURL = nil
+            self.pendingDiffMode = nil
             refresh()
-            statusMessage = "Applied AI link suggestions"
+            statusMessage = appliedMode == .updateReadme ? "Applied README changes" : "Applied AI link suggestions"
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -361,7 +370,26 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func cancelPendingDiff() {
         pendingDiff = nil
+        pendingDiffRootURL = nil
+        pendingDiffMode = nil
         statusMessage = "AI link changes discarded"
+    }
+
+    func folderURLForAI(mode: AIMode) -> URL? {
+        guard mode == .updateReadme else { return activeRootURL }
+
+        if let selectedDocument, selectedDocument.isReadme {
+            return selectedDocument.url.deletingLastPathComponent().standardizedFileURL
+        }
+
+        if let selectedURL {
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: selectedURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                return selectedURL.standardizedFileURL
+            }
+        }
+
+        return activeRootURL
     }
 
     private func rootNode(for rootURL: URL, sortMode: FileSortMode) throws -> MarkdownNode {

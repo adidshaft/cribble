@@ -29,4 +29,10 @@ final class MarkdownDisplayPreprocessorTests: XCTestCase {
 
         XCTAssertEqual(prepared, "- ☑ Done\n- ☐ Next")
     }
+
+    func testDetectsAutoCreatedReadmeAsEssentiallyEmpty() {
+        XCTAssertTrue(MarkdownDisplayPreprocessor.isEssentiallyEmpty("# docs\n", documentTitle: "docs"))
+        XCTAssertTrue(MarkdownDisplayPreprocessor.isEssentiallyEmpty("---\ntags: [index]\n---\n# images\n", documentTitle: "images"))
+        XCTAssertFalse(MarkdownDisplayPreprocessor.isEssentiallyEmpty("# docs\n\n## Contents\n- [Guide](Guide.md)", documentTitle: "docs"))
+    }
 }

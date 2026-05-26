@@ -8,6 +8,10 @@ enum MarkdownDisplayPreprocessor {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    static func isEssentiallyEmpty(_ markdown: String, documentTitle: String) -> Bool {
+        prepare(markdown, documentTitle: documentTitle).isEmpty
+    }
+
     private static func stripFrontMatter(_ markdown: String) -> String {
         var lines = markdown.components(separatedBy: .newlines)
         guard lines.first == "---" else { return markdown }

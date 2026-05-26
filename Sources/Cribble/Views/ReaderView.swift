@@ -14,8 +14,12 @@ struct ReaderView: View {
                     linkedFiles: library.selectedLinkedFiles,
                     showLinkedFileCards: settings.showLinkedFileCards,
                     fontScale: settings.readerFontScale,
+                    isRunningAI: library.isRunningAI,
                     onSelectLink: { library.select(url: $0.url) },
-                    onOpenURL: { library.handleOpenURL($0) }
+                    onOpenURL: { library.handleOpenURL($0) },
+                    onFillReadme: { provider in
+                        library.runAILinking(provider: provider, mode: .updateReadme)
+                    }
                 )
                 .id(document.url)
             } else {
@@ -50,8 +54,10 @@ private struct ReaderDocumentView: View {
     let linkedFiles: [LinkedFileSummary]
     let showLinkedFileCards: Bool
     let fontScale: Double
+    let isRunningAI: Bool
     let onSelectLink: (LinkedFileSummary) -> Void
     let onOpenURL: (URL) -> OpenURLAction.Result
+    let onFillReadme: (AIProvider) -> Void
 
     var body: some View {
         ScrollView {
@@ -65,7 +71,13 @@ private struct ReaderDocumentView: View {
                     LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
                 }
 
-                if rendered.isEmpty {
+                if document.isEssentiallyEmptyReadme {
+                    EmptyReadmePanel(
+                        folderName: document.url.deletingLastPathComponent().lastPathComponent,
+                        isRunningAI: isRunningAI,
+                        onFillReadme: onFillReadme
+                    )
+                } else if rendered.isEmpty {
                     ProgressView()
                         .controlSize(.small)
                         .padding(.top, 8)
@@ -98,6 +110,51 @@ private struct ReaderDocumentView: View {
         })
         .backgroundExtensionEffect()
         .navigationTitle(document.title)
+    }
+}
+
+private struct EmptyReadmePanel: View {
+    let folderName: String
+    let isRunningAI: Bool
+    let onFillReadme: (AIProvider) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.badge.plus")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 32, height: 32)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("This README is empty")
+                        .font(.custom("Roobert", size: 17))
+                        .fontWeight(.semibold)
+
+                    Text("Generate a folder overview, contents list, and useful links from the Markdown files in \(folderName).")
+                        .font(.custom("Roobert", size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack(spacing: 10) {
+                ForEach(AIProvider.allCases) { provider in
+                    Button {
+                        onFillReadme(provider)
+                    } label: {
+                        Label("Fill + Link with \(provider.rawValue)", systemImage: provider == .codex ? "terminal" : "sparkles")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(isRunningAI)
+                    .help("Use \(provider.rawValue) \(provider.lowestModelName) to draft this README, then review the patch before applying")
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: 560, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

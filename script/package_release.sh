@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_NAME="Cribble"
 BUNDLE_ID="com.cribble.reader"
-MIN_SYSTEM_VERSION="26.0"
+MIN_SYSTEM_VERSION="15.0"
 VERSION="${1:-$(<VERSION)}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Aman Pandey (JP4HU7X6G7)}"

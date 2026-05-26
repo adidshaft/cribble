@@ -57,7 +57,7 @@ struct AIProviderSheet: View {
         }
         .padding(24)
         .frame(width: 460)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
     }
 }
 

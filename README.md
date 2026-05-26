@@ -8,7 +8,7 @@
   A native macOS Markdown reader for local folders, rich reading, and safe AI-assisted note linking.
 </p>
 
-Cribble is a native macOS 26 Markdown reader for folder-based note libraries.
+Cribble is a native macOS 15+ Markdown reader for folder-based note libraries.
 It is built for people who already write in plain `.md` files, but want a
 calmer, richer, more connected place to read them than Finder, a code editor, or
 a full writing app.
@@ -106,12 +106,12 @@ No AI command is allowed to directly mutate files in v1.
 
 ## Design Direction
 
-Cribble aims for a quiet, native macOS 26 reading experience:
+Cribble aims for a quiet, native macOS reading experience:
 
 - sidebar-first library navigation
 - compact toolbar actions
 - system theme awareness
-- Liquid Glass materials where they help
+- Liquid Glass materials on macOS 26+, with native material fallbacks on older systems
 - restrained card use
 - readable line lengths on wide screens
 - polished behavior across small, medium, and large windows

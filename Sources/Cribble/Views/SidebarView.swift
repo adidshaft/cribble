@@ -60,53 +60,61 @@ private struct SidebarControls: View {
     @EnvironmentObject private var settings: AppSettings
 
     var body: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                Button {
-                    library.chooseFolder(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Open Folder", systemImage: "folder.badge.plus")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.glassProminent)
-                .help("Open a Markdown folder and keep it in the sidebar")
-
-                Button {
-                    library.refresh(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.glass)
-                .disabled(!library.hasFolders)
-                .help("Reload the opened Markdown folders")
-
-                Button {
-                    library.removeSelectedFolder()
-                } label: {
-                    Label("Remove Folder", systemImage: "folder.badge.minus")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.glass)
-                .disabled(library.selectedRootURL == nil)
-                .help("Remove the selected folder from Cribble without deleting files")
-
-                Menu {
-                    Picker("Sort Files", selection: $settings.fileSortMode) {
-                        ForEach(FileSortMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.glass)
-                .disabled(!library.hasFolders)
-                .help("Sort files inside folders by name, created date, or updated date")
-
-                Spacer(minLength: 0)
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 8) {
+                controls
             }
+        } else {
+            controls
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 8) {
+            Button {
+                library.chooseFolder(sortMode: settings.fileSortMode)
+            } label: {
+                Label("Open Folder", systemImage: "folder.badge.plus")
+                    .labelStyle(.iconOnly)
+            }
+            .cribbleGlassButton(prominent: true)
+            .help("Open a Markdown folder and keep it in the sidebar")
+
+            Button {
+                library.refresh(sortMode: settings.fileSortMode)
+            } label: {
+                Label("Refresh", systemImage: "arrow.clockwise")
+                    .labelStyle(.iconOnly)
+            }
+            .cribbleGlassButton()
+            .disabled(!library.hasFolders)
+            .help("Reload the opened Markdown folders")
+
+            Button {
+                library.removeSelectedFolder()
+            } label: {
+                Label("Remove Folder", systemImage: "folder.badge.minus")
+                    .labelStyle(.iconOnly)
+            }
+            .cribbleGlassButton()
+            .disabled(library.selectedRootURL == nil)
+            .help("Remove the selected folder from Cribble without deleting files")
+
+            Menu {
+                Picker("Sort Files", selection: $settings.fileSortMode) {
+                    ForEach(FileSortMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+            } label: {
+                Label("Sort", systemImage: "arrow.up.arrow.down")
+                    .labelStyle(.iconOnly)
+            }
+            .cribbleGlassButton()
+            .disabled(!library.hasFolders)
+            .help("Sort files inside folders by name, created date, or updated date")
+
+            Spacer(minLength: 0)
         }
     }
 }

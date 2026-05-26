@@ -41,7 +41,7 @@ struct ReaderView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
             }
@@ -109,7 +109,7 @@ private struct ReaderDocumentView: View {
         .environment(\.openURL, OpenURLAction { url in
             onOpenURL(url)
         })
-        .backgroundExtensionEffect()
+        .cribbleBackgroundExtension()
         .navigationTitle(document.title)
     }
 }
@@ -155,7 +155,7 @@ private struct EmptyReadmePanel: View {
         }
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -190,7 +190,7 @@ private struct LinkedFilesCardPanel: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .glassEffect(.regular, in: Capsule())
+                        .cribbleGlass(in: Capsule())
 
                     Spacer(minLength: 0)
                 }
@@ -217,7 +217,7 @@ private struct LinkedFilesCardPanel: View {
             }
         }
         .padding(12)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -273,7 +273,7 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(14)
         }
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
         .textual.blockSpacing(.init(top: 8, bottom: 18))
     }
 }
@@ -320,7 +320,7 @@ private struct WelcomeView: View {
                 library.chooseFolder(sortMode: settings.fileSortMode)
             }
             .controlSize(.large)
-            .buttonStyle(.glassProminent)
+            .cribbleGlassButton(prominent: true)
             .help("Open a Markdown folder and keep it in the sidebar")
         }
     }

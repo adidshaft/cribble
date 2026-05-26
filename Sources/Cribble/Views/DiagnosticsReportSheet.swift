@@ -27,7 +27,7 @@ struct DiagnosticsReportSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+            .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
 
             HStack {
                 if didCopy {
@@ -50,12 +50,12 @@ struct DiagnosticsReportSheet: View {
                     Label("Copy Report", systemImage: "doc.on.doc")
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
-                .buttonStyle(.glassProminent)
+                .cribbleGlassButton(prominent: true)
                 .help("Copy the diagnostic report to the clipboard")
             }
         }
         .padding(22)
         .frame(width: 760, height: 560)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
     }
 }

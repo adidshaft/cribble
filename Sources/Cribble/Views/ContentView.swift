@@ -28,7 +28,7 @@ struct ContentView: View {
                     Label("AI Link Notes", systemImage: "sparkles")
                 }
                 .disabled(!library.hasFolders || library.isRunningAI)
-                .buttonStyle(.glass)
+                .cribbleGlassButton()
                 .help("Ask a local AI tool to suggest wiki links with a patch preview")
             }
         }
@@ -106,7 +106,7 @@ private struct TextSizeMenu: View {
         } label: {
             Label("Text Size", systemImage: "textformat.size")
         }
-        .buttonStyle(.glass)
+        .cribbleGlassButton()
         .help("Change reader text size from XXS to XXL")
     }
 }
@@ -145,7 +145,7 @@ private struct OpenInMenu: View {
         } label: {
             Label("Open in", systemImage: "square.and.pencil")
         }
-        .buttonStyle(.glass)
+        .cribbleGlassButton()
         .disabled(library.selectedDocument == nil)
         .help("Open the selected Markdown file in another app or reveal it in Finder")
     }

@@ -36,7 +36,7 @@ struct DiffPreviewSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+                    .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
             }
 
             HStack {
@@ -47,13 +47,13 @@ struct DiffPreviewSheet: View {
                 Button("Apply Changes", action: onApply)
                     .keyboardShortcut(.defaultAction)
                     .disabled(diff.isEmpty)
-                    .buttonStyle(.glassProminent)
+                    .cribbleGlassButton(prominent: true)
                     .help("Apply the reviewed Markdown link changes")
             }
         }
         .padding(22)
         .frame(width: 760, height: 560)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
@@ -82,7 +82,7 @@ private struct DiffFileView: View {
                 }
             }
             .padding(10)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+            .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
         }
     }
 

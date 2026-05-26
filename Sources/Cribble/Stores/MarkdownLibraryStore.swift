@@ -35,7 +35,6 @@ final class MarkdownLibraryStore: ObservableObject {
     private var documents: [MarkdownDocument] = []
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
-    private var securityScopedRoots: Set<URL> = []
     private var renderTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
     private var pendingDiffRootURL: URL?
@@ -552,9 +551,14 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private func persistFolders() {
         UserDefaults.standard.set(rootURLs.map(\.path), forKey: Keys.folderPaths)
+        // Cribble ships unsandboxed via Developer ID, so plain bookmarks are
+        // enough to survive folder renames/moves. Security-scoped bookmarks
+        // require the app sandbox + user-selected file entitlement; calling
+        // them here on a non-sandboxed binary silently throws and used to
+        // wipe the persisted folder list on every clean machine.
         let bookmarks = rootURLs.compactMap { url in
             try? url.bookmarkData(
-                options: [.withSecurityScope],
+                options: [],
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
             )
@@ -577,9 +581,12 @@ final class MarkdownLibraryStore: ObservableObject {
         let bookmarks = UserDefaults.standard.array(forKey: Keys.folderBookmarks) as? [Data] ?? []
         return bookmarks.compactMap { bookmark in
             var isStale = false
+            // Try plain bookmarks first (current format). Fall back to
+            // security-scoped resolution so that defaults written by older
+            // builds (which used .withSecurityScope) still round-trip.
             if let url = try? URL(
                 resolvingBookmarkData: bookmark,
-                options: [.withSecurityScope],
+                options: [],
                 relativeTo: nil,
                 bookmarkDataIsStale: &isStale
             ).standardizedFileURL {
@@ -589,7 +596,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
             if let url = try? URL(
                 resolvingBookmarkData: bookmark,
-                options: [],
+                options: [.withSecurityScope],
                 relativeTo: nil,
                 bookmarkDataIsStale: &isStale
             ).standardizedFileURL {
@@ -602,24 +609,17 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private func startAccessingFolder(_ url: URL) {
-        let standardized = url.standardizedFileURL
-        guard !securityScopedRoots.contains(standardized) else { return }
-        if standardized.startAccessingSecurityScopedResource() {
-            securityScopedRoots.insert(standardized)
-        }
+        // No-op for unsandboxed builds. Kept as a hook so callers don't
+        // change shape if Cribble is ever sandboxed (App Store target etc.).
+        _ = url
     }
 
     private func stopAccessingFolder(_ url: URL) {
-        let standardized = url.standardizedFileURL
-        guard securityScopedRoots.remove(standardized) != nil else { return }
-        standardized.stopAccessingSecurityScopedResource()
+        _ = url
     }
 
     private func stopAccessingAllFolders() {
-        for url in securityScopedRoots {
-            url.stopAccessingSecurityScopedResource()
-        }
-        securityScopedRoots.removeAll()
+        // No-op for unsandboxed builds.
     }
 
     private func documentURL(for url: URL) -> URL? {

@@ -8,6 +8,13 @@ MIN_SYSTEM_VERSION="15.0"
 VERSION="${1:-$(<VERSION)}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Aman Pandey (JP4HU7X6G7)}"
+# Architectures to build, space-separated. Default to a universal binary so
+# Intel Macs aren't silently locked out. Set ARCHS="arm64" to opt back into
+# Apple-Silicon-only.
+ARCHS="${ARCHS:-arm64 x86_64}"
+# Keychain profile for `xcrun notarytool` if you want this script to notarize
+# + staple the DMG automatically. Leave NOTARY_PROFILE empty to skip.
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT_DIR/releases"
@@ -33,20 +40,47 @@ cd "$ROOT_DIR"
 rm -rf "$STAGE_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES" "$OUT_DIR"
 
-swift build -c release --arch arm64
-BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+SLICE_BINARIES=()
+LAST_BUILD_DIR=""
+for ARCH in $ARCHS; do
+  swift build -c release --arch "$ARCH"
+  ARCH_BUILD_DIR="$(swift build -c release --arch "$ARCH" --show-bin-path)"
+  /usr/bin/lipo "$ARCH_BUILD_DIR/$APP_NAME" -verify_arch "$ARCH"
+  SLICE_BINARIES+=("$ARCH_BUILD_DIR/$APP_NAME")
+  LAST_BUILD_DIR="$ARCH_BUILD_DIR"
+done
 
-/usr/bin/lipo "$BUILD_DIR/$APP_NAME" -verify_arch arm64
-
-cp "$BUILD_DIR/$APP_NAME" "$APP_BINARY"
+# If multiple slices, lipo them into a universal binary; otherwise just copy.
+if (( ${#SLICE_BINARIES[@]} > 1 )); then
+  /usr/bin/lipo -create "${SLICE_BINARIES[@]}" -output "$APP_BINARY"
+else
+  cp "${SLICE_BINARIES[0]}" "$APP_BINARY"
+fi
 chmod +x "$APP_BINARY"
+# Sanity-check the final binary's architectures and minimum macOS — these
+# are the two things that most often make the DMG refuse to launch on
+# someone else's Mac.
+/usr/bin/lipo -info "$APP_BINARY"
+/usr/bin/otool -l "$APP_BINARY" | /usr/bin/awk '/LC_BUILD_VERSION/{flag=1} flag{print; if (/sdk/){flag=0}}'
+
+BUILD_DIR="$LAST_BUILD_DIR"
 
 if [[ -f "$APP_ICON_SOURCE" ]]; then
   cp "$APP_ICON_SOURCE" "$APP_RESOURCES/Cribble.icns"
+else
+  echo "warning: app icon not found at $APP_ICON_SOURCE — shipping default Swift icon" >&2
 fi
 
-if [[ -d "$BUILD_DIR/Cribble_Cribble.bundle" ]]; then
-  cp -R "$BUILD_DIR/Cribble_Cribble.bundle" "$APP_RESOURCES/"
+# The SPM-generated resource bundle holds AppIconLight.png / AppIconDark.png
+# that AppIconManager loads via Bundle.module. If it's missing the app falls
+# back to a generic icon — fail loudly here so we don't ship that silently.
+RESOURCE_BUNDLE="$BUILD_DIR/Cribble_Cribble.bundle"
+if [[ -d "$RESOURCE_BUNDLE" ]]; then
+  cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
+else
+  echo "error: SPM resource bundle not found at $RESOURCE_BUNDLE" >&2
+  echo "       AppIconManager.applyForSystemAppearance() needs Bundle.module to exist." >&2
+  exit 1
 fi
 
 cat >"$INFO_PLIST" <<PLIST
@@ -151,8 +185,25 @@ cleanup_mount
 trap - EXIT
 
 /usr/bin/hdiutil convert "$RW_DMG_PATH" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
-/usr/bin/shasum -a 256 "$DMG_PATH" > "$CHECKSUM_PATH"
 rm -f "$RW_DMG_PATH"
+
+# Notarize + staple if a keychain profile was provided. Without this,
+# Gatekeeper on macOS 15.4+ refuses to open the DMG with "Cribble is
+# damaged" — that's the most common cause of "the app crashes" reports
+# from non-developer users.
+if [[ -n "$NOTARY_PROFILE" ]]; then
+  echo "Submitting DMG to Apple notary service via profile '$NOTARY_PROFILE'..."
+  /usr/bin/xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+  echo "Stapling notary ticket to DMG..."
+  /usr/bin/xcrun stapler staple "$DMG_PATH"
+  /usr/bin/xcrun stapler validate "$DMG_PATH"
+else
+  echo "warning: NOTARY_PROFILE not set — DMG is signed but NOT notarized." >&2
+  echo "         Gatekeeper will block this DMG on other Macs. Set" >&2
+  echo "         NOTARY_PROFILE=<keychain-profile> to notarize automatically." >&2
+fi
+
+/usr/bin/shasum -a 256 "$DMG_PATH" > "$CHECKSUM_PATH"
 
 echo "$DMG_PATH"
 echo "$CHECKSUM_PATH"

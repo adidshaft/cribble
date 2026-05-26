@@ -158,15 +158,33 @@ Current version: `1.0.0`
 
 The release script:
 
-- builds the Swift package in release mode
+- builds the Swift package in release mode for every arch in `ARCHS`
+  (default `arm64 x86_64`, so the shipped binary is universal)
+- `lipo`s the slices together and prints the resulting architectures and
+  `LC_BUILD_VERSION` so you can verify the binary's minimum macOS is what
+  you expect (`15.0`, not `26.0`)
 - creates `Cribble.app`
+- copies the SPM resource bundle (`Bundle.module`) and fails loudly if it
+  is missing, so the bundled app icon can't silently disappear
 - signs with Developer ID
 - creates `releases/Cribble-1.0.0.dmg`
-- signs the DMG
+- if `NOTARY_PROFILE=<keychain-profile>` is set, submits the DMG to
+  Apple's notary service and staples the ticket
 - writes a SHA-256 checksum
 
-For public sharing, submit the DMG to Apple's notary service and staple the
-ticket:
+```sh
+# Apple Silicon + Intel, signed only (Gatekeeper will block on other Macs):
+./script/package_release.sh 1.0.0
+
+# Apple Silicon + Intel, signed + notarized + stapled (recommended for
+# public sharing):
+NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.0
+
+# Apple Silicon only:
+ARCHS=arm64 ./script/package_release.sh 1.0.0
+```
+
+If you'd rather notarize by hand:
 
 ```sh
 xcrun notarytool submit releases/Cribble-1.0.0.dmg --keychain-profile cribble-notary --wait

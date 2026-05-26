@@ -16,7 +16,12 @@ final class DiagnosticsCenter: ObservableObject {
     }
 
     func markLaunch() {
-        if defaults.bool(forKey: Keys.sessionActive) {
+        if defaults.bool(forKey: Keys.sessionActive) && launchedRecently() {
+            // Only warn when the previous session looks like it was still
+            // alive recently. Normal shutdowns (system restart, force quit
+            // during sleep, etc.) often skip applicationWillTerminate even
+            // though nothing crashed, so a stale flag from days ago is a
+            // false positive — don't pester the user about it.
             previousSessionDidNotCloseCleanly = true
             record(
                 level: .error,
@@ -26,6 +31,15 @@ final class DiagnosticsCenter: ObservableObject {
 
         defaults.set(true, forKey: Keys.sessionActive)
         defaults.set(Date().timeIntervalSince1970, forKey: Keys.lastLaunchTime)
+    }
+
+    private func launchedRecently() -> Bool {
+        // Treat any session whose last heartbeat was within ~6 hours as
+        // recent. Anything older is almost certainly a normal shutdown that
+        // didn't run applicationWillTerminate, not a crash.
+        let last = defaults.double(forKey: Keys.lastLaunchTime)
+        guard last > 0 else { return false }
+        return Date().timeIntervalSince1970 - last < 6 * 60 * 60
     }
 
     func acknowledgePreviousSessionIssue() {

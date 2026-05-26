@@ -15,6 +15,7 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var errorMessage: String?
     @Published var isRunningAI = false
     @Published var pendingDiff: UnifiedDiff?
+    @Published private var rootDisplayNames: [String: String] = [:]
 
     private let loader = DocumentLoader()
     private let monitor = FileChangeMonitor()
@@ -90,6 +91,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
         let removedSelectedDocument = selectedURL?.isSameFileOrDescendant(of: standardized) ?? false
         rootURLs.removeAll { $0.standardizedFileURL == standardized }
+        rootDisplayNames.removeValue(forKey: standardized.path)
         persistFolders()
         stopAccessingFolder(standardized)
 
@@ -110,6 +112,49 @@ final class MarkdownLibraryStore: ObservableObject {
         refresh(sortMode: currentSortMode, keepStatusQuiet: true)
         startMonitoring()
         statusMessage = "Removed \(standardized.lastPathComponent)"
+    }
+
+    func renameImportedFolder(_ url: URL) {
+        let standardized = url.standardizedFileURL
+        guard rootURLs.contains(standardized) else { return }
+
+        let alert = NSAlert()
+        alert.messageText = "Rename Imported Folder"
+        alert.informativeText = "This changes only the name shown in Cribble. The actual folder on disk is not renamed."
+        alert.addButton(withTitle: "Rename")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        field.stringValue = displayName(forRoot: standardized)
+        field.placeholderString = standardized.lastPathComponent
+        alert.accessoryView = field
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            setImportedFolderDisplayName(field.stringValue, for: standardized)
+        }
+    }
+
+    func setImportedFolderDisplayName(_ name: String, for url: URL) {
+        let standardized = url.standardizedFileURL
+        guard rootURLs.contains(standardized) else { return }
+
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed == standardized.lastPathComponent {
+            rootDisplayNames.removeValue(forKey: standardized.path)
+        } else {
+            rootDisplayNames[standardized.path] = trimmed
+        }
+
+        persistFolderDisplayNames()
+        refresh(sortMode: currentSortMode, keepStatusQuiet: true)
+        statusMessage = "Renamed \(standardized.lastPathComponent) in Cribble"
+    }
+
+    func copyActualPath(for url: URL) {
+        let standardized = url.standardizedFileURL
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(standardized.path, forType: .string)
+        statusMessage = "Copied \(standardized.path)"
     }
 
     func refresh(sortMode: FileSortMode? = nil, keepStatusQuiet: Bool = false) {
@@ -325,7 +370,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let readmeURL = rootURL.appendingPathComponent("README.md")
         return MarkdownNode(
             id: rootURL.standardizedFileURL,
-            name: rootURL.lastPathComponent,
+            name: displayName(forRoot: rootURL),
             url: rootURL,
             kind: .folder,
             createdAt: values.creationDate,
@@ -342,6 +387,7 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private func restoreFolders() {
+        rootDisplayNames = UserDefaults.standard.dictionary(forKey: Keys.folderDisplayNames) as? [String: String] ?? [:]
         let bookmarkedURLs = restoreBookmarkedFolders()
         let paths = UserDefaults.standard.stringArray(forKey: Keys.folderPaths)
         let legacyPath = UserDefaults.standard.string(forKey: Keys.legacyLastFolderPath)
@@ -370,6 +416,17 @@ final class MarkdownLibraryStore: ObservableObject {
             )
         }
         UserDefaults.standard.set(bookmarks, forKey: Keys.folderBookmarks)
+        persistFolderDisplayNames()
+    }
+
+    private func persistFolderDisplayNames() {
+        let rootPaths = Set(rootURLs.map(\.standardizedFileURL.path))
+        rootDisplayNames = rootDisplayNames.filter { rootPaths.contains($0.key) }
+        UserDefaults.standard.set(rootDisplayNames, forKey: Keys.folderDisplayNames)
+    }
+
+    private func displayName(forRoot url: URL) -> String {
+        rootDisplayNames[url.standardizedFileURL.path] ?? url.lastPathComponent
     }
 
     private func restoreBookmarkedFolders() -> [URL] {
@@ -482,6 +539,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private enum Keys {
         static let folderBookmarks = "folderBookmarks"
+        static let folderDisplayNames = "folderDisplayNames"
         static let folderPaths = "folderPaths"
         static let legacyLastFolderPath = "lastFolderPath"
     }

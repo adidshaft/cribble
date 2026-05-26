@@ -24,6 +24,20 @@ struct SidebarView: View {
                         .tag(Optional(node.url))
                         .contextMenu {
                             if library.isImportedRoot(node.url) {
+                                Text(node.url.path)
+
+                                Divider()
+
+                                Button("Rename Folder...", systemImage: "pencil") {
+                                    library.renameImportedFolder(node.url)
+                                }
+
+                                Button("Copy Actual Path", systemImage: "doc.on.doc") {
+                                    library.copyActualPath(for: node.url)
+                                }
+
+                                Divider()
+
                                 Button("Remove Folder", systemImage: "folder.badge.minus", role: .destructive) {
                                     library.removeFolder(node.url)
                                 }

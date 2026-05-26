@@ -111,15 +111,19 @@ struct AIService {
 
             let outputPipe = Pipe()
             let errorPipe = Pipe()
+            let outputBuffer = PipeBuffer(fileHandle: outputPipe.fileHandleForReading)
+            let errorBuffer = PipeBuffer(fileHandle: errorPipe.fileHandleForReading)
             process.standardOutput = outputPipe
             process.standardError = errorPipe
             process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
 
+            outputBuffer.start()
+            errorBuffer.start()
             try process.run()
             process.waitUntilExit()
 
-            let output = String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            let error = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            let output = outputBuffer.finish()
+            let error = errorBuffer.finish()
             let finalOutput = outputFile.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
             if let outputFile {
                 try? FileManager.default.removeItem(at: outputFile)
@@ -162,7 +166,7 @@ struct AIService {
         }
 
         return """
-        Claude is installed but its local authentication failed with 401 Invalid authentication credentials. Run `claude auth status` and `claude auth login` in Terminal, then try AI Link Notes again.
+        Claude is installed, but `claude --print` failed with 401 Invalid authentication credentials. Run `claude auth status` in Terminal; if it still says logged in, refresh the token with `claude auth logout` followed by `claude auth login`, or run `claude setup-token`, then try AI Link Notes again.
 
         \(rawMessage)
         """
@@ -207,5 +211,42 @@ private extension Array where Element == String {
     func uniquedStrings() -> [String] {
         var seen = Set<String>()
         return filter { seen.insert($0).inserted }
+    }
+}
+
+private final class PipeBuffer: @unchecked Sendable {
+    private let fileHandle: FileHandle
+    private let lock = NSLock()
+    private var data = Data()
+
+    init(fileHandle: FileHandle) {
+        self.fileHandle = fileHandle
+    }
+
+    func start() {
+        fileHandle.readabilityHandler = { [weak self] handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else { return }
+            self?.append(chunk)
+        }
+    }
+
+    func finish() -> String {
+        fileHandle.readabilityHandler = nil
+        append(fileHandle.readDataToEndOfFile())
+        return String(data: snapshot(), encoding: .utf8) ?? ""
+    }
+
+    private func append(_ chunk: Data) {
+        guard !chunk.isEmpty else { return }
+        lock.withLock {
+            data.append(chunk)
+        }
+    }
+
+    private func snapshot() -> Data {
+        lock.withLock {
+            data
+        }
     }
 }

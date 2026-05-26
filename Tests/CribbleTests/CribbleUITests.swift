@@ -82,9 +82,11 @@ final class CribbleUITests: XCTestCase {
     func testRemovingFolderOnlyRemovesItFromCribble() throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
         let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
         let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
         defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "folderDisplayNames")
         defaults.removeObject(forKey: "folderPaths")
         defaults.removeObject(forKey: "lastFolderPath")
         defer {
@@ -92,6 +94,12 @@ final class CribbleUITests: XCTestCase {
                 defaults.set(oldBookmarks, forKey: "folderBookmarks")
             } else {
                 defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldDisplayNames {
+                defaults.set(oldDisplayNames, forKey: "folderDisplayNames")
+            } else {
+                defaults.removeObject(forKey: "folderDisplayNames")
             }
 
             if let oldFolderPaths {
@@ -128,6 +136,63 @@ final class CribbleUITests: XCTestCase {
         XCTAssertNil(store.selectedDocument)
         XCTAssertEqual(defaults.stringArray(forKey: "folderPaths") ?? [], [])
         XCTAssertEqual(defaults.array(forKey: "folderBookmarks") as? [Data] ?? [], [])
+        XCTAssertTrue(defaults.dictionary(forKey: "folderDisplayNames")?.isEmpty ?? true)
+    }
+
+    func testImportedFolderDisplayNameDoesNotRenameFolderOnDisk() throws {
+        let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "folderDisplayNames")
+        defaults.removeObject(forKey: "folderPaths")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldDisplayNames {
+                defaults.set(oldDisplayNames, forKey: "folderDisplayNames")
+            } else {
+                defaults.removeObject(forKey: "folderDisplayNames")
+            }
+
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Actual-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        try "# Note\n".write(to: rootURL.appendingPathComponent("Note.md"), atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore()
+        store.openFolder(rootURL, sortMode: .name)
+        store.setImportedFolderDisplayName("Project Notes", for: rootURL)
+
+        XCTAssertEqual(store.nodes.first?.name, "Project Notes")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rootURL.path))
+        XCTAssertEqual(rootURL.lastPathComponent, rootURL.standardizedFileURL.lastPathComponent)
+        XCTAssertEqual(
+            defaults.dictionary(forKey: "folderDisplayNames")?[rootURL.standardizedFileURL.path] as? String,
+            "Project Notes"
+        )
     }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {

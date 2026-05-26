@@ -7,6 +7,7 @@ DerivedData/
 *.xcuserstate
 Cribble_App_Icon_Exports/
 .notary/
+.appstore/
 *.p8
 *.cer
 *.csr

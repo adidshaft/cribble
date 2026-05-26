@@ -61,12 +61,8 @@ private struct ReaderDocumentView: View {
                     .fontWeight(.semibold)
                     .textSelection(.enabled)
 
-                if !linkedFiles.isEmpty {
-                    LinkedFilesTagRow(links: linkedFiles, onSelect: onSelectLink)
-
-                    if showLinkedFileCards {
-                        LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
-                    }
+                if showLinkedFileCards, !linkedFiles.isEmpty {
+                    LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
                 }
 
                 if rendered.isEmpty {
@@ -102,56 +98,6 @@ private struct ReaderDocumentView: View {
         })
         .backgroundExtensionEffect()
         .navigationTitle(document.title)
-    }
-}
-
-private struct LinkedFilesTagRow: View {
-    let links: [LinkedFileSummary]
-    let onSelect: (LinkedFileSummary) -> Void
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(links) { link in
-                    Button {
-                        onSelect(link)
-                    } label: {
-                        LinkedFileTag(link: link)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Open \(link.title)")
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-}
-
-private struct LinkedFileTag: View {
-    let link: LinkedFileSummary
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "link")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.blue)
-            Text(link.title)
-                .font(.custom("Roobert", size: 12))
-                .fontWeight(.medium)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background {
-            Capsule()
-                .fill(.blue.opacity(0.10))
-        }
-        .overlay {
-            Capsule()
-                .strokeBorder(.blue.opacity(0.22), lineWidth: 0.5)
-        }
-        .contentShape(Capsule())
     }
 }
 

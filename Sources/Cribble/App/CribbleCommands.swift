@@ -7,6 +7,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.showDiagnosticsAction) private var showDiagnostics
     @FocusedValue(\.copyDiagnosticsAction) private var copyDiagnostics
+    @FocusedValue(\.reportIssueAction) private var reportIssue
+    @FocusedValue(\.openPullRequestAction) private var openPullRequest
 
     var body: some Commands {
         CommandMenu("Library") {
@@ -37,6 +39,14 @@ struct CribbleCommands: Commands {
             Button("Copy Diagnostic Report", action: { copyDiagnostics?() })
                 .keyboardShortcut("c", modifiers: [.command, .option])
                 .disabled(copyDiagnostics == nil)
+
+            Divider()
+
+            Button("Report Issue on GitHub", action: { reportIssue?() })
+                .disabled(reportIssue == nil)
+
+            Button("Open Pull Request on GitHub", action: { openPullRequest?() })
+                .disabled(openPullRequest == nil)
         }
     }
 }
@@ -62,6 +72,14 @@ private struct ShowDiagnosticsActionKey: FocusedValueKey {
 }
 
 private struct CopyDiagnosticsActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ReportIssueActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenPullRequestActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -94,5 +112,15 @@ extension FocusedValues {
     var copyDiagnosticsAction: (() -> Void)? {
         get { self[CopyDiagnosticsActionKey.self] }
         set { self[CopyDiagnosticsActionKey.self] = newValue }
+    }
+
+    var reportIssueAction: (() -> Void)? {
+        get { self[ReportIssueActionKey.self] }
+        set { self[ReportIssueActionKey.self] = newValue }
+    }
+
+    var openPullRequestAction: (() -> Void)? {
+        get { self[OpenPullRequestActionKey.self] }
+        set { self[OpenPullRequestActionKey.self] = newValue }
     }
 }

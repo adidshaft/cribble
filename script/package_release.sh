@@ -18,16 +18,24 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION.dmg"
+RW_DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION-rw.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
+PYTHON_DEPS="$OUT_DIR/python-deps"
+DMG_ROOT="$STAGE_DIR/dmg-root"
+DMG_BACKGROUND_DIR="$DMG_ROOT/.background"
+DMG_BACKGROUND_PATH="$DMG_BACKGROUND_DIR/background.png"
+DMG_MOUNT="$STAGE_DIR/mount"
 
 cd "$ROOT_DIR"
 
 rm -rf "$STAGE_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES" "$OUT_DIR"
 
-swift build -c release
-BUILD_DIR="$(swift build -c release --show-bin-path)"
+swift build -c release --arch arm64
+BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+
+/usr/bin/lipo "$BUILD_DIR/$APP_NAME" -verify_arch arm64
 
 cp "$BUILD_DIR/$APP_NAME" "$APP_BINARY"
 chmod +x "$APP_BINARY"
@@ -74,11 +82,54 @@ PLIST
 /usr/bin/codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_BUNDLE"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
-rm -f "$DMG_PATH" "$CHECKSUM_PATH"
-/usr/bin/hdiutil create -volname "$APP_NAME" -srcfolder "$APP_BUNDLE" -ov -format UDZO "$DMG_PATH"
-/usr/bin/codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG_PATH"
-/usr/bin/codesign --verify --verbose=2 "$DMG_PATH"
+rm -rf "$DMG_ROOT" "$DMG_MOUNT"
+mkdir -p "$DMG_BACKGROUND_DIR" "$DMG_MOUNT"
+cp -R "$APP_BUNDLE" "$DMG_ROOT/"
+ln -s /Applications "$DMG_ROOT/Applications"
+swift "$ROOT_DIR/script/create_dmg_background.swift" "$DMG_BACKGROUND_PATH"
+
+rm -f "$DMG_PATH" "$RW_DMG_PATH" "$CHECKSUM_PATH"
+/usr/bin/hdiutil create -volname "$APP_NAME" -srcfolder "$DMG_ROOT" -ov -format UDRW "$RW_DMG_PATH"
+DEVICE="$(/usr/bin/hdiutil attach "$RW_DMG_PATH" -readwrite -noverify -noautoopen -mountpoint "$DMG_MOUNT" | /usr/bin/awk '/Apple_HFS/ { print $1; exit }')"
+
+cleanup_mount() {
+  if [[ -n "${DEVICE:-}" ]]; then
+    for _ in 1 2 3 4 5; do
+      /usr/bin/hdiutil detach "$DEVICE" >/dev/null 2>&1 && return
+      /usr/bin/hdiutil detach "$DEVICE" -force >/dev/null 2>&1 && return
+      /bin/sleep 1
+    done
+  fi
+
+  if [[ -d "$DMG_MOUNT" ]]; then
+    for _ in 1 2 3; do
+      /usr/bin/hdiutil detach "$DMG_MOUNT" >/dev/null 2>&1 && return
+      /usr/bin/hdiutil detach "$DMG_MOUNT" -force >/dev/null 2>&1 && return
+      /bin/sleep 1
+    done
+  fi
+}
+trap cleanup_mount EXIT
+
+if ! PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 -c "import ds_store, mac_alias" >/dev/null 2>&1; then
+  PIP_DISABLE_PIP_VERSION_CHECK=1 /usr/bin/python3 -m pip install --quiet --target "$PYTHON_DEPS" ds_store mac_alias
+fi
+
+/usr/bin/SetFile -a V "$DMG_MOUNT/.background"
+PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 "$ROOT_DIR/script/write_dmg_ds_store.py" \
+  "$DMG_MOUNT" \
+  "$DMG_MOUNT/.background/background.png" \
+  "$APP_NAME.app" \
+  "Applications"
+
+/bin/sync
+cleanup_mount
+/bin/sleep 2
+trap - EXIT
+
+/usr/bin/hdiutil convert "$RW_DMG_PATH" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
 /usr/bin/shasum -a 256 "$DMG_PATH" > "$CHECKSUM_PATH"
+rm -f "$RW_DMG_PATH"
 
 echo "$DMG_PATH"
 echo "$CHECKSUM_PATH"

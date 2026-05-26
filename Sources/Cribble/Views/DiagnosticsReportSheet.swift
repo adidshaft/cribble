@@ -4,6 +4,8 @@ import SwiftUI
 struct DiagnosticsReportSheet: View {
     let report: String
     let onCopy: () -> Void
+    let onReportIssue: () -> Void
+    let onOpenPullRequest: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var didCopy = false
 
@@ -42,6 +44,20 @@ struct DiagnosticsReportSheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
+
+                Button {
+                    onOpenPullRequest()
+                } label: {
+                    Label("Open PR", systemImage: "arrow.triangle.pull")
+                }
+                .help("Open GitHub's pull request flow and copy this report")
+
+                Button {
+                    onReportIssue()
+                } label: {
+                    Label("Report Issue", systemImage: "exclamationmark.bubble")
+                }
+                .help("Open a prefilled GitHub issue and copy this report")
 
                 Button {
                     onCopy()

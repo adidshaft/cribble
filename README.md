@@ -62,7 +62,10 @@ respectful of the user's files.
   eligible apps, the default app, and Finder reveal.
 - Offers preview-first AI linking with local Codex or Claude, using the lowest
   configured model for each provider.
-- Ships as a signed, notarized macOS DMG for local distribution.
+- Provides a Diagnostic Report sheet with copy, GitHub issue, and GitHub pull
+  request actions for quick user reports.
+- Ships as a signed, notarized Apple Silicon macOS DMG with a drag-to-install
+  Finder layout.
 
 ## Reading Workflow
 

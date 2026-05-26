@@ -44,7 +44,9 @@ struct ContentView: View {
         .sheet(isPresented: $showingDiagnosticsReport) {
             DiagnosticsReportSheet(
                 report: diagnostics.makeReport(library: library, settings: settings),
-                onCopy: { diagnostics.copyReport(library: library, settings: settings) }
+                onCopy: { diagnostics.copyReport(library: library, settings: settings) },
+                onReportIssue: { reportIssueOnGitHub() },
+                onOpenPullRequest: { openPullRequestOnGitHub() }
             )
         }
         .sheet(item: Binding(
@@ -61,6 +63,10 @@ struct ContentView: View {
             get: { library.errorMessage != nil },
             set: { if !$0 { library.errorMessage = nil } }
         )) {
+            Button("Report Issue") {
+                reportIssueOnGitHub()
+                library.errorMessage = nil
+            }
             Button("Copy Report") {
                 diagnostics.copyReport(library: library, settings: settings)
                 library.errorMessage = nil
@@ -75,6 +81,20 @@ struct ContentView: View {
         .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
         .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
         .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
+        .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
+        .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
+    }
+
+    private func reportIssueOnGitHub() {
+        let report = diagnostics.makeReport(library: library, settings: settings)
+        GitHubReport.openIssue(report: report)
+        diagnostics.record(level: .info, message: "Opened GitHub issue flow.")
+    }
+
+    private func openPullRequestOnGitHub() {
+        let report = diagnostics.makeReport(library: library, settings: settings)
+        GitHubReport.openPullRequest(report: report)
+        diagnostics.record(level: .info, message: "Opened GitHub pull request flow.")
     }
 }
 

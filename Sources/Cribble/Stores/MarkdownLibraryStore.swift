@@ -15,6 +15,7 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var errorMessage: String?
     @Published var isRunningAI = false
     @Published var pendingDiff: UnifiedDiff?
+    @Published var pendingDiffError: String?
     @Published private var rootDisplayNames: [String: String] = [:]
 
     private let loader = DocumentLoader()
@@ -325,6 +326,7 @@ final class MarkdownLibraryStore: ObservableObject {
         guard let folderURL = folderURLForAI(mode: mode) else { return }
         isRunningAI = true
         pendingDiff = nil
+        pendingDiffError = nil
         pendingDiffRootURL = folderURL
         pendingDiffMode = mode
         let actionLabel = mode == .updateReadme ? "rewrite the folder README" : "suggest links"
@@ -359,17 +361,20 @@ final class MarkdownLibraryStore: ObservableObject {
             try DiffApplier().apply(pendingDiff, rootURL: rootURL)
             let appliedMode = pendingDiffMode
             self.pendingDiff = nil
+            self.pendingDiffError = nil
             self.pendingDiffRootURL = nil
             self.pendingDiffMode = nil
             refresh()
             statusMessage = appliedMode == .updateReadme ? "Applied README changes" : "Applied AI link suggestions"
         } catch {
-            errorMessage = error.localizedDescription
+            pendingDiffError = error.localizedDescription
+            statusMessage = "Could not apply AI changes"
         }
     }
 
     func cancelPendingDiff() {
         pendingDiff = nil
+        pendingDiffError = nil
         pendingDiffRootURL = nil
         pendingDiffMode = nil
         statusMessage = "AI link changes discarded"

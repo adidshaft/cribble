@@ -38,4 +38,45 @@ final class UnifiedDiffTests: XCTestCase {
         XCTAssertEqual(diff.files.first?.oldPath, "data/brain.md")
         XCTAssertEqual(diff.files.first?.newPath, "data/brain.md")
     }
+
+    func testAppliesInsertionOnlyHunk() throws {
+        let root = try Fixture.makeFolder()
+        let readme = root.appendingPathComponent("README.md")
+        try "# docs\n".write(to: readme, atomically: true, encoding: .utf8)
+
+        let diff = UnifiedDiffParser.parse("""
+        --- a/README.md
+        +++ b/README.md
+        @@ -0,0 +1,3 @@
+        +## Contents
+        +- [Guide](Guide.md)
+        +
+        """)
+
+        try DiffApplier().apply(diff, rootURL: root)
+
+        XCTAssertEqual(
+            try String(contentsOf: readme, encoding: .utf8),
+            "## Contents\n- [Guide](Guide.md)\n\n# docs\n"
+        )
+    }
+
+    func testCreatesFileFromDevNullDiff() throws {
+        let root = try Fixture.makeFolder()
+
+        let diff = UnifiedDiffParser.parse("""
+        --- /dev/null
+        +++ b/README.md
+        @@ -0,0 +1,2 @@
+        +## Contents
+        +- [Guide](Guide.md)
+        """)
+
+        try DiffApplier().apply(diff, rootURL: root)
+
+        XCTAssertEqual(
+            try String(contentsOf: root.appendingPathComponent("README.md"), encoding: .utf8),
+            "## Contents\n- [Guide](Guide.md)\n"
+        )
+    }
 }

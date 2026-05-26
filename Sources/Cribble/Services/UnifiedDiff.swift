@@ -141,12 +141,15 @@ struct DiffApplier {
     private func apply(_ file: DiffFile, rootURL: URL) throws {
         let relativePath = file.newPath == "/dev/null" ? file.oldPath : file.newPath
         let fileURL = rootURL.appendingPathComponent(relativePath)
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard FileManager.default.fileExists(atPath: fileURL.path) || file.oldPath == "/dev/null" else {
             throw DiffApplyError.fileNotFound(relativePath)
         }
 
-        let original = try String(contentsOf: fileURL, encoding: .utf8)
+        let original = FileManager.default.fileExists(atPath: fileURL.path)
+            ? try String(contentsOf: fileURL, encoding: .utf8)
+            : ""
         var lines = original.components(separatedBy: "\n")
+        var lineOffset = 0
 
         for hunk in file.hunks {
             let expected = hunk.lines.compactMap { line -> String? in
@@ -156,14 +159,32 @@ struct DiffApplier {
                 line.kind == .removal ? nil : line.text
             }
 
-            guard let start = findSubsequence(expected, in: lines) else {
-                throw DiffApplyError.hunkMismatch(relativePath)
+            let hintedStart = hunk.oldStartIndex.map { max(0, min(lines.count, $0 + lineOffset)) }
+            let start: Int?
+            if expected.isEmpty {
+                start = hintedStart ?? 0
+            } else if let hintedStart, matches(expected, in: lines, at: hintedStart) {
+                start = hintedStart
+            } else {
+                start = findSubsequence(expected, in: lines)
             }
 
+            guard let start else { throw DiffApplyError.hunkMismatch(relativePath) }
+
             lines.replaceSubrange(start..<(start + expected.count), with: replacement)
+            lineOffset += replacement.count - expected.count
         }
 
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         try lines.joined(separator: "\n").write(to: fileURL, atomically: true, encoding: .utf8)
+    }
+
+    private func matches(_ needle: [String], in haystack: [String], at start: Int) -> Bool {
+        guard start >= 0, start + needle.count <= haystack.count else { return false }
+        return Array(haystack[start..<(start + needle.count)]) == needle
     }
 
     private func findSubsequence(_ needle: [String], in haystack: [String]) -> Int? {
@@ -177,5 +198,22 @@ struct DiffApplier {
             }
         }
         return nil
+    }
+}
+
+private extension DiffHunk {
+    var oldStartIndex: Int? {
+        guard let match = header.range(of: #"@@ -(\d+)(?:,\d+)? \+\d+(?:,\d+)? @@"#, options: .regularExpression) else {
+            return nil
+        }
+
+        let matched = String(header[match])
+        guard let startRange = matched.range(of: #"(?<=@@ -)\d+"#, options: .regularExpression),
+              let oldStart = Int(matched[startRange])
+        else {
+            return nil
+        }
+
+        return oldStart == 0 ? 0 : oldStart - 1
     }
 }

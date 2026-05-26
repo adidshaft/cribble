@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiffPreviewSheet: View {
     let diff: UnifiedDiff
+    let applyError: String?
     let onApply: () -> Void
     let onCancel: () -> Void
 
@@ -26,6 +27,16 @@ struct DiffPreviewSheet: View {
                     .padding(.vertical, 4)
                 }
                 .frame(minHeight: 320)
+            }
+
+            if let applyError {
+                Label(applyError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
             }
 
             HStack {

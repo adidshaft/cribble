@@ -43,7 +43,7 @@ struct ContentView: View {
             get: { library.pendingDiff.map(DiffSheetItem.init(diff:)) },
             set: { if $0 == nil { library.cancelPendingDiff() } }
         )) { item in
-            DiffPreviewSheet(diff: item.diff) {
+            DiffPreviewSheet(diff: item.diff, applyError: library.pendingDiffError) {
                 library.applyPendingDiff()
             } onCancel: {
                 library.cancelPendingDiff()
@@ -214,6 +214,9 @@ private enum CommonEditorApplication {
 }
 
 private struct DiffSheetItem: Identifiable {
-    let id = UUID()
     let diff: UnifiedDiff
+
+    var id: String {
+        diff.files.map(\.newPath).joined(separator: "\u{1f}")
+    }
 }

@@ -134,6 +134,17 @@ Swift package.
 swift test
 ```
 
+## Validate A Release
+
+After packaging and notarization, run:
+
+```sh
+./script/validate_release.sh 1.0.0
+```
+
+The script checks the Apple Silicon binary, minimum macOS version, code signing,
+Gatekeeper acceptance, notarization tickets, and DMG contents.
+
 The tests cover folder scanning, sort behavior, wiki-link parsing, link-index
 resolution, Markdown display preparation, and unified-diff parsing/apply logic.
 

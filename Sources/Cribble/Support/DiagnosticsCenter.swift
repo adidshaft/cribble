@@ -6,6 +6,7 @@ final class DiagnosticsCenter: ObservableObject {
     static let shared = DiagnosticsCenter()
 
     @Published private(set) var events: [DiagnosticEvent] = []
+    @Published private(set) var previousSessionDidNotCloseCleanly = false
 
     private let defaults = UserDefaults.standard
     private let maxEvents = 80
@@ -16,6 +17,7 @@ final class DiagnosticsCenter: ObservableObject {
 
     func markLaunch() {
         if defaults.bool(forKey: Keys.sessionActive) {
+            previousSessionDidNotCloseCleanly = true
             record(
                 level: .error,
                 message: "Previous Cribble session did not close cleanly. This may indicate a crash or force quit."
@@ -24,6 +26,10 @@ final class DiagnosticsCenter: ObservableObject {
 
         defaults.set(true, forKey: Keys.sessionActive)
         defaults.set(Date().timeIntervalSince1970, forKey: Keys.lastLaunchTime)
+    }
+
+    func acknowledgePreviousSessionIssue() {
+        previousSessionDidNotCloseCleanly = false
     }
 
     func markCleanTermination() {

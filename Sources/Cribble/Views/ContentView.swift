@@ -7,6 +7,7 @@ struct ContentView: View {
     @EnvironmentObject private var diagnostics: DiagnosticsCenter
     @State private var showingAIProviderSheet = false
     @State private var showingDiagnosticsReport = false
+    @State private var showingPreviousSessionIssue = false
 
     var body: some View {
         NavigationSplitView {
@@ -34,6 +35,12 @@ struct ContentView: View {
         }
         .onChange(of: settings.fileSortMode) { _, newMode in
             library.refresh(sortMode: newMode)
+        }
+        .onAppear {
+            showingPreviousSessionIssue = diagnostics.previousSessionDidNotCloseCleanly
+        }
+        .onChange(of: diagnostics.previousSessionDidNotCloseCleanly) { _, didNotCloseCleanly in
+            showingPreviousSessionIssue = didNotCloseCleanly
         }
         .sheet(isPresented: $showingAIProviderSheet) {
             AIProviderSheet { provider, mode in
@@ -74,6 +81,21 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(library.errorMessage ?? "")
+        }
+        .alert("Cribble did not close cleanly", isPresented: $showingPreviousSessionIssue) {
+            Button("Report Issue") {
+                reportIssueOnGitHub()
+                diagnostics.acknowledgePreviousSessionIssue()
+            }
+            Button("Copy Report") {
+                diagnostics.copyReport(library: library, settings: settings)
+                diagnostics.acknowledgePreviousSessionIssue()
+            }
+            Button("Not Now", role: .cancel) {
+                diagnostics.acknowledgePreviousSessionIssue()
+            }
+        } message: {
+            Text("Cribble detected that the previous session may have crashed or been force quit. You can send a diagnostic report so it can be fixed.")
         }
         .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
         .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })

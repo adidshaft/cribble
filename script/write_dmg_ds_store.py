@@ -41,7 +41,7 @@ def main() -> int:
         "showItemInfo": False,
         "labelOnBottom": True,
         "textSize": 13.0,
-        "iconSize": 142.0,
+        "iconSize": 128.0,
         "scrollPositionX": 0.0,
         "scrollPositionY": 0.0,
     }
@@ -51,8 +51,8 @@ def main() -> int:
         store["."]["bwsp"] = window_options
         store["."]["icvp"] = icon_view_options
         store["."]["icvl"] = ("type", "icnv")
-        store[app_name]["Iloc"] = (185, 240)
-        store[applications_name]["Iloc"] = (575, 240)
+        store[app_name]["Iloc"] = (182, 228)
+        store[applications_name]["Iloc"] = (575, 228)
 
     return 0
 

@@ -122,6 +122,28 @@ PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 "$ROOT_DIR/script/write_dmg_ds_store.
   "$APP_NAME.app" \
   "Applications"
 
+/usr/bin/osascript <<APPLESCRIPT
+tell application "Finder"
+  set dmgFolder to POSIX file "$DMG_MOUNT" as alias
+  open dmgFolder
+  delay 1
+  set dmgWindow to container window of dmgFolder
+  set current view of dmgWindow to icon view
+  set toolbar visible of dmgWindow to false
+  set statusbar visible of dmgWindow to false
+  set bounds of dmgWindow to {120, 120, 880, 580}
+  set viewOptions to icon view options of dmgWindow
+  set arrangement of viewOptions to not arranged
+  set icon size of viewOptions to 128
+  set background picture of viewOptions to POSIX file "$DMG_MOUNT/.background/background.png"
+  set position of item "$APP_NAME.app" of dmgFolder to {182, 228}
+  set position of item "Applications" of dmgFolder to {575, 228}
+  update dmgFolder without registering applications
+  delay 2
+  close dmgWindow
+end tell
+APPLESCRIPT
+
 /bin/sync
 cleanup_mount
 /bin/sleep 2

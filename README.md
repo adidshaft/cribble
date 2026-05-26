@@ -1,4 +1,12 @@
-# Cribble
+<p align="center">
+  <img src=".github/assets/cribble-logo.png" alt="Cribble app icon" width="120" height="120">
+</p>
+
+<h1 align="center">Cribble</h1>
+
+<p align="center">
+  A native macOS Markdown reader for local folders, rich reading, and safe AI-assisted note linking.
+</p>
 
 Cribble is a native macOS 26 Markdown reader for folder-based note libraries.
 It is built for people who already write in plain `.md` files, but want a

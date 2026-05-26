@@ -9,6 +9,7 @@ VERSION="${1:-$(<VERSION)}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 APP_SIGN_IDENTITY="${APP_SIGN_IDENTITY:-Apple Distribution: Aman Pandey (JP4HU7X6G7)}"
 INSTALLER_SIGN_IDENTITY="${INSTALLER_SIGN_IDENTITY:-}"
+PROVISION_PROFILE="${PROVISION_PROFILE:-}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT_DIR/appstore-build"
@@ -23,13 +24,32 @@ PKG_PATH="$OUT_DIR/$APP_NAME-$VERSION-mas.pkg"
 
 cd "$ROOT_DIR"
 
+resolve_executable() {
+  local build_dir="$1"
+  if [[ -x "$build_dir/$APP_NAME" ]]; then
+    printf '%s\n' "$build_dir/$APP_NAME"
+    return
+  fi
+
+  local found
+  found="$(find "$ROOT_DIR/.build" -path '*/release/'"$APP_NAME" -type f -perm -111 -print -quit)"
+  if [[ -n "$found" ]]; then
+    printf '%s\n' "$found"
+    return
+  fi
+
+  echo "error: release executable '$APP_NAME' not found under $build_dir or $ROOT_DIR/.build" >&2
+  exit 1
+}
+
 rm -rf "$OUT_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 
 swift build -c release --arch arm64
 BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+BINARY_SOURCE="$(resolve_executable "$BUILD_DIR")"
 
-cp "$BUILD_DIR/$APP_NAME" "$APP_BINARY"
+cp "$BINARY_SOURCE" "$APP_BINARY"
 chmod +x "$APP_BINARY"
 
 if [[ -f "$APP_ICON_SOURCE" ]]; then
@@ -65,6 +85,8 @@ cat >"$INFO_PLIST" <<PLIST
   <string>$MIN_SYSTEM_VERSION</string>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.productivity</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>
@@ -73,14 +95,26 @@ cat >"$INFO_PLIST" <<PLIST
 </plist>
 PLIST
 
+if [[ -n "$PROVISION_PROFILE" ]]; then
+  cp "$PROVISION_PROFILE" "$APP_CONTENTS/embedded.provisionprofile"
+fi
+
+chmod -R u+w "$APP_BUNDLE"
+/usr/bin/xattr -cr "$APP_BUNDLE"
+find "$APP_BUNDLE" -name '._*' -delete
+
 /usr/bin/codesign --force --options runtime --entitlements "$ROOT_DIR/Cribble.entitlements" --sign "$APP_SIGN_IDENTITY" "$APP_BUNDLE"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+chmod -R u+w "$APP_BUNDLE"
+/usr/bin/xattr -cr "$APP_BUNDLE"
+find "$APP_BUNDLE" -name '._*' -delete
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
 if [[ -n "$INSTALLER_SIGN_IDENTITY" ]]; then
-  /usr/bin/productbuild --component "$APP_BUNDLE" /Applications --sign "$INSTALLER_SIGN_IDENTITY" "$PKG_PATH"
+  COPYFILE_DISABLE=1 /usr/bin/productbuild --component "$APP_BUNDLE" /Applications --sign "$INSTALLER_SIGN_IDENTITY" "$PKG_PATH"
   /usr/sbin/pkgutil --check-signature "$PKG_PATH"
 else
-  /usr/bin/productbuild --component "$APP_BUNDLE" /Applications "$PKG_PATH"
+  COPYFILE_DISABLE=1 /usr/bin/productbuild --component "$APP_BUNDLE" /Applications "$PKG_PATH"
   echo "Created unsigned package. Set INSTALLER_SIGN_IDENTITY to a Mac App Store installer signing identity before upload." >&2
 fi
 

@@ -15,6 +15,14 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(showLinkedFileCards, forKey: Keys.showLinkedFileCards) }
     }
 
+    @Published var showOutline: Bool {
+        didSet { UserDefaults.standard.set(showOutline, forKey: Keys.showOutline) }
+    }
+
+    @Published var isFocusMode: Bool {
+        didSet { UserDefaults.standard.set(isFocusMode, forKey: Keys.isFocusMode) }
+    }
+
     @Published var editorApplicationURL: URL? {
         didSet { UserDefaults.standard.set(editorApplicationURL?.path, forKey: Keys.editorApplicationPath) }
     }
@@ -25,6 +33,8 @@ final class AppSettings: ObservableObject {
         let sortMode = UserDefaults.standard.string(forKey: Keys.fileSortMode).flatMap(FileSortMode.init(rawValue:))
         fileSortMode = sortMode ?? .name
         showLinkedFileCards = UserDefaults.standard.object(forKey: Keys.showLinkedFileCards) as? Bool ?? true
+        showOutline = UserDefaults.standard.object(forKey: Keys.showOutline) as? Bool ?? true
+        isFocusMode = UserDefaults.standard.object(forKey: Keys.isFocusMode) as? Bool ?? false
         if let path = UserDefaults.standard.string(forKey: Keys.editorApplicationPath), !path.isEmpty {
             editorApplicationURL = URL(fileURLWithPath: path)
         } else {
@@ -79,6 +89,8 @@ final class AppSettings: ObservableObject {
         static let readerFontScale = "readerFontScale"
         static let fileSortMode = "fileSortMode"
         static let showLinkedFileCards = "showLinkedFileCards"
+        static let showOutline = "showOutline"
+        static let isFocusMode = "isFocusMode"
         static let editorApplicationPath = "editorApplicationPath"
     }
 }

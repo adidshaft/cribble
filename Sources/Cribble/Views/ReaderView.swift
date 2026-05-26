@@ -8,7 +8,9 @@ struct ReaderView: View {
 
     var body: some View {
         Group {
-            if let document = library.selectedDocument {
+            if let unresolved = library.selectedUnresolvedTarget {
+                UnresolvedTargetView(target: unresolved)
+            } else if let document = library.selectedDocument {
                 ReaderDocumentView(
                     document: document,
                     rendered: library.selectedRenderedMarkdown,
@@ -50,6 +52,9 @@ struct ReaderView: View {
 }
 
 private struct ReaderDocumentView: View {
+    @EnvironmentObject private var library: MarkdownLibraryStore
+    @EnvironmentObject private var settings: AppSettings
+
     let document: MarkdownDocument
     let rendered: String
     let linkedFiles: [LinkedFileSummary]
@@ -61,51 +66,82 @@ private struct ReaderDocumentView: View {
     let onFillReadme: (AIProvider) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text(document.title)
-                    .font(.system(size: 30 * fontScale))
-                    .fontWeight(.semibold)
-                    .textSelection(.enabled)
+        HStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text(document.title)
+                            .font(.system(size: 30 * fontScale))
+                            .fontWeight(.semibold)
+                            .textSelection(.enabled)
 
-                if showLinkedFileCards, !linkedFiles.isEmpty {
-                    LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
+                        if showLinkedFileCards, !linkedFiles.isEmpty {
+                            LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
+                        }
+
+                        if document.isEssentiallyEmptyReadme {
+                            EmptyReadmePanel(
+                                folderName: document.url.deletingLastPathComponent().lastPathComponent,
+                                isRunningAI: isRunningAI,
+                                onFillReadme: onFillReadme
+                            )
+                        } else if rendered.isEmpty {
+                            ProgressView()
+                                .controlSize(.small)
+                                .padding(.top, 8)
+                        } else {
+                            StructuredText(
+                                markdown: rendered,
+                                baseURL: document.url.deletingLastPathComponent(),
+                                syntaxExtensions: [.math]
+                            )
+                            .font(.system(size: 17 * fontScale))
+                            .textual.structuredTextStyle(.gitHub)
+                            .textual.inlineStyle(
+                                InlineStyle()
+                                    .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                                    .strong(.fontWeight(.semibold))
+                            )
+                            .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
+                            .textual.imageAttachmentLoader(.image(relativeTo: document.url.deletingLastPathComponent()))
+                            .textual.textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: settings.isFocusMode ? 640 : 840, alignment: .leading)
+                    .padding(.horizontal, settings.isFocusMode ? 56 : 42)
+                    .padding(.vertical, 34)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
-
-                if document.isEssentiallyEmptyReadme {
-                    EmptyReadmePanel(
-                        folderName: document.url.deletingLastPathComponent().lastPathComponent,
-                        isRunningAI: isRunningAI,
-                        onFillReadme: onFillReadme
-                    )
-                } else if rendered.isEmpty {
-                    ProgressView()
-                        .controlSize(.small)
-                        .padding(.top, 8)
-                } else {
-                    StructuredText(
-                        markdown: rendered,
-                        baseURL: document.url.deletingLastPathComponent(),
-                        syntaxExtensions: [.math]
-                    )
-                    .font(.system(size: 17 * fontScale))
-                    .textual.structuredTextStyle(.gitHub)
-                    .textual.inlineStyle(
-                        InlineStyle()
-                            .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
-                            .strong(.fontWeight(.semibold))
-                    )
-                    .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
-                    .textual.imageAttachmentLoader(.image(relativeTo: document.url.deletingLastPathComponent()))
-                    .textual.textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
+                .onChange(of: library.activeScrollAnchor) { _, newAnchor in
+                    if let newAnchor {
+                        withAnimation(.spring()) {
+                            proxy.scrollTo(newAnchor, anchor: .top)
+                        }
+                        library.activeScrollAnchor = nil
+                    }
+                }
+                .onChange(of: rendered) { _, newRendered in
+                    if !newRendered.isEmpty, let anchor = library.activeScrollAnchor {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.spring()) {
+                                proxy.scrollTo(anchor, anchor: .top)
+                            }
+                            library.activeScrollAnchor = nil
+                        }
+                    }
                 }
             }
-            .frame(maxWidth: 840, alignment: .leading)
-            .padding(.horizontal, 42)
-            .padding(.vertical, 34)
-            .frame(maxWidth: .infinity, alignment: .center)
+
+            if settings.showOutline && !settings.isFocusMode {
+                Divider()
+                OutlineView()
+                    .frame(width: 220)
+                    .transition(.move(edge: .trailing))
+            }
         }
+        .animation(.snappy(duration: 0.2), value: settings.showOutline)
+        .animation(.snappy(duration: 0.2), value: settings.isFocusMode)
         .environment(\.openURL, OpenURLAction { url in
             onOpenURL(url)
         })
@@ -210,6 +246,7 @@ private struct LinkedFilesCardPanel: View {
                         .frame(maxWidth: .infinity, minHeight: 56)
                         .contentShape(RoundedRectangle(cornerRadius: 8))
                         .pointingHandOnHover()
+                        .notePreviewPopover(url: link.url)
                         .help("Open \(link.title)")
                     }
                 }
@@ -275,34 +312,6 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
         }
         .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
         .textual.blockSpacing(.init(top: 8, bottom: 18))
-    }
-}
-
-private struct PointingHandOnHoverModifier: ViewModifier {
-    @State private var didPushCursor = false
-
-    func body(content: Content) -> some View {
-        content.onHover { isHovering in
-            if isHovering, !didPushCursor {
-                NSCursor.pointingHand.push()
-                didPushCursor = true
-            } else if !isHovering, didPushCursor {
-                NSCursor.pop()
-                didPushCursor = false
-            }
-        }
-        .onDisappear {
-            if didPushCursor {
-                NSCursor.pop()
-                didPushCursor = false
-            }
-        }
-    }
-}
-
-private extension View {
-    func pointingHandOnHover() -> some View {
-        modifier(PointingHandOnHoverModifier())
     }
 }
 

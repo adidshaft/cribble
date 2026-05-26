@@ -11,6 +11,11 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var selectedRenderedMarkdown: String = ""
     @Published var selectedLinkedFiles: [LinkedFileSummary] = []
     @Published var searchText = ""
+    @Published var history: [URL] = []
+    @Published var historyIndex: Int = -1
+    @Published var activeScrollAnchor: String?
+    @Published var selectedUnresolvedTarget: UnresolvedTarget?
+    private var isNavigatingHistory = false
     @Published var statusMessage: String? {
         didSet {
             if let statusMessage {
@@ -32,7 +37,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private let loader = DocumentLoader()
     private let monitor = FileChangeMonitor()
-    private var documents: [MarkdownDocument] = []
+    private(set) var documents: [MarkdownDocument] = []
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
     private var renderTask: Task<Void, Never>?
@@ -40,8 +45,10 @@ final class MarkdownLibraryStore: ObservableObject {
     private var pendingDiffRootURL: URL?
     private var pendingDiffMode: AIMode?
 
-    init() {
-        restoreFolders()
+    init(restore: Bool = true) {
+        if restore {
+            restoreFolders()
+        }
     }
 
     var hasFolders: Bool {
@@ -233,6 +240,7 @@ final class MarkdownLibraryStore: ObservableObject {
                 self.nodes = result.nodes
                 self.documents = result.documents
                 self.linkIndex = result.linkIndex
+                self.filterHistory()
 
                 if let selectedURL = self.selectedURL {
                     self.select(url: selectedURL)
@@ -260,18 +268,30 @@ final class MarkdownLibraryStore: ObservableObject {
             selectedDocument = nil
             selectedRenderedMarkdown = ""
             selectedLinkedFiles = []
+            selectedUnresolvedTarget = nil
             renderTask?.cancel()
             return
         }
 
         let documentURL = documentURL(for: url)
         selectedURL = url
+        selectedUnresolvedTarget = nil
 
         guard let documentURL else {
             selectedDocument = nil
             selectedRenderedMarkdown = ""
             selectedLinkedFiles = []
             return
+        }
+
+        if !isNavigatingHistory {
+            if historyIndex < history.count - 1 {
+                history.removeSubrange((historyIndex + 1)...)
+            }
+            if history.isEmpty || history[historyIndex] != documentURL {
+                history.append(documentURL)
+                historyIndex = history.count - 1
+            }
         }
 
         if selectedDocument?.url != documentURL {
@@ -366,16 +386,108 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private func handleCribbleURL(_ url: URL) -> OpenURLAction.Result {
-        guard url.host == "open",
-              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let path = components.queryItems?.first(where: { $0.name == "path" })?.value
-        else {
-            errorMessage = "No matching Markdown file found for that link."
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return .handled
         }
 
-        select(url: URL(fileURLWithPath: path))
+        if url.host == "open", let path = components.queryItems?.first(where: { $0.name == "path" })?.value {
+            if let anchor = components.queryItems?.first(where: { $0.name == "anchor" })?.value {
+                activeScrollAnchor = anchor
+            } else {
+                activeScrollAnchor = nil
+            }
+            select(url: URL(fileURLWithPath: path))
+            return .handled
+        }
+
+        if url.host == "unresolved", let target = components.queryItems?.first(where: { $0.name == "target" })?.value {
+            if let root = activeRootURL {
+                selectedURL = nil
+                selectedDocument = nil
+                selectedRenderedMarkdown = ""
+                selectedLinkedFiles = []
+                selectedUnresolvedTarget = UnresolvedTarget(targetName: target, folderURL: root)
+            }
+            return .handled
+        }
+
+        errorMessage = "No matching Markdown file found for that link."
         return .handled
+    }
+
+    var canNavigateBack: Bool {
+        historyIndex > 0
+    }
+
+    var canNavigateForward: Bool {
+        historyIndex >= 0 && historyIndex < history.count - 1
+    }
+
+    func navigateBack() {
+        guard canNavigateBack else { return }
+        isNavigatingHistory = true
+        historyIndex -= 1
+        let targetURL = history[historyIndex]
+        select(url: targetURL)
+        isNavigatingHistory = false
+    }
+
+    func navigateForward() {
+        guard canNavigateForward else { return }
+        isNavigatingHistory = true
+        historyIndex += 1
+        let targetURL = history[historyIndex]
+        select(url: targetURL)
+        isNavigatingHistory = false
+    }
+
+    func filterHistory() {
+        let validURLs = history.filter { url in
+            FileManager.default.fileExists(atPath: url.path) && rootURLs.contains(where: { url.isSameFileOrDescendant(of: $0) })
+        }
+        if validURLs != history {
+            if let currentURL = selectedDocument?.url, let index = validURLs.firstIndex(of: currentURL) {
+                history = validURLs
+                historyIndex = index
+            } else {
+                history = validURLs
+                historyIndex = validURLs.isEmpty ? -1 : validURLs.count - 1
+            }
+        }
+    }
+
+    func fuzzyMatches(for targetName: String) -> [MarkdownDocument] {
+        let normalizedQuery = LinkIndex.normalize(targetName)
+        return documents.filter { doc in
+            let filename = doc.url.deletingPathExtension().lastPathComponent
+            let normalizedFile = LinkIndex.normalize(filename)
+            let title = doc.title
+            let normalizedTitle = LinkIndex.normalize(title)
+            
+            return normalizedFile.contains(normalizedQuery) ||
+                   normalizedQuery.contains(normalizedFile) ||
+                   normalizedTitle.contains(normalizedQuery) ||
+                   normalizedQuery.contains(normalizedTitle)
+        }
+    }
+
+    func createDocument(named filename: String, in folderURL: URL) {
+        let fileURL = folderURL.appendingPathComponent(filename.hasSuffix(".md") ? filename : "\(filename).md")
+        let title = fileURL.deletingPathExtension().lastPathComponent
+        let defaultContent = "# \(title)\n\n"
+        
+        do {
+            try defaultContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            refresh(sortMode: currentSortMode, keepStatusQuiet: true)
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                await MainActor.run {
+                    select(url: fileURL)
+                }
+            }
+        } catch {
+            errorMessage = "Failed to create note: \(error.localizedDescription)"
+        }
     }
 
     private func internalMarkdownURL(for url: URL) -> URL? {

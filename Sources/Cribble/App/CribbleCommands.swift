@@ -9,6 +9,10 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copyDiagnosticsAction) private var copyDiagnostics
     @FocusedValue(\.reportIssueAction) private var reportIssue
     @FocusedValue(\.openPullRequestAction) private var openPullRequest
+    @FocusedValue(\.navigateBackAction) private var navigateBack
+    @FocusedValue(\.navigateForwardAction) private var navigateForward
+    @FocusedValue(\.toggleOutlineAction) private var toggleOutline
+    @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
 
     var body: some Commands {
         CommandMenu("Library") {
@@ -29,6 +33,26 @@ struct CribbleCommands: Commands {
             Button("AI Link Notes...", action: { runAILinking?() })
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(runAILinking == nil)
+        }
+
+        CommandMenu("Go") {
+            Button("Back", action: { navigateBack?() })
+                .keyboardShortcut("[", modifiers: [.command])
+                .disabled(navigateBack == nil)
+
+            Button("Forward", action: { navigateForward?() })
+                .keyboardShortcut("]", modifiers: [.command])
+                .disabled(navigateForward == nil)
+        }
+
+        CommandMenu("View") {
+            Button("Toggle Outline", action: { toggleOutline?() })
+                .keyboardShortcut("o", modifiers: [.command, .option])
+                .disabled(toggleOutline == nil)
+
+            Button("Toggle Focus Mode", action: { toggleFocusMode?() })
+                .keyboardShortcut("f", modifiers: [.command, .option])
+                .disabled(toggleFocusMode == nil)
         }
 
         CommandMenu("Diagnostics") {
@@ -83,6 +107,22 @@ private struct OpenPullRequestActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct NavigateBackActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct NavigateForwardActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ToggleOutlineActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ToggleFocusModeActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var openFolderAction: (() -> Void)? {
         get { self[OpenFolderActionKey.self] }
@@ -122,5 +162,25 @@ extension FocusedValues {
     var openPullRequestAction: (() -> Void)? {
         get { self[OpenPullRequestActionKey.self] }
         set { self[OpenPullRequestActionKey.self] = newValue }
+    }
+
+    var navigateBackAction: (() -> Void)? {
+        get { self[NavigateBackActionKey.self] }
+        set { self[NavigateBackActionKey.self] = newValue }
+    }
+
+    var navigateForwardAction: (() -> Void)? {
+        get { self[NavigateForwardActionKey.self] }
+        set { self[NavigateForwardActionKey.self] = newValue }
+    }
+
+    var toggleOutlineAction: (() -> Void)? {
+        get { self[ToggleOutlineActionKey.self] }
+        set { self[ToggleOutlineActionKey.self] = newValue }
+    }
+
+    var toggleFocusModeAction: (() -> Void)? {
+        get { self[ToggleFocusModeActionKey.self] }
+        set { self[ToggleFocusModeActionKey.self] = newValue }
     }
 }

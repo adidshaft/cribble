@@ -8,103 +8,200 @@ struct ContentView: View {
     @State private var showingAIProviderSheet = false
     @State private var showingDiagnosticsReport = false
     @State private var showingPreviousSessionIssue = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView {
+        sceneConfiguredContent
+    }
+
+    private var sceneConfiguredContent: some View {
+        alertContent
+            .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
+            .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
+            .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
+            .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
+            .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
+            .focusedSceneValue(\.navigateBackAction, { library.navigateBack() })
+            .focusedSceneValue(\.navigateForwardAction, { library.navigateForward() })
+            .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
+            .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
+    }
+
+    private var alertContent: some View {
+        sheetContent
+            .alert("Cribble", isPresented: errorAlertBinding) {
+                Button("Report Issue") {
+                    reportIssueOnGitHub()
+                    library.errorMessage = nil
+                }
+                Button("Copy Report") {
+                    diagnostics.copyReport(library: library, settings: settings)
+                    library.errorMessage = nil
+                }
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(library.errorMessage ?? "")
+            }
+            .alert("Cribble did not close cleanly", isPresented: $showingPreviousSessionIssue) {
+                Button("Report Issue") {
+                    reportIssueOnGitHub()
+                    diagnostics.acknowledgePreviousSessionIssue()
+                }
+                Button("Copy Report") {
+                    diagnostics.copyReport(library: library, settings: settings)
+                    diagnostics.acknowledgePreviousSessionIssue()
+                }
+                Button("Not Now", role: .cancel) {
+                    diagnostics.acknowledgePreviousSessionIssue()
+                }
+            } message: {
+                Text("Cribble detected that the previous session may have crashed or been force quit. You can send a diagnostic report so it can be fixed.")
+            }
+    }
+
+    private var sheetContent: some View {
+        behaviorContent
+            .sheet(isPresented: $showingAIProviderSheet) {
+                AIProviderSheet { provider, mode in
+                    showingAIProviderSheet = false
+                    library.runAILinking(provider: provider, mode: mode)
+                }
+            }
+            .sheet(isPresented: $showingDiagnosticsReport) {
+                DiagnosticsReportSheet(
+                    report: diagnostics.makeReport(library: library, settings: settings),
+                    onCopy: { diagnostics.copyReport(library: library, settings: settings) },
+                    onReportIssue: { reportIssueOnGitHub() },
+                    onOpenPullRequest: { openPullRequestOnGitHub() }
+                )
+            }
+            .sheet(item: pendingDiffBinding) { item in
+                DiffPreviewSheet(diff: item.diff, applyError: library.pendingDiffError) {
+                    library.applyPendingDiff()
+                } onCancel: {
+                    library.cancelPendingDiff()
+                }
+            }
+    }
+
+    private var behaviorContent: some View {
+        toolbarContent
+            .onChange(of: settings.fileSortMode) { _, newMode in
+                library.refresh(sortMode: newMode)
+            }
+            .onAppear {
+                showingPreviousSessionIssue = diagnostics.previousSessionDidNotCloseCleanly
+            }
+            .onChange(of: diagnostics.previousSessionDidNotCloseCleanly) { _, didNotCloseCleanly in
+                showingPreviousSessionIssue = didNotCloseCleanly
+            }
+    }
+
+    private var toolbarContent: some View {
+        content
+        .searchable(text: $library.searchText, placement: .toolbar, prompt: "Search files")
+        .onChange(of: settings.isFocusMode, initial: true) {
+            let isFocus = settings.isFocusMode
+            withAnimation {
+                columnVisibility = isFocus ? .detailOnly : .all
+            }
+        }
+        .toolbar {
+            navigationToolbar
+            primaryToolbar
+        }
+    }
+
+    private var content: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
         } detail: {
             ReaderView()
         }
-        .searchable(text: $library.searchText, placement: .toolbar, prompt: "Search files")
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                TextSizeMenu()
+    }
 
-                OpenInMenu()
+    @ToolbarContentBuilder
+    private var navigationToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigation) {
+            Button {
+                library.navigateBack()
+            } label: {
+                Label("Back", systemImage: "chevron.left")
+            }
+            .disabled(!library.canNavigateBack)
+            .cribbleGlassButton()
+            .help("Navigate back (Cmd + [)")
 
-                Button {
-                    showingAIProviderSheet = true
-                } label: {
-                    Label("AI Link Notes", systemImage: "sparkles")
-                }
-                .disabled(!library.hasFolders || library.isRunningAI)
-                .cribbleGlassButton()
-                .help("Ask a local AI tool to suggest wiki links with a patch preview")
+            Button {
+                library.navigateForward()
+            } label: {
+                Label("Forward", systemImage: "chevron.right")
             }
+            .disabled(!library.canNavigateForward)
+            .cribbleGlassButton()
+            .help("Navigate forward (Cmd + ])")
         }
-        .onChange(of: settings.fileSortMode) { _, newMode in
-            library.refresh(sortMode: newMode)
-        }
-        .onAppear {
-            showingPreviousSessionIssue = diagnostics.previousSessionDidNotCloseCleanly
-        }
-        .onChange(of: diagnostics.previousSessionDidNotCloseCleanly) { _, didNotCloseCleanly in
-            showingPreviousSessionIssue = didNotCloseCleanly
-        }
-        .sheet(isPresented: $showingAIProviderSheet) {
-            AIProviderSheet { provider, mode in
-                showingAIProviderSheet = false
-                library.runAILinking(provider: provider, mode: mode)
+    }
+
+    @ToolbarContentBuilder
+    private var primaryToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            TextSizeMenu()
+
+            OpenInMenu()
+
+            Button {
+                settings.isFocusMode.toggle()
+            } label: {
+                Label("Focus Mode", systemImage: settings.isFocusMode ? "eye.slash.fill" : "eye.slash")
             }
+            .cribbleGlassButton(prominent: settings.isFocusMode)
+            .help("Toggle Focus Mode (Cmd + Option + F)")
+
+            Button {
+                settings.showOutline.toggle()
+            } label: {
+                Label("Outline", systemImage: "list.bullet.indent")
+            }
+            .disabled(library.selectedDocument == nil || settings.isFocusMode)
+            .cribbleGlassButton(prominent: settings.showOutline && !settings.isFocusMode)
+            .help("Toggle Headings Outline (Cmd + Option + O)")
+
+            Button {
+                showingAIProviderSheet = true
+            } label: {
+                Label("AI Link Notes", systemImage: "sparkles")
+            }
+            .disabled(!library.hasFolders || library.isRunningAI)
+            .cribbleGlassButton()
+            .help("Ask a local AI tool to suggest wiki links with a patch preview")
         }
-        .sheet(isPresented: $showingDiagnosticsReport) {
-            DiagnosticsReportSheet(
-                report: diagnostics.makeReport(library: library, settings: settings),
-                onCopy: { diagnostics.copyReport(library: library, settings: settings) },
-                onReportIssue: { reportIssueOnGitHub() },
-                onOpenPullRequest: { openPullRequestOnGitHub() }
-            )
-        }
-        .sheet(item: Binding(
+    }
+
+    private var pendingDiffBinding: Binding<DiffSheetItem?> {
+        Binding(
             get: { library.pendingDiff.map(DiffSheetItem.init(diff:)) },
-            set: { if $0 == nil { library.cancelPendingDiff() } }
-        )) { item in
-            DiffPreviewSheet(diff: item.diff, applyError: library.pendingDiffError) {
-                library.applyPendingDiff()
-            } onCancel: {
-                library.cancelPendingDiff()
+            set: { item in
+                if item == nil {
+                    library.cancelPendingDiff()
+                }
             }
-        }
-        .alert("Cribble", isPresented: Binding(
+        )
+    }
+
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
             get: { library.errorMessage != nil },
-            set: { if !$0 { library.errorMessage = nil } }
-        )) {
-            Button("Report Issue") {
-                reportIssueOnGitHub()
-                library.errorMessage = nil
+            set: { isPresented in
+                if !isPresented {
+                    library.errorMessage = nil
+                }
             }
-            Button("Copy Report") {
-                diagnostics.copyReport(library: library, settings: settings)
-                library.errorMessage = nil
-            }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(library.errorMessage ?? "")
-        }
-        .alert("Cribble did not close cleanly", isPresented: $showingPreviousSessionIssue) {
-            Button("Report Issue") {
-                reportIssueOnGitHub()
-                diagnostics.acknowledgePreviousSessionIssue()
-            }
-            Button("Copy Report") {
-                diagnostics.copyReport(library: library, settings: settings)
-                diagnostics.acknowledgePreviousSessionIssue()
-            }
-            Button("Not Now", role: .cancel) {
-                diagnostics.acknowledgePreviousSessionIssue()
-            }
-        } message: {
-            Text("Cribble detected that the previous session may have crashed or been force quit. You can send a diagnostic report so it can be fixed.")
-        }
-        .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
-        .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
-        .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
-        .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
-        .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
-        .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
-        .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
-        .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
+        )
     }
 
     private func reportIssueOnGitHub() {

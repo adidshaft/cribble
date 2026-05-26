@@ -134,5 +134,6 @@ private struct SidebarRow: View {
             Image(systemName: node.kind == .folder ? "folder" : "doc.text")
                 .foregroundStyle(.secondary)
         }
+        .notePreviewPopover(url: node.kind == .markdown ? node.url : nil)
     }
 }

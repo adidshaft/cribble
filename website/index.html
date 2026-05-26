@@ -556,7 +556,7 @@
       <a href="#download">Download</a>
       <a href="#privacy">Privacy</a>
       <a href="#support">Support</a>
-      <a href="https://github.com/adidshaft/cribble/releases/latest" class="nav-cta" data-release-link>Get Cribble</a>
+      <a href="https://github.com/adidshaft/cribble/releases/tag/stable" class="nav-cta" data-release-link>Get Cribble</a>
     </div>
   </div>
 </nav>
@@ -571,7 +571,7 @@
   <p>Cribble turns ordinary folders into a quiet reading surface — wiki links, rich typography, native Mac navigation. No database. No lock-in.</p>
 
   <div class="hero-ctas">
-    <a href="https://github.com/adidshaft/cribble/releases/latest" class="btn btn-primary" data-release-link>
+    <a href="https://github.com/adidshaft/cribble/releases/tag/stable" class="btn btn-primary" data-release-link>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 11.6c0-2.5 2-3.7 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.15-2.9.9-3.7.9-.8 0-1.9-.85-3.2-.85-1.6 0-3.1.95-4 2.4-1.7 3-.45 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2-.05 1.7-.8 3.2-.8 1.5 0 1.9.8 3.2.75 1.3-.05 2.2-1.2 3-2.4.95-1.4 1.35-2.7 1.4-2.8-.05-.05-2.7-1.05-2.7-3.85zM14.7 4.3c.65-.8 1.1-1.9.95-3-1 .05-2.2.65-2.85 1.45-.6.7-1.15 1.85-1 2.9 1.1.1 2.2-.55 2.9-1.35z"/></svg>
       Download for Mac
     </a>
@@ -609,7 +609,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 11.6c0-2.5 2-3.7 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.15-2.9.9-3.7.9-.8 0-1.9-.85-3.2-.85-1.6 0-3.1.95-4 2.4-1.7 3-.45 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2-.05 1.7-.8 3.2-.8 1.5 0 1.9.8 3.2.75 1.3-.05 2.2-1.2 3-2.4.95-1.4 1.35-2.7 1.4-2.8-.05-.05-2.7-1.05-2.7-3.85zM14.7 4.3c.65-.8 1.1-1.9.95-3-1 .05-2.2.65-2.85 1.45-.6.7-1.15 1.85-1 2.9 1.1.1 2.2-.55 2.9-1.35z"/></svg>
           Download from App Store
         </a>
-        <a href="https://github.com/adidshaft/cribble/releases/download/v1.0.0/Cribble-1.0.0.dmg" class="btn btn-secondary" data-dmg-link>Direct .dmg</a>
+        <a href="https://github.com/adidshaft/cribble/releases/download/stable/Cribble-1.0.3.dmg" class="btn btn-secondary" data-dmg-link>Direct .dmg</a>
       </div>
       <div class="download-version">
         <div class="item"><span class="label">Version</span><span class="value"><span data-version-value>1.0.0</span> (build 1)</span></div>
@@ -625,11 +625,11 @@
       <p>macOS 13 Ventura or later. Works on every Mac shipped since 2017.</p>
       <h4>Other downloads</h4>
       <div class="alt">
-        <a href="https://github.com/adidshaft/cribble/releases/download/v1.0.0/Cribble-1.0.0.dmg" class="alt-row" data-dmg-link>
+        <a href="https://github.com/adidshaft/cribble/releases/download/stable/Cribble-1.0.3.dmg" class="alt-row" data-dmg-link>
           <span class="left">Cribble <span data-version-value>1.0.0</span> <span class="tag">.dmg</span></span>
           <span style="color: var(--blue);">Download →</span>
         </a>
-        <a href="https://github.com/adidshaft/cribble/releases/tag/v1.0.0" class="alt-row" data-release-notes-link>
+        <a href="https://github.com/adidshaft/cribble/releases/tag/stable" class="alt-row" data-release-notes-link>
           <span class="left">Release notes <span class="tag" data-release-tag>v1.0.0</span></span>
           <span style="color: var(--blue);">Read →</span>
         </a>
@@ -803,8 +803,9 @@
   });
 
   const githubRepo = 'adidshaft/cribble';
-  const appStoreVersion = '1.0.0';
-  const appStoreBuild = '1';
+  const stableReleaseTag = 'stable';
+  const appStoreVersion = '1.0.3';
+  const appStoreBuild = '7';
 
   function formatBytes(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return '5.6 MB';
@@ -830,13 +831,19 @@
     });
   }
 
-  fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
-    .then(response => response.ok ? response.json() : Promise.reject(new Error('Release metadata unavailable')))
+  function fetchRelease(tag) {
+    return fetch(`https://api.github.com/repos/${githubRepo}/releases/tags/${tag}`, { headers: { Accept: 'application/vnd.github+json' } })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Release metadata unavailable')));
+  }
+
+  fetchRelease(stableReleaseTag)
+    .catch(() => fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Release metadata unavailable'))))
     .then(release => {
       const dmg = (release.assets || []).find(asset => asset.name && asset.name.endsWith('.dmg'));
-      const tag = release.tag_name || 'v1.0.0';
-      const version = tag.replace(/^v/, '');
-      const releaseUrl = release.html_url || `https://github.com/${githubRepo}/releases/latest`;
+      const tag = release.name?.match(/v\d+\.\d+\.\d+/)?.[0] || release.tag_name || 'v1.0.3';
+      const version = tag.replace(/^v/, '').replace(/^stable$/, appStoreVersion);
+      const releaseUrl = release.html_url || `https://github.com/${githubRepo}/releases/tag/${stableReleaseTag}`;
       const dmgUrl = dmg?.browser_download_url || releaseUrl;
       const size = formatBytes(dmg?.size);
 

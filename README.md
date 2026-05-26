@@ -191,9 +191,9 @@ xcrun notarytool submit releases/Cribble-1.0.0.dmg --keychain-profile cribble-no
 xcrun stapler staple releases/Cribble-1.0.0.dmg
 ```
 
-Latest release:
+Stable release:
 
-https://github.com/adidshaft/cribble/releases/tag/v1.0.0
+https://github.com/adidshaft/cribble/releases/tag/stable
 
 ## Product Roadmap
 

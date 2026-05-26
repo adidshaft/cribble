@@ -184,73 +184,19 @@ fi
 
 rm -rf "$DMG_ROOT" "$DMG_MOUNT"
 mkdir -p "$DMG_BACKGROUND_DIR" "$DMG_MOUNT"
-cp -R "$APP_BUNDLE" "$DMG_ROOT/"
-ln -s /Applications "$DMG_ROOT/Applications"
 swift "$ROOT_DIR/script/create_dmg_background.swift" "$DMG_BACKGROUND_PATH"
 
 rm -f "$DMG_PATH" "$RW_DMG_PATH" "$CHECKSUM_PATH"
-/usr/bin/hdiutil create -volname "$APP_NAME" -srcfolder "$DMG_ROOT" -ov -format UDRW "$RW_DMG_PATH"
-DEVICE="$(/usr/bin/hdiutil attach "$RW_DMG_PATH" -readwrite -noverify -noautoopen -mountpoint "$DMG_MOUNT" | /usr/bin/awk '/Apple_HFS/ { print $1; exit }')"
-
-cleanup_mount() {
-  if [[ -n "${DEVICE:-}" ]]; then
-    for _ in 1 2 3 4 5; do
-      /usr/bin/hdiutil detach "$DEVICE" >/dev/null 2>&1 && return
-      /usr/bin/hdiutil detach "$DEVICE" -force >/dev/null 2>&1 && return
-      /bin/sleep 1
-    done
-  fi
-
-  if [[ -d "$DMG_MOUNT" ]]; then
-    for _ in 1 2 3; do
-      /usr/bin/hdiutil detach "$DMG_MOUNT" >/dev/null 2>&1 && return
-      /usr/bin/hdiutil detach "$DMG_MOUNT" -force >/dev/null 2>&1 && return
-      /bin/sleep 1
-    done
-  fi
-}
-trap cleanup_mount EXIT
-
-if ! PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 -c "import ds_store, mac_alias" >/dev/null 2>&1; then
-  PIP_DISABLE_PIP_VERSION_CHECK=1 /usr/bin/python3 -m pip install --quiet --target "$PYTHON_DEPS" ds_store mac_alias
+if ! PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 -c "import dmgbuild" >/dev/null 2>&1; then
+  PIP_DISABLE_PIP_VERSION_CHECK=1 /usr/bin/python3 -m pip install --quiet --target "$PYTHON_DEPS" dmgbuild
 fi
 
-/usr/bin/SetFile -a V "$DMG_MOUNT/.background"
-PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 "$ROOT_DIR/script/write_dmg_ds_store.py" \
-  "$DMG_MOUNT" \
-  "$DMG_MOUNT/.background/background.png" \
-  "$APP_NAME.app" \
+PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 "$ROOT_DIR/script/build_dmg.py" \
+  "$DMG_PATH" \
+  "$APP_NAME" \
+  "$APP_BUNDLE" \
+  "$DMG_BACKGROUND_PATH" \
   "Applications"
-
-/usr/bin/osascript <<APPLESCRIPT
-tell application "Finder"
-  set dmgFolder to POSIX file "$DMG_MOUNT" as alias
-  open dmgFolder
-  delay 1
-  set dmgWindow to container window of dmgFolder
-  set current view of dmgWindow to icon view
-  set toolbar visible of dmgWindow to false
-  set statusbar visible of dmgWindow to false
-  set bounds of dmgWindow to {120, 120, 880, 580}
-  set viewOptions to icon view options of dmgWindow
-  set arrangement of viewOptions to not arranged
-  set icon size of viewOptions to 128
-  set background picture of viewOptions to POSIX file "$DMG_MOUNT/.background/background.png"
-  set position of item "$APP_NAME.app" of dmgFolder to {182, 228}
-  set position of item "Applications" of dmgFolder to {575, 228}
-  update dmgFolder without registering applications
-  delay 2
-  close dmgWindow
-end tell
-APPLESCRIPT
-
-/bin/sync
-cleanup_mount
-/bin/sleep 2
-trap - EXIT
-
-/usr/bin/hdiutil convert "$RW_DMG_PATH" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
-rm -f "$RW_DMG_PATH"
 
 # Notarize + staple if a keychain profile was provided. Without this,
 # Gatekeeper on macOS 15.4+ refuses to open the DMG with "Cribble is

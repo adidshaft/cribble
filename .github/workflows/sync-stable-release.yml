@@ -1,0 +1,46 @@
+name: Sync Stable Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to promote to stable
+        required: true
+        default: v1.0.3
+
+permissions:
+  contents: write
+
+jobs:
+  sync-stable:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.prerelease && github.event.release.tag_name != 'stable')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SOURCE_TAG: ${{ github.event.inputs.release_tag || github.event.release.tag_name }}
+      STABLE_TAG: stable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Move stable tag
+        run: |
+          git fetch --tags --force
+          git tag -f "$STABLE_TAG" "$SOURCE_TAG"
+          git push origin "refs/tags/$STABLE_TAG" --force
+
+      - name: Mirror release assets
+        run: |
+          rm -rf /tmp/cribble-stable-assets
+          mkdir -p /tmp/cribble-stable-assets
+          gh release download "$SOURCE_TAG" --dir /tmp/cribble-stable-assets
+          gh release delete "$STABLE_TAG" --yes --cleanup-tag || true
+          git push origin "refs/tags/$STABLE_TAG" --force
+          gh release create "$STABLE_TAG" /tmp/cribble-stable-assets/* \
+            --title "Cribble Stable" \
+            --notes "Stable channel for Cribble. Currently mirrors ${SOURCE_TAG}." \
+            --latest=false

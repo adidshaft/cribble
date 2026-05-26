@@ -2,7 +2,7 @@ import Foundation
 
 struct FolderScanner {
     func scan(rootURL: URL) throws -> [MarkdownNode] {
-        try ensureReadmes(in: rootURL)
+        try createReadmeIfNeeded(in: rootURL)
         return try scanChildren(in: rootURL)
     }
 
@@ -26,6 +26,7 @@ struct FolderScanner {
             }
 
             if values.isDirectory == true {
+                try createReadmeIfNeeded(in: url)
                 let children = try scanChildren(in: url)
                 folders.append(
                     MarkdownNode(
@@ -86,26 +87,7 @@ struct FolderScanner {
         }
     }
 
-    private func ensureReadmes(in rootURL: URL) throws {
-        let resourceKeys: [URLResourceKey] = [.isDirectoryKey, .isHiddenKey]
-        try createReadmeIfNeeded(in: rootURL)
-
-        guard let enumerator = FileManager.default.enumerator(
-            at: rootURL,
-            includingPropertiesForKeys: resourceKeys,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return
-        }
-
-        for case let url as URL in enumerator {
-            let values = try url.resourceValues(forKeys: Set(resourceKeys))
-            guard values.isDirectory == true, values.isHidden != true, !url.lastPathComponent.hasPrefix(".") else {
-                continue
-            }
-            try createReadmeIfNeeded(in: url)
-        }
-    }
+    // ensured readmes are created in-pass during directory scanning
 
     private func createReadmeIfNeeded(in folderURL: URL) throws {
         let readmeURL = readmeURL(in: folderURL)

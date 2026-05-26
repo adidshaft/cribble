@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Cribble"
+DISPLAY_NAME="Cribble: Markdown Knowledge Base Manager"
 BUNDLE_ID="com.cribble.reader"
 MIN_SYSTEM_VERSION="15.0"
 VERSION="${1:-$(<VERSION)}"
@@ -62,7 +63,7 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundleName</key>
   <string>$APP_NAME</string>
   <key>CFBundleDisplayName</key>
-  <string>$APP_NAME</string>
+  <string>$DISPLAY_NAME</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

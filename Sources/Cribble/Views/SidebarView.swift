@@ -60,6 +60,7 @@ private struct SidebarControls: View {
     @EnvironmentObject private var settings: AppSettings
 
     var body: some View {
+        #if compiler(>=6.1)
         if #available(macOS 26.0, *) {
             GlassEffectContainer(spacing: 8) {
                 controls
@@ -67,6 +68,9 @@ private struct SidebarControls: View {
         } else {
             controls
         }
+        #else
+        controls
+        #endif
     }
 
     private var controls: some View {

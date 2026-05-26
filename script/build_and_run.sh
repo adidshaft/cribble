@@ -3,6 +3,7 @@ set -euo pipefail
 
 MODE="${1:-run}"
 APP_NAME="Cribble"
+DISPLAY_NAME="Cribble: Markdown Knowledge Base Manager"
 BUNDLE_ID="com.cribble.reader"
 MIN_SYSTEM_VERSION="15.0"
 
@@ -18,6 +19,7 @@ APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 
 cd "$ROOT_DIR"
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
+VERSION_STR="$(cat "$ROOT_DIR/VERSION" | tr -d '\n')"
 
 swift build
 BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
@@ -49,8 +51,14 @@ cat >"$INFO_PLIST" <<PLIST
   <string>Cribble</string>
   <key>CFBundleName</key>
   <string>$APP_NAME</string>
+  <key>CFBundleDisplayName</key>
+  <string>$DISPLAY_NAME</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$VERSION_STR</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
   <key>LSMinimumSystemVersion</key>
   <string>$MIN_SYSTEM_VERSION</string>
   <key>NSPrincipalClass</key>

@@ -63,18 +63,18 @@ private struct DiffFileView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(file.newPath)
-                .font(.custom("Roobert", size: 14).weight(.semibold))
+                .font(.system(size: 14, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(file.hunks) { hunk in
                     Text(hunk.header)
-                        .font(.custom("Monaco", size: 12))
+                        .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
 
                     ForEach(Array(hunk.lines.enumerated()), id: \.offset) { _, line in
                         Text(prefix(for: line) + line.text)
-                            .font(.custom("Monaco", size: 12))
+                            .font(.system(size: 12, design: .monospaced))
                             .foregroundStyle(color(for: line))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 1)

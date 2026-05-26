@@ -64,7 +64,7 @@ private struct ReaderDocumentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 Text(document.title)
-                    .font(.custom("Roobert", size: 30 * fontScale))
+                    .font(.system(size: 30 * fontScale))
                     .fontWeight(.semibold)
                     .textSelection(.enabled)
 
@@ -88,11 +88,11 @@ private struct ReaderDocumentView: View {
                         baseURL: document.url.deletingLastPathComponent(),
                         syntaxExtensions: [.math]
                     )
-                    .font(.custom("Roobert", size: 17 * fontScale))
+                    .font(.system(size: 17 * fontScale))
                     .textual.structuredTextStyle(.gitHub)
                     .textual.inlineStyle(
                         InlineStyle()
-                            .code(.font(.custom("Monaco", size: 14 * fontScale)))
+                            .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
                             .strong(.fontWeight(.semibold))
                     )
                     .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
@@ -129,11 +129,11 @@ private struct EmptyReadmePanel: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("This README is empty")
-                        .font(.custom("Roobert", size: 17))
+                        .font(.system(size: 17))
                         .fontWeight(.semibold)
 
                     Text("Generate a folder overview, contents list, and useful links from the Markdown files in \(folderName).")
-                        .font(.custom("Roobert", size: 13))
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -181,11 +181,11 @@ private struct LinkedFilesCardPanel: View {
                         .foregroundStyle(.secondary)
 
                     Text("Linked files")
-                        .font(.custom("Roobert", size: 14))
+                        .font(.system(size: 14))
                         .fontWeight(.semibold)
 
                     Text("\(links.count)")
-                        .font(.custom("Monaco", size: 10))
+                        .font(.system(size: 10, design: .monospaced))
                         .fontWeight(.bold)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
@@ -233,13 +233,13 @@ private struct LinkedFileCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(link.title)
-                    .font(.custom("Roobert", size: 13))
+                    .font(.system(size: 13))
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(link.subtitle)
-                    .font(.custom("Monaco", size: 10))
+                    .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -247,7 +247,7 @@ private struct LinkedFileCard: View {
             Spacer(minLength: 6)
 
             Text("MD")
-                .font(.custom("Monaco", size: 10))
+                .font(.system(size: 10, design: .monospaced))
                 .fontWeight(.bold)
                 .foregroundStyle(.pink)
         }
@@ -268,7 +268,7 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
     func makeBody(configuration: Configuration) -> some View {
         Overflow {
             configuration.label
-                .font(.custom("Monaco", size: fontSize))
+                .font(.system(size: fontSize, design: .monospaced))
                 .textual.lineSpacing(.fontScaled(0.25))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(14)

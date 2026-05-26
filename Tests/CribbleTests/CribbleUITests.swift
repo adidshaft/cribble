@@ -79,7 +79,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.filteredNodes.isEmpty)
     }
 
-    func testRemovingFolderOnlyRemovesItFromCribble() throws {
+    func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")
         let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
@@ -125,10 +125,12 @@ final class CribbleUITests: XCTestCase {
 
         let store = MarkdownLibraryStore()
         store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
         XCTAssertEqual(store.rootURLs, [rootURL.standardizedFileURL])
         XCTAssertNotNil(store.selectedDocument)
 
         store.removeSelectedFolder()
+        await store.waitForLoadToComplete()
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: noteURL.path))
         XCTAssertTrue(store.rootURLs.isEmpty)
@@ -139,7 +141,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(defaults.dictionary(forKey: "folderDisplayNames")?.isEmpty ?? true)
     }
 
-    func testImportedFolderDisplayNameDoesNotRenameFolderOnDisk() throws {
+    func testImportedFolderDisplayNameDoesNotRenameFolderOnDisk() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")
         let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
@@ -184,7 +186,9 @@ final class CribbleUITests: XCTestCase {
 
         let store = MarkdownLibraryStore()
         store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
         store.setImportedFolderDisplayName("Project Notes", for: rootURL)
+        await store.waitForLoadToComplete()
 
         XCTAssertEqual(store.nodes.first?.name, "Project Notes")
         XCTAssertTrue(FileManager.default.fileExists(atPath: rootURL.path))
@@ -195,7 +199,7 @@ final class CribbleUITests: XCTestCase {
         )
     }
 
-    func testReadmeAIUsesSelectedReadmeFolder() throws {
+    func testReadmeAIUsesSelectedReadmeFolder() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")
         let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
@@ -243,6 +247,7 @@ final class CribbleUITests: XCTestCase {
 
         let store = MarkdownLibraryStore()
         store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
         store.select(url: childURL)
 
         XCTAssertEqual(store.folderURLForAI(mode: .updateReadme), childURL.standardizedFileURL)
@@ -250,7 +255,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.selectedDocument?.isEssentiallyEmptyReadme == true)
     }
 
-    func testRelativeMarkdownLinksNavigateInsideCribble() throws {
+    func testRelativeMarkdownLinksNavigateInsideCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")
         let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
@@ -298,6 +303,7 @@ final class CribbleUITests: XCTestCase {
 
         let store = MarkdownLibraryStore()
         store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
         store.select(url: readmeURL)
 
         _ = store.handleOpenURL(URL(string: "Guide%20File.md#intro")!)

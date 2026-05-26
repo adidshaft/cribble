@@ -8,16 +8,38 @@ struct FrontMatter {
 
 enum FrontMatterParser {
     static func parse(_ markdown: String) -> FrontMatter {
-        let lines = markdown.components(separatedBy: .newlines)
-        guard lines.first == "---" else { return FrontMatter() }
+        guard markdown.hasPrefix("---") else { return FrontMatter() }
 
         var metadata = FrontMatter()
-        var index = 1
+        var isFirst = true
+        var linesToProcess: [String] = []
+        var lineCount = 0
 
-        while index < lines.count {
-            let line = lines[index]
-            if line == "---" { break }
+        markdown.enumerateLines { line, stop in
+            if isFirst {
+                isFirst = false
+                if line != "---" {
+                    stop = true
+                    return
+                }
+                return
+            }
 
+            if line == "---" {
+                stop = true
+                return
+            }
+
+            lineCount += 1
+            if lineCount > 100 { // Limit front matter scan to first 100 lines
+                stop = true
+                return
+            }
+
+            linesToProcess.append(line)
+        }
+
+        for line in linesToProcess {
             if line.hasPrefix("aliases:") {
                 metadata.aliases = parseListValue(line, key: "aliases")
             } else if line.hasPrefix("keywords:") {
@@ -25,8 +47,6 @@ enum FrontMatterParser {
             } else if line.hasPrefix("tags:") {
                 metadata.tags = parseListValue(line, key: "tags")
             }
-
-            index += 1
         }
 
         return metadata

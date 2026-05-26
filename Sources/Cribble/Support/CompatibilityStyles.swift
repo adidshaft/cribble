@@ -3,39 +3,60 @@ import SwiftUI
 extension View {
     @ViewBuilder
     func cribbleGlass<S: InsettableShape>(in shape: S) -> some View {
+        #if compiler(>=6.1)
         if #available(macOS 26.0, *) {
-            glassEffect(.regular, in: shape)
+            self.glassEffect(.regular, in: shape)
         } else {
-            background(.regularMaterial, in: shape)
-                .overlay {
-                    shape.strokeBorder(.primary.opacity(0.08), lineWidth: 0.75)
-                }
+            fallbackGlass(in: shape)
         }
+        #else
+        fallbackGlass(in: shape)
+        #endif
+    }
+
+    private func fallbackGlass<S: InsettableShape>(in shape: S) -> some View {
+        self.background(.regularMaterial, in: shape)
+            .overlay {
+                shape.strokeBorder(.primary.opacity(0.08), lineWidth: 0.75)
+            }
     }
 
     @ViewBuilder
     func cribbleGlassButton(prominent: Bool = false) -> some View {
+        #if compiler(>=6.1)
         if #available(macOS 26.0, *) {
             if prominent {
-                buttonStyle(.glassProminent)
+                self.buttonStyle(.glassProminent)
             } else {
-                buttonStyle(.glass)
+                self.buttonStyle(.glass)
             }
         } else {
-            if prominent {
-                buttonStyle(.borderedProminent)
-            } else {
-                buttonStyle(.bordered)
-            }
+            fallbackGlassButton(prominent: prominent)
+        }
+        #else
+        fallbackGlassButton(prominent: prominent)
+        #endif
+    }
+
+    @ViewBuilder
+    private func fallbackGlassButton(prominent: Bool) -> some View {
+        if prominent {
+            self.buttonStyle(.borderedProminent)
+        } else {
+            self.buttonStyle(.bordered)
         }
     }
 
     @ViewBuilder
     func cribbleBackgroundExtension() -> some View {
+        #if compiler(>=6.1)
         if #available(macOS 26.0, *) {
-            backgroundExtensionEffect()
+            self.backgroundExtensionEffect()
         } else {
-            background(.background)
+            self.background(.background)
         }
+        #else
+        self.background(.background)
+        #endif
     }
 }

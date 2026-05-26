@@ -7,7 +7,6 @@ struct DocumentLoader {
         let headings = parseHeadings(from: raw)
         let title = headings.first(where: { $0.level == 1 })?.title ?? url.deletingPathExtension().lastPathComponent
         let outboundLinks = WikiLinkParser.parse(raw)
-        _ = Document(parsing: raw)
         return MarkdownDocument(url: url, title: title, rawMarkdown: raw, headings: headings, outboundLinks: outboundLinks)
     }
 

@@ -9,7 +9,7 @@ struct CribbleApp: App {
     @StateObject private var diagnostics = DiagnosticsCenter.shared
 
     var body: some Scene {
-        WindowGroup("Cribble") {
+        WindowGroup("Cribble: Markdown Knowledge Base Manager") {
             ContentView()
                 .environmentObject(library)
                 .environmentObject(settings)
@@ -33,7 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
         AppIconManager.applyForSystemAppearance()
         DiagnosticsCenter.shared.markLaunch()
 

@@ -24,7 +24,7 @@ struct DiagnosticsReportSheet: View {
 
             ScrollView {
                 Text(report)
-                    .font(.custom("Monaco", size: 12))
+                    .font(.system(size: 12, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)

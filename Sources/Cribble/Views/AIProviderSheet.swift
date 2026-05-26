@@ -78,7 +78,7 @@ private struct ModeRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mode.title)
-                    .font(.custom("Roobert", size: 14))
+                    .font(.system(size: 14))
                     .fontWeight(.semibold)
                 Text(mode.subtitle)
                     .font(.caption)

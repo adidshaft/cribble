@@ -37,6 +37,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private var currentSortMode: FileSortMode = .name
     private var securityScopedRoots: Set<URL> = []
     private var renderTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
     private var pendingDiffRootURL: URL?
     private var pendingDiffMode: AIMode?
 
@@ -177,27 +178,81 @@ final class MarkdownLibraryStore: ObservableObject {
             currentSortMode = sortMode
         }
 
-        do {
-            nodes = try rootURLs.map { try rootNode(for: $0, sortMode: currentSortMode) }
-            documents = try collectMarkdownURLs(nodes).map(loader.load)
-            if let firstRoot = rootURLs.first {
-                linkIndex = LinkIndex(documents: documents, rootURL: firstRoot)
-            } else {
-                linkIndex = nil
-            }
+        let roots = rootURLs
+        let sort = currentSortMode
+        let displayNames = rootDisplayNames
 
-            if let selectedURL {
-                select(url: selectedURL)
-            } else if let first = firstReadableURL(in: nodes) {
-                select(url: first)
-            }
+        loadTask?.cancel()
+        loadTask = Task {
+            do {
+                let result = try await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocument], linkIndex: LinkIndex?) in
+                    var nodesList: [MarkdownNode] = []
+                    for rootURL in roots {
+                        let values = try rootURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+                        let children = try FolderScanner(fileSortMode: sort).scan(rootURL: rootURL)
+                        let readmeURL = rootURL.appendingPathComponent("README.md")
+                        let displayName = displayNames[rootURL.standardizedFileURL.path] ?? rootURL.lastPathComponent
+                        nodesList.append(MarkdownNode(
+                            id: rootURL.standardizedFileURL,
+                            name: displayName,
+                            url: rootURL,
+                            kind: .folder,
+                            createdAt: values.creationDate,
+                            modifiedAt: values.contentModificationDate,
+                            readmeURL: readmeURL,
+                            children: children
+                        ))
+                    }
 
-            if !keepStatusQuiet {
-                statusMessage = "Loaded \(documents.count) Markdown files"
+                    func collect(_ nodes: [MarkdownNode]) -> [URL] {
+                        nodes.flatMap { node -> [URL] in
+                            switch node.kind {
+                            case .folder:
+                                let ownReadme = node.readmeURL.map { [$0] } ?? []
+                                return ownReadme + collect(node.children)
+                            case .markdown:
+                                return [node.url]
+                            }
+                        }
+                    }
+                    let urls = collect(nodesList).uniqued()
+                    let loader = DocumentLoader()
+                    let docs = try urls.map(loader.load)
+
+                    let index: LinkIndex?
+                    if let firstRoot = roots.first {
+                        index = LinkIndex(documents: docs, rootURL: firstRoot)
+                    } else {
+                        index = nil
+                    }
+
+                    return (nodesList, docs, index)
+                }.value
+
+                guard !Task.isCancelled else { return }
+
+                self.nodes = result.nodes
+                self.documents = result.documents
+                self.linkIndex = result.linkIndex
+
+                if let selectedURL = self.selectedURL {
+                    self.select(url: selectedURL)
+                } else if let first = self.firstReadableURL(in: result.nodes) {
+                    self.select(url: first)
+                }
+
+                if !keepStatusQuiet {
+                    self.statusMessage = "Loaded \(result.documents.count) Markdown files"
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.errorMessage = error.localizedDescription
             }
-        } catch {
-            errorMessage = error.localizedDescription
         }
+    }
+
+    func waitForLoadToComplete() async {
+        _ = await loadTask?.result
     }
 
     func select(url: URL?) {

@@ -85,6 +85,8 @@ Cribble 1.0.4 focuses on reading flow polish and stability:
 - Added right-click note editing for highlighted text; notes are stored with
   the highlight and attached to that highlighted range for hover.
 - Fixed a pasteboard restore crash that could happen after highlighting.
+- Fixed a Textual selection-layout spin that could hang the app after copying,
+  highlighting, or editing a highlight note.
 - Restored the compact macOS toolbar button treatment.
 - Updated the reader cursor in highlight mode to a longer straight line.
 - Upgraded Markdown reading so ordered checkboxes, Mermaid fences, graph/chart

@@ -11,7 +11,7 @@ let package = Package(
         .executable(name: "Cribble", targets: ["Cribble"])
     ],
     dependencies: [
-        .package(url: "https://github.com/gonzalezreal/textual", from: "0.3.1"),
+        .package(path: "Vendor/textual"),
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
     ],
     targets: [

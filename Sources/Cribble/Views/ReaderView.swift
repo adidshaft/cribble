@@ -303,7 +303,9 @@ private struct ReaderDocumentView: View {
 
     private func updateCurrentSection(from frames: [ReadingSectionFrame]) {
         let candidates = frames.sorted { abs($0.minY) < abs($1.minY) }
-        currentSectionTitle = candidates.first?.title
+        let nextSectionTitle = candidates.first?.title
+        guard currentSectionTitle != nextSectionTitle else { return }
+        currentSectionTitle = nextSectionTitle
     }
 
     private func dropReadingBookmark() {

@@ -70,6 +70,11 @@ private struct ReaderDocumentView: View {
     @State private var isHighlightMode = false
     @State private var lastHighlightedQuote: String?
     @State private var shortcutToken = UUID()
+    // Cached section partitioning + highlight assignments. Rebuilt only when
+    // the document body or its highlight set changes, so scroll-triggered
+    // re-renders no longer pay O(sections * highlights * text-length) for
+    // normalization on every body invocation.
+    @State private var sectionPlan: ReaderSectionPlan = .empty
 
     let document: MarkdownDocument
     let rendered: String
@@ -127,12 +132,12 @@ private struct ReaderDocumentView: View {
                             // sectioning logic above, only what's near the
                             // viewport pays the StructuredText parse cost.
                             LazyVStack(alignment: .leading, spacing: 14) {
-                                ForEach(ReadingSection.sections(from: rendered)) { section in
+                                ForEach(sectionPlan.sections) { section in
                                     ReaderMarkdownSection(
                                         section: section,
                                         baseURL: document.url.deletingLastPathComponent(),
                                         fontScale: fontScale,
-                                        highlights: readingAnnotations.highlights(for: document.url)
+                                        highlights: sectionPlan.highlightsByAnchor[section.id] ?? []
                                     )
                                     .id(section.anchor)
                                     .background {
@@ -170,9 +175,14 @@ private struct ReaderDocumentView: View {
                     }
                 }
                 .onChange(of: rendered, initial: true) { _, newRendered in
+                    rebuildSectionPlan(rendered: newRendered)
                     guard !newRendered.isEmpty else { return }
                     restoreBookmarkIfNeeded()
                     announceOrphanedHighlightsIfNeeded()
+                }
+                .onReceive(readingAnnotations.$highlights) { newHighlights in
+                    let documentHighlights = newHighlights[document.url.standardizedFileURL.path] ?? []
+                    rebuildSectionPlan(rendered: rendered, highlights: documentHighlights)
                 }
             }
 
@@ -301,9 +311,14 @@ private struct ReaderDocumentView: View {
         library.statusMessage = "\(orphaned.count) \(noun) couldn't be located in the current file — likely edited since"
     }
 
+    private func rebuildSectionPlan(rendered: String, highlights: [ReadingHighlight]? = nil) {
+        let documentHighlights = highlights ?? readingAnnotations.highlights(for: document.url)
+        sectionPlan = ReaderSectionPlan.build(rendered: rendered, highlights: documentHighlights)
+    }
+
     private func updateCurrentSection(from frames: [ReadingSectionFrame]) {
-        let candidates = frames.sorted { abs($0.minY) < abs($1.minY) }
-        let nextSectionTitle = candidates.first?.title
+        // Preference reduction already collapsed to the single nearest frame.
+        let nextSectionTitle = frames.first?.title
         guard currentSectionTitle != nextSectionTitle else { return }
         currentSectionTitle = nextSectionTitle
     }
@@ -621,7 +636,9 @@ private struct ReaderMarkdownSection: View {
     let highlights: [ReadingHighlight]
 
     var body: some View {
-        let applicableHighlights = highlightsInSection
+        // Parent already partitioned highlights to the sections that contain
+        // them (see ReaderSectionPlan). No per-render filtering needed here.
+        let applicableHighlights = highlights
         VStack(alignment: .leading, spacing: 12) {
             ForEach(RichMarkdownBlock.blocks(from: section.markdown)) { block in
                 switch block {
@@ -655,11 +672,6 @@ private struct ReaderMarkdownSection: View {
         // otherwise trigger a re-parse and the highlight would never appear.
         .id(highlightIdentity(for: applicableHighlights))
         .help(applicableHighlights.map(\.note).filter { !$0.isEmpty }.joined(separator: "\n\n"))
-    }
-
-    private var highlightsInSection: [ReadingHighlight] {
-        let normalizedSection = section.markdown.normalizedReadingText
-        return highlights.filter { normalizedSection.contains($0.quote.normalizedReadingText) }
     }
 
     private func highlightIdentity(for highlights: [ReadingHighlight]) -> String {
@@ -1121,6 +1133,43 @@ private struct ReadingSection: Identifiable, Hashable {
     }
 }
 
+private struct ReaderSectionPlan {
+    let sections: [ReadingSection]
+    let highlightsByAnchor: [String: [ReadingHighlight]]
+
+    static let empty = ReaderSectionPlan(sections: [], highlightsByAnchor: [:])
+
+    static func build(rendered: String, highlights: [ReadingHighlight]) -> ReaderSectionPlan {
+        let sections = ReadingSection.sections(from: rendered)
+        guard !sections.isEmpty, !highlights.isEmpty else {
+            return ReaderSectionPlan(sections: sections, highlightsByAnchor: [:])
+        }
+
+        // Normalize each highlight quote exactly once.
+        let normalizedHighlights: [(ReadingHighlight, String)] = highlights.compactMap { highlight in
+            let normalized = highlight.quote.normalizedReadingText
+            return normalized.isEmpty ? nil : (highlight, normalized)
+        }
+        guard !normalizedHighlights.isEmpty else {
+            return ReaderSectionPlan(sections: sections, highlightsByAnchor: [:])
+        }
+
+        var assignments: [String: [ReadingHighlight]] = [:]
+        for section in sections {
+            let normalizedSection = section.markdown.normalizedReadingText
+            var matches: [ReadingHighlight] = []
+            for (highlight, normalizedQuote) in normalizedHighlights
+            where normalizedSection.contains(normalizedQuote) {
+                matches.append(highlight)
+            }
+            if !matches.isEmpty {
+                assignments[section.id] = matches
+            }
+        }
+        return ReaderSectionPlan(sections: sections, highlightsByAnchor: assignments)
+    }
+}
+
 private struct ReadingSectionFrame: Equatable {
     let title: String?
     let minY: CGFloat
@@ -1145,10 +1194,22 @@ private struct SectionVisibilityReporter: View {
 }
 
 private struct SectionVisibilityPreferenceKey: PreferenceKey {
+    // Carry only the single section whose minY is closest to the viewport
+    // origin. Reducing at collection time keeps the per-scroll-tick payload
+    // O(1) instead of O(sections) and removes the sort that ran in
+    // updateCurrentSection on every callback.
     static let defaultValue: [ReadingSectionFrame] = []
 
     static func reduce(value: inout [ReadingSectionFrame], nextValue: () -> [ReadingSectionFrame]) {
-        value.append(contentsOf: nextValue())
+        for frame in nextValue() {
+            if let current = value.first {
+                if abs(frame.minY) < abs(current.minY) {
+                    value = [frame]
+                }
+            } else {
+                value = [frame]
+            }
+        }
     }
 }
 
@@ -1169,12 +1230,18 @@ private struct ScrollPositionBridge: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
+        // Skip the async hop when nothing has changed: attach() is idempotent
+        // and re-firing it on every SwiftUI invalidation kept enqueuing
+        // identical work that the coordinator just no-ops. Only re-dispatch
+        // when there's a scroll target to consume.
+        guard let targetOffsetY else {
+            context.coordinator.attach(to: nsView.enclosingScrollView)
+            return
+        }
         DispatchQueue.main.async {
             context.coordinator.attach(to: nsView.enclosingScrollView)
-            if let targetOffsetY {
-                context.coordinator.scroll(to: targetOffsetY)
-                self.targetOffsetY = nil
-            }
+            context.coordinator.scroll(to: targetOffsetY)
+            self.targetOffsetY = nil
         }
     }
 

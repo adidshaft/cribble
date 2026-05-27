@@ -59,4 +59,33 @@ final class ReadingAnnotationsStoreTests: XCTestCase {
         let restored = ReadingAnnotationsStore(fileURL: storeURL)
         XCTAssertTrue(restored.highlights(for: documentURL).isEmpty)
     }
+
+    func testUpdatesHighlightNoteByIDWhenQuotesRepeat() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let storeURL = directory.appendingPathComponent("ReadingAnnotations.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let documentURL = directory.appendingPathComponent("Note.md").standardizedFileURL
+        let store = ReadingAnnotationsStore(fileURL: storeURL)
+
+        let first = store.addHighlight(
+            for: documentURL,
+            quote: "repeat",
+            note: "",
+            anchor: HighlightAnchor(sectionAnchor: "a", blockIndex: 0, blockSignature: "one", startOffset: 0, length: 6)
+        )
+        let second = store.addHighlight(
+            for: documentURL,
+            quote: "repeat",
+            note: "",
+            anchor: HighlightAnchor(sectionAnchor: "a", blockIndex: 0, blockSignature: "one", startOffset: 12, length: 6)
+        )
+
+        XCTAssertNotEqual(first?.id, second?.id)
+        XCTAssertTrue(store.updateHighlightNote(id: second!.id, in: documentURL, note: "second only"))
+
+        let highlights = store.highlights(for: documentURL)
+        XCTAssertEqual(highlights.first(where: { $0.id == first?.id })?.note, "")
+        XCTAssertEqual(highlights.first(where: { $0.id == second?.id })?.note, "second only")
+    }
 }

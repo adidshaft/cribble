@@ -34,7 +34,7 @@ final class CribbleUITests: XCTestCase {
     }
     
     func testLibraryStoreSearchFiltering() throws {
-        let store = MarkdownLibraryStore()
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
         
         // Create nodes mock
         let node1 = MarkdownNode(
@@ -123,7 +123,7 @@ final class CribbleUITests: XCTestCase {
         let noteURL = rootURL.appendingPathComponent("Note.md")
         try "# Note\n".write(to: noteURL, atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore()
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
         XCTAssertEqual(store.rootURLs, [rootURL.standardizedFileURL])
@@ -184,7 +184,7 @@ final class CribbleUITests: XCTestCase {
 
         try "# Note\n".write(to: rootURL.appendingPathComponent("Note.md"), atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore()
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
         store.setImportedFolderDisplayName("Project Notes", for: rootURL)
@@ -245,7 +245,7 @@ final class CribbleUITests: XCTestCase {
         try "# Child\n".write(to: childURL.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
         try "# Note\nBody\n".write(to: childURL.appendingPathComponent("Note.md"), atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore()
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
         store.select(url: childURL)
@@ -301,7 +301,7 @@ final class CribbleUITests: XCTestCase {
         try "# Home\n[Guide](Guide%20File.md#intro)\n".write(to: readmeURL, atomically: true, encoding: .utf8)
         try "# Guide\nBody\n".write(to: guideURL, atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore()
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
         store.select(url: readmeURL)

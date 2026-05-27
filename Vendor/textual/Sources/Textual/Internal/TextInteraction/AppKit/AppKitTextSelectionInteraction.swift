@@ -102,6 +102,10 @@
     static let defaultValue: Int = 0
   }
 
+  private struct TextInteractionBlockSignatureKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+  }
+
   extension EnvironmentValues {
     public var textInteractionCursorRegions: [TextInteractionCursorRegion] {
       get { self[TextInteractionCursorRegionsKey.self] }
@@ -114,6 +118,10 @@
     public var textInteractionBlockIndex: Int {
       get { self[TextInteractionBlockIndexKey.self] }
       set { self[TextInteractionBlockIndexKey.self] = newValue }
+    }
+    public var textInteractionBlockSignature: String? {
+      get { self[TextInteractionBlockSignatureKey.self] }
+      set { self[TextInteractionBlockSignatureKey.self] = newValue }
     }
   }
 
@@ -151,10 +159,19 @@
     /// Bounding rect of the current selection in `view`'s coordinate space.
     /// Falls back to a 1x1 rect at the click point when nothing is selected.
     public let selectionRect: NSRect
+    /// Exact selection snapshot captured at menu construction time. Hosts can
+    /// use it to address persisted range-backed annotations by ID instead of
+    /// fuzzy-matching selected text.
+    public let selectionSnapshot: TextInteractionSelectionSnapshot?
 
-    public init(view: NSView, selectionRect: NSRect) {
+    public init(
+      view: NSView,
+      selectionRect: NSRect,
+      selectionSnapshot: TextInteractionSelectionSnapshot? = nil
+    ) {
       self.view = view
       self.selectionRect = selectionRect
+      self.selectionSnapshot = selectionSnapshot
     }
   }
 

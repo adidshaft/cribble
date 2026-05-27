@@ -69,9 +69,9 @@ final class MarkdownLibraryStore: ObservableObject {
     // 16 saturates an SSD without thrashing the dispatch queue.
     private static let loadConcurrency = 16
 
-    init(restore: Bool = true) {
+    init(restore: Bool = true, includeBundledDemo: Bool = true) {
         if restore {
-            restoreFolders()
+            restoreFolders(includeBundledDemo: includeBundledDemo)
         }
     }
 
@@ -745,7 +745,7 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
-    private func restoreFolders() {
+    private func restoreFolders(includeBundledDemo: Bool) {
         rootDisplayNames = UserDefaults.standard.dictionary(forKey: Keys.folderDisplayNames) as? [String: String] ?? [:]
         let bookmarkedURLs = restoreBookmarkedFolders()
         let paths = UserDefaults.standard.stringArray(forKey: Keys.folderPaths)
@@ -757,11 +757,42 @@ final class MarkdownLibraryStore: ObservableObject {
             .filter { FileManager.default.fileExists(atPath: $0.path) }
             .uniqued()
 
+        if includeBundledDemo {
+            seedBundledDemoIfNeeded()
+        }
+
         if !rootURLs.isEmpty {
             rootURLs.forEach(startAccessingFolder)
             persistFolders()
             refresh()
             startMonitoring()
+        }
+    }
+
+    private func seedBundledDemoIfNeeded() {
+        let defaults = UserDefaults.standard
+        let alreadySeeded = defaults.string(forKey: Keys.bundledDemoNotesVersion) == Self.bundledDemoNotesVersion
+        guard !alreadySeeded,
+              rootURLs.isEmpty,
+              let bundledDemoURL = Bundle.module.url(forResource: "DemoNotes", withExtension: nil)
+        else { return }
+
+        do {
+            let installedDemoURL = Self.applicationSupportDirectory()
+                .appendingPathComponent("DemoNotes", isDirectory: true)
+            let fileManager = FileManager.default
+            try fileManager.createDirectory(
+                at: installedDemoURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            if fileManager.fileExists(atPath: installedDemoURL.path) {
+                try fileManager.removeItem(at: installedDemoURL)
+            }
+            try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
+            rootURLs.append(installedDemoURL.standardizedFileURL)
+            defaults.set(Self.bundledDemoNotesVersion, forKey: Keys.bundledDemoNotesVersion)
+        } catch {
+            DiagnosticsCenter.shared.record(level: .error, message: "Failed to install DemoNotes: \(error.localizedDescription)")
         }
     }
 
@@ -897,11 +928,20 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
+    private static let bundledDemoNotesVersion = "1.0.5"
+
+    private static func applicationSupportDirectory() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
+        return base.appendingPathComponent("Cribble", isDirectory: true)
+    }
+
     private enum Keys {
         static let folderBookmarks = "folderBookmarks"
         static let folderDisplayNames = "folderDisplayNames"
         static let folderPaths = "folderPaths"
         static let legacyLastFolderPath = "lastFolderPath"
+        static let bundledDemoNotesVersion = "bundledDemoNotesVersion"
     }
 }
 

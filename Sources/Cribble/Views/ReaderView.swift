@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Textual
+import WebKit
 
 struct ReaderView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
@@ -320,24 +321,25 @@ private struct ReaderDocumentView: View {
         let cleaned = Self.sanitizeHighlightQuote(selected)
         guard !cleaned.isEmpty else { return [] }
 
-        let existing = readingAnnotations.highlight(for: document.url, matching: cleaned)
+        let snapshot = anchor.selectionSnapshot
+        let existing = highlightForSelection(quote: cleaned, snapshot: snapshot)
         var items: [TextInteractionMenuItem]
         if existing == nil {
             items = [
                 TextInteractionMenuItem(title: "Highlight Selection") { [self] in
-                    addHighlightForCapturedSelection(cleaned)
+                    addHighlightForCapturedSelection(cleaned, snapshot: snapshot)
                 },
                 TextInteractionMenuItem(title: "Highlight with Note") { [self] in
-                    presentNoteEditor(forQuote: cleaned, anchor: anchor)
+                    presentNoteEditor(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
                 }
             ]
         } else {
             items = [
                 TextInteractionMenuItem(title: existing?.note.isEmpty == false ? "Edit Highlight Note" : "Add Highlight Note") { [self] in
-                    presentNoteEditor(forQuote: cleaned, anchor: anchor)
+                    presentNoteEditor(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
                 },
                 TextInteractionMenuItem(title: "Remove Highlight") { [self] in
-                    removeHighlight(matching: cleaned)
+                    removeHighlight(matching: cleaned, selectionSnapshot: snapshot)
                 }
             ]
         }
@@ -349,11 +351,14 @@ private struct ReaderDocumentView: View {
         return items
     }
 
-    private func addHighlightForCapturedSelection(_ quote: String) {
+    private func addHighlightForCapturedSelection(
+        _ quote: String,
+        snapshot providedSnapshot: TextInteractionSelectionSnapshot? = nil
+    ) {
         let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        if let snapshot = currentlyFocusedTextInteractionSnapshot(),
+        if let snapshot = providedSnapshot ?? currentlyFocusedTextInteractionSnapshot(),
            let sectionAnchor = snapshot.sectionAnchor {
             let highlightAnchor = HighlightAnchor(
                 sectionAnchor: sectionAnchor,
@@ -376,11 +381,15 @@ private struct ReaderDocumentView: View {
         library.statusMessage = "Highlighted selection"
     }
 
-    private func presentNoteEditor(forQuote quote: String, anchor: TextInteractionContextAnchor) {
+    private func presentNoteEditor(
+        forQuote quote: String,
+        anchor: TextInteractionContextAnchor,
+        selectionSnapshot providedSnapshot: TextInteractionSelectionSnapshot? = nil
+    ) {
         let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        let existing = readingAnnotations.highlight(for: document.url, matching: trimmed)
+        let existing = highlightForSelection(quote: trimmed, snapshot: providedSnapshot)
         let initialNote = existing?.note ?? ""
 
         HighlightNotePopover.present(
@@ -394,15 +403,12 @@ private struct ReaderDocumentView: View {
                 return
             case .saved(let note):
                 if existing != nil {
-                    if readingAnnotations.updateHighlightNote(
-                        for: document.url,
-                        matching: trimmed,
-                        note: note
-                    ) {
+                    if let existing,
+                       readingAnnotations.updateHighlightNote(id: existing.id, in: document.url, note: note) {
                         library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
                     }
                 } else {
-                    if let snapshot = currentlyFocusedTextInteractionSnapshot(),
+                    if let snapshot = providedSnapshot ?? currentlyFocusedTextInteractionSnapshot(),
                        let sectionAnchor = snapshot.sectionAnchor {
                         let highlightAnchor = HighlightAnchor(
                             sectionAnchor: sectionAnchor,
@@ -429,9 +435,12 @@ private struct ReaderDocumentView: View {
         }
     }
 
-    private func removeHighlight(matching quote: String) {
+    private func removeHighlight(
+        matching quote: String,
+        selectionSnapshot providedSnapshot: TextInteractionSelectionSnapshot? = nil
+    ) {
         let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let existing = readingAnnotations.highlight(for: document.url, matching: trimmed) {
+        if let existing = highlightForSelection(quote: trimmed, snapshot: providedSnapshot) {
             _ = readingAnnotations.removeHighlight(id: existing.id, in: document.url)
             library.statusMessage = "Removed highlight"
         } else {
@@ -439,6 +448,36 @@ private struct ReaderDocumentView: View {
                 library.statusMessage = "Removed highlight"
             }
         }
+    }
+
+    private func highlightForSelection(
+        quote: String,
+        snapshot: TextInteractionSelectionSnapshot?
+    ) -> ReadingHighlight? {
+        let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let snapshot,
+           let sectionAnchor = snapshot.sectionAnchor,
+           let anchored = readingAnnotations.highlights(for: document.url).first(where: { highlight in
+               guard let anchor = highlight.anchor else { return false }
+               return anchor.sectionAnchor == sectionAnchor
+                   && anchor.blockIndex == snapshot.blockIndex
+                   && anchor.blockSignature == snapshot.blockSignature
+                   && anchor.startOffset == snapshot.characterRange.location
+                   && anchor.length == snapshot.characterRange.length
+           }) {
+            return anchored
+        }
+        if snapshot != nil {
+            return readingAnnotations.highlights(for: document.url).first { highlight in
+                guard highlight.anchor == nil else { return false }
+                let stored = Self.sanitizeHighlightQuote(highlight.quote).normalizedReadingText
+                let selected = trimmed.normalizedReadingText
+                return !stored.isEmpty
+                    && !selected.isEmpty
+                    && (stored == selected || stored.contains(selected) || selected.contains(stored))
+            }
+        }
+        return readingAnnotations.highlight(for: document.url, matching: trimmed)
     }
 
     private func rebuildSectionPlan(rendered: String, highlights: [ReadingHighlight]? = nil) {
@@ -763,6 +802,7 @@ private struct ReaderMarkdownSection: View {
                         .textual.textSelection(.enabled)
                         .environment(\.textInteractionSectionAnchor, section.anchor)
                         .environment(\.textInteractionBlockIndex, idx)
+                        .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: markdown))
                         .highlightInteractionOverlay(blockHighlights)
                         .fixedSize(horizontal: false, vertical: true)
                     }
@@ -801,6 +841,9 @@ private struct ReaderMarkdownSection: View {
 }
 
 private struct RichCodeBlockView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var mermaidHeight: CGFloat = 260
+
     let language: String?
     let code: String
     let fontScale: Double
@@ -855,14 +898,24 @@ private struct RichCodeBlockView: View {
             .background(.primary.opacity(0.035))
 
             if normalizedLanguage == "mermaid" {
-                MermaidDiagramView(source: code, fontScale: fontScale)
-                    .padding(12)
+                MermaidWebDiagramView(
+                    source: code,
+                    fontScale: fontScale,
+                    isDark: colorScheme == .dark,
+                    height: $mermaidHeight
+                )
+                .frame(height: mermaidHeight)
+                .padding(12)
             } else if ["dot", "graphviz", "vega", "vega-lite", "vegalite", "chart", "graph"].contains(normalizedLanguage) {
                 DiagramSourceView(source: code, fontScale: fontScale, iconName: "chart.xyaxis.line")
                     .padding(12)
             } else {
-                CodeSourceView(source: code, fontScale: fontScale)
-                    .padding(12)
+                SyntaxHighlightedCodeBlockView(
+                    language: normalizedLanguage,
+                    code: code,
+                    fontScale: fontScale
+                )
+                .padding(12)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -882,6 +935,200 @@ private struct RichCodeBlockView: View {
             return "chart.bar.xaxis"
         default:
             return "curlybraces"
+        }
+    }
+}
+
+private struct SyntaxHighlightedCodeBlockView: View {
+    let language: String
+    let code: String
+    let fontScale: Double
+
+    var body: some View {
+        StructuredText(markdown: fencedMarkdown)
+            .font(.system(size: 14 * fontScale, design: .monospaced))
+            .textual.structuredTextStyle(.gitHub)
+            .textual.textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var fencedMarkdown: String {
+        let fenceLength = max(3, longestBacktickRun(in: code) + 1)
+        let fence = String(repeating: "`", count: fenceLength)
+        let languageSuffix = language.isEmpty ? "" : language
+        return "\(fence)\(languageSuffix)\n\(code)\n\(fence)"
+    }
+
+    private func longestBacktickRun(in text: String) -> Int {
+        var longest = 0
+        var current = 0
+        for character in text {
+            if character == "`" {
+                current += 1
+                longest = max(longest, current)
+            } else {
+                current = 0
+            }
+        }
+        return longest
+    }
+}
+
+private struct MermaidWebDiagramView: NSViewRepresentable {
+    let source: String
+    let fontScale: Double
+    let isDark: Bool
+    @Binding var height: CGFloat
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(height: $height)
+    }
+
+    func makeNSView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.userContentController.add(context.coordinator, name: "height")
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.allowsMagnification = false
+        context.coordinator.webView = webView
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        context.coordinator.height = $height
+        let nextHTML = html
+        guard context.coordinator.loadedHTML != nextHTML else { return }
+        context.coordinator.loadedHTML = nextHTML
+        webView.loadHTMLString(nextHTML, baseURL: nil)
+    }
+
+    private var html: String {
+        let encodedSource = (try? String(data: JSONEncoder().encode(source), encoding: .utf8)) ?? "\"\""
+        let background = isDark ? "#151515" : "#ffffff"
+        let foreground = isDark ? "#f2f2f2" : "#202124"
+        let secondary = isDark ? "#a7a7a7" : "#5f6368"
+        let line = isDark ? "#8ab4f8" : "#1a73e8"
+        let nodeFill = isDark ? "#19324a" : "#e8f0fe"
+        let nodeBorder = isDark ? "#2f6ea6" : "#1a73e8"
+
+        return """
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <script>\(mermaidScript)</script>
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: transparent;
+              color: \(foreground);
+              font: \(max(12, 13 * fontScale))px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+              overflow: hidden;
+            }
+            #diagram {
+              box-sizing: border-box;
+              width: 100%;
+              min-height: 180px;
+              padding: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            svg {
+              max-width: 100%;
+              height: auto !important;
+            }
+            .error {
+              white-space: pre-wrap;
+              font: \(max(12, 13 * fontScale))px ui-monospace, SFMono-Regular, Menlo, monospace;
+              color: \(secondary);
+              text-align: left;
+              width: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="diagram"></div>
+          <script>
+            const source = \(encodedSource);
+            const root = document.getElementById('diagram');
+            const reportHeight = () => {
+              const rect = document.documentElement.getBoundingClientRect();
+              window.webkit.messageHandlers.height.postMessage(Math.ceil(rect.height));
+            };
+            const escapeHTML = value => String(value).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+            const showError = error => {
+              root.innerHTML = '<pre class="error">' + escapeHTML(error) + '</pre>';
+              requestAnimationFrame(reportHeight);
+            };
+            try {
+              if (!globalThis.mermaid) throw new Error('Bundled Mermaid renderer did not load.');
+              globalThis.mermaid.initialize({
+                startOnLoad: false,
+                securityLevel: 'strict',
+                theme: 'base',
+                themeVariables: {
+                  background: 'transparent',
+                  mainBkg: '\(nodeFill)',
+                  primaryColor: '\(nodeFill)',
+                  primaryBorderColor: '\(nodeBorder)',
+                  primaryTextColor: '\(foreground)',
+                  secondaryColor: '\(background)',
+                  tertiaryColor: '\(background)',
+                  lineColor: '\(line)',
+                  textColor: '\(foreground)',
+                  edgeLabelBackground: '\(background)',
+                  clusterBkg: '\(background)',
+                  clusterBorder: '\(nodeBorder)',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, sans-serif'
+                }
+              });
+              globalThis.mermaid.render('cribble-mermaid-' + Math.random().toString(36).slice(2), source)
+                .then(({ svg }) => {
+                  root.innerHTML = svg;
+                  requestAnimationFrame(reportHeight);
+                })
+                .catch(showError);
+              new ResizeObserver(reportHeight).observe(document.body);
+            } catch (error) {
+              showError(error);
+            }
+          </script>
+        </body>
+        </html>
+        """
+    }
+
+    private var mermaidScript: String {
+        guard let url = Bundle.module.url(forResource: "mermaid.min", withExtension: "js", subdirectory: "Mermaid")
+                ?? Bundle.module.url(forResource: "mermaid.min", withExtension: "js"),
+              let script = try? String(contentsOf: url, encoding: .utf8)
+        else {
+            return "window.__cribbleMermaidMissing = true;"
+        }
+        return script.replacingOccurrences(of: "</script", with: "<\\/script")
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+        weak var webView: WKWebView?
+        var height: Binding<CGFloat>
+        var loadedHTML: String?
+
+        init(height: Binding<CGFloat>) {
+            self.height = height
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "height",
+                  let height = message.body as? NSNumber
+            else { return }
+            self.height.wrappedValue = max(220, CGFloat(height.doubleValue))
         }
     }
 }
@@ -1177,10 +1424,10 @@ struct HighlightedMarkdownParser: MarkupParser {
     private func apply(_ h: ResolvedHighlight, to attributed: inout AttributedString) {
         switch h.strategy {
         case .offset(let start, let length):
-            let chars = attributed.characters
-            guard start >= 0,
-                  let lower = chars.index(chars.startIndex, offsetBy: start, limitedBy: chars.endIndex),
-                  let upper = chars.index(lower, offsetBy: length, limitedBy: chars.endIndex)
+            let plain = String(attributed.characters)
+            guard let stringRange = plain.utf16Range(location: start, length: length),
+                  let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
+                  let upper = AttributedString.Index(stringRange.upperBound, within: attributed)
             else { return }
             paint(in: lower..<upper, note: h.note, on: &attributed)
 
@@ -1531,6 +1778,19 @@ private extension String {
             .split(whereSeparator: \.isWhitespace)
             .map(String.init)
             .joined(separator: " ")
+    }
+
+    func utf16Range(location: Int, length: Int) -> Range<String.Index>? {
+        guard location >= 0,
+              length >= 0,
+              let lowerUTF16 = utf16.index(utf16.startIndex, offsetBy: location, limitedBy: utf16.endIndex),
+              let upperUTF16 = utf16.index(lowerUTF16, offsetBy: length, limitedBy: utf16.endIndex),
+              let lower = String.Index(lowerUTF16, within: self),
+              let upper = String.Index(upperUTF16, within: self)
+        else {
+            return nil
+        }
+        return lower..<upper
     }
 }
 

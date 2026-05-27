@@ -68,4 +68,40 @@ final class HighlightedMarkdownParserOffsetTests: XCTestCase {
             XCTAssertNil(bgColor, "Background color at index \(index) should be nil")
         }
     }
+
+    func testOffsetHighlightUsesUTF16OffsetsAroundEmoji() throws {
+        let input = "Intro 😀 **target** tail"
+        let rendered = "Intro 😀 target tail"
+        let range = rendered.range(of: "target")!
+        let startUTF16 = rendered.utf16.distance(
+            from: rendered.utf16.startIndex,
+            to: range.lowerBound.samePosition(in: rendered.utf16)!
+        )
+        let lengthUTF16 = "target".utf16.count
+        let startCharacter = rendered.distance(from: rendered.startIndex, to: range.lowerBound)
+
+        let highlight = ResolvedHighlight(
+            id: UUID(),
+            note: "",
+            strategy: .offset(start: startUTF16, length: lengthUTF16)
+        )
+
+        let parser = HighlightedMarkdownParser(baseURL: URL(fileURLWithPath: "/"), highlights: [highlight])
+        let attributedString = try parser.attributedString(for: input)
+
+        XCTAssertEqual(String(attributedString.characters), rendered)
+
+        for index in startCharacter..<(startCharacter + "target".count) {
+            let attrIndex = attributedString.characters.index(attributedString.startIndex, offsetBy: index)
+            let nextIndex = attributedString.characters.index(after: attrIndex)
+            XCTAssertNotNil(
+                attributedString[attrIndex..<nextIndex].appKit.backgroundColor,
+                "Expected highlight at character index \(index)"
+            )
+        }
+
+        let emojiIndex = attributedString.characters.index(attributedString.startIndex, offsetBy: 6)
+        let afterEmoji = attributedString.characters.index(after: emojiIndex)
+        XCTAssertNil(attributedString[emojiIndex..<afterEmoji].appKit.backgroundColor)
+    }
 }

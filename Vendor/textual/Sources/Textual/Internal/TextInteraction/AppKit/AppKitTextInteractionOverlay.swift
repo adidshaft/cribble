@@ -28,6 +28,7 @@
       )
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
+      nsView.blockSignature = context.environment.textInteractionBlockSignature
       return nsView
     }
 
@@ -38,6 +39,7 @@
       nsView.additionalMenuItemsProvider = context.environment.textInteractionAdditionalMenuItems
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
+      nsView.blockSignature = context.environment.textInteractionBlockSignature
     }
   }
 #endif

@@ -63,9 +63,12 @@ struct HighlightInteractionOverlay: ViewModifier {
             case .textSearch(let quote):
                 let fullRange = Textual.TextRange(start: model.startPosition, end: model.endPosition)
                 let blockText = model.text(in: fullRange)
-                guard let stringRange = blockText.range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]) else { continue }
-                let startOffset = blockText.distance(from: blockText.startIndex, to: stringRange.lowerBound)
-                let length = blockText.distance(from: stringRange.lowerBound, to: stringRange.upperBound)
+                guard let stringRange = blockText.range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]),
+                      let lowerUTF16 = stringRange.lowerBound.samePosition(in: blockText.utf16),
+                      let upperUTF16 = stringRange.upperBound.samePosition(in: blockText.utf16)
+                else { continue }
+                let startOffset = blockText.utf16.distance(from: blockText.utf16.startIndex, to: lowerUTF16)
+                let length = blockText.utf16.distance(from: lowerUTF16, to: upperUTF16)
                 
                 guard let startPos = model.position(from: model.startPosition, offset: startOffset),
                       let endPos = model.position(from: startPos, offset: length)

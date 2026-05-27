@@ -22,7 +22,10 @@ let package = Package(
                 .product(name: "Markdown", package: "swift-markdown")
             ],
             resources: [
-                .process("Resources")
+                .process("Resources/AppIconLight.png"),
+                .process("Resources/AppIconDark.png"),
+                .copy("Resources/Mermaid"),
+                .copy("Resources/DemoNotes")
             ]
         ),
         .testTarget(

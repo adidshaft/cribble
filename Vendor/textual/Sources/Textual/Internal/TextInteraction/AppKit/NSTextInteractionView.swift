@@ -21,6 +21,7 @@
     var additionalMenuItemsProvider: TextInteractionMenuItemProvider?
     public var sectionAnchor: String?
     public var blockIndex: Int = 0
+    public var blockSignature: String?
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
@@ -225,7 +226,11 @@
           guard let first = selectionRects.first?.rect else { return .zero }
           return selectionRects.dropFirst().reduce(first) { $0.union($1.rect) }
         }()
-        let anchor = TextInteractionContextAnchor(view: self, selectionRect: anchorRect)
+        let anchor = TextInteractionContextAnchor(
+          view: self,
+          selectionRect: anchorRect,
+          selectionSnapshot: currentSelectionSnapshot()
+        )
         let extras = provider(selectedString, anchor)
         if !extras.isEmpty {
           for extra in extras {
@@ -364,19 +369,18 @@ extension NSTextInteractionView {
     guard let range = model.selectedRange, !range.isCollapsed else { return nil }
     let attributed = AttributedString(model.attributedText(in: range))
     let plainText = attributed.characters.reduce(into: "") { $0.append($1) }
-    let start = model.offset(from: model.startPosition, to: range.start)
-    let length = model.offset(from: range.start, to: range.end)
-    let nsRange = NSRange(location: start, length: length)
     let fullRange = TextRange(start: model.startPosition, end: model.endPosition)
     let blockPlain = model.text(in: fullRange)
-    let signature = TextInteractionSelectionSnapshot.signature(for: blockPlain)
+    let startUTF16 = model.offset(from: model.startPosition, to: range.start)
+    let lengthUTF16 = model.offset(from: range.start, to: range.end)
+    let signature = blockSignature ?? TextInteractionSelectionSnapshot.signature(for: blockPlain)
     let union = model.selectionRects(for: range)
       .map(\.rect)
       .reduce(NSRect.null) { $0.union($1) }
     return TextInteractionSelectionSnapshot(
       plainText: plainText,
       attributed: attributed,
-      characterRange: nsRange,
+      characterRange: NSRange(location: startUTF16, length: lengthUTF16),
       blockPlainText: blockPlain,
       blockSignature: signature,
       view: self,
@@ -388,6 +392,21 @@ extension NSTextInteractionView {
 }
 
 extension TextInteractionSelectionSnapshot {
+  public static func characterRange(in text: String, startUTF16: Int, lengthUTF16: Int) -> NSRange? {
+    guard startUTF16 >= 0, lengthUTF16 >= 0,
+          let lowerUTF16 = text.utf16.index(text.utf16.startIndex, offsetBy: startUTF16, limitedBy: text.utf16.endIndex),
+          let upperUTF16 = text.utf16.index(lowerUTF16, offsetBy: lengthUTF16, limitedBy: text.utf16.endIndex),
+          let lower = String.Index(lowerUTF16, within: text),
+          let upper = String.Index(upperUTF16, within: text)
+    else {
+      return nil
+    }
+
+    let start = text.distance(from: text.startIndex, to: lower)
+    let length = text.distance(from: lower, to: upper)
+    return NSRange(location: start, length: length)
+  }
+
   public static func signature(for text: String) -> String {
     // Stable hash of the first 64 UTF-8 bytes of normalized text
     let normalized = text.normalizedSelectionText

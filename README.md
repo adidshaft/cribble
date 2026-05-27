@@ -52,8 +52,12 @@ respectful of the user's files.
 - Sorts files inside folders by name, creation date, or last updated date.
 - Auto-reloads Markdown files when they change on disk.
 - Renders rich Markdown with Textual and native rich-block previews, including
-  task markers, ordered task lists, code blocks, Mermaid diagrams, chart/graph
-  fences, tables, relative images, links, and LaTeX math.
+  task markers, ordered task lists, syntax-highlighted code blocks, real
+  Mermaid diagrams, chart/graph fences, tables, relative images, links, and
+  LaTeX math.
+- Bundles a removable DemoNotes sample library on fresh installs so new users
+  can immediately inspect rich Markdown, wiki links, task lists, code, math,
+  and Mermaid rendering.
 - Uses Roobert for reading typography and Monaco for monospaced text.
 - Provides XXS-to-XXL reader text sizing.
 - Supports wiki links such as `[[Home]]`, `[[Note#Heading]]`, and
@@ -80,9 +84,11 @@ Cribble 1.0.5 focuses on rebuilding highlights and expanding Markdown support:
 
 - Rebuilt text highlights using robust offset anchors (PDF-style) for stable, drift-resistant highlight ranges.
 - Fixed the inline-code highlight bug so monospace text runs color perfectly across style boundaries.
-- Added range-precise hover tooltips using a high-fidelity SwiftUI overlay reading model selection geometry.
+- Added anchored right-click highlight notes, plus edit/remove actions that target the exact selected highlight even when repeated text appears in a document.
 - Added custom highlight hand cursor (`cribbleHighlightHand`) driving visual feedback when hovering over highlighted text.
+- Added bundled Mermaid rendering and restored Prism-backed syntax highlighting for fenced code blocks.
 - Patched Markdown support for footnotes (dynamic Unicode superscript references and final glossary block generation) and expanded task list checkbox markers.
+- Ships the DemoNotes sample library with every new install; it can be removed from Cribble without deleting user files.
 
 
 ## Reading Workflow

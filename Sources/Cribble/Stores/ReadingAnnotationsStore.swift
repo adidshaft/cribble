@@ -129,6 +129,21 @@ final class ReadingAnnotationsStore: ObservableObject {
         return true
     }
 
+    @discardableResult
+    func updateHighlightNote(id: UUID, in documentURL: URL, note: String) -> Bool {
+        let key = key(for: documentURL)
+        guard var documentHighlights = highlights[key],
+              let index = documentHighlights.firstIndex(where: { $0.id == id })
+        else {
+            return false
+        }
+
+        documentHighlights[index].note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        highlights[key] = documentHighlights
+        save()
+        return true
+    }
+
     func highlight(for documentURL: URL, matching quote: String) -> ReadingHighlight? {
         let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuote.isEmpty else { return nil }

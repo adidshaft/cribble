@@ -14,6 +14,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.navigateForwardAction) private var navigateForward
     @FocusedValue(\.toggleOutlineAction) private var toggleOutline
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
+    @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
+    @FocusedValue(\.highlightSelectionAction) private var highlightSelection
 
     var body: some Commands {
         CommandMenu("Library") {
@@ -54,6 +56,16 @@ struct CribbleCommands: Commands {
             Button("Toggle Focus Mode", action: { toggleFocusMode?() })
                 .keyboardShortcut("f", modifiers: [.command, .option])
                 .disabled(toggleFocusMode == nil)
+        }
+
+        CommandMenu("Reading") {
+            Button("Drop Reading Bookmark", action: { dropReadingBookmark?() })
+                .keyboardShortcut("b", modifiers: [])
+                .disabled(dropReadingBookmark == nil)
+
+            Button("Highlight Selection...", action: { highlightSelection?() })
+                .keyboardShortcut("h", modifiers: [])
+                .disabled(highlightSelection == nil)
         }
 
         CommandMenu("Diagnostics") {
@@ -131,6 +143,14 @@ private struct ToggleFocusModeActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct DropReadingBookmarkActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct HighlightSelectionActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var openFolderAction: (() -> Void)? {
         get { self[OpenFolderActionKey.self] }
@@ -195,5 +215,15 @@ extension FocusedValues {
     var toggleFocusModeAction: (() -> Void)? {
         get { self[ToggleFocusModeActionKey.self] }
         set { self[ToggleFocusModeActionKey.self] = newValue }
+    }
+
+    var dropReadingBookmarkAction: (() -> Void)? {
+        get { self[DropReadingBookmarkActionKey.self] }
+        set { self[DropReadingBookmarkActionKey.self] = newValue }
+    }
+
+    var highlightSelectionAction: (() -> Void)? {
+        get { self[HighlightSelectionActionKey.self] }
+        set { self[HighlightSelectionActionKey.self] = newValue }
     }
 }

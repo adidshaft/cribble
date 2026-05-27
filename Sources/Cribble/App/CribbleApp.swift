@@ -7,6 +7,7 @@ struct CribbleApp: App {
     @StateObject private var library = MarkdownLibraryStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var diagnostics = DiagnosticsCenter.shared
+    @StateObject private var readingAnnotations = ReadingAnnotationsStore()
 
     var body: some Scene {
         WindowGroup("Cribble: Markdown Knowledge Base Manager") {
@@ -14,6 +15,7 @@ struct CribbleApp: App {
                 .environmentObject(library)
                 .environmentObject(settings)
                 .environmentObject(diagnostics)
+                .environmentObject(readingAnnotations)
                 .frame(minWidth: 820, minHeight: 560)
         }
         .commands {

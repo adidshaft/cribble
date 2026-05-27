@@ -34,9 +34,17 @@ if [[ -f "$APP_ICON_SOURCE" ]]; then
   cp "$APP_ICON_SOURCE" "$APP_RESOURCES/Cribble.icns"
 fi
 
-if [[ -d "$BUILD_DIR/Cribble_Cribble.bundle" ]]; then
-  cp -R "$BUILD_DIR/Cribble_Cribble.bundle" "$APP_RESOURCES/"
-fi
+shopt -s nullglob
+RESOURCE_BUNDLES=("$BUILD_DIR"/*.bundle)
+shopt -u nullglob
+for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
+  cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
+  # SwiftPM's generated Bundle.module accessors first look beside the .app
+  # bundle itself. Keep root copies in dev/local installs so dependency
+  # resources (Textual syntax highlighting, SwiftUIMath fonts) work even
+  # before release codesigning layout is involved.
+  cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/"
+done
 
 cat >"$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

@@ -56,9 +56,25 @@ if [[ -f "$APP_ICON_SOURCE" ]]; then
   cp "$APP_ICON_SOURCE" "$APP_RESOURCES/Cribble.icns"
 fi
 
-if [[ -d "$BUILD_DIR/Cribble_Cribble.bundle" ]]; then
-  cp -R "$BUILD_DIR/Cribble_Cribble.bundle" "$APP_RESOURCES/"
-fi
+shopt -s nullglob
+RESOURCE_BUNDLES=("$BUILD_DIR"/*.bundle)
+shopt -u nullglob
+for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
+  cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
+done
+
+REQUIRED_RESOURCE_BUNDLES=(
+  "Cribble_Cribble.bundle"
+  "swiftui-math_SwiftUIMath.bundle"
+  "textual_Textual.bundle"
+)
+
+for REQUIRED_BUNDLE in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
+  if [[ ! -d "$APP_RESOURCES/$REQUIRED_BUNDLE" ]]; then
+    echo "error: required SPM resource bundle missing from Resources/: $REQUIRED_BUNDLE" >&2
+    exit 1
+  fi
+done
 
 cat >"$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

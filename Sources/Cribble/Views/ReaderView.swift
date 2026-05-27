@@ -51,9 +51,22 @@ struct ReaderView: View {
     }
 }
 
+@MainActor
+private final class ReaderScrollState {
+    var offsetY: Double = 0
+}
+
 private struct ReaderDocumentView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var readingAnnotations: ReadingAnnotationsStore
+    // Reference type so the bridge's per-scroll-tick writes don't invalidate
+    // this view's body (which used to re-trigger LazyVStack diffing and
+    // updateNSView on every pixel of scrolling — the dominant lag source).
+    @State private var scrollState = ReaderScrollState()
+    @State private var restoreScrollOffsetY: Double?
+    @State private var currentSectionTitle: String?
+    @State private var restoredDocumentURL: URL?
 
     let document: MarkdownDocument
     let rendered: String
@@ -70,6 +83,21 @@ private struct ReaderDocumentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        ScrollPositionBridge(
+                            scrollState: scrollState,
+                            targetOffsetY: $restoreScrollOffsetY
+                        )
+                        .frame(width: 0, height: 0)
+
+                        if let bookmark = readingAnnotations.bookmark(for: document.url) {
+                            ReadingBookmarkStrip(
+                                bookmark: bookmark,
+                                documentURL: document.url
+                            ) {
+                                resumeBookmark(bookmark)
+                            }
+                        }
+
                         Text(document.title)
                             .font(.system(size: 30 * fontScale))
                             .fontWeight(.semibold)
@@ -90,28 +118,35 @@ private struct ReaderDocumentView: View {
                                 .controlSize(.small)
                                 .padding(.top, 8)
                         } else {
-                            StructuredText(
-                                markdown: rendered,
-                                baseURL: document.url.deletingLastPathComponent(),
-                                syntaxExtensions: [.math]
-                            )
-                            .font(.system(size: 17 * fontScale))
-                            .textual.structuredTextStyle(.gitHub)
-                            .textual.inlineStyle(
-                                InlineStyle()
-                                    .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
-                                    .strong(.fontWeight(.semibold))
-                            )
-                            .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
-                            .textual.imageAttachmentLoader(.image(relativeTo: document.url.deletingLastPathComponent()))
-                            .textual.textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
+                            // LazyVStack so a 10 MB note with hundreds of
+                            // sections doesn't eagerly parse + lay out every
+                            // section on first appearance. Combined with the
+                            // sectioning logic above, only what's near the
+                            // viewport pays the StructuredText parse cost.
+                            LazyVStack(alignment: .leading, spacing: 14) {
+                                ForEach(ReadingSection.sections(from: rendered)) { section in
+                                    ReaderMarkdownSection(
+                                        section: section,
+                                        baseURL: document.url.deletingLastPathComponent(),
+                                        fontScale: fontScale,
+                                        highlights: readingAnnotations.highlights(for: document.url)
+                                    )
+                                    .id(section.anchor)
+                                    .background {
+                                        SectionVisibilityReporter(section: section)
+                                    }
+                                }
+                            }
                         }
                     }
                     .frame(maxWidth: settings.isFocusMode ? 640 : 840, alignment: .leading)
                     .padding(.horizontal, settings.isFocusMode ? 56 : 42)
                     .padding(.vertical, 34)
                     .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .coordinateSpace(name: "readerScroll")
+                .onPreferenceChange(SectionVisibilityPreferenceKey.self) { frames in
+                    updateCurrentSection(from: frames)
                 }
                 .onChange(of: library.activeScrollAnchor) { _, newAnchor in
                     if let newAnchor {
@@ -131,6 +166,11 @@ private struct ReaderDocumentView: View {
                         }
                     }
                 }
+                .onChange(of: rendered, initial: true) { _, newRendered in
+                    guard !newRendered.isEmpty else { return }
+                    restoreBookmarkIfNeeded()
+                    announceOrphanedHighlightsIfNeeded()
+                }
             }
 
             if settings.showOutline && !settings.isFocusMode {
@@ -145,8 +185,486 @@ private struct ReaderDocumentView: View {
         .environment(\.openURL, OpenURLAction { url in
             onOpenURL(url)
         })
+        .focusedSceneValue(\.dropReadingBookmarkAction, { dropReadingBookmark() })
+        .focusedSceneValue(\.highlightSelectionAction, { highlightSelection() })
+        .contextMenu {
+            Button("Highlight Selection...") {
+                highlightSelection()
+            }
+
+            Button("Drop Reading Bookmark") {
+                dropReadingBookmark()
+            }
+        }
         .cribbleBackgroundExtension()
         .navigationTitle(document.title)
+    }
+
+    private func restoreBookmarkIfNeeded() {
+        guard restoredDocumentURL != document.url else { return }
+        guard let bookmark = readingAnnotations.bookmark(for: document.url) else { return }
+        restoredDocumentURL = document.url
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            resumeBookmark(bookmark)
+        }
+    }
+
+    /// Resume from a bookmark with a graceful fallback chain that copes with
+    /// the file having changed since the bookmark was dropped:
+    ///   1. Exact section anchor still present  → scroll there.
+    ///   2. Bookmarked heading title fuzzy-matches a current heading
+    ///      (substring in either direction, case-insensitive) → scroll to
+    ///      the closest match.
+    ///   3. No heading match but a recorded scroll offset → scroll by offset
+    ///      with a "file may have changed" hint.
+    ///   4. Nothing usable → restore to top and tell the user.
+    private func resumeBookmark(_ bookmark: ReadingBookmark) {
+        let sections = ReadingSection.sections(from: rendered)
+
+        if let title = bookmark.sectionTitle, !title.isEmpty {
+            let anchor = title.textualSlug()
+
+            if sections.contains(where: { $0.anchor == anchor }) {
+                library.activeScrollAnchor = anchor
+                library.statusMessage = "Resumed at \(title)"
+                return
+            }
+
+            if let nearest = Self.nearestHeading(to: title, in: sections) {
+                library.activeScrollAnchor = nearest.anchor
+                let label = nearest.title ?? nearest.anchor
+                library.statusMessage = "Bookmarked section \"\(title)\" not found — resumed near \(label)"
+                return
+            }
+        }
+
+        if bookmark.scrollOffsetY > 0 {
+            restoreScrollOffsetY = bookmark.scrollOffsetY
+            library.statusMessage = "Bookmarked section gone — restored to approximate scroll position"
+            return
+        }
+
+        library.activeScrollAnchor = sections.first?.anchor
+        library.statusMessage = "Bookmark target couldn't be located — restored to top"
+    }
+
+    private static func nearestHeading(to title: String, in sections: [ReadingSection]) -> ReadingSection? {
+        let target = title.normalizedReadingText
+        guard !target.isEmpty else { return nil }
+
+        let withTitles = sections.compactMap { section -> (section: ReadingSection, title: String)? in
+            guard let raw = section.title?.normalizedReadingText, !raw.isEmpty else { return nil }
+            return (section, raw)
+        }
+
+        // Substring in either direction handles common edits: "Setup" still
+        // matches a renamed "Project Setup", and an old "Project Setup" still
+        // matches a renamed "Setup". Falls through (returns nil) only when
+        // the bookmarked title shares no token with any current heading.
+        return withTitles.first(where: { $0.title.contains(target) || target.contains($0.title) })?.section
+    }
+
+    /// Surface a one-shot status message when some of the document's stored
+    /// highlights can't be located in the current rendered text — happens
+    /// when the user has edited the file in their external editor since the
+    /// highlights were made. The highlight records stay in the store so
+    /// they re-anchor automatically if the original text comes back.
+    private func announceOrphanedHighlightsIfNeeded() {
+        let all = readingAnnotations.highlights(for: document.url)
+        guard !all.isEmpty, !rendered.isEmpty else { return }
+
+        let body = rendered.normalizedReadingText
+        let orphaned = all.filter { !body.contains($0.quote.normalizedReadingText) }
+        guard !orphaned.isEmpty else { return }
+
+        let noun = orphaned.count == 1 ? "highlight" : "highlights"
+        library.statusMessage = "\(orphaned.count) \(noun) couldn't be located in the current file — likely edited since"
+    }
+
+    private func updateCurrentSection(from frames: [ReadingSectionFrame]) {
+        let candidates = frames.sorted { abs($0.minY) < abs($1.minY) }
+        currentSectionTitle = candidates.first?.title
+    }
+
+    private func dropReadingBookmark() {
+        readingAnnotations.dropBookmark(
+            for: document.url,
+            offsetY: scrollState.offsetY,
+            sectionTitle: currentSectionTitle
+        )
+        library.statusMessage = "Dropped bookmark\(currentSectionTitle.map { " at \($0)" } ?? "")"
+    }
+
+    private func highlightSelection() {
+        guard let quote = Self.captureSelectedText(),
+              !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            library.statusMessage = "Click in the text and select a passage first, then press H."
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Add Highlight Note"
+        alert.informativeText = "This note appears when hovering over the highlighted passage."
+        alert.addButton(withTitle: "Add Highlight")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
+        field.placeholderString = "Optional note"
+        alert.accessoryView = field
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            readingAnnotations.addHighlight(for: document.url, quote: quote, note: field.stringValue)
+            library.statusMessage = "Highlighted selection"
+        }
+    }
+
+    /// Capture the currently selected text by piggy-backing on the standard
+    /// AppKit `copy:` action, restoring the user's clipboard afterwards.
+    ///
+    /// Trying paths in order:
+    ///   1. `NSApp.sendAction(copy:, to: nil, from: nil)` walks the responder
+    ///      chain from the first responder up. This is the cheap path and
+    ///      works when the Textual selection view is still first responder.
+    ///   2. If that returns false (no responder handled it — e.g. focus
+    ///      drifted to a button), fall back to the key window's first
+    ///      responder explicitly via `tryToPerform`.
+    /// Both forms use the bare "copy:" selector so any responder with an
+    /// `@objc copy(_:)` (which is the standard AppKit contract Textual
+    /// implements) will pick it up.
+    private static func captureSelectedText() -> String? {
+        let pasteboard = NSPasteboard.general
+        let previousItems = pasteboard.pasteboardItems?.compactMap { $0.copy() as? NSPasteboardItem } ?? []
+        let previousChangeCount = pasteboard.changeCount
+
+        let copySelector = NSSelectorFromString("copy:")
+
+        var handled = NSApp.sendAction(copySelector, to: nil, from: nil)
+        if !handled || pasteboard.changeCount == previousChangeCount {
+            if let responder = NSApp.keyWindow?.firstResponder {
+                handled = responder.tryToPerform(copySelector, with: nil) || handled
+            }
+        }
+
+        defer {
+            pasteboard.clearContents()
+            if !previousItems.isEmpty {
+                pasteboard.writeObjects(previousItems)
+            }
+        }
+
+        guard pasteboard.changeCount != previousChangeCount else { return nil }
+        return pasteboard.string(forType: .string)
+    }
+}
+
+private struct ReadingBookmarkStrip: View {
+    let bookmark: ReadingBookmark
+    let documentURL: URL
+    let onResume: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "bookmark.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.yellow)
+
+            Text(bookmark.sectionTitle.map { "Bookmark: \($0)" } ?? "Reading bookmark")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            if fileWasEditedSinceBookmark {
+                Text("• file edited since")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .help("This file was modified after the bookmark was saved — the saved position may have shifted.")
+            }
+
+            Spacer(minLength: 8)
+
+            Button("Resume", action: onResume)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var fileWasEditedSinceBookmark: Bool {
+        guard let values = try? documentURL.resourceValues(forKeys: [.contentModificationDateKey]),
+              let mtime = values.contentModificationDate
+        else {
+            return false
+        }
+        // 1-second slack absorbs filesystem timestamp granularity differences
+        // (HFS+ stores seconds, APFS nanoseconds) so saving a bookmark and
+        // then immediately re-opening doesn't false-positive.
+        return mtime.timeIntervalSince(bookmark.updatedAt) > 1
+    }
+}
+
+private struct ReaderMarkdownSection: View {
+    let section: ReadingSection
+    let baseURL: URL
+    let fontScale: Double
+    let highlights: [ReadingHighlight]
+
+    var body: some View {
+        let applicableHighlights = highlightsInSection
+        StructuredText(
+            section.markdown,
+            parser: HighlightedMarkdownParser(
+                baseURL: baseURL,
+                highlights: applicableHighlights
+            )
+        )
+        // Force re-parse when the highlight set changes. StructuredText
+        // caches its rendered AttributedString keyed on `markup` alone, so
+        // changing the parser (the only carrier of highlights) wouldn't
+        // otherwise trigger a re-parse and the highlight would never appear.
+        .id(highlightIdentity(for: applicableHighlights))
+        .font(.system(size: 17 * fontScale))
+        .textual.structuredTextStyle(.gitHub)
+        .textual.inlineStyle(
+            InlineStyle()
+                .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                .strong(.fontWeight(.semibold))
+        )
+        .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
+        .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
+        .textual.textSelection(.enabled)
+        .fixedSize(horizontal: false, vertical: true)
+        .help(applicableHighlights.map(\.note).filter { !$0.isEmpty }.joined(separator: "\n\n"))
+    }
+
+    private var highlightsInSection: [ReadingHighlight] {
+        let normalizedSection = section.markdown.normalizedReadingText
+        return highlights.filter { normalizedSection.contains($0.quote.normalizedReadingText) }
+    }
+
+    private func highlightIdentity(for highlights: [ReadingHighlight]) -> String {
+        // Identity = (section + sorted highlight ids). Stable across re-renders
+        // when nothing changed, unique when highlights are added/removed.
+        let ids = highlights.map(\.id.uuidString).sorted().joined(separator: "|")
+        return "\(section.id)#\(ids)"
+    }
+}
+
+private struct HighlightedMarkdownParser: MarkupParser {
+    let baseURL: URL
+    let highlights: [ReadingHighlight]
+
+    func attributedString(for input: String) throws -> AttributedString {
+        var attributed = try AttributedStringMarkdownParser.markdown(
+            baseURL: baseURL,
+            syntaxExtensions: [.math]
+        )
+        .attributedString(for: input)
+
+        for highlight in highlights {
+            applyHighlight(highlight, to: &attributed)
+        }
+
+        return attributed
+    }
+
+    private func applyHighlight(_ highlight: ReadingHighlight, to attributed: inout AttributedString) {
+        let quote = highlight.quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !quote.isEmpty else { return }
+        guard let stringRange = String(attributed.characters).range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]) else {
+            return
+        }
+        guard let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
+              let upper = AttributedString.Index(stringRange.upperBound, within: attributed)
+        else {
+            return
+        }
+
+        attributed[lower..<upper].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
+    }
+}
+
+private struct ReadingSection: Identifiable, Hashable {
+    let id: String
+    let anchor: String
+    let title: String?
+    let markdown: String
+
+    static func sections(from markdown: String) -> [ReadingSection] {
+        var sections: [ReadingSection] = []
+        var currentLines: [String] = []
+        var currentTitle: String?
+        var currentAnchor = "top"
+        var sectionIndex = 0
+
+        func flush() {
+            let body = currentLines.joined(separator: "\n").trimmingCharacters(in: .newlines)
+            guard !body.isEmpty else { return }
+            sections.append(
+                ReadingSection(
+                    id: "\(sectionIndex)-\(currentAnchor)",
+                    anchor: currentAnchor,
+                    title: currentTitle,
+                    markdown: body
+                )
+            )
+            sectionIndex += 1
+        }
+
+        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            if let heading = parseHeading(line), !currentLines.isEmpty {
+                flush()
+                currentLines = [line]
+                currentTitle = heading
+                currentAnchor = heading.textualSlug()
+            } else {
+                if let heading = parseHeading(line), currentLines.isEmpty {
+                    currentTitle = heading
+                    currentAnchor = heading.textualSlug()
+                }
+                currentLines.append(line)
+            }
+        }
+
+        flush()
+        return sections
+    }
+
+    private static func parseHeading(_ line: String) -> String? {
+        guard line.hasPrefix("#") else { return nil }
+        let markerCount = line.prefix { $0 == "#" }.count
+        guard (1...6).contains(markerCount) else { return nil }
+        let rest = line.dropFirst(markerCount)
+        guard rest.first == " " else { return nil }
+        let title = rest.trimmingCharacters(in: .whitespaces)
+        return title.isEmpty ? nil : title
+    }
+}
+
+private struct ReadingSectionFrame: Equatable {
+    let title: String?
+    let minY: CGFloat
+}
+
+private struct SectionVisibilityReporter: View {
+    let section: ReadingSection
+
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(
+                key: SectionVisibilityPreferenceKey.self,
+                value: [
+                    ReadingSectionFrame(
+                        title: section.title,
+                        minY: proxy.frame(in: .named("readerScroll")).minY
+                    )
+                ]
+            )
+        }
+    }
+}
+
+private struct SectionVisibilityPreferenceKey: PreferenceKey {
+    static let defaultValue: [ReadingSectionFrame] = []
+
+    static func reduce(value: inout [ReadingSectionFrame], nextValue: () -> [ReadingSectionFrame]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+private struct ScrollPositionBridge: NSViewRepresentable {
+    let scrollState: ReaderScrollState
+    @Binding var targetOffsetY: Double?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(scrollState: scrollState)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async {
+            context.coordinator.attach(to: view.enclosingScrollView)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            context.coordinator.attach(to: nsView.enclosingScrollView)
+            if let targetOffsetY {
+                context.coordinator.scroll(to: targetOffsetY)
+                self.targetOffsetY = nil
+            }
+        }
+    }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        // Reference, not Binding — boundsDidChange fires on every scroll
+        // tick. Writing to a SwiftUI @State/Binding here invalidated the
+        // entire ReaderDocumentView body once per pixel of scroll.
+        private let scrollState: ReaderScrollState
+        private weak var scrollView: NSScrollView?
+
+        init(scrollState: ReaderScrollState) {
+            self.scrollState = scrollState
+        }
+
+        func attach(to scrollView: NSScrollView?) {
+            guard self.scrollView !== scrollView, let scrollView else { return }
+            self.scrollView = scrollView
+            scrollView.contentView.postsBoundsChangedNotifications = true
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(boundsDidChange),
+                name: NSView.boundsDidChangeNotification,
+                object: scrollView.contentView
+            )
+            scrollState.offsetY = scrollView.contentView.bounds.origin.y
+        }
+
+        func scroll(to offsetY: Double) {
+            guard let scrollView else { return }
+            let documentHeight = scrollView.documentView?.bounds.height ?? 0
+            let maxY = max(0, documentHeight - scrollView.contentView.bounds.height)
+            let y = min(max(0, offsetY), maxY)
+            scrollView.contentView.scroll(to: NSPoint(x: 0, y: y))
+            scrollView.reflectScrolledClipView(scrollView.contentView)
+            scrollState.offsetY = y
+        }
+
+        @objc nonisolated private func boundsDidChange(_ notification: Notification) {
+            guard let clipView = notification.object as? NSClipView else { return }
+            // NSScrollView posts bounds-changed on the main thread, so we
+            // assume isolation rather than hopping through Task (which would
+            // queue per-tick work and lose the no-overhead property we
+            // moved here for).
+            MainActor.assumeIsolated {
+                scrollState.offsetY = clipView.bounds.origin.y
+            }
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
+    }
+}
+
+private extension String {
+    var normalizedReadingText: String {
+        lowercased()
+            .map { character in
+                if character.isLetter || character.isNumber || character.isWhitespace {
+                    return character
+                }
+                return " "
+            }
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+            .joined(separator: " ")
     }
 }
 

@@ -1,0 +1,110 @@
+import Foundation
+
+@MainActor
+final class ReadingAnnotationsStore: ObservableObject {
+    @Published private(set) var bookmarks: [String: ReadingBookmark] = [:]
+    @Published private(set) var highlights: [String: [ReadingHighlight]] = [:]
+
+    private let fileURL: URL
+
+    init(fileURL: URL? = nil) {
+        self.fileURL = fileURL ?? Self.defaultFileURL()
+        load()
+    }
+
+    func bookmark(for documentURL: URL) -> ReadingBookmark? {
+        bookmarks[key(for: documentURL)]
+    }
+
+    func dropBookmark(for documentURL: URL, offsetY: Double, sectionTitle: String?) {
+        let key = key(for: documentURL)
+        bookmarks[key] = ReadingBookmark(
+            documentPath: key,
+            scrollOffsetY: max(0, offsetY),
+            sectionTitle: sectionTitle,
+            updatedAt: Date()
+        )
+        save()
+    }
+
+    func highlights(for documentURL: URL) -> [ReadingHighlight] {
+        highlights[key(for: documentURL)] ?? []
+    }
+
+    func addHighlight(for documentURL: URL, quote: String, note: String) {
+        let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuote.isEmpty else { return }
+
+        let key = key(for: documentURL)
+        var documentHighlights = highlights[key] ?? []
+        documentHighlights.append(
+            ReadingHighlight(
+                id: UUID(),
+                documentPath: key,
+                quote: trimmedQuote,
+                note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+                createdAt: Date()
+            )
+        )
+        highlights[key] = documentHighlights
+        save()
+    }
+
+    private func load() {
+        guard let data = try? Data(contentsOf: fileURL) else { return }
+        guard let payload = try? JSONDecoder.cribble.decode(Payload.self, from: data) else { return }
+        bookmarks = Dictionary(uniqueKeysWithValues: payload.bookmarks.map { ($0.documentPath, $0) })
+        highlights = Dictionary(grouping: payload.highlights, by: \.documentPath)
+    }
+
+    private func save() {
+        let payload = Payload(
+            bookmarks: bookmarks.values.sorted { $0.documentPath < $1.documentPath },
+            highlights: highlights.values.flatMap { $0 }.sorted { $0.createdAt < $1.createdAt }
+        )
+
+        do {
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let data = try JSONEncoder.prettyCribble.encode(payload)
+            try data.write(to: fileURL, options: [.atomic])
+        } catch {
+            DiagnosticsCenter.shared.record(level: .error, message: "Failed to save reading annotations: \(error.localizedDescription)")
+        }
+    }
+
+    private func key(for url: URL) -> String {
+        url.standardizedFileURL.path
+    }
+
+    private static func defaultFileURL() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
+        return base.appendingPathComponent("Cribble", isDirectory: true)
+            .appendingPathComponent("ReadingAnnotations.json")
+    }
+
+    private struct Payload: Codable {
+        var bookmarks: [ReadingBookmark]
+        var highlights: [ReadingHighlight]
+    }
+}
+
+private extension JSONEncoder {
+    static var prettyCribble: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
+    }
+}
+
+private extension JSONDecoder {
+    static var cribble: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+}

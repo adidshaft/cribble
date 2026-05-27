@@ -5,12 +5,16 @@ import SwiftUI
 @MainActor
 final class MarkdownLibraryStore: ObservableObject {
     @Published var rootURLs: [URL] = []
-    @Published var nodes: [MarkdownNode] = []
+    @Published var nodes: [MarkdownNode] = [] {
+        didSet { cachedFilteredNodes = nil }
+    }
     @Published var selectedURL: URL?
     @Published var selectedDocument: MarkdownDocument?
     @Published var selectedRenderedMarkdown: String = ""
     @Published var selectedLinkedFiles: [LinkedFileSummary] = []
-    @Published var searchText = ""
+    @Published var searchText = "" {
+        didSet { cachedFilteredNodes = nil }
+    }
     @Published var history: [URL] = []
     @Published var historyIndex: Int = -1
     @Published var activeScrollAnchor: String?
@@ -45,6 +49,26 @@ final class MarkdownLibraryStore: ObservableObject {
     private var pendingDiffRootURL: URL?
     private var pendingDiffMode: AIMode?
 
+    // LRU render cache. Keyed by document URL; entries are invalidated when
+    // the underlying file content changes (we compare a hash of rawMarkdown).
+    // Bounded so a long browsing session can't pin all rendered HTML in RAM.
+    private struct RenderCacheEntry {
+        let sourceHash: Int
+        let rendered: String
+        let linkedFiles: [LinkedFileSummary]
+    }
+    private var renderCache: [URL: RenderCacheEntry] = [:]
+    private var renderCacheOrder: [URL] = []
+    private static let renderCacheLimit = 20
+
+    // Memoized result of `filteredNodes`. Invalidated whenever `nodes` or
+    // `searchText` change (see their didSet).
+    private var cachedFilteredNodes: [MarkdownNode]?
+
+    // Bounded concurrency for the initial parallel-load fan-out. Empirically
+    // 16 saturates an SSD without thrashing the dispatch queue.
+    private static let loadConcurrency = 16
+
     init(restore: Bool = true) {
         if restore {
             restoreFolders()
@@ -68,9 +92,16 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     var filteredNodes: [MarkdownNode] {
+        if let cachedFilteredNodes { return cachedFilteredNodes }
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return nodes }
-        return nodes.compactMap { filter($0, query: query) }
+        let result: [MarkdownNode]
+        if query.isEmpty {
+            result = nodes
+        } else {
+            result = nodes.compactMap { filter($0, query: query) }
+        }
+        cachedFilteredNodes = result
+        return result
     }
 
     func chooseFolder(sortMode: FileSortMode) {
@@ -189,6 +220,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let displayNames = rootDisplayNames
 
         loadTask?.cancel()
+        let concurrency = Self.loadConcurrency
         loadTask = Task {
             do {
                 let result = try await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocument], linkIndex: LinkIndex?) in
@@ -223,7 +255,30 @@ final class MarkdownLibraryStore: ObservableObject {
                     }
                     let urls = collect(nodesList).uniqued()
                     let loader = DocumentLoader()
-                    let docs = try urls.map(loader.load)
+
+                    // Bounded-concurrency fan-out. Reads + heading/wiki-link
+                    // parsing is the dominant cost during refresh; serial
+                    // mapping pegged one core and idled the rest. This
+                    // pattern keeps `concurrency` tasks in-flight at any
+                    // moment and preserves the original strict-throw
+                    // semantics (a failed file aborts the whole refresh).
+                    let docs: [MarkdownDocument] = try await withThrowingTaskGroup(of: MarkdownDocument.self) { group in
+                        var iterator = urls.makeIterator()
+                        var inFlight = 0
+                        while inFlight < concurrency, let url = iterator.next() {
+                            group.addTask { try loader.load(url: url) }
+                            inFlight += 1
+                        }
+                        var collected: [MarkdownDocument] = []
+                        collected.reserveCapacity(urls.count)
+                        while let doc = try await group.next() {
+                            collected.append(doc)
+                            if let url = iterator.next() {
+                                group.addTask { try loader.load(url: url) }
+                            }
+                        }
+                        return collected
+                    }
 
                     let index: LinkIndex?
                     if let firstRoot = roots.first {
@@ -240,6 +295,12 @@ final class MarkdownLibraryStore: ObservableObject {
                 self.nodes = result.nodes
                 self.documents = result.documents
                 self.linkIndex = result.linkIndex
+                // Render cache keys by URL but the file content may have
+                // changed under us (e.g. user edited externally and the
+                // FSEvents monitor triggered this refresh). Drop everything
+                // — the next selection will re-render and re-cache.
+                self.renderCache.removeAll()
+                self.renderCacheOrder.removeAll()
                 self.filterHistory()
 
                 if let selectedURL = self.selectedURL {
@@ -300,6 +361,12 @@ final class MarkdownLibraryStore: ObservableObject {
         }
 
         do {
+            // Synchronous read on purpose: callers (including the test
+            // suite) expect `selectedDocument` to be populated by the time
+            // select() returns. The heavy work — markdown preprocessing,
+            // wiki-link rewriting, linked-files resolution — happens off
+            // the main thread inside scheduleRender(), and a recent render
+            // is served from the LRU cache for free.
             let document = try loader.load(url: documentURL)
             selectedDocument = document
             scheduleRender(for: document)
@@ -310,8 +377,21 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private func scheduleRender(for document: MarkdownDocument) {
         renderTask?.cancel()
+
+        // Fast path: if we already rendered this exact body recently
+        // (back/forward navigation, or re-select), publish the cached
+        // version synchronously and skip the detached pipeline entirely.
+        let sourceHash = document.rawMarkdown.hashValue
+        if let cached = renderCache[document.url], cached.sourceHash == sourceHash {
+            selectedRenderedMarkdown = cached.rendered
+            selectedLinkedFiles = cached.linkedFiles
+            touchRenderCacheEntry(for: document.url)
+            return
+        }
+
         let index = linkIndex
         let documentsSnapshot = documents
+        let documentURL = document.url
         renderTask = Task.detached(priority: .userInitiated) { [weak self] in
             let preprocessed = MarkdownDisplayPreprocessor.prepare(
                 document.rawMarkdown,
@@ -328,11 +408,35 @@ final class MarkdownLibraryStore: ObservableObject {
             if Task.isCancelled { return }
             await MainActor.run {
                 guard let self else { return }
-                guard self.selectedDocument?.url == document.url else { return }
+                guard self.selectedDocument?.url == documentURL else { return }
                 self.selectedRenderedMarkdown = rendered
                 self.selectedLinkedFiles = linkedFiles
+                self.storeRenderCacheEntry(
+                    url: documentURL,
+                    entry: RenderCacheEntry(
+                        sourceHash: sourceHash,
+                        rendered: rendered,
+                        linkedFiles: linkedFiles
+                    )
+                )
             }
         }
+    }
+
+    private func storeRenderCacheEntry(url: URL, entry: RenderCacheEntry) {
+        renderCache[url] = entry
+        renderCacheOrder.removeAll { $0 == url }
+        renderCacheOrder.append(url)
+        while renderCacheOrder.count > Self.renderCacheLimit {
+            let evicted = renderCacheOrder.removeFirst()
+            renderCache.removeValue(forKey: evicted)
+        }
+    }
+
+    private func touchRenderCacheEntry(for url: URL) {
+        guard renderCache[url] != nil else { return }
+        renderCacheOrder.removeAll { $0 == url }
+        renderCacheOrder.append(url)
     }
 
     nonisolated private static func linkedFiles(

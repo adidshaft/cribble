@@ -137,7 +137,7 @@ private struct ReaderDocumentView: View {
                                         section: section,
                                         baseURL: document.url.deletingLastPathComponent(),
                                         fontScale: fontScale,
-                                        highlights: sectionPlan.highlightsByAnchor[section.id] ?? []
+                                        highlightsByBlock: sectionPlan.highlightsByBlock
                                     )
                                     .id(section.anchor)
                                     .background {
@@ -352,7 +352,26 @@ private struct ReaderDocumentView: View {
     private func addHighlightForCapturedSelection(_ quote: String) {
         let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: "")
+
+        if let snapshot = currentlyFocusedTextInteractionSnapshot(),
+           let sectionAnchor = snapshot.sectionAnchor {
+            let highlightAnchor = HighlightAnchor(
+                sectionAnchor: sectionAnchor,
+                blockIndex: snapshot.blockIndex,
+                blockSignature: snapshot.blockSignature,
+                startOffset: snapshot.characterRange.location,
+                length: snapshot.characterRange.length
+            )
+            _ = readingAnnotations.addHighlight(
+                for: document.url,
+                quote: trimmed,
+                note: "",
+                anchor: highlightAnchor
+            )
+        } else {
+            readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: "")
+        }
+
         lastHighlightedQuote = trimmed
         library.statusMessage = "Highlighted selection"
     }
@@ -374,14 +393,33 @@ private struct ReaderDocumentView: View {
             case .cancelled:
                 return
             case .saved(let note):
-                if readingAnnotations.updateHighlightNote(
-                    for: document.url,
-                    matching: trimmed,
-                    note: note
-                ) {
-                    library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
+                if existing != nil {
+                    if readingAnnotations.updateHighlightNote(
+                        for: document.url,
+                        matching: trimmed,
+                        note: note
+                    ) {
+                        library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
+                    }
                 } else {
-                    readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: note)
+                    if let snapshot = currentlyFocusedTextInteractionSnapshot(),
+                       let sectionAnchor = snapshot.sectionAnchor {
+                        let highlightAnchor = HighlightAnchor(
+                            sectionAnchor: sectionAnchor,
+                            blockIndex: snapshot.blockIndex,
+                            blockSignature: snapshot.blockSignature,
+                            startOffset: snapshot.characterRange.location,
+                            length: snapshot.characterRange.length
+                        )
+                        _ = readingAnnotations.addHighlight(
+                            for: document.url,
+                            quote: trimmed,
+                            note: note,
+                            anchor: highlightAnchor
+                        )
+                    } else {
+                        readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: note)
+                    }
                     lastHighlightedQuote = trimmed
                     library.statusMessage = note.isEmpty
                         ? "Highlighted selection"
@@ -392,8 +430,15 @@ private struct ReaderDocumentView: View {
     }
 
     private func removeHighlight(matching quote: String) {
-        guard readingAnnotations.removeHighlight(for: document.url, matching: quote) else { return }
-        library.statusMessage = "Removed highlight"
+        let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = readingAnnotations.highlight(for: document.url, matching: trimmed) {
+            _ = readingAnnotations.removeHighlight(id: existing.id, in: document.url)
+            library.statusMessage = "Removed highlight"
+        } else {
+            if readingAnnotations.removeHighlight(for: document.url, matching: quote) {
+                library.statusMessage = "Removed highlight"
+            }
+        }
     }
 
     private func rebuildSectionPlan(rendered: String, highlights: [ReadingHighlight]? = nil) {
@@ -443,27 +488,46 @@ private struct ReaderDocumentView: View {
         keepModeActive: Bool,
         completion: ((Bool) -> Void)? = nil
     ) {
-        Self.captureSelectedText { selectedText in
-            guard let raw = selectedText,
-                  case let quote = Self.sanitizeHighlightQuote(raw),
-                  !quote.isEmpty
-            else {
-                completion?(false)
-                return
-            }
-
-            guard quote != lastHighlightedQuote else {
-                completion?(false)
-                return
-            }
-
-            readingAnnotations.addHighlight(for: document.url, quote: quote, note: "")
-            lastHighlightedQuote = quote
-            library.statusMessage = keepModeActive
-                ? "Highlighted selection - highlight mode still on"
-                : "Highlighted selection"
-            completion?(true)
+        guard let snapshot = currentlyFocusedTextInteractionSnapshot() else {
+            completion?(false)
+            return
         }
+        let quote = Self.sanitizeHighlightQuote(snapshot.plainText)
+        guard !quote.isEmpty else {
+            completion?(false)
+            return
+        }
+
+        guard quote != lastHighlightedQuote else {
+            completion?(false)
+            return
+        }
+
+        guard let sectionAnchor = snapshot.sectionAnchor else {
+            completion?(false)
+            return
+        }
+
+        let anchor = HighlightAnchor(
+            sectionAnchor: sectionAnchor,
+            blockIndex: snapshot.blockIndex,
+            blockSignature: snapshot.blockSignature,
+            startOffset: snapshot.characterRange.location,
+            length: snapshot.characterRange.length
+        )
+
+        _ = readingAnnotations.addHighlight(
+            for: document.url,
+            quote: quote,
+            note: "",
+            anchor: anchor
+        )
+
+        lastHighlightedQuote = quote
+        library.statusMessage = keepModeActive
+            ? "Highlighted selection - highlight mode still on"
+            : "Highlighted selection"
+        completion?(true)
     }
 
     /// Trim the noise Textual's plain-text copy adds — list bullets (`• `,
@@ -498,64 +562,12 @@ private struct ReaderDocumentView: View {
 
     fileprivate nonisolated static let listMarkerRegex: NSRegularExpression = {
         // Leading whitespace, then either a bullet glyph (Textual emits U+2022)
-        // / dash / asterisk / plus, or "<digits>." / "<digits>)", followed by
+        // / dash / asterisk / plus, or "<digits>." / "<digits>)" followed by
         // at least one space. Matches what Formatter+PlainText emits in the
         // copy-buffer text Cribble reads from when capturing highlights.
         let pattern = #"^\s*(?:[•\-*+]|\d+[.)])\s+"#
         return try! NSRegularExpression(pattern: pattern)
     }()
-
-    /// Capture the currently selected text by piggy-backing on the standard
-    /// AppKit `copy:` action, restoring the user's clipboard afterwards.
-    ///
-    /// The copy result is read on the next run-loop turn instead of
-    /// synchronously waiting inside the menu/keyboard action. That keeps
-    /// highlight capture from parking the UI in an intermediate state.
-    private static func captureSelectedText(completion: @escaping (String?) -> Void) {
-        let pasteboard = NSPasteboard.general
-        let previousItems = PasteboardSnapshot(items: pasteboard.pasteboardItems ?? [])
-        let previousChangeCount = pasteboard.changeCount
-
-        _ = NSApp.sendAction(NSSelectorFromString("copy:"), to: nil, from: nil)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            let copied = pasteboard.changeCount != previousChangeCount
-                ? pasteboard.string(forType: .string)
-                : nil
-            pasteboard.clearContents()
-            previousItems.restore(to: pasteboard)
-            completion(copied)
-        }
-    }
-
-    private struct PasteboardSnapshot {
-        private let items: [[NSPasteboard.PasteboardType: Data]]
-
-        init(items pasteboardItems: [NSPasteboardItem]) {
-            items = pasteboardItems.map { item in
-                Dictionary(
-                    uniqueKeysWithValues: item.types.compactMap { type in
-                        guard let data = item.data(forType: type) else { return nil }
-                        return (type, data)
-                    }
-                )
-            }
-            .filter { !$0.isEmpty }
-        }
-
-        func restore(to pasteboard: NSPasteboard) {
-            guard !items.isEmpty else { return }
-
-            let restoredItems = items.map { storedTypes in
-                let item = NSPasteboardItem()
-                for (type, data) in storedTypes {
-                    item.setData(data, forType: type)
-                }
-                return item
-            }
-            pasteboard.writeObjects(restoredItems)
-        }
-    }
 }
 
 @MainActor
@@ -711,53 +723,78 @@ private struct ReadingBookmarkStrip: View {
     }
 }
 
+private struct IndexedBlock: Identifiable {
+    let id: String
+    let block: RichMarkdownBlock
+    let markdownIndex: Int?
+}
+
 private struct ReaderMarkdownSection: View {
     let section: ReadingSection
     let baseURL: URL
     let fontScale: Double
-    let highlights: [ReadingHighlight]
+    let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
 
     var body: some View {
-        // Parent already partitioned highlights to the sections that contain
-        // them (see ReaderSectionPlan). No per-render filtering needed here.
-        let applicableHighlights = highlights
+        let blocks = indexedBlocks(from: section.markdown)
+        let allSectionHighlights = highlightsByBlock.filter { $0.key.sectionAnchor == section.anchor }.flatMap { $0.value }
+
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(RichMarkdownBlock.blocks(from: section.markdown)) { block in
-                switch block {
+            ForEach(blocks) { indexedBlock in
+                switch indexedBlock.block {
                 case .markdown(_, let markdown):
-                    StructuredText(
-                        markdown,
-                        parser: HighlightedMarkdownParser(
-                            baseURL: baseURL,
-                            highlights: applicableHighlights
+                    if let idx = indexedBlock.markdownIndex {
+                        let blockHighlights = highlightsByBlock[BlockKey(sectionAnchor: section.anchor, blockIndex: idx)] ?? []
+                        StructuredText(
+                            markdown,
+                            parser: HighlightedMarkdownParser(
+                                baseURL: baseURL,
+                                highlights: blockHighlights
+                            )
                         )
-                    )
-                    .font(.system(size: 17 * fontScale))
-                    .textual.structuredTextStyle(.gitHub)
-                    .textual.inlineStyle(
-                        InlineStyle()
-                            .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
-                            .strong(.fontWeight(.semibold))
-                    )
-                    .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
-                    .textual.textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
+                        .font(.system(size: 17 * fontScale))
+                        .textual.structuredTextStyle(.gitHub)
+                        .textual.inlineStyle(
+                            InlineStyle()
+                                .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                                .strong(.fontWeight(.semibold))
+                        )
+                        .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
+                        .textual.textSelection(.enabled)
+                        .environment(\.textInteractionSectionAnchor, section.anchor)
+                        .environment(\.textInteractionBlockIndex, idx)
+                        .highlightInteractionOverlay(blockHighlights)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
 
                 case .fencedCode(_, let language, let code):
+                    // Highlights inside fenced code blocks are not supported — these
+                    // are rendered by RichCodeBlockView (a separate non-Textual view)
+                    // and don't participate in the HighlightedMarkdownParser pipeline.
                     RichCodeBlockView(language: language, code: code, fontScale: fontScale)
                 }
             }
         }
-        // Force re-parse when the highlight set changes. StructuredText
-        // caches its rendered AttributedString keyed on `markup` alone, so
-        // changing the parser (the only carrier of highlights) wouldn't
-        // otherwise trigger a re-parse and the highlight would never appear.
-        .id(highlightIdentity(for: applicableHighlights))
+        .id(highlightIdentity(for: allSectionHighlights))
     }
 
-    private func highlightIdentity(for highlights: [ReadingHighlight]) -> String {
-        // Identity = (section + sorted highlight ids). Stable across re-renders
-        // when nothing changed, unique when highlights are added/removed.
+    private func indexedBlocks(from markdown: String) -> [IndexedBlock] {
+        let rawBlocks = RichMarkdownBlock.blocks(from: markdown)
+        var result: [IndexedBlock] = []
+        var markdownCount = 0
+        for block in rawBlocks {
+            switch block {
+            case .markdown:
+                result.append(IndexedBlock(id: block.id, block: block, markdownIndex: markdownCount))
+                markdownCount += 1
+            case .fencedCode:
+                result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil))
+            }
+        }
+        return result
+    }
+
+    private func highlightIdentity(for highlights: [ResolvedHighlight]) -> String {
         let ids = highlights.map(\.id.uuidString).sorted().joined(separator: "|")
         return "\(section.id)#\(ids)"
     }
@@ -1120,9 +1157,9 @@ private struct MermaidPieSlice: Identifiable, Equatable {
     }
 }
 
-private struct HighlightedMarkdownParser: MarkupParser {
+struct HighlightedMarkdownParser: MarkupParser {
     let baseURL: URL
-    let highlights: [ReadingHighlight]
+    let highlights: [ResolvedHighlight]
 
     func attributedString(for input: String) throws -> AttributedString {
         var attributed = try AttributedStringMarkdownParser.markdown(
@@ -1132,39 +1169,47 @@ private struct HighlightedMarkdownParser: MarkupParser {
         .attributedString(for: input)
 
         for highlight in highlights {
-            applyHighlight(highlight, to: &attributed)
+            apply(highlight, to: &attributed)
         }
-
         return attributed
     }
 
-    private func applyHighlight(_ highlight: ReadingHighlight, to attributed: inout AttributedString) {
-        let trimmed = highlight.quote.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    private func apply(_ h: ResolvedHighlight, to attributed: inout AttributedString) {
+        switch h.strategy {
+        case .offset(let start, let length):
+            let chars = attributed.characters
+            print("DIAGNOSTIC_APPLY: chars count = \(chars.count), start = \(start), length = \(length)")
+            guard start >= 0 else {
+                print("DIAGNOSTIC_APPLY: start < 0")
+                return
+            }
+            guard let lower = chars.index(chars.startIndex, offsetBy: start, limitedBy: chars.endIndex) else {
+                print("DIAGNOSTIC_APPLY: lower index is nil")
+                return
+            }
+            guard let upper = chars.index(lower, offsetBy: length, limitedBy: chars.endIndex) else {
+                print("DIAGNOSTIC_APPLY: upper index is nil")
+                return
+            }
+            print("DIAGNOSTIC_APPLY: Painting range!")
+            paint(in: lower..<upper, note: h.note, on: &attributed)
 
-        let haystack = String(attributed.characters)
-        // Try the stored quote, then a marker-stripped variant. The second
-        // path keeps legacy highlights captured before the capture-time
-        // sanitizer existed (their quotes still carry "• " from Textual's
-        // plain-text copy) actually rendering.
-        let candidates: [String] = {
-            let stripped = ReaderDocumentView.sanitizeHighlightQuote(trimmed)
-            return stripped == trimmed ? [trimmed] : [trimmed, stripped]
-        }()
-
-        for candidate in candidates {
-            guard !candidate.isEmpty else { continue }
-            guard let stringRange = haystack.range(
-                of: candidate,
-                options: [.caseInsensitive, .diacriticInsensitive]
-            ) else { continue }
-            guard let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
+        case .textSearch(let quote):
+            let cleaned = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleaned.isEmpty,
+                  let stringRange = String(attributed.characters).range(
+                      of: cleaned,
+                      options: [.caseInsensitive, .diacriticInsensitive]
+                  ),
+                  let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
                   let upper = AttributedString.Index(stringRange.upperBound, within: attributed)
-            else { continue }
-
-            attributed[lower..<upper].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
-            return
+            else { return }
+            paint(in: lower..<upper, note: h.note, on: &attributed)
         }
+    }
+
+    private func paint(in range: Range<AttributedString.Index>, note: String, on attributed: inout AttributedString) {
+        attributed[range].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
     }
 }
 
@@ -1225,43 +1270,135 @@ private struct ReadingSection: Identifiable, Hashable {
     }
 }
 
+struct ResolvedHighlight {
+    let id: UUID
+    let note: String
+    enum Strategy {
+        case offset(start: Int, length: Int)
+        case textSearch(quote: String)
+    }
+    let strategy: Strategy
+}
+
+struct BlockKey: Hashable {
+    let sectionAnchor: String
+    let blockIndex: Int
+}
+
 private struct ReaderSectionPlan {
     let sections: [ReadingSection]
-    let highlightsByAnchor: [String: [ReadingHighlight]]
+    // (sectionAnchor, blockIndex) -> highlights to apply
+    let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
 
-    static let empty = ReaderSectionPlan(sections: [], highlightsByAnchor: [:])
+    static let empty = ReaderSectionPlan(sections: [], highlightsByBlock: [:])
 
     static func build(rendered: String, highlights: [ReadingHighlight]) -> ReaderSectionPlan {
         let sections = ReadingSection.sections(from: rendered)
         guard !sections.isEmpty, !highlights.isEmpty else {
-            return ReaderSectionPlan(sections: sections, highlightsByAnchor: [:])
+            return ReaderSectionPlan(sections: sections, highlightsByBlock: [:])
         }
 
-        // Normalize each highlight quote exactly once. Strip list markers
-        // first so a legacy "• View attendance history." quote still
-        // partitions into the right section.
-        let normalizedHighlights: [(ReadingHighlight, String)] = highlights.compactMap { highlight in
-            let cleaned = ReaderDocumentView.sanitizeHighlightQuote(highlight.quote)
-            let normalized = cleaned.normalizedReadingText
-            return normalized.isEmpty ? nil : (highlight, normalized)
-        }
-        guard !normalizedHighlights.isEmpty else {
-            return ReaderSectionPlan(sections: sections, highlightsByAnchor: [:])
-        }
+        var highlightsByBlock: [BlockKey: [ResolvedHighlight]] = [:]
 
-        var assignments: [String: [ReadingHighlight]] = [:]
+        // Build a mapping of (sectionAnchor, blockIndex) -> (signature, textLength)
+        // and also collect blocks for fallback search
+        struct BlockMetadata {
+            let sectionAnchor: String
+            let blockIndex: Int
+            let signature: String
+            let rawText: String
+            let normalizedText: String
+        }
+        
+        var blockMetadatas: [BlockKey: BlockMetadata] = [:]
+        
         for section in sections {
-            let normalizedSection = section.markdown.normalizedReadingText
-            var matches: [ReadingHighlight] = []
-            for (highlight, normalizedQuote) in normalizedHighlights
-            where normalizedSection.contains(normalizedQuote) {
-                matches.append(highlight)
-            }
-            if !matches.isEmpty {
-                assignments[section.id] = matches
+            let blocks = RichMarkdownBlock.blocks(from: section.markdown)
+            var markdownIdx = 0
+            for block in blocks {
+                switch block {
+                case .markdown(_, let text):
+                    let signature = TextInteractionSelectionSnapshot.signature(for: text)
+                    let key = BlockKey(sectionAnchor: section.anchor, blockIndex: markdownIdx)
+                    blockMetadatas[key] = BlockMetadata(
+                        sectionAnchor: section.anchor,
+                        blockIndex: markdownIdx,
+                        signature: signature,
+                        rawText: text,
+                        normalizedText: text.normalizedReadingText
+                    )
+                    markdownIdx += 1
+                case .fencedCode:
+                    break
+                }
             }
         }
-        return ReaderSectionPlan(sections: sections, highlightsByAnchor: assignments)
+
+        for highlight in highlights {
+            let cleanedQuote = ReaderDocumentView.sanitizeHighlightQuote(highlight.quote)
+            let normalizedQuote = cleanedQuote.normalizedReadingText
+            guard !normalizedQuote.isEmpty else { continue }
+
+            if let anchor = highlight.anchor {
+                // Offset-anchored highlight
+                let key = BlockKey(sectionAnchor: anchor.sectionAnchor, blockIndex: anchor.blockIndex)
+                if let meta = blockMetadatas[key],
+                   meta.signature == anchor.blockSignature {
+                    // Perfect signature match!
+                    let resolved = ResolvedHighlight(
+                        id: highlight.id,
+                        note: highlight.note,
+                        strategy: .offset(start: anchor.startOffset, length: anchor.length)
+                    )
+                    highlightsByBlock[key, default: []].append(resolved)
+                } else {
+                    // Fallback to text search on all blocks in the section
+                    var found = false
+                    for (k, meta) in blockMetadatas where k.sectionAnchor == anchor.sectionAnchor {
+                        if meta.normalizedText.contains(normalizedQuote) {
+                            let resolved = ResolvedHighlight(
+                                id: highlight.id,
+                                note: highlight.note,
+                                strategy: .textSearch(quote: cleanedQuote)
+                            )
+                            highlightsByBlock[k, default: []].append(resolved)
+                            found = true
+                            break
+                        }
+                    }
+                    if !found {
+                        // Global fallback across all blocks
+                        for (k, meta) in blockMetadatas {
+                            if meta.normalizedText.contains(normalizedQuote) {
+                                let resolved = ResolvedHighlight(
+                                    id: highlight.id,
+                                    note: highlight.note,
+                                    strategy: .textSearch(quote: cleanedQuote)
+                                )
+                                highlightsByBlock[k, default: []].append(resolved)
+                                break
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Legacy text-search highlight
+                // Scan all blocks in the matched section by normalized text containment
+                for (k, meta) in blockMetadatas {
+                    if meta.normalizedText.contains(normalizedQuote) {
+                        let resolved = ResolvedHighlight(
+                            id: highlight.id,
+                            note: highlight.note,
+                            strategy: .textSearch(quote: cleanedQuote)
+                        )
+                        highlightsByBlock[k, default: []].append(resolved)
+                        break
+                    }
+                }
+            }
+        }
+
+        return ReaderSectionPlan(sections: sections, highlightsByBlock: highlightsByBlock)
     }
 }
 

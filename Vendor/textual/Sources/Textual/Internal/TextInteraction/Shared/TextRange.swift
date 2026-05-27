@@ -9,19 +9,19 @@
   // That’s what allows ranges like “caret at the end of a slice” to either include or exclude the
   // slice, depending on whether the caret is considered to be on the leading or trailing edge.
 
-  struct TextRange: Hashable, CustomStringConvertible {
-    let start: TextPosition
-    let end: TextPosition
+  public struct TextRange: Hashable, CustomStringConvertible {
+    public let start: TextPosition
+    public let end: TextPosition
 
-    var description: String {
+    public var description: String {
       "[\(start)...\(end)]"
     }
 
-    var isCollapsed: Bool {
+    public var isCollapsed: Bool {
       start == end
     }
 
-    init(from: TextPosition, to: TextPosition) {
+    public init(from: TextPosition, to: TextPosition) {
       if from <= to {
         self.init(start: from, end: to)
       } else {
@@ -29,7 +29,7 @@
       }
     }
 
-    init(start: TextPosition, end: TextPosition) {
+    public init(start: TextPosition, end: TextPosition) {
       assert(start <= end)
 
       self.start = start

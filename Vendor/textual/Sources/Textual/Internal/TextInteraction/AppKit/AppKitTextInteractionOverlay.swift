@@ -20,12 +20,15 @@
     }
 
     func makeNSView(context: Context) -> NSTextInteractionView {
-      NSTextInteractionView(
+      let nsView = NSTextInteractionView(
         model: model,
         exclusionRects: overflowFrames,
         openURL: context.environment.openURL,
         additionalMenuItemsProvider: context.environment.textInteractionAdditionalMenuItems
       )
+      nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
+      nsView.blockIndex = context.environment.textInteractionBlockIndex
+      return nsView
     }
 
     func updateNSView(_ nsView: NSTextInteractionView, context: Context) {
@@ -33,6 +36,8 @@
       nsView.exclusionRects = overflowFrames
       nsView.openURL = context.environment.openURL
       nsView.additionalMenuItemsProvider = context.environment.textInteractionAdditionalMenuItems
+      nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
+      nsView.blockIndex = context.environment.textInteractionBlockIndex
     }
   }
 #endif

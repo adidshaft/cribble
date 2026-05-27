@@ -20,6 +20,7 @@
     // immediately stomped by `cursor.set()` on every continuous-hover
     // sample, so any custom cursor never appeared over actual text.
     @Environment(\.textInteractionCursorOverride) private var cursorOverride
+    @Environment(\.textInteractionCursorRegions) private var cursorRegions
 
     private let model: TextSelectionModel
 
@@ -44,7 +45,9 @@
       switch phase {
       case .active(let location):
         let cursor: NSCursor
-        if let override = cursorOverride {
+        if let regionCursor = cursorRegions.first(where: { $0.rect.contains(location) })?.cursor {
+          cursor = regionCursor
+        } else if let override = cursorOverride {
           cursor = override
         } else {
           cursor =
@@ -78,6 +81,46 @@
     public var textInteractionCursorOverride: NSCursor? {
       get { self[TextInteractionCursorOverrideKey.self] }
       set { self[TextInteractionCursorOverrideKey.self] = newValue }
+    }
+  }
+
+  public struct TextInteractionCursorRegion {
+    public let rect: NSRect       // in the AppKitTextInteractionOverlay's coord space
+    public let cursor: NSCursor
+    public init(rect: NSRect, cursor: NSCursor) { self.rect = rect; self.cursor = cursor }
+  }
+
+  private struct TextInteractionCursorRegionsKey: EnvironmentKey {
+    nonisolated(unsafe) static let defaultValue: [TextInteractionCursorRegion] = []
+  }
+
+  private struct TextInteractionSectionAnchorKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+  }
+
+  private struct TextInteractionBlockIndexKey: EnvironmentKey {
+    static let defaultValue: Int = 0
+  }
+
+  extension EnvironmentValues {
+    public var textInteractionCursorRegions: [TextInteractionCursorRegion] {
+      get { self[TextInteractionCursorRegionsKey.self] }
+      set { self[TextInteractionCursorRegionsKey.self] = newValue }
+    }
+    public var textInteractionSectionAnchor: String? {
+      get { self[TextInteractionSectionAnchorKey.self] }
+      set { self[TextInteractionSectionAnchorKey.self] = newValue }
+    }
+    public var textInteractionBlockIndex: Int {
+      get { self[TextInteractionBlockIndexKey.self] }
+      set { self[TextInteractionBlockIndexKey.self] = newValue }
+    }
+  }
+
+  public struct TextSelectionModelPreferenceKey: PreferenceKey {
+    nonisolated(unsafe) public static let defaultValue: TextSelectionModel? = nil
+    public static func reduce(value: inout TextSelectionModel?, nextValue: () -> TextSelectionModel?) {
+      value = value ?? nextValue()
     }
   }
 

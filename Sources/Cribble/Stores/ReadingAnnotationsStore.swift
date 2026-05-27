@@ -31,6 +31,57 @@ final class ReadingAnnotationsStore: ObservableObject {
         highlights[key(for: documentURL)] ?? []
     }
 
+    @discardableResult
+    func addHighlight(
+        for documentURL: URL,
+        quote: String,
+        note: String,
+        anchor: HighlightAnchor
+    ) -> ReadingHighlight? {
+        let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuote.isEmpty else { return nil }
+        let key = self.key(for: documentURL)
+        var documentHighlights = highlights[key] ?? []
+        let highlight = ReadingHighlight(
+            id: UUID(),
+            documentPath: key,
+            quote: trimmedQuote,
+            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+            createdAt: Date(),
+            anchor: anchor
+        )
+        documentHighlights.append(highlight)
+        highlights[key] = documentHighlights
+        save()
+        return highlight
+    }
+
+    func updateAnchor(for highlightID: UUID, in documentURL: URL, anchor: HighlightAnchor) {
+        let key = self.key(for: documentURL)
+        guard var documentHighlights = highlights[key],
+              let index = documentHighlights.firstIndex(where: { $0.id == highlightID })
+        else { return }
+        documentHighlights[index].anchor = anchor
+        highlights[key] = documentHighlights
+        save()
+    }
+
+    @discardableResult
+    func removeHighlight(id: UUID, in documentURL: URL) -> Bool {
+        let key = self.key(for: documentURL)
+        guard var documentHighlights = highlights[key],
+              let index = documentHighlights.firstIndex(where: { $0.id == id })
+        else { return false }
+        documentHighlights.remove(at: index)
+        if documentHighlights.isEmpty {
+            highlights.removeValue(forKey: key)
+        } else {
+            highlights[key] = documentHighlights
+        }
+        save()
+        return true
+    }
+
     func addHighlight(for documentURL: URL, quote: String, note: String) {
         let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuote.isEmpty else { return }

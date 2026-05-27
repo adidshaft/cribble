@@ -150,4 +150,19 @@ extension NSCursor {
         image.unlockFocus()
         return NSCursor(image: image, hotSpot: NSPoint(x: 4.5, y: 16))
     }()
+
+    @MainActor
+    static let cribbleHighlightHand: NSCursor = {
+        // Pointing hand + small yellow indicator dot
+        let image = NSCursor.pointingHand.image.copy() as! NSImage
+        let size = image.size
+        image.lockFocus()
+        let dotPath = NSBezierPath(ovalIn: NSRect(x: size.width - 6, y: 2, width: 4.5, height: 4.5))
+        NSColor.systemYellow.setFill()
+        dotPath.fill()
+        NSColor.labelColor.withAlphaComponent(0.2).setStroke()
+        dotPath.stroke()
+        image.unlockFocus()
+        return NSCursor(image: image, hotSpot: NSCursor.pointingHand.hotSpot)
+    }()
 }

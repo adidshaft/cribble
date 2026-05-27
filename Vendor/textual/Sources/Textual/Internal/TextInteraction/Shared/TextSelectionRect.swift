@@ -1,18 +1,18 @@
 #if TEXTUAL_ENABLE_TEXT_SELECTION
   import SwiftUI
 
-  struct TextSelectionRect: Hashable, CustomStringConvertible {
-    var rect: CGRect
+  public struct TextSelectionRect: Hashable, CustomStringConvertible {
+    public var rect: CGRect
 
-    let layoutDirection: LayoutDirection
-    var containsStart: Bool
-    var containsEnd: Bool
+    public let layoutDirection: LayoutDirection
+    public var containsStart: Bool
+    public var containsEnd: Bool
 
-    var description: String {
+    public var description: String {
       "(\(rect.logDescription), \(layoutDirection == .leftToRight ? "LTR" : "RTL"))"
     }
 
-    init(
+    public init(
       rect: CGRect,
       layoutDirection: LayoutDirection,
       containsStart: Bool = false,
@@ -24,7 +24,7 @@
       self.containsEnd = containsEnd
     }
 
-    func offsetBy(dx: CGFloat, dy: CGFloat) -> TextSelectionRect {
+    public func offsetBy(dx: CGFloat, dy: CGFloat) -> TextSelectionRect {
       .init(
         rect: rect.offsetBy(dx: dx, dy: dy),
         layoutDirection: layoutDirection,

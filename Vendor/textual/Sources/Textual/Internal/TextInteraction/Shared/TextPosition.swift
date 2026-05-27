@@ -10,16 +10,21 @@
   // the edge between two run slices. That extra bit of information makes range comparisons and
   // containment behave consistently when the same visual location can map to two adjacent indices.
 
-  struct TextPosition: Hashable, Comparable, CustomStringConvertible {
-    enum Affinity: Comparable {
+  public struct TextPosition: Hashable, Comparable, CustomStringConvertible {
+    public enum Affinity: Comparable {
       case downstream  // leading edge in the current layout direction
       case upstream  // trailing edge
     }
 
-    let indexPath: IndexPath
-    let affinity: Affinity
+    public let indexPath: IndexPath
+    public let affinity: Affinity
 
-    var description: String {
+    public init(indexPath: IndexPath, affinity: Affinity) {
+      self.indexPath = indexPath
+      self.affinity = affinity
+    }
+
+    public var description: String {
       let path = "(\(indexPath.map(\.description).joined(separator: ", ")))"
       switch affinity {
       case .downstream:
@@ -29,7 +34,7 @@
       }
     }
 
-    static func < (lhs: TextPosition, rhs: TextPosition) -> Bool {
+    public static func < (lhs: TextPosition, rhs: TextPosition) -> Bool {
       if lhs.indexPath == rhs.indexPath {
         return lhs.affinity < rhs.affinity
       }

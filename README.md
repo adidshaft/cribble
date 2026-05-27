@@ -74,25 +74,16 @@ respectful of the user's files.
   request actions for quick user reports.
 - Ships as a signed, notarized macOS DMG with a drag-to-install Finder layout.
 
-## Latest Release: 1.0.4
+## Latest Release: 1.0.5
 
-Cribble 1.0.4 focuses on reading flow polish and stability:
+Cribble 1.0.5 focuses on rebuilding highlights and expanding Markdown support:
 
-- Added per-document reading bookmarks for the exact section where you stopped
-  reading.
-- Added Mac-preview-style text highlighting with a quick `H` shortcut and a
-  continuous highlight mode.
-- Added right-click note editing for highlighted text; notes are stored with
-  the highlight and reopen in a small popover anchored beside the text.
-- Fixed a pasteboard restore crash that could happen after highlighting.
-- Fixed a Textual selection-layout spin that could hang the app after copying,
-  highlighting, or editing a highlight note.
-- Restored the compact macOS toolbar button treatment.
-- Updated the reader cursor in highlight mode to a longer straight line.
-- Upgraded Markdown reading so ordered checkboxes, Mermaid fences, graph/chart
-  fences, and code blocks render as first-class reading blocks.
-- Preserved existing bookmark/highlight storage in
-  `~/Library/Application Support/Cribble/ReadingAnnotations.json`.
+- Rebuilt text highlights using robust offset anchors (PDF-style) for stable, drift-resistant highlight ranges.
+- Fixed the inline-code highlight bug so monospace text runs color perfectly across style boundaries.
+- Added range-precise hover tooltips using a high-fidelity SwiftUI overlay reading model selection geometry.
+- Added custom highlight hand cursor (`cribbleHighlightHand`) driving visual feedback when hovering over highlighted text.
+- Patched Markdown support for footnotes (dynamic Unicode superscript references and final glossary block generation) and expanded task list checkbox markers.
+
 
 ## Reading Workflow
 
@@ -166,7 +157,7 @@ swift test
 After packaging and notarization, run:
 
 ```sh
-./script/validate_release.sh 1.0.4
+./script/validate_release.sh 1.0.5
 ```
 
 The script checks the Apple Silicon binary, minimum macOS version, code signing,
@@ -178,10 +169,10 @@ unified-diff parsing/apply logic.
 
 ## Release
 
-Current version: `1.0.4`
+Current version: `1.0.5`
 
 ```sh
-./script/package_release.sh 1.0.4
+./script/package_release.sh 1.0.5
 ```
 
 The release script:
@@ -195,28 +186,28 @@ The release script:
 - copies the SPM resource bundle (`Bundle.module`) and fails loudly if it
   is missing, so the bundled app icon can't silently disappear
 - signs with Developer ID
-- creates `releases/Cribble-1.0.4.dmg`
+- creates `releases/Cribble-1.0.5.dmg`
 - if `NOTARY_PROFILE=<keychain-profile>` is set, submits the DMG to
   Apple's notary service and staples the ticket
 - writes a SHA-256 checksum
 
 ```sh
 # Apple Silicon + Intel, signed only (Gatekeeper will block on other Macs):
-./script/package_release.sh 1.0.4
+./script/package_release.sh 1.0.5
 
 # Apple Silicon + Intel, signed + notarized + stapled (recommended for
 # public sharing):
-NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.4
+NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.5
 
 # Apple Silicon only:
-ARCHS=arm64 ./script/package_release.sh 1.0.4
+ARCHS=arm64 ./script/package_release.sh 1.0.5
 ```
 
 If you'd rather notarize by hand:
 
 ```sh
-xcrun notarytool submit releases/Cribble-1.0.4.dmg --keychain-profile cribble-notary --wait
-xcrun stapler staple releases/Cribble-1.0.4.dmg
+xcrun notarytool submit releases/Cribble-1.0.5.dmg --keychain-profile cribble-notary --wait
+xcrun stapler staple releases/Cribble-1.0.5.dmg
 ```
 
 Stable release:

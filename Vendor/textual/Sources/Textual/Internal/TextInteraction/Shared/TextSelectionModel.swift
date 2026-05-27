@@ -12,8 +12,8 @@
   // selection stays stable across updates.
 
   @Observable
-  final class TextSelectionModel {
-    var selectedRange: TextRange? {
+  public final class TextSelectionModel {
+    public var selectedRange: TextRange? {
       willSet {
         selectionWillChange?()
       }
@@ -36,6 +36,10 @@
 
     @ObservationIgnored
     private weak var coordinator: TextSelectionCoordinator?
+
+    public convenience init() {
+      self.init(layoutCollection: EmptyTextLayoutCollection(), coordinator: nil)
+    }
 
     init(
       layoutCollection: any TextLayoutCollection = EmptyTextLayoutCollection(),
@@ -86,31 +90,31 @@
   }
 
   extension TextSelectionModel {
-    var hasText: Bool {
+    public var hasText: Bool {
       layoutCollection.stringLength > 0
     }
 
-    var startPosition: TextPosition {
+    public var startPosition: TextPosition {
       layoutCollection.startPosition
     }
 
-    var endPosition: TextPosition {
+    public var endPosition: TextPosition {
       layoutCollection.endPosition
     }
 
-    func attributedText(in range: TextRange) -> NSAttributedString {
+    public func attributedText(in range: TextRange) -> NSAttributedString {
       layoutCollection.attributedText(in: range)
     }
 
-    func text(in range: TextRange) -> String {
+    public func text(in range: TextRange) -> String {
       attributedText(in: range).string
     }
 
-    func position(from position: TextPosition, offset: Int) -> TextPosition? {
+    public func position(from position: TextPosition, offset: Int) -> TextPosition? {
       layoutCollection.position(from: position, offset: offset)
     }
 
-    func offset(from: TextPosition, to: TextPosition) -> Int {
+    public func offset(from: TextPosition, to: TextPosition) -> Int {
       layoutCollection.characterIndex(at: to) - layoutCollection.characterIndex(at: from)
     }
 
@@ -122,15 +126,15 @@
       layoutCollection.caretRect(for: position)
     }
 
-    func selectionRects(for range: TextRange) -> [TextSelectionRect] {
+    public func selectionRects(for range: TextRange) -> [TextSelectionRect] {
       layoutCollection.selectionRects(for: range)
     }
 
-    func selectionRects(for range: TextRange, layout: Text.Layout) -> [TextSelectionRect] {
+    public func selectionRects(for range: TextRange, layout: Text.Layout) -> [TextSelectionRect] {
       layoutCollection.selectionRects(for: range, layout: layout)
     }
 
-    func closestPosition(to point: CGPoint) -> TextPosition? {
+    public func closestPosition(to point: CGPoint) -> TextPosition? {
       layoutCollection.closestPosition(to: point)
     }
 
@@ -188,6 +192,12 @@
     @available(visionOS, unavailable)
     func previousWord(from position: TextPosition) -> TextPosition? {
       layoutCollection.previousWord(from: position)
+    }
+  }
+
+  extension TextSelectionModel: Equatable {
+    public static func == (lhs: TextSelectionModel, rhs: TextSelectionModel) -> Bool {
+      lhs === rhs
     }
   }
 #endif

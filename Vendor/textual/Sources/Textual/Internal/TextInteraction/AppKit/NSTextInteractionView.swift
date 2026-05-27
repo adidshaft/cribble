@@ -19,6 +19,8 @@
     // to inject "Add/Edit Highlight Note" and friends — without it, Textual's
     // own NSMenu shadowed Cribble's SwiftUI `.contextMenu`.
     var additionalMenuItemsProvider: TextInteractionMenuItemProvider?
+    public var sectionAnchor: String?
+    public var blockIndex: Int = 0
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
@@ -344,4 +346,100 @@
       }
     }
   }
+
+public struct TextInteractionSelectionSnapshot {
+  public let plainText: String              // exact rendered text — no bullet injection
+  public let attributed: AttributedString
+  public let characterRange: NSRange        // UTF-16 offset within this view's full text
+  public let blockPlainText: String         // full plain text of this view's content
+  public let blockSignature: String         // SHA-256/FNV-1a hash of blockPlainText
+  public let view: NSView                   // the NSTextInteractionView (use NSView to keep type internal-friendly)
+  public let unionRect: NSRect              // bounds of the selection in `view` coords
+  public let sectionAnchor: String?
+  public let blockIndex: Int
+}
+
+extension NSTextInteractionView {
+  @MainActor public func currentSelectionSnapshot() -> TextInteractionSelectionSnapshot? {
+    guard let range = model.selectedRange, !range.isCollapsed else { return nil }
+    let attributed = AttributedString(model.attributedText(in: range))
+    let plainText = attributed.characters.reduce(into: "") { $0.append($1) }
+    let start = model.offset(from: model.startPosition, to: range.start)
+    let length = model.offset(from: range.start, to: range.end)
+    let nsRange = NSRange(location: start, length: length)
+    let fullRange = TextRange(start: model.startPosition, end: model.endPosition)
+    let blockPlain = model.text(in: fullRange)
+    let signature = TextInteractionSelectionSnapshot.signature(for: blockPlain)
+    let union = model.selectionRects(for: range)
+      .map(\.rect)
+      .reduce(NSRect.null) { $0.union($1) }
+    return TextInteractionSelectionSnapshot(
+      plainText: plainText,
+      attributed: attributed,
+      characterRange: nsRange,
+      blockPlainText: blockPlain,
+      blockSignature: signature,
+      view: self,
+      unionRect: union.isNull ? .zero : union,
+      sectionAnchor: self.sectionAnchor,
+      blockIndex: self.blockIndex
+    )
+  }
+}
+
+extension TextInteractionSelectionSnapshot {
+  public static func signature(for text: String) -> String {
+    // Stable hash of the first 64 UTF-8 bytes of normalized text
+    let normalized = text.normalizedSelectionText
+    var slice = ArraySlice(normalized.utf8)
+    if slice.count > 64 { slice = slice.prefix(64) }
+    var hash: UInt64 = 1469598103934665603 // FNV-1a
+    for byte in slice { hash ^= UInt64(byte); hash &*= 1099511628211 }
+    return String(hash, radix: 16)
+  }
+}
+
+@MainActor
+public func currentlyFocusedTextInteractionSnapshot() -> TextInteractionSelectionSnapshot? {
+  guard let window = NSApp.keyWindow else { return nil }
+  var responder: NSResponder? = window.firstResponder
+  while let current = responder {
+    if let view = current as? NSTextInteractionView { return view.currentSelectionSnapshot() }
+    responder = current.nextResponder
+  }
+  // Fallback: walk content view subtree looking for any NSTextInteractionView
+  // with a non-empty selection.
+  if let root = window.contentView {
+    return firstSelectedSnapshot(in: root)
+  }
+  return nil
+}
+
+@MainActor
+private func firstSelectedSnapshot(in view: NSView) -> TextInteractionSelectionSnapshot? {
+  if let candidate = view as? NSTextInteractionView,
+     let snapshot = candidate.currentSelectionSnapshot() {
+    return snapshot
+  }
+  for sub in view.subviews {
+    if let snapshot = firstSelectedSnapshot(in: sub) { return snapshot }
+  }
+  return nil
+}
+
+private extension String {
+  var normalizedSelectionText: String {
+    lowercased()
+      .map { character in
+        if character.isLetter || character.isNumber || character.isWhitespace {
+          return character
+        }
+        return " "
+      }
+      .split(whereSeparator: \.isWhitespace)
+      .map(String.init)
+      .joined(separator: " ")
+  }
+}
+
 #endif

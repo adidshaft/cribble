@@ -37,6 +37,7 @@ struct TextSelectionInteraction: ViewModifier {
               }
           }
           .modifier(PlatformTextSelectionInteraction(model: model))
+          .preference(key: TextSelectionModelPreferenceKey.self, value: model)
       } else {
         content
       }

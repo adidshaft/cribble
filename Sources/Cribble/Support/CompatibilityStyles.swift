@@ -39,6 +39,14 @@ extension View {
         #endif
     }
 
+    func cribbleToolbarControl(prominent: Bool = false) -> some View {
+        self.labelStyle(.iconOnly)
+            .imageScale(.medium)
+            .controlSize(.regular)
+            .frame(minWidth: 34, minHeight: 30)
+            .cribbleGlassButton(prominent: prominent)
+    }
+
     @ViewBuilder
     private func fallbackGlassButton(prominent: Bool) -> some View {
         if prominent {

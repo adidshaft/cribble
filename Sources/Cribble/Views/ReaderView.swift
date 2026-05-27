@@ -366,7 +366,7 @@ private struct ReaderDocumentView: View {
     /// highlight capture from parking the UI in an intermediate state.
     private static func captureSelectedText(completion: @escaping (String?) -> Void) {
         let pasteboard = NSPasteboard.general
-        let previousItems = pasteboard.pasteboardItems?.compactMap { $0.copy() as? NSPasteboardItem } ?? []
+        let previousItems = PasteboardSnapshot(items: pasteboard.pasteboardItems ?? [])
         let previousChangeCount = pasteboard.changeCount
 
         _ = NSApp.sendAction(NSSelectorFromString("copy:"), to: nil, from: nil)
@@ -376,10 +376,37 @@ private struct ReaderDocumentView: View {
                 ? pasteboard.string(forType: .string)
                 : nil
             pasteboard.clearContents()
-            if !previousItems.isEmpty {
-                pasteboard.writeObjects(previousItems)
-            }
+            previousItems.restore(to: pasteboard)
             completion(copied)
+        }
+    }
+
+    private struct PasteboardSnapshot {
+        private let items: [[NSPasteboard.PasteboardType: Data]]
+
+        init(items pasteboardItems: [NSPasteboardItem]) {
+            items = pasteboardItems.map { item in
+                Dictionary(
+                    uniqueKeysWithValues: item.types.compactMap { type in
+                        guard let data = item.data(forType: type) else { return nil }
+                        return (type, data)
+                    }
+                )
+            }
+            .filter { !$0.isEmpty }
+        }
+
+        func restore(to pasteboard: NSPasteboard) {
+            guard !items.isEmpty else { return }
+
+            let restoredItems = items.map { storedTypes in
+                let item = NSPasteboardItem()
+                for (type, data) in storedTypes {
+                    item.setData(data, forType: type)
+                }
+                return item
+            }
+            pasteboard.writeObjects(restoredItems)
         }
     }
 }

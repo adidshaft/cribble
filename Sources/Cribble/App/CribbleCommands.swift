@@ -14,8 +14,6 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.navigateForwardAction) private var navigateForward
     @FocusedValue(\.toggleOutlineAction) private var toggleOutline
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
-    @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
-    @FocusedValue(\.highlightSelectionAction) private var highlightSelection
 
     var body: some Commands {
         CommandMenu("Library") {
@@ -59,21 +57,11 @@ struct CribbleCommands: Commands {
         }
 
         CommandMenu("Reading") {
-            // ⌘D — same mnemonic browsers use for "Add Bookmark". Switched
-            // from bare-letter "b" because Textual's NSTextInteractionView
-            // overrides keyDown → interpretKeyEvents → insertText: which
-            // swallows unmodified letters before macOS's menu key-equivalent
-            // dispatch can claim them. Once the user clicks into the text to
-            // select something, bare letters stop reaching the menu at all.
-            Button("Drop Reading Bookmark", action: { dropReadingBookmark?() })
-                .keyboardShortcut("d", modifiers: [.command])
-                .disabled(dropReadingBookmark == nil)
+            Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
+                .keyboardShortcut("b", modifiers: [])
 
-            // ⌘⇧H — ⌘H alone is the system Hide shortcut, so we add Shift.
-            // Same first-responder-eats-the-key reason as the bookmark change.
-            Button("Highlight Selection...", action: { highlightSelection?() })
-                .keyboardShortcut("h", modifiers: [.command, .shift])
-                .disabled(highlightSelection == nil)
+            Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
+                .keyboardShortcut("h", modifiers: [])
         }
 
         CommandMenu("Diagnostics") {

@@ -67,6 +67,9 @@ private struct ReaderDocumentView: View {
     @State private var restoreScrollOffsetY: Double?
     @State private var currentSectionTitle: String?
     @State private var restoredDocumentURL: URL?
+    @State private var isHighlightMode = false
+    @State private var lastHighlightedQuote: String?
+    @State private var shortcutToken = UUID()
 
     let document: MarkdownDocument
     let rendered: String
@@ -180,16 +183,28 @@ private struct ReaderDocumentView: View {
                     .transition(.move(edge: .trailing))
             }
         }
+        .onAppear {
+            ReaderShortcutHub.shared.activate(
+                token: shortcutToken,
+                isHighlightMode: $isHighlightMode,
+                onDropBookmark: { dropReadingBookmark() },
+                onHighlightKey: { handleHighlightKey() },
+                onHighlightMouseUp: { captureHighlightFromSelection(keepModeActive: true) }
+            )
+        }
+        .onDisappear {
+            ReaderShortcutHub.shared.deactivate(token: shortcutToken)
+        }
         .animation(.snappy(duration: 0.2), value: settings.showOutline)
         .animation(.snappy(duration: 0.2), value: settings.isFocusMode)
         .environment(\.openURL, OpenURLAction { url in
             onOpenURL(url)
         })
         .focusedSceneValue(\.dropReadingBookmarkAction, { dropReadingBookmark() })
-        .focusedSceneValue(\.highlightSelectionAction, { highlightSelection() })
+        .focusedSceneValue(\.highlightSelectionAction, { handleHighlightKey() })
         .contextMenu {
-            Button("Highlight Selection...") {
-                highlightSelection()
+            Button("Highlight Selection") {
+                captureHighlightFromSelection(keepModeActive: false)
             }
 
             Button("Drop Reading Bookmark") {
@@ -299,67 +314,178 @@ private struct ReaderDocumentView: View {
         library.statusMessage = "Dropped bookmark\(currentSectionTitle.map { " at \($0)" } ?? "")"
     }
 
-    private func highlightSelection() {
-        library.statusMessage = "Capturing selection…"
-        guard let quote = Self.captureSelectedText(),
-              !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else {
-            library.statusMessage = "No text selected — click into the document, drag to select a passage, then press ⌘⇧H."
-            return
+    private func handleHighlightKey() {
+        let wasHighlighting = isHighlightMode
+        if wasHighlighting {
+            isHighlightMode = false
+            library.statusMessage = "Highlight mode off"
+        } else {
+            isHighlightMode = true
+            lastHighlightedQuote = nil
+            library.statusMessage = "Highlight mode on - drag over text to mark passages"
         }
 
-        let alert = NSAlert()
-        alert.messageText = "Add Highlight Note"
-        alert.informativeText = "This note appears when hovering over the highlighted passage."
-        alert.addButton(withTitle: "Add Highlight")
-        alert.addButton(withTitle: "Cancel")
+        captureHighlightFromSelection(keepModeActive: false) { captured in
+            if captured {
+                isHighlightMode = false
+            }
+        }
+    }
 
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        field.placeholderString = "Optional note"
-        alert.accessoryView = field
+    private func captureHighlightFromSelection(
+        keepModeActive: Bool,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        Self.captureSelectedText { selectedText in
+            guard let quote = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !quote.isEmpty
+            else {
+                completion?(false)
+                return
+            }
 
-        if alert.runModal() == .alertFirstButtonReturn {
-            readingAnnotations.addHighlight(for: document.url, quote: quote, note: field.stringValue)
-            library.statusMessage = "Highlighted selection"
+            guard quote != lastHighlightedQuote else {
+                completion?(false)
+                return
+            }
+
+            readingAnnotations.addHighlight(for: document.url, quote: quote, note: "")
+            lastHighlightedQuote = quote
+            library.statusMessage = keepModeActive
+                ? "Highlighted selection - highlight mode still on"
+                : "Highlighted selection"
+            completion?(true)
         }
     }
 
     /// Capture the currently selected text by piggy-backing on the standard
     /// AppKit `copy:` action, restoring the user's clipboard afterwards.
     ///
-    /// Trying paths in order:
-    ///   1. `NSApp.sendAction(copy:, to: nil, from: nil)` walks the responder
-    ///      chain from the first responder up. This is the cheap path and
-    ///      works when the Textual selection view is still first responder.
-    ///   2. If that returns false (no responder handled it — e.g. focus
-    ///      drifted to a button), fall back to the key window's first
-    ///      responder explicitly via `tryToPerform`.
-    /// Both forms use the bare "copy:" selector so any responder with an
-    /// `@objc copy(_:)` (which is the standard AppKit contract Textual
-    /// implements) will pick it up.
-    private static func captureSelectedText() -> String? {
+    /// The copy result is read on the next run-loop turn instead of
+    /// synchronously waiting inside the menu/keyboard action. That keeps
+    /// highlight capture from parking the UI in an intermediate state.
+    private static func captureSelectedText(completion: @escaping (String?) -> Void) {
         let pasteboard = NSPasteboard.general
         let previousItems = pasteboard.pasteboardItems?.compactMap { $0.copy() as? NSPasteboardItem } ?? []
         let previousChangeCount = pasteboard.changeCount
 
-        let copySelector = NSSelectorFromString("copy:")
+        _ = NSApp.sendAction(NSSelectorFromString("copy:"), to: nil, from: nil)
 
-        var handled = NSApp.sendAction(copySelector, to: nil, from: nil)
-        if !handled || pasteboard.changeCount == previousChangeCount {
-            if let responder = NSApp.keyWindow?.firstResponder {
-                handled = responder.tryToPerform(copySelector, with: nil) || handled
-            }
-        }
-
-        defer {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            let copied = pasteboard.changeCount != previousChangeCount
+                ? pasteboard.string(forType: .string)
+                : nil
             pasteboard.clearContents()
             if !previousItems.isEmpty {
                 pasteboard.writeObjects(previousItems)
             }
+            completion(copied)
+        }
+    }
+}
+
+@MainActor
+final class ReaderShortcutHub {
+    static let shared = ReaderShortcutHub()
+
+    private var activeToken: UUID?
+    private var isHighlightMode: Binding<Bool>?
+    private var onDropBookmark: (() -> Void)?
+    private var onHighlightKey: (() -> Void)?
+    private var onHighlightMouseUp: (() -> Void)?
+    nonisolated(unsafe) private var monitor: Any?
+
+    private init() {}
+
+    func activate(
+        token: UUID,
+        isHighlightMode: Binding<Bool>,
+        onDropBookmark: @escaping () -> Void,
+        onHighlightKey: @escaping () -> Void,
+        onHighlightMouseUp: @escaping () -> Void
+    ) {
+        activeToken = token
+        self.isHighlightMode = isHighlightMode
+        self.onDropBookmark = onDropBookmark
+        self.onHighlightKey = onHighlightKey
+        self.onHighlightMouseUp = onHighlightMouseUp
+        installMonitorIfNeeded()
+    }
+
+    func deactivate(token: UUID) {
+        guard activeToken == token else { return }
+        activeToken = nil
+        isHighlightMode = nil
+        onDropBookmark = nil
+        onHighlightKey = nil
+        onHighlightMouseUp = nil
+    }
+
+    func performDropBookmark() {
+        onDropBookmark?()
+    }
+
+    func performHighlightKey() {
+        onHighlightKey?()
+    }
+
+    private func installMonitorIfNeeded() {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseUp]) { [weak self] event in
+            guard let self else { return event }
+            return self.handle(event)
+        }
+    }
+
+    private func handle(_ event: NSEvent) -> NSEvent? {
+        guard activeToken != nil, NSApp.keyWindow != nil else { return event }
+
+        switch event.type {
+        case .keyDown:
+            return handleKeyDown(event)
+        case .leftMouseUp:
+            if isHighlightMode?.wrappedValue == true {
+                DispatchQueue.main.async { [weak self] in
+                    self?.onHighlightMouseUp?()
+                }
+            }
+            return event
+        default:
+            return event
+        }
+    }
+
+    private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
+            return event
         }
 
-        guard pasteboard.changeCount != previousChangeCount else { return nil }
-        return pasteboard.string(forType: .string)
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            .subtracting([.capsLock, .shift])
+        guard flags.isEmpty else { return event }
+
+        if event.keyCode == 53 {
+            if isHighlightMode?.wrappedValue == true {
+                isHighlightMode?.wrappedValue = false
+                return nil
+            }
+            return event
+        }
+
+        guard let key = event.charactersIgnoringModifiers?.lowercased() else {
+            return event
+        }
+
+        switch key {
+        case "b", "d":
+            performDropBookmark()
+            return nil
+        case "h":
+            performHighlightKey()
+            return nil
+        default:
+            return event
+        }
     }
 }
 

@@ -83,7 +83,7 @@ Cribble 1.0.4 focuses on reading flow polish and stability:
 - Added Mac-preview-style text highlighting with a quick `H` shortcut and a
   continuous highlight mode.
 - Added right-click note editing for highlighted text; notes are stored with
-  the highlight and attached to that highlighted range for hover.
+  the highlight and reopen in a small popover anchored beside the text.
 - Fixed a pasteboard restore crash that could happen after highlighting.
 - Fixed a Textual selection-layout spin that could hang the app after copying,
   highlighting, or editing a highlight note.

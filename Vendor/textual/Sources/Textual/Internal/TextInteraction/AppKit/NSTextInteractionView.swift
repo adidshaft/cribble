@@ -14,6 +14,11 @@
     var model: TextSelectionModel
     var exclusionRects: [CGRect]
     var openURL: OpenURLAction
+    // Closure that returns extra context-menu items to splice into the
+    // selection menu (above the system Share/Copy items). Cribble uses this
+    // to inject "Add/Edit Highlight Note" and friends — without it, Textual's
+    // own NSMenu shadowed Cribble's SwiftUI `.contextMenu`.
+    var additionalMenuItemsProvider: TextInteractionMenuItemProvider?
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
@@ -24,15 +29,18 @@
     init(
       model: TextSelectionModel,
       exclusionRects: [CGRect],
-      openURL: OpenURLAction
+      openURL: OpenURLAction,
+      additionalMenuItemsProvider: TextInteractionMenuItemProvider? = nil
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
       self.openURL = openURL
+      self.additionalMenuItemsProvider = additionalMenuItemsProvider
 
       super.init(frame: .zero)
       self.wantsLayer = false
     }
+
 
     required init?(coder: NSCoder) {
       fatalError("init(coder:) has not been implemented")
@@ -201,6 +209,29 @@
         } else {
           NSLocalizedString("Copy", bundle: .main, comment: "")
         }
+
+      // Host-provided items (e.g. Cribble's "Add/Edit Highlight Note")
+      // appear first, then a separator, then the built-in Share / Copy
+      // actions.
+      if let provider = additionalMenuItemsProvider {
+        let attributedText = model.attributedText(in: selectedRange)
+        let selectedString = attributedText.string
+        let selectionRects = model.selectionRects(for: selectedRange)
+        // Bounds rect of the selection in our coord space — gives the host
+        // a precise anchor for popovers.
+        let anchorRect: NSRect = {
+          guard let first = selectionRects.first?.rect else { return .zero }
+          return selectionRects.dropFirst().reduce(first) { $0.union($1.rect) }
+        }()
+        let anchor = TextInteractionContextAnchor(view: self, selectionRect: anchorRect)
+        let extras = provider(selectedString, anchor)
+        if !extras.isEmpty {
+          for extra in extras {
+            contextMenu.addItem(TextInteractionMenuItem.makeNSMenuItem(extra))
+          }
+          contextMenu.addItem(.separator())
+        }
+      }
 
       contextMenu.addItem(
         .init(

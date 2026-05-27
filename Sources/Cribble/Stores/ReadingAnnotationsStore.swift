@@ -37,12 +37,22 @@ final class ReadingAnnotationsStore: ObservableObject {
 
         let key = key(for: documentURL)
         var documentHighlights = highlights[key] ?? []
+        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let index = documentHighlights.firstIndex(where: { highlightMatches($0, quote: trimmedQuote) }) {
+            if !trimmedNote.isEmpty {
+                documentHighlights[index].note = trimmedNote
+            }
+            highlights[key] = documentHighlights
+            save()
+            return
+        }
+
         documentHighlights.append(
             ReadingHighlight(
                 id: UUID(),
                 documentPath: key,
                 quote: trimmedQuote,
-                note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+                note: trimmedNote,
                 createdAt: Date()
             )
         )
@@ -72,6 +82,28 @@ final class ReadingAnnotationsStore: ObservableObject {
         let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuote.isEmpty else { return nil }
         return highlights(for: documentURL).first { highlightMatches($0, quote: trimmedQuote) }
+    }
+
+    @discardableResult
+    func removeHighlight(for documentURL: URL, matching quote: String) -> Bool {
+        let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuote.isEmpty else { return false }
+
+        let key = key(for: documentURL)
+        guard var documentHighlights = highlights[key],
+              let index = documentHighlights.firstIndex(where: { highlightMatches($0, quote: trimmedQuote) })
+        else {
+            return false
+        }
+
+        documentHighlights.remove(at: index)
+        if documentHighlights.isEmpty {
+            highlights.removeValue(forKey: key)
+        } else {
+            highlights[key] = documentHighlights
+        }
+        save()
+        return true
     }
 
     private func load() {

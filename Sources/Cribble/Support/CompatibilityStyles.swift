@@ -129,7 +129,7 @@ private struct HighlightModeCursorModifier: ViewModifier {
     }
 }
 
-private extension NSCursor {
+extension NSCursor {
     @MainActor
     static let cribbleHighlightLine: NSCursor = {
         let size = NSSize(width: 9, height: 32)

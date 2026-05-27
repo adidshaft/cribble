@@ -38,4 +38,25 @@ final class ReadingAnnotationsStoreTests: XCTestCase {
         let restored = ReadingAnnotationsStore(fileURL: storeURL)
         XCTAssertEqual(restored.highlights(for: documentURL).first?.note, "Ask about this")
     }
+
+    func testHighlightActionsDoNotDuplicateAndCanRemoveBySelectedQuote() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let storeURL = directory.appendingPathComponent("ReadingAnnotations.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let documentURL = directory.appendingPathComponent("Note.md").standardizedFileURL
+
+        let store = ReadingAnnotationsStore(fileURL: storeURL)
+        store.addHighlight(for: documentURL, quote: "important sentence with context", note: "")
+        store.addHighlight(for: documentURL, quote: "important sentence", note: "")
+        store.addHighlight(for: documentURL, quote: "important sentence", note: "Ask about this")
+
+        XCTAssertEqual(store.highlights(for: documentURL).count, 1)
+        XCTAssertEqual(store.highlight(for: documentURL, matching: "important sentence")?.note, "Ask about this")
+        XCTAssertTrue(store.removeHighlight(for: documentURL, matching: "important sentence"))
+        XCTAssertTrue(store.highlights(for: documentURL).isEmpty)
+
+        let restored = ReadingAnnotationsStore(fileURL: storeURL)
+        XCTAssertTrue(restored.highlights(for: documentURL).isEmpty)
+    }
 }

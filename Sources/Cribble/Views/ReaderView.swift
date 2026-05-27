@@ -194,6 +194,12 @@ private struct ReaderDocumentView: View {
             }
         }
         .highlightModeCursor(isHighlightMode)
+        // Textual installs its own I-beam via onContinuousHover on every
+        // sample, which would stomp the cursor pushed by the modifier above
+        // the instant the mouse enters text. Pushing the cursor through
+        // Textual's env override means Textual itself sets our cursor over
+        // text, so highlight mode actually shows a visual signal.
+        .environment(\.textInteractionCursorOverride, isHighlightMode ? NSCursor.cribbleHighlightLine : nil)
         .onAppear {
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,
@@ -213,18 +219,12 @@ private struct ReaderDocumentView: View {
         })
         .focusedSceneValue(\.dropReadingBookmarkAction, { dropReadingBookmark() })
         .focusedSceneValue(\.highlightSelectionAction, { handleHighlightKey() })
-        .contextMenu {
-            Button("Add/Edit Highlight Note") {
-                addNoteToSelectedHighlight()
-            }
-
-            Button("Highlight Selection") {
-                captureHighlightFromSelection(keepModeActive: false)
-            }
-
-            Button("Drop Reading Bookmark") {
-                dropReadingBookmark()
-            }
+        // Textual's NSTextInteractionView shows its own NSMenu on right-click
+        // over text, which shadowed any SwiftUI `.contextMenu` we attached
+        // here. Inject our custom items through Textual's env hook so they
+        // appear alongside Share / Copy.
+        .environment(\.textInteractionAdditionalMenuItems) { selected, anchor in
+            buildHighlightContextMenuItems(forSelection: selected, anchor: anchor)
         }
         .cribbleBackgroundExtension()
         .navigationTitle(document.title)
@@ -311,6 +311,91 @@ private struct ReaderDocumentView: View {
         library.statusMessage = "\(orphaned.count) \(noun) couldn't be located in the current file — likely edited since"
     }
 
+    private func buildHighlightContextMenuItems(
+        forSelection selected: String,
+        anchor: TextInteractionContextAnchor
+    ) -> [TextInteractionMenuItem] {
+        // Sanitize once so we work with what `applyHighlight` ultimately
+        // sees (no leading bullet, etc.).
+        let cleaned = Self.sanitizeHighlightQuote(selected)
+        guard !cleaned.isEmpty else { return [] }
+
+        let existing = readingAnnotations.highlight(for: document.url, matching: cleaned)
+        var items: [TextInteractionMenuItem]
+        if existing == nil {
+            items = [
+                TextInteractionMenuItem(title: "Highlight Selection") { [self] in
+                    addHighlightForCapturedSelection(cleaned)
+                },
+                TextInteractionMenuItem(title: "Highlight with Note") { [self] in
+                    presentNoteEditor(forQuote: cleaned, anchor: anchor)
+                }
+            ]
+        } else {
+            items = [
+                TextInteractionMenuItem(title: existing?.note.isEmpty == false ? "Edit Highlight Note" : "Add Highlight Note") { [self] in
+                    presentNoteEditor(forQuote: cleaned, anchor: anchor)
+                },
+                TextInteractionMenuItem(title: "Remove Highlight") { [self] in
+                    removeHighlight(matching: cleaned)
+                }
+            ]
+        }
+        items.append(
+            TextInteractionMenuItem(title: "Drop Reading Bookmark") { [self] in
+                dropReadingBookmark()
+            }
+        )
+        return items
+    }
+
+    private func addHighlightForCapturedSelection(_ quote: String) {
+        let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: "")
+        lastHighlightedQuote = trimmed
+        library.statusMessage = "Highlighted selection"
+    }
+
+    private func presentNoteEditor(forQuote quote: String, anchor: TextInteractionContextAnchor) {
+        let trimmed = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let existing = readingAnnotations.highlight(for: document.url, matching: trimmed)
+        let initialNote = existing?.note ?? ""
+
+        HighlightNotePopover.present(
+            quote: existing?.quote ?? trimmed,
+            initialNote: initialNote,
+            anchorView: anchor.view,
+            anchorRect: anchor.selectionRect
+        ) { [self] result in
+            switch result {
+            case .cancelled:
+                return
+            case .saved(let note):
+                if readingAnnotations.updateHighlightNote(
+                    for: document.url,
+                    matching: trimmed,
+                    note: note
+                ) {
+                    library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
+                } else {
+                    readingAnnotations.addHighlight(for: document.url, quote: trimmed, note: note)
+                    lastHighlightedQuote = trimmed
+                    library.statusMessage = note.isEmpty
+                        ? "Highlighted selection"
+                        : "Highlighted selection with note"
+                }
+            }
+        }
+    }
+
+    private func removeHighlight(matching quote: String) {
+        guard readingAnnotations.removeHighlight(for: document.url, matching: quote) else { return }
+        library.statusMessage = "Removed highlight"
+    }
+
     private func rebuildSectionPlan(rendered: String, highlights: [ReadingHighlight]? = nil) {
         let documentHighlights = highlights ?? readingAnnotations.highlights(for: document.url)
         sectionPlan = ReaderSectionPlan.build(rendered: rendered, highlights: documentHighlights)
@@ -359,7 +444,8 @@ private struct ReaderDocumentView: View {
         completion: ((Bool) -> Void)? = nil
     ) {
         Self.captureSelectedText { selectedText in
-            guard let quote = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines),
+            guard let raw = selectedText,
+                  case let quote = Self.sanitizeHighlightQuote(raw),
                   !quote.isEmpty
             else {
                 completion?(false)
@@ -380,48 +466,44 @@ private struct ReaderDocumentView: View {
         }
     }
 
-    private func addNoteToSelectedHighlight() {
-        Self.captureSelectedText { selectedText in
-            guard let quote = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !quote.isEmpty
-            else {
-                library.statusMessage = "Select highlighted text, then right-click to add a note"
-                return
-            }
-
-            let existing = readingAnnotations.highlight(for: document.url, matching: quote)
-            guard let note = Self.promptForHighlightNote(
-                quote: existing?.quote ?? quote,
-                currentNote: existing?.note ?? ""
-            ) else {
-                return
-            }
-
-            if readingAnnotations.updateHighlightNote(for: document.url, matching: quote, note: note) {
-                library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
-            } else {
-                readingAnnotations.addHighlight(for: document.url, quote: quote, note: note)
-                lastHighlightedQuote = quote
-                library.statusMessage = note.isEmpty ? "Highlighted selection" : "Highlighted selection with note"
-            }
+    /// Trim the noise Textual's plain-text copy adds — list bullets (`• `,
+    /// `- `, `* `, `+ `) and ordered markers (`1. `, `1) `) — that exist only
+    /// in the rendered clipboard string and NOT in the underlying
+    /// AttributedString the highlight parser later searches. Without this
+    /// strip, a triple-click on a bulleted line yields a stored quote like
+    /// "• View attendance history." that `applyHighlight`'s
+    /// `String(attributed.characters).range(of:)` can never match, so the
+    /// yellow background never appears.
+    fileprivate nonisolated static func sanitizeHighlightQuote(_ raw: String) -> String {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Repeated strip handles nested lists ("• 1. item").
+        while let stripped = stripLeadingListMarker(from: text), stripped != text {
+            text = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        return text
     }
 
-    private static func promptForHighlightNote(quote: String, currentNote: String) -> String? {
-        let alert = NSAlert()
-        alert.messageText = "Highlight Note"
-        alert.informativeText = "This note appears only when hovering over the highlighted text:\n\"\(quote.prefix(140))\""
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 26))
-        field.stringValue = currentNote
-        field.placeholderString = "Add a short note"
-        alert.accessoryView = field
-
-        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
-        return field.stringValue
+    fileprivate nonisolated static func stripLeadingListMarker(from text: String) -> String? {
+        guard let match = listMarkerRegex.firstMatch(
+            in: text,
+            range: NSRange(text.startIndex..., in: text)
+        ),
+        match.range.location == 0,
+        let upper = Range(match.range, in: text)?.upperBound
+        else {
+            return nil
+        }
+        return String(text[upper...])
     }
+
+    fileprivate nonisolated static let listMarkerRegex: NSRegularExpression = {
+        // Leading whitespace, then either a bullet glyph (Textual emits U+2022)
+        // / dash / asterisk / plus, or "<digits>." / "<digits>)", followed by
+        // at least one space. Matches what Formatter+PlainText emits in the
+        // copy-buffer text Cribble reads from when capturing highlights.
+        let pattern = #"^\s*(?:[•\-*+]|\d+[.)])\s+"#
+        return try! NSRegularExpression(pattern: pattern)
+    }()
 
     /// Capture the currently selected text by piggy-backing on the standard
     /// AppKit `copy:` action, restoring the user's clipboard afterwards.
@@ -671,7 +753,6 @@ private struct ReaderMarkdownSection: View {
         // changing the parser (the only carrier of highlights) wouldn't
         // otherwise trigger a re-parse and the highlight would never appear.
         .id(highlightIdentity(for: applicableHighlights))
-        .help(applicableHighlights.map(\.note).filter { !$0.isEmpty }.joined(separator: "\n\n"))
     }
 
     private func highlightIdentity(for highlights: [ReadingHighlight]) -> String {
@@ -1058,20 +1139,31 @@ private struct HighlightedMarkdownParser: MarkupParser {
     }
 
     private func applyHighlight(_ highlight: ReadingHighlight, to attributed: inout AttributedString) {
-        let quote = highlight.quote.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !quote.isEmpty else { return }
-        guard let stringRange = String(attributed.characters).range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]) else {
-            return
-        }
-        guard let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
-              let upper = AttributedString.Index(stringRange.upperBound, within: attributed)
-        else {
-            return
-        }
+        let trimmed = highlight.quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
 
-        attributed[lower..<upper].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
-        if !highlight.note.isEmpty {
-            attributed[lower..<upper].toolTip = highlight.note
+        let haystack = String(attributed.characters)
+        // Try the stored quote, then a marker-stripped variant. The second
+        // path keeps legacy highlights captured before the capture-time
+        // sanitizer existed (their quotes still carry "• " from Textual's
+        // plain-text copy) actually rendering.
+        let candidates: [String] = {
+            let stripped = ReaderDocumentView.sanitizeHighlightQuote(trimmed)
+            return stripped == trimmed ? [trimmed] : [trimmed, stripped]
+        }()
+
+        for candidate in candidates {
+            guard !candidate.isEmpty else { continue }
+            guard let stringRange = haystack.range(
+                of: candidate,
+                options: [.caseInsensitive, .diacriticInsensitive]
+            ) else { continue }
+            guard let lower = AttributedString.Index(stringRange.lowerBound, within: attributed),
+                  let upper = AttributedString.Index(stringRange.upperBound, within: attributed)
+            else { continue }
+
+            attributed[lower..<upper].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
+            return
         }
     }
 }
@@ -1145,9 +1237,12 @@ private struct ReaderSectionPlan {
             return ReaderSectionPlan(sections: sections, highlightsByAnchor: [:])
         }
 
-        // Normalize each highlight quote exactly once.
+        // Normalize each highlight quote exactly once. Strip list markers
+        // first so a legacy "• View attendance history." quote still
+        // partitions into the right section.
         let normalizedHighlights: [(ReadingHighlight, String)] = highlights.compactMap { highlight in
-            let normalized = highlight.quote.normalizedReadingText
+            let cleaned = ReaderDocumentView.sanitizeHighlightQuote(highlight.quote)
+            let normalized = cleaned.normalizedReadingText
             return normalized.isEmpty ? nil : (highlight, normalized)
         }
         guard !normalizedHighlights.isEmpty else {

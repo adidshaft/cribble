@@ -23,11 +23,27 @@ final class MarkdownDisplayPreprocessorTests: XCTestCase {
             """
             - [x] Done
             - [ ] Next
+            * [X] Shouted
+            + [ ] Plus
+              - [ ] Nested
+            1. [ ] Ordered
+            2) [x] Parenthesized
             """,
             documentTitle: "Tasks"
         )
 
-        XCTAssertEqual(prepared, "- ☑ Done\n- ☐ Next")
+        XCTAssertEqual(
+            prepared,
+            """
+            - ☑ Done
+            - ☐ Next
+            * ☑ Shouted
+            + ☐ Plus
+              - ☐ Nested
+            1. ☐ Ordered
+            2) ☑ Parenthesized
+            """
+        )
     }
 
     func testDetectsAutoCreatedReadmeAsEssentiallyEmpty() {

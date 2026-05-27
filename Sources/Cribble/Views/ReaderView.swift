@@ -204,6 +204,10 @@ private struct ReaderDocumentView: View {
         .focusedSceneValue(\.dropReadingBookmarkAction, { dropReadingBookmark() })
         .focusedSceneValue(\.highlightSelectionAction, { handleHighlightKey() })
         .contextMenu {
+            Button("Add/Edit Highlight Note") {
+                addNoteToSelectedHighlight()
+            }
+
             Button("Highlight Selection") {
                 captureHighlightFromSelection(keepModeActive: false)
             }
@@ -357,6 +361,49 @@ private struct ReaderDocumentView: View {
                 : "Highlighted selection"
             completion?(true)
         }
+    }
+
+    private func addNoteToSelectedHighlight() {
+        Self.captureSelectedText { selectedText in
+            guard let quote = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !quote.isEmpty
+            else {
+                library.statusMessage = "Select highlighted text, then right-click to add a note"
+                return
+            }
+
+            let existing = readingAnnotations.highlight(for: document.url, matching: quote)
+            guard let note = Self.promptForHighlightNote(
+                quote: existing?.quote ?? quote,
+                currentNote: existing?.note ?? ""
+            ) else {
+                return
+            }
+
+            if readingAnnotations.updateHighlightNote(for: document.url, matching: quote, note: note) {
+                library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
+            } else {
+                readingAnnotations.addHighlight(for: document.url, quote: quote, note: note)
+                lastHighlightedQuote = quote
+                library.statusMessage = note.isEmpty ? "Highlighted selection" : "Highlighted selection with note"
+            }
+        }
+    }
+
+    private static func promptForHighlightNote(quote: String, currentNote: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = "Highlight Note"
+        alert.informativeText = "This note appears only when hovering over the highlighted text:\n\"\(quote.prefix(140))\""
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 26))
+        field.stringValue = currentNote
+        field.placeholderString = "Add a short note"
+        alert.accessoryView = field
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        return field.stringValue
     }
 
     /// Capture the currently selected text by piggy-backing on the standard
@@ -573,29 +620,38 @@ private struct ReaderMarkdownSection: View {
 
     var body: some View {
         let applicableHighlights = highlightsInSection
-        StructuredText(
-            section.markdown,
-            parser: HighlightedMarkdownParser(
-                baseURL: baseURL,
-                highlights: applicableHighlights
-            )
-        )
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(RichMarkdownBlock.blocks(from: section.markdown)) { block in
+                switch block {
+                case .markdown(_, let markdown):
+                    StructuredText(
+                        markdown,
+                        parser: HighlightedMarkdownParser(
+                            baseURL: baseURL,
+                            highlights: applicableHighlights
+                        )
+                    )
+                    .font(.system(size: 17 * fontScale))
+                    .textual.structuredTextStyle(.gitHub)
+                    .textual.inlineStyle(
+                        InlineStyle()
+                            .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                            .strong(.fontWeight(.semibold))
+                    )
+                    .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
+                    .textual.textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                case .fencedCode(_, let language, let code):
+                    RichCodeBlockView(language: language, code: code, fontScale: fontScale)
+                }
+            }
+        }
         // Force re-parse when the highlight set changes. StructuredText
         // caches its rendered AttributedString keyed on `markup` alone, so
         // changing the parser (the only carrier of highlights) wouldn't
         // otherwise trigger a re-parse and the highlight would never appear.
         .id(highlightIdentity(for: applicableHighlights))
-        .font(.system(size: 17 * fontScale))
-        .textual.structuredTextStyle(.gitHub)
-        .textual.inlineStyle(
-            InlineStyle()
-                .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
-                .strong(.fontWeight(.semibold))
-        )
-        .textual.codeBlockStyle(CribbleCodeBlockStyle(fontSize: 13 * fontScale))
-        .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
-        .textual.textSelection(.enabled)
-        .fixedSize(horizontal: false, vertical: true)
         .help(applicableHighlights.map(\.note).filter { !$0.isEmpty }.joined(separator: "\n\n"))
     }
 
@@ -609,6 +665,363 @@ private struct ReaderMarkdownSection: View {
         // when nothing changed, unique when highlights are added/removed.
         let ids = highlights.map(\.id.uuidString).sorted().joined(separator: "|")
         return "\(section.id)#\(ids)"
+    }
+}
+
+private struct RichCodeBlockView: View {
+    let language: String?
+    let code: String
+    let fontScale: Double
+
+    private var normalizedLanguage: String {
+        language?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+    }
+
+    private var displayLanguage: String {
+        guard !normalizedLanguage.isEmpty else { return "Code" }
+        switch normalizedLanguage {
+        case "mermaid":
+            return "Mermaid"
+        case "dot", "graphviz":
+            return "Graphviz"
+        case "vega":
+            return "Vega"
+        case "vega-lite", "vegalite":
+            return "Vega-Lite"
+        default:
+            return normalizedLanguage.uppercased()
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+
+                Text(displayLanguage)
+                    .font(.system(size: 12 * fontScale, design: .rounded))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 8)
+
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(code, forType: .string)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Copy block")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(.primary.opacity(0.035))
+
+            if normalizedLanguage == "mermaid" {
+                MermaidDiagramView(source: code, fontScale: fontScale)
+                    .padding(12)
+            } else if ["dot", "graphviz", "vega", "vega-lite", "vegalite", "chart", "graph"].contains(normalizedLanguage) {
+                DiagramSourceView(source: code, fontScale: fontScale, iconName: "chart.xyaxis.line")
+                    .padding(12)
+            } else {
+                CodeSourceView(source: code, fontScale: fontScale)
+                    .padding(12)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(.primary.opacity(0.08), lineWidth: 1)
+        }
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var iconName: String {
+        switch normalizedLanguage {
+        case "mermaid", "dot", "graphviz":
+            return "point.3.connected.trianglepath.dotted"
+        case "vega", "vega-lite", "vegalite", "chart", "graph":
+            return "chart.bar.xaxis"
+        default:
+            return "curlybraces"
+        }
+    }
+}
+
+private struct MermaidDiagramView: View {
+    let source: String
+    let fontScale: Double
+
+    var body: some View {
+        let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        let firstLine = trimmed.components(separatedBy: .newlines).first?.lowercased() ?? ""
+
+        if firstLine.hasPrefix("sequenceDiagram".lowercased()) {
+            MermaidSequenceView(messages: MermaidSequenceMessage.messages(from: source), fontScale: fontScale, source: source)
+        } else if firstLine.hasPrefix("pie") {
+            MermaidPieView(slices: MermaidPieSlice.slices(from: source), fontScale: fontScale)
+        } else {
+            MermaidFlowchartView(edges: MermaidFlowchartEdge.edges(from: source), fontScale: fontScale, source: source)
+        }
+    }
+}
+
+private struct MermaidFlowchartView: View {
+    let edges: [MermaidFlowchartEdge]
+    let fontScale: Double
+    let source: String
+
+    var body: some View {
+        if edges.isEmpty {
+            DiagramSourceView(source: source, fontScale: fontScale, iconName: "point.3.connected.trianglepath.dotted")
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(edges.prefix(10)) { edge in
+                    HStack(spacing: 8) {
+                        MermaidNodeChip(label: edge.from, fontScale: fontScale)
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        MermaidNodeChip(label: edge.to, fontScale: fontScale)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if edges.count > 10 {
+                    Text("+ \(edges.count - 10) more connections")
+                        .font(.system(size: 12 * fontScale))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+}
+
+private struct MermaidNodeChip: View {
+    let label: String
+    let fontScale: Double
+
+    var body: some View {
+        Text(label)
+            .font(.system(size: 13 * fontScale, weight: .semibold, design: .rounded))
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+            .overlay {
+                RoundedRectangle(cornerRadius: 7)
+                    .strokeBorder(.blue.opacity(0.22), lineWidth: 1)
+            }
+    }
+}
+
+private struct MermaidSequenceView: View {
+    let messages: [MermaidSequenceMessage]
+    let fontScale: Double
+    let source: String
+
+    var body: some View {
+        if messages.isEmpty {
+            DiagramSourceView(source: source, fontScale: fontScale, iconName: "arrow.left.arrow.right")
+        } else {
+            VStack(alignment: .leading, spacing: 9) {
+                ForEach(messages.prefix(10)) { message in
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack(spacing: 7) {
+                            Text(message.from)
+                                .fontWeight(.semibold)
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                            Text(message.to)
+                                .fontWeight(.semibold)
+                        }
+                        .font(.system(size: 12 * fontScale, design: .rounded))
+
+                        Text(message.label)
+                            .font(.system(size: 13 * fontScale))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.purple.opacity(0.09), in: RoundedRectangle(cornerRadius: 7))
+                }
+            }
+        }
+    }
+}
+
+private struct MermaidPieView: View {
+    let slices: [MermaidPieSlice]
+    let fontScale: Double
+
+    var body: some View {
+        if slices.isEmpty {
+            DiagramSourceView(source: "", fontScale: fontScale, iconName: "chart.pie")
+        } else {
+            let maxValue = slices.map(\.value).max() ?? 1
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(slices.prefix(10)) { slice in
+                    HStack(spacing: 10) {
+                        Text(slice.label)
+                            .font(.system(size: 13 * fontScale))
+                            .frame(width: 120, alignment: .leading)
+                            .lineLimit(1)
+
+                        GeometryReader { proxy in
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.green.opacity(0.28))
+                                .frame(width: max(8, proxy.size.width * slice.value / maxValue))
+                        }
+                        .frame(height: 8)
+
+                        Text(slice.value.formatted())
+                            .font(.system(size: 11 * fontScale, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DiagramSourceView: View {
+    let source: String
+    let fontScale: Double
+    let iconName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: iconName)
+                    .foregroundStyle(.secondary)
+                Text("Diagram preview")
+                    .font(.system(size: 13 * fontScale, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
+            if !source.isEmpty {
+                CodeSourceView(source: source, fontScale: fontScale)
+            }
+        }
+    }
+}
+
+private struct CodeSourceView: View {
+    let source: String
+    let fontScale: Double
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            Text(source.isEmpty ? " " : source)
+                .font(.system(size: 13 * fontScale, design: .monospaced))
+                .textSelection(.enabled)
+                .lineSpacing(2)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
+    }
+}
+
+private struct MermaidFlowchartEdge: Identifiable, Equatable {
+    let id = UUID()
+    let from: String
+    let to: String
+
+    static func edges(from source: String) -> [MermaidFlowchartEdge] {
+        source
+            .components(separatedBy: .newlines)
+            .compactMap { line -> MermaidFlowchartEdge? in
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty,
+                      !trimmed.lowercased().hasPrefix("flowchart"),
+                      !trimmed.lowercased().hasPrefix("graph")
+                else { return nil }
+
+                let sanitized = trimmed
+                    .replacingOccurrences(of: #"\|[^|]*\|"#, with: " ", options: .regularExpression)
+                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+
+                let separators = ["-->", "---", "==>", "-.->", "~~~"]
+                guard let separator = separators.first(where: { sanitized.contains($0) }) else { return nil }
+                let parts = sanitized.components(separatedBy: separator)
+                guard parts.count >= 2 else { return nil }
+
+                let from = normalizeNode(parts[0])
+                let to = normalizeNode(parts[1])
+                guard !from.isEmpty, !to.isEmpty else { return nil }
+                return MermaidFlowchartEdge(from: from, to: to)
+            }
+    }
+
+    private static func normalizeNode(_ raw: String) -> String {
+        raw
+            .replacingOccurrences(of: #"^[A-Za-z0-9_]+\s*[\[\(\{<"](.+)[\]\)\}>"]$"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: #"[;\[\]\(\)\{\}<"]"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct MermaidSequenceMessage: Identifiable, Equatable {
+    let id = UUID()
+    let from: String
+    let to: String
+    let label: String
+
+    static func messages(from source: String) -> [MermaidSequenceMessage] {
+        source
+            .components(separatedBy: .newlines)
+            .compactMap { line -> MermaidSequenceMessage? in
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                let arrows = ["-->>", "->>", "-->", "->", "-x", "--x"]
+                guard let arrow = arrows.first(where: { trimmed.contains($0) }),
+                      let arrowRange = trimmed.range(of: arrow),
+                      let colonIndex = trimmed[arrowRange.upperBound...].firstIndex(of: ":")
+                else { return nil }
+
+                let from = String(trimmed[..<arrowRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let to = String(trimmed[arrowRange.upperBound..<colonIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let label = String(trimmed[trimmed.index(after: colonIndex)...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !from.isEmpty, !to.isEmpty, !label.isEmpty else { return nil }
+                return MermaidSequenceMessage(from: from, to: to, label: label)
+            }
+    }
+}
+
+private struct MermaidPieSlice: Identifiable, Equatable {
+    let id = UUID()
+    let label: String
+    let value: Double
+
+    static func slices(from source: String) -> [MermaidPieSlice] {
+        source
+            .components(separatedBy: .newlines)
+            .compactMap { line -> MermaidPieSlice? in
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard trimmed.contains(":"),
+                      !trimmed.lowercased().hasPrefix("pie"),
+                      !trimmed.lowercased().hasPrefix("title")
+                else { return nil }
+
+                let parts = trimmed.split(separator: ":", maxSplits: 1).map(String.init)
+                guard parts.count == 2,
+                      let value = Double(parts[1].trimmingCharacters(in: .whitespacesAndNewlines))
+                else { return nil }
+
+                let label = parts[0]
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "\"' "))
+                guard !label.isEmpty else { return nil }
+                return MermaidPieSlice(label: label, value: value)
+            }
     }
 }
 
@@ -643,6 +1056,9 @@ private struct HighlightedMarkdownParser: MarkupParser {
         }
 
         attributed[lower..<upper].backgroundColor = NSColor.systemYellow.withAlphaComponent(0.35)
+        if !highlight.note.isEmpty {
+            attributed[lower..<upper].toolTip = highlight.note
+        }
     }
 }
 

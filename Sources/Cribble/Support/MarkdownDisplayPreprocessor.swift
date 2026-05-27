@@ -44,7 +44,15 @@ enum MarkdownDisplayPreprocessor {
 
     private static func enrichTaskListMarkers(_ markdown: String) -> String {
         markdown
-            .replacingOccurrences(of: #"(?m)^(\s*)[-*]\s+\[[xX]\]\s+"#, with: "$1- ☑ ", options: .regularExpression)
-            .replacingOccurrences(of: #"(?m)^(\s*)[-*]\s+\[ \]\s+"#, with: "$1- ☐ ", options: .regularExpression)
+            .replacingOccurrences(
+                of: #"(?m)^(\s*)((?:[-*+])|(?:\d+[.)]))\s+\[[xX]\]\s+"#,
+                with: "$1$2 ☑ ",
+                options: .regularExpression
+            )
+            .replacingOccurrences(
+                of: #"(?m)^(\s*)((?:[-*+])|(?:\d+[.)]))\s+\[ \]\s+"#,
+                with: "$1$2 ☐ ",
+                options: .regularExpression
+            )
     }
 }

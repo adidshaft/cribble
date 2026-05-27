@@ -34,7 +34,8 @@ respectful of the user's files.
 ## Core Ideas
 
 - **Read beautifully:** render Markdown with strong typography, tables, task
-  states, code blocks, images, links, and math without adding an editor surface.
+  states, code blocks, Mermaid diagrams, chart/graph fences, images, links, and
+  math without adding an editor surface.
 - **Navigate locally:** preserve the folder tree, open folder `README.md` files,
   resolve wiki links, and make cross-file reading feel natural.
 - **Connect notes safely:** use local Codex or Claude CLIs to suggest links, then
@@ -50,8 +51,9 @@ respectful of the user's files.
 - Opens a folder's `README.md` automatically when the folder is selected.
 - Sorts files inside folders by name, creation date, or last updated date.
 - Auto-reloads Markdown files when they change on disk.
-- Renders rich Markdown with Textual, including task markers, code blocks,
-  tables, relative images, links, and LaTeX math.
+- Renders rich Markdown with Textual and native rich-block previews, including
+  task markers, ordered task lists, code blocks, Mermaid diagrams, chart/graph
+  fences, tables, relative images, links, and LaTeX math.
 - Uses Roobert for reading typography and Monaco for monospaced text.
 - Provides XXS-to-XXL reader text sizing.
 - Supports wiki links such as `[[Home]]`, `[[Note#Heading]]`, and
@@ -70,8 +72,7 @@ respectful of the user's files.
   configured model for each provider.
 - Provides a Diagnostic Report sheet with copy, GitHub issue, and GitHub pull
   request actions for quick user reports.
-- Ships as a signed, notarized Apple Silicon macOS DMG with a drag-to-install
-  Finder layout.
+- Ships as a signed, notarized macOS DMG with a drag-to-install Finder layout.
 
 ## Latest Release: 1.0.4
 
@@ -81,9 +82,13 @@ Cribble 1.0.4 focuses on reading flow polish and stability:
   reading.
 - Added Mac-preview-style text highlighting with a quick `H` shortcut and a
   continuous highlight mode.
+- Added right-click note editing for highlighted text; notes are stored with
+  the highlight and attached to that highlighted range for hover.
 - Fixed a pasteboard restore crash that could happen after highlighting.
 - Restored the compact macOS toolbar button treatment.
 - Updated the reader cursor in highlight mode to a longer straight line.
+- Upgraded Markdown reading so ordered checkboxes, Mermaid fences, graph/chart
+  fences, and code blocks render as first-class reading blocks.
 - Preserved existing bookmark/highlight storage in
   `~/Library/Application Support/Cribble/ReadingAnnotations.json`.
 
@@ -166,7 +171,8 @@ The script checks the Apple Silicon binary, minimum macOS version, code signing,
 Gatekeeper acceptance, notarization tickets, and DMG contents.
 
 The tests cover folder scanning, sort behavior, wiki-link parsing, link-index
-resolution, Markdown display preparation, and unified-diff parsing/apply logic.
+resolution, Markdown display preparation, rich fenced-block splitting, and
+unified-diff parsing/apply logic.
 
 ## Release
 

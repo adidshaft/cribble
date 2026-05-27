@@ -335,8 +335,9 @@ final class CribbleUITests: XCTestCase {
         - [x] Complete task
         - [ ] Pending task
         - [X] Case-insensitive complete
+        1. [ ] Ordered task
         """
         let preparedTasks = MarkdownDisplayPreprocessor.prepare(rawTasks, documentTitle: "Tasks")
-        XCTAssertEqual(preparedTasks, "- ☑ Complete task\n- ☐ Pending task\n- ☑ Case-insensitive complete")
+        XCTAssertEqual(preparedTasks, "- ☑ Complete task\n- ☐ Pending task\n- ☑ Case-insensitive complete\n1. ☐ Ordered task")
     }
 }

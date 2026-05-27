@@ -50,6 +50,30 @@ final class ReadingAnnotationsStore: ObservableObject {
         save()
     }
 
+    @discardableResult
+    func updateHighlightNote(for documentURL: URL, matching quote: String, note: String) -> Bool {
+        let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuote.isEmpty else { return false }
+
+        let key = key(for: documentURL)
+        guard var documentHighlights = highlights[key],
+              let index = documentHighlights.firstIndex(where: { highlightMatches($0, quote: trimmedQuote) })
+        else {
+            return false
+        }
+
+        documentHighlights[index].note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        highlights[key] = documentHighlights
+        save()
+        return true
+    }
+
+    func highlight(for documentURL: URL, matching quote: String) -> ReadingHighlight? {
+        let trimmedQuote = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuote.isEmpty else { return nil }
+        return highlights(for: documentURL).first { highlightMatches($0, quote: trimmedQuote) }
+    }
+
     private func load() {
         guard let data = try? Data(contentsOf: fileURL) else { return }
         guard let payload = try? JSONDecoder.cribble.decode(Payload.self, from: data) else { return }
@@ -79,6 +103,13 @@ final class ReadingAnnotationsStore: ObservableObject {
         url.standardizedFileURL.path
     }
 
+    private func highlightMatches(_ highlight: ReadingHighlight, quote: String) -> Bool {
+        let stored = highlight.quote.normalizedAnnotationText
+        let selected = quote.normalizedAnnotationText
+        guard !stored.isEmpty, !selected.isEmpty else { return false }
+        return stored == selected || stored.contains(selected) || selected.contains(stored)
+    }
+
     private static func defaultFileURL() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
@@ -89,6 +120,14 @@ final class ReadingAnnotationsStore: ObservableObject {
     private struct Payload: Codable {
         var bookmarks: [ReadingBookmark]
         var highlights: [ReadingHighlight]
+    }
+}
+
+private extension String {
+    var normalizedAnnotationText: String {
+        lowercased()
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
     }
 }
 

@@ -138,7 +138,7 @@
     @MainActor (_ selection: String, _ anchor: TextInteractionContextAnchor) -> [TextInteractionMenuItem]
 
   private struct TextInteractionAdditionalMenuItemsKey: EnvironmentKey {
-    nonisolated(unsafe) static let defaultValue: TextInteractionMenuItemProvider? = nil
+    static let defaultValue: TextInteractionMenuItemProvider? = nil
   }
 
   extension EnvironmentValues {

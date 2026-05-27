@@ -287,6 +287,10 @@ private struct ReaderDocumentView: View {
     }
 
     private func dropReadingBookmark() {
+        // Immediate user-visible confirmation — proves the action fired even
+        // if downstream rendering (the bookmark strip) is somehow not picking
+        // up the @Published change.
+        library.statusMessage = "Dropping bookmark…"
         readingAnnotations.dropBookmark(
             for: document.url,
             offsetY: scrollState.offsetY,
@@ -296,10 +300,11 @@ private struct ReaderDocumentView: View {
     }
 
     private func highlightSelection() {
+        library.statusMessage = "Capturing selection…"
         guard let quote = Self.captureSelectedText(),
               !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
-            library.statusMessage = "Click in the text and select a passage first, then press H."
+            library.statusMessage = "No text selected — click into the document, drag to select a passage, then press ⌘⇧H."
             return
         }
 
@@ -637,13 +642,13 @@ private struct ScrollPositionBridge: NSViewRepresentable {
         }
 
         @objc nonisolated private func boundsDidChange(_ notification: Notification) {
-            guard let clipView = notification.object as? NSClipView else { return }
-            // NSScrollView posts bounds-changed on the main thread, so we
-            // assume isolation rather than hopping through Task (which would
-            // queue per-tick work and lose the no-overhead property we
-            // moved here for).
+            // NSScrollView always posts bounds-changed on the main thread,
+            // so MainActor.assumeIsolated is sound. We deliberately avoid
+            // pulling `notification.object` across the actor boundary (Swift
+            // 6 sendability) by reading our own cached scrollView reference.
             MainActor.assumeIsolated {
-                scrollState.offsetY = clipView.bounds.origin.y
+                guard let scrollView else { return }
+                scrollState.offsetY = scrollView.contentView.bounds.origin.y
             }
         }
 

@@ -137,7 +137,7 @@ struct ContentView: View {
                 Label("Back", systemImage: "chevron.left")
             }
             .disabled(!library.canNavigateBack)
-            .cribbleToolbarControl()
+            .cribbleGlassButton()
             .help("Navigate back (Cmd + [)")
 
             Button {
@@ -146,7 +146,7 @@ struct ContentView: View {
                 Label("Forward", systemImage: "chevron.right")
             }
             .disabled(!library.canNavigateForward)
-            .cribbleToolbarControl()
+            .cribbleGlassButton()
             .help("Navigate forward (Cmd + ])")
         }
     }
@@ -163,7 +163,7 @@ struct ContentView: View {
             } label: {
                 Label("Focus Mode", systemImage: settings.isFocusMode ? "eye.slash.fill" : "eye.slash")
             }
-            .cribbleToolbarControl(prominent: settings.isFocusMode)
+            .cribbleGlassButton(prominent: settings.isFocusMode)
             .help("Toggle Focus Mode (Cmd + Option + F)")
 
             Button {
@@ -172,7 +172,7 @@ struct ContentView: View {
                 Label("Outline", systemImage: "list.bullet.indent")
             }
             .disabled(library.selectedDocument == nil || settings.isFocusMode)
-            .cribbleToolbarControl(prominent: settings.showOutline && !settings.isFocusMode)
+            .cribbleGlassButton(prominent: settings.showOutline && !settings.isFocusMode)
             .help("Toggle Headings Outline (Cmd + Option + O)")
 
             Button {
@@ -181,7 +181,7 @@ struct ContentView: View {
                 Label("AI Link Notes", systemImage: "sparkles")
             }
             .disabled(!library.hasFolders || library.isRunningAI)
-            .cribbleToolbarControl()
+            .cribbleGlassButton()
             .help("Ask a local AI tool to suggest wiki links with a patch preview")
         }
     }
@@ -249,7 +249,7 @@ private struct TextSizeMenu: View {
         } label: {
             Label("Text Size", systemImage: "textformat.size")
         }
-        .cribbleToolbarControl()
+        .cribbleGlassButton()
         .help("Change reader text size from XXS to XXL")
     }
 }
@@ -288,7 +288,7 @@ private struct OpenInMenu: View {
         } label: {
             Label("Open in", systemImage: "square.and.pencil")
         }
-        .cribbleToolbarControl()
+        .cribbleGlassButton()
         .disabled(library.selectedDocument == nil)
         .help("Open the selected Markdown file in another app or reveal it in Finder")
     }

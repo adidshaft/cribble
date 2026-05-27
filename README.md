@@ -58,6 +58,12 @@ respectful of the user's files.
   `[[Note|Label]]`.
 - Shows linked files inline in the document and as a collapsible linked-files
   panel.
+- Drops one reading bookmark per page at the current reading section with `B`
+  or `D`, then resumes through the bookmark strip.
+- Highlights selected passages with `H`, or enters a continuous highlight mode
+  for quick mark-as-you-read workflows.
+- Uses a tall highlight-mode cursor so it is clear when drag-to-highlight is
+  active.
 - Opens the current file with a toolbar `Open in` menu, including detected
   eligible apps, the default app, and Finder reveal.
 - Offers preview-first AI linking with local Codex or Claude, using the lowest
@@ -66,6 +72,20 @@ respectful of the user's files.
   request actions for quick user reports.
 - Ships as a signed, notarized Apple Silicon macOS DMG with a drag-to-install
   Finder layout.
+
+## Latest Release: 1.0.4
+
+Cribble 1.0.4 focuses on reading flow polish and stability:
+
+- Added per-document reading bookmarks for the exact section where you stopped
+  reading.
+- Added Mac-preview-style text highlighting with a quick `H` shortcut and a
+  continuous highlight mode.
+- Fixed a pasteboard restore crash that could happen after highlighting.
+- Restored the compact macOS toolbar button treatment.
+- Updated the reader cursor in highlight mode to a longer straight line.
+- Preserved existing bookmark/highlight storage in
+  `~/Library/Application Support/Cribble/ReadingAnnotations.json`.
 
 ## Reading Workflow
 
@@ -139,7 +159,7 @@ swift test
 After packaging and notarization, run:
 
 ```sh
-./script/validate_release.sh 1.0.0
+./script/validate_release.sh 1.0.4
 ```
 
 The script checks the Apple Silicon binary, minimum macOS version, code signing,
@@ -150,10 +170,10 @@ resolution, Markdown display preparation, and unified-diff parsing/apply logic.
 
 ## Release
 
-Current version: `1.0.0`
+Current version: `1.0.4`
 
 ```sh
-./script/package_release.sh 1.0.0
+./script/package_release.sh 1.0.4
 ```
 
 The release script:
@@ -167,28 +187,28 @@ The release script:
 - copies the SPM resource bundle (`Bundle.module`) and fails loudly if it
   is missing, so the bundled app icon can't silently disappear
 - signs with Developer ID
-- creates `releases/Cribble-1.0.0.dmg`
+- creates `releases/Cribble-1.0.4.dmg`
 - if `NOTARY_PROFILE=<keychain-profile>` is set, submits the DMG to
   Apple's notary service and staples the ticket
 - writes a SHA-256 checksum
 
 ```sh
 # Apple Silicon + Intel, signed only (Gatekeeper will block on other Macs):
-./script/package_release.sh 1.0.0
+./script/package_release.sh 1.0.4
 
 # Apple Silicon + Intel, signed + notarized + stapled (recommended for
 # public sharing):
-NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.0
+NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.4
 
 # Apple Silicon only:
-ARCHS=arm64 ./script/package_release.sh 1.0.0
+ARCHS=arm64 ./script/package_release.sh 1.0.4
 ```
 
 If you'd rather notarize by hand:
 
 ```sh
-xcrun notarytool submit releases/Cribble-1.0.0.dmg --keychain-profile cribble-notary --wait
-xcrun stapler staple releases/Cribble-1.0.0.dmg
+xcrun notarytool submit releases/Cribble-1.0.4.dmg --keychain-profile cribble-notary --wait
+xcrun stapler staple releases/Cribble-1.0.4.dmg
 ```
 
 Stable release:

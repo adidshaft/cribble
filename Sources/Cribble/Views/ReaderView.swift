@@ -183,6 +183,7 @@ private struct ReaderDocumentView: View {
                     .transition(.move(edge: .trailing))
             }
         }
+        .highlightModeCursor(isHighlightMode)
         .onAppear {
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,

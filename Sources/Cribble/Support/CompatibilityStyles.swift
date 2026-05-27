@@ -39,14 +39,6 @@ extension View {
         #endif
     }
 
-    func cribbleToolbarControl(prominent: Bool = false) -> some View {
-        self.labelStyle(.iconOnly)
-            .imageScale(.medium)
-            .controlSize(.regular)
-            .frame(minWidth: 34, minHeight: 30)
-            .cribbleGlassButton(prominent: prominent)
-    }
-
     @ViewBuilder
     private func fallbackGlassButton(prominent: Bool) -> some View {
         if prominent {
@@ -72,6 +64,10 @@ extension View {
     func pointingHandOnHover() -> some View {
         modifier(PointingHandOnHoverModifier())
     }
+
+    func highlightModeCursor(_ isActive: Bool) -> some View {
+        modifier(HighlightModeCursorModifier(isActive: isActive))
+    }
 }
 
 struct PointingHandOnHoverModifier: ViewModifier {
@@ -94,4 +90,64 @@ struct PointingHandOnHoverModifier: ViewModifier {
             }
         }
     }
+}
+
+private struct HighlightModeCursorModifier: ViewModifier {
+    let isActive: Bool
+    @State private var isHovering = false
+    @State private var didPushCursor = false
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { hovering in
+                isHovering = hovering
+                syncCursor()
+            }
+            .onChange(of: isActive) { _, _ in
+                syncCursor()
+            }
+            .onDisappear {
+                popCursorIfNeeded()
+            }
+    }
+
+    private func syncCursor() {
+        if isActive && isHovering {
+            guard !didPushCursor else { return }
+            NSCursor.cribbleHighlightLine.push()
+            didPushCursor = true
+        } else {
+            popCursorIfNeeded()
+        }
+    }
+
+    private func popCursorIfNeeded() {
+        if didPushCursor {
+            NSCursor.pop()
+            didPushCursor = false
+        }
+    }
+}
+
+private extension NSCursor {
+    @MainActor
+    static let cribbleHighlightLine: NSCursor = {
+        let size = NSSize(width: 9, height: 32)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        NSColor.clear.setFill()
+        NSRect(origin: .zero, size: size).fill()
+
+        let lineRect = NSRect(x: 4, y: 2, width: 1.5, height: 28)
+        NSColor.labelColor.withAlphaComponent(0.92).setFill()
+        lineRect.fill()
+
+        NSColor.systemYellow.withAlphaComponent(0.7).setFill()
+        NSRect(x: 3, y: 1, width: 3.5, height: 2).fill()
+        NSRect(x: 3, y: 29, width: 3.5, height: 2).fill()
+
+        image.unlockFocus()
+        return NSCursor(image: image, hotSpot: NSPoint(x: 4.5, y: 16))
+    }()
 }

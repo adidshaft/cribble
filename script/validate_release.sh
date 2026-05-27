@@ -64,7 +64,10 @@ trap cleanup EXIT
 DEVICE="$(/usr/bin/hdiutil attach "$DMG_PATH" -readonly -noverify -noautoopen -mountpoint "$MOUNT_DIR" | /usr/bin/awk '/Apple_HFS|Apple_APFS/ { print $1; exit }')"
 /bin/test -d "$MOUNT_DIR/Cribble.app"
 /bin/test -L "$MOUNT_DIR/Applications"
-/bin/test -f "$MOUNT_DIR/.background/background.png"
+if [[ ! -f "$MOUNT_DIR/.background/background.png" && ! -f "$MOUNT_DIR/.background.png" ]]; then
+  echo "Missing DMG background image" >&2
+  exit 1
+fi
 for bundle in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
   /bin/test -d "$MOUNT_DIR/Cribble.app/Contents/Resources/$bundle"
 done

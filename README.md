@@ -86,7 +86,7 @@ Cribble 1.0.5 is the stable rich-reading release with a crash fix for highlight 
 - Fixed release checksum generation so public `.sha256` assets never include local machine paths.
 - Rebuilt text highlights using robust offset anchors (PDF-style) for stable, drift-resistant highlight ranges.
 - Fixed the inline-code highlight bug so monospace text runs color perfectly across style boundaries.
-- Added anchored right-click highlight notes, plus edit/remove actions that target the exact selected highlight even when repeated text appears in a document.
+- Added anchored right-click highlight notes with a no-button note editor that saves on Return or outside click, deletes empty notes, and shows saved notes immediately on hover.
 - Added custom highlight hand cursor (`cribbleHighlightHand`) driving visual feedback when hovering over highlighted text.
 - Added bundled Mermaid rendering and restored Prism-backed syntax highlighting for fenced code blocks.
 - Patched Markdown support for footnotes (dynamic Unicode superscript references and final glossary block generation) and expanded task list checkbox markers.

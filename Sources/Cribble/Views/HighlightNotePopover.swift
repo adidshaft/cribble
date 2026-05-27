@@ -2,7 +2,6 @@ import AppKit
 import SwiftUI
 
 enum HighlightNotePopoverResult {
-    case cancelled
     case saved(String)
 }
 
@@ -22,18 +21,16 @@ enum HighlightNotePopover {
         popover.behavior = .transient
         popover.animates = true
 
-        let coordinator = NotePopoverCoordinator(completion: completion)
+        let coordinator = NotePopoverCoordinator(initialNote: initialNote, completion: completion)
 
         let hosting = NSHostingController(
             rootView: HighlightNoteEditor(
-                quote: quote,
                 initialNote: initialNote,
+                onChange: { [weak coordinator] note in
+                    coordinator?.currentNote = note
+                },
                 onSave: { [weak popover] note in
                     coordinator.finalize(.saved(note))
-                    popover?.performClose(nil)
-                },
-                onCancel: { [weak popover] in
-                    coordinator.finalize(.cancelled)
                     popover?.performClose(nil)
                 }
             )
@@ -62,8 +59,10 @@ enum HighlightNotePopover {
 private final class NotePopoverCoordinator: NSObject, NSPopoverDelegate {
     private var completion: ((HighlightNotePopoverResult) -> Void)?
     private var retainedPopover: NSPopover?
+    var currentNote: String
 
-    init(completion: @escaping (HighlightNotePopoverResult) -> Void) {
+    init(initialNote: String, completion: @escaping (HighlightNotePopoverResult) -> Void) {
+        self.currentNote = initialNote
         self.completion = completion
     }
 
@@ -87,10 +86,7 @@ private final class NotePopoverCoordinator: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
-        // If the popover was dismissed by clicking outside (no save/cancel
-        // tapped), treat it as a cancel so the caller sees a deterministic
-        // result.
-        finalize(.cancelled)
+        finalize(.saved(currentNote))
         retainedPopover = nil
     }
 
@@ -98,43 +94,49 @@ private final class NotePopoverCoordinator: NSObject, NSPopoverDelegate {
 }
 
 private struct HighlightNoteEditor: View {
-    let quote: String
     let initialNote: String
+    let onChange: (String) -> Void
     let onSave: (String) -> Void
-    let onCancel: () -> Void
 
     @State private var note: String = ""
     @FocusState private var fieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\u{201C}\(quote.prefix(120))\u{201D}")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .truncationMode(.tail)
+            Text("Add Note to highlight")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
 
-            TextField("Add a note", text: $note, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(2...5)
-                .focused($fieldFocused)
-                .onSubmit { onSave(note) }
+            ZStack(alignment: .bottomTrailing) {
+                TextField("Write a note", text: $note, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(4...5)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .frame(minHeight: 106, alignment: .topLeading)
+                    .background(.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .strokeBorder(.secondary.opacity(0.28), lineWidth: 0.75)
+                    }
+                    .focused($fieldFocused)
+                    .onSubmit { onSave(note) }
+                    .onChange(of: note) { _, newValue in
+                        onChange(newValue)
+                    }
 
-            HStack(spacing: 8) {
-                Spacer()
-                Button("Cancel", role: .cancel) { onCancel() }
-                    .keyboardShortcut(.cancelAction)
-                Button(initialNote.isEmpty ? "Save" : "Update") {
-                    onSave(note)
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
+                Image(systemName: "arrow.turn.down.left")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 7)
             }
         }
         .padding(12)
-        .frame(width: 260)
+        .frame(width: 320)
         .onAppear {
             note = initialNote
+            onChange(initialNote)
             fieldFocused = true
         }
     }

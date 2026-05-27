@@ -4,8 +4,12 @@ import Textual
 
 struct HighlightInteractionOverlay: ViewModifier {
     let highlights: [ResolvedHighlight]
+    let onUpdateNote: (UUID, String) -> Void
     @State private var model: TextSelectionModel?
     @State private var regions: [TextInteractionCursorRegion] = []
+    @State private var hoveredHighlightID: UUID?
+    @State private var editingHighlightID: UUID?
+    @State private var editingNote: String = ""
 
     func body(content: Content) -> some View {
         content
@@ -24,6 +28,14 @@ struct HighlightInteractionOverlay: ViewModifier {
                     let newRegions = allRects.map { TextInteractionCursorRegion(rect: $0, cursor: .cribbleHighlightHand) }
                     
                     ZStack(alignment: .topLeading) {
+                        if editingHighlightID != nil {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    saveInlineEditor()
+                                }
+                        }
+
                         // Invisible active state to update state safely in the rendering cycle
                         Color.clear
                             .onChange(of: newRegions.map(\.rect), initial: true) { _, _ in
@@ -34,10 +46,58 @@ struct HighlightInteractionOverlay: ViewModifier {
                             ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
                                 Rectangle()
                                     .fill(Color.clear)
+                                    .contentShape(Rectangle())
                                     .frame(width: rect.width, height: rect.height)
                                     .position(x: rect.midX, y: rect.midY)
-                                    .help(h.note.isEmpty ? "Highlight" : h.note)
+                                    .onHover { hovering in
+                                        if hovering, !h.note.isEmpty {
+                                            hoveredHighlightID = h.id
+                                        } else if hoveredHighlightID == h.id {
+                                            hoveredHighlightID = nil
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        guard !h.note.isEmpty else { return }
+                                        beginInlineEditing(h)
+                                    }
+                                    .contextMenu {
+                                        Button(h.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note") {
+                                            beginInlineEditing(h)
+                                        }
+                                        if !h.note.isEmpty {
+                                            Button("Delete Highlight Note") {
+                                                onUpdateNote(h.id, "")
+                                            }
+                                        }
+                                    }
+                                    .allowsHitTesting(editingHighlightID == nil)
                             }
+                        }
+
+                        if let h = activeHoverHighlight(
+                            rectsByHighlight: rectsByHighlight
+                        ), editingHighlightID == nil {
+                            HighlightNoteHoverCard(note: h.note)
+                                .position(
+                                    x: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
+                                    y: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
+                                )
+                                .onTapGesture {
+                                    beginInlineEditing(h)
+                                }
+                        }
+
+                        if let h = activeEditingHighlight(
+                            rectsByHighlight: rectsByHighlight
+                        ) {
+                            HighlightInlineNoteEditor(
+                                note: $editingNote,
+                                onSubmit: { saveInlineEditor() }
+                            )
+                            .position(
+                                x: editorPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
+                                y: editorPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
+                            )
                         }
                     }
                 }
@@ -99,6 +159,56 @@ struct HighlightInteractionOverlay: ViewModifier {
         return result
     }
 
+    private func activeHoverHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {
+        guard let hoveredHighlightID,
+              let highlight = highlights.first(where: { $0.id == hoveredHighlightID }),
+              !highlight.note.isEmpty,
+              rectsByHighlight[highlight.id]?.isEmpty == false
+        else { return nil }
+        return highlight
+    }
+
+    private func activeEditingHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {
+        guard let editingHighlightID,
+              let highlight = highlights.first(where: { $0.id == editingHighlightID }),
+              rectsByHighlight[highlight.id]?.isEmpty == false
+        else { return nil }
+        return highlight
+    }
+
+    private func beginInlineEditing(_ highlight: ResolvedHighlight) {
+        editingHighlightID = highlight.id
+        editingNote = highlight.note
+        hoveredHighlightID = nil
+    }
+
+    private func saveInlineEditor() {
+        guard let editingHighlightID else { return }
+        onUpdateNote(editingHighlightID, editingNote)
+        self.editingHighlightID = nil
+        editingNote = ""
+    }
+
+    private func cardPosition(for rects: [CGRect], in size: CGSize) -> CGPoint {
+        let anchor = rects.first ?? .zero
+        let width: CGFloat = 320
+        let height: CGFloat = 96
+        let x = min(max(anchor.midX, width / 2 + 12), max(width / 2 + 12, size.width - width / 2 - 12))
+        let y = max(anchor.minY - height / 2 - 12, height / 2 + 12)
+        return CGPoint(x: x, y: y)
+    }
+
+    private func editorPosition(for rects: [CGRect], in size: CGSize) -> CGPoint {
+        let anchor = rects.first ?? .zero
+        let width: CGFloat = 320
+        let height: CGFloat = 150
+        let x = min(max(anchor.midX, width / 2 + 12), max(width / 2 + 12, size.width - width / 2 - 12))
+        let below = anchor.maxY + height / 2 + 12
+        let above = anchor.minY - height / 2 - 12
+        let y = below + height / 2 < size.height ? below : max(above, height / 2 + 12)
+        return CGPoint(x: x, y: y)
+    }
+
     private func resolvedTextRange(
         startOffset: Int,
         length: Int,
@@ -121,7 +231,82 @@ struct HighlightInteractionOverlay: ViewModifier {
 }
 
 extension View {
-    func highlightInteractionOverlay(_ highlights: [ResolvedHighlight]) -> some View {
-        modifier(HighlightInteractionOverlay(highlights: highlights))
+    func highlightInteractionOverlay(
+        _ highlights: [ResolvedHighlight],
+        onUpdateNote: @escaping (UUID, String) -> Void
+    ) -> some View {
+        modifier(HighlightInteractionOverlay(highlights: highlights, onUpdateNote: onUpdateNote))
+    }
+}
+
+private struct HighlightNoteHoverCard: View {
+    let note: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Highlight Note")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            Text(note)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(5)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(width: 320, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(.white.opacity(0.18))
+        }
+        .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
+    }
+}
+
+private struct HighlightInlineNoteEditor: View {
+    @Binding var note: String
+    let onSubmit: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Add Note to highlight")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            ZStack(alignment: .bottomTrailing) {
+                TextField("Write a note", text: $note, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(4...5)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .frame(minHeight: 106, alignment: .topLeading)
+                    .background(.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .strokeBorder(.secondary.opacity(0.28), lineWidth: 0.75)
+                    }
+                    .focused($focused)
+                    .onSubmit(onSubmit)
+
+                Image(systemName: "arrow.turn.down.left")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 7)
+            }
+        }
+        .padding(12)
+        .frame(width: 320)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.white.opacity(0.18))
+        }
+        .shadow(color: .black.opacity(0.25), radius: 22, y: 12)
+        .onAppear { focused = true }
     }
 }

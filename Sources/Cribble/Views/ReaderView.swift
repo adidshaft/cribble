@@ -138,7 +138,10 @@ private struct ReaderDocumentView: View {
                                         section: section,
                                         baseURL: document.url.deletingLastPathComponent(),
                                         fontScale: fontScale,
-                                        highlightsByBlock: sectionPlan.highlightsByBlock
+                                        highlightsByBlock: sectionPlan.highlightsByBlock,
+                                        onUpdateHighlightNote: { highlightID, note in
+                                            updateHighlightNote(id: highlightID, note: note)
+                                        }
                                     )
                                     .id(section.anchor)
                                     .background {
@@ -337,11 +340,20 @@ private struct ReaderDocumentView: View {
             items = [
                 TextInteractionMenuItem(title: existing?.note.isEmpty == false ? "Edit Highlight Note" : "Add Highlight Note") { [self] in
                     presentNoteEditor(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
-                },
+                }
+            ]
+            if existing?.note.isEmpty == false, let existing {
+                items.append(
+                    TextInteractionMenuItem(title: "Delete Highlight Note") { [self] in
+                        updateHighlightNote(id: existing.id, note: "")
+                    }
+                )
+            }
+            items.append(
                 TextInteractionMenuItem(title: "Remove Highlight") { [self] in
                     removeHighlight(matching: cleaned, selectionSnapshot: snapshot)
                 }
-            ]
+            )
         }
         items.append(
             TextInteractionMenuItem(title: "Drop Reading Bookmark") { [self] in
@@ -399,13 +411,11 @@ private struct ReaderDocumentView: View {
             anchorRect: anchor.selectionRect
         ) { [self] result in
             switch result {
-            case .cancelled:
-                return
             case .saved(let note):
                 if existing != nil {
                     if let existing,
                        readingAnnotations.updateHighlightNote(id: existing.id, in: document.url, note: note) {
-                        library.statusMessage = note.isEmpty ? "Removed highlight note" : "Updated highlight note"
+                        library.statusMessage = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Removed highlight note" : "Updated highlight note"
                     }
                 } else {
                     if let snapshot = providedSnapshot ?? currentlyFocusedTextInteractionSnapshot(),
@@ -450,6 +460,13 @@ private struct ReaderDocumentView: View {
         }
     }
 
+    private func updateHighlightNote(id: UUID, note: String) {
+        guard readingAnnotations.updateHighlightNote(id: id, in: document.url, note: note) else { return }
+        library.statusMessage = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Removed highlight note"
+            : "Updated highlight note"
+    }
+
     private func highlightForSelection(
         quote: String,
         snapshot: TextInteractionSelectionSnapshot?
@@ -459,11 +476,13 @@ private struct ReaderDocumentView: View {
            let sectionAnchor = snapshot.sectionAnchor,
            let anchored = readingAnnotations.highlights(for: document.url).first(where: { highlight in
                guard let anchor = highlight.anchor else { return false }
-               return anchor.sectionAnchor == sectionAnchor
-                   && anchor.blockIndex == snapshot.blockIndex
-                   && anchor.blockSignature == snapshot.blockSignature
-                   && anchor.startOffset == snapshot.characterRange.location
-                   && anchor.length == snapshot.characterRange.length
+               guard anchor.sectionAnchor == sectionAnchor,
+                     anchor.blockIndex == snapshot.blockIndex,
+                     anchor.blockSignature == snapshot.blockSignature
+               else { return false }
+               let highlightRange = anchor.startOffset..<(anchor.startOffset + anchor.length)
+               let selectedRange = snapshot.characterRange.location..<(snapshot.characterRange.location + snapshot.characterRange.length)
+               return highlightRange.overlaps(selectedRange)
            }) {
             return anchored
         }
@@ -773,6 +792,7 @@ private struct ReaderMarkdownSection: View {
     let baseURL: URL
     let fontScale: Double
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
+    let onUpdateHighlightNote: (UUID, String) -> Void
 
     var body: some View {
         let blocks = indexedBlocks(from: section.markdown)
@@ -803,7 +823,7 @@ private struct ReaderMarkdownSection: View {
                         .environment(\.textInteractionSectionAnchor, section.anchor)
                         .environment(\.textInteractionBlockIndex, idx)
                         .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: markdown))
-                        .highlightInteractionOverlay(blockHighlights)
+                        .highlightInteractionOverlay(blockHighlights, onUpdateNote: onUpdateHighlightNote)
                         .fixedSize(horizontal: false, vertical: true)
                     }
 

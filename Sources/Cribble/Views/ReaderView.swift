@@ -1178,20 +1178,10 @@ struct HighlightedMarkdownParser: MarkupParser {
         switch h.strategy {
         case .offset(let start, let length):
             let chars = attributed.characters
-            print("DIAGNOSTIC_APPLY: chars count = \(chars.count), start = \(start), length = \(length)")
-            guard start >= 0 else {
-                print("DIAGNOSTIC_APPLY: start < 0")
-                return
-            }
-            guard let lower = chars.index(chars.startIndex, offsetBy: start, limitedBy: chars.endIndex) else {
-                print("DIAGNOSTIC_APPLY: lower index is nil")
-                return
-            }
-            guard let upper = chars.index(lower, offsetBy: length, limitedBy: chars.endIndex) else {
-                print("DIAGNOSTIC_APPLY: upper index is nil")
-                return
-            }
-            print("DIAGNOSTIC_APPLY: Painting range!")
+            guard start >= 0,
+                  let lower = chars.index(chars.startIndex, offsetBy: start, limitedBy: chars.endIndex),
+                  let upper = chars.index(lower, offsetBy: length, limitedBy: chars.endIndex)
+            else { return }
             paint(in: lower..<upper, note: h.note, on: &attributed)
 
         case .textSearch(let quote):

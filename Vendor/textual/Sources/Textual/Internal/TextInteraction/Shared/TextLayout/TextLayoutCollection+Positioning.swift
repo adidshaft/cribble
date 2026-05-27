@@ -29,6 +29,10 @@
     }
 
     func position(from position: TextPosition, offset: Int) -> TextPosition? {
+      guard layouts.indices.contains(position.indexPath.layout) else {
+        return offset == 0 ? startPosition : nil
+      }
+
       let from = characterIndex(at: position)
       let target = from + offset
 
@@ -75,10 +79,26 @@
     }
 
     func localCharacterRange(at indexPath: IndexPath) -> Range<Int> {
-      let line = layouts[indexPath.layout].lines[indexPath.line]
-      return line.runs[indexPath.run]
-        .slices[indexPath.runSlice]
-        .characterRange
+      guard layouts.indices.contains(indexPath.layout) else {
+        return 0..<0
+      }
+
+      let layout = layouts[indexPath.layout]
+      guard layout.lines.indices.contains(indexPath.line) else {
+        return 0..<0
+      }
+
+      let line = layout.lines[indexPath.line]
+      guard line.runs.indices.contains(indexPath.run) else {
+        return 0..<0
+      }
+
+      let run = line.runs[indexPath.run]
+      guard run.slices.indices.contains(indexPath.runSlice) else {
+        return 0..<0
+      }
+
+      return run.slices[indexPath.runSlice].characterRange
     }
 
     func layoutDirection(at indexPath: IndexPath) -> LayoutDirection {

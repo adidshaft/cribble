@@ -48,21 +48,25 @@ struct HighlightInteractionOverlay: ViewModifier {
         layouts: [Text.LayoutKey.AnchoredLayout],
         geometry: GeometryProxy
     ) -> [UUID: [CGRect]] {
-        guard let model else { return [:] }
+        guard let model, model.hasText, !layouts.isEmpty else { return [:] }
         var result: [UUID: [CGRect]] = [:]
+        let fullRange = Textual.TextRange(start: model.startPosition, end: model.endPosition)
+        let blockText = model.text(in: fullRange)
         
         for h in highlights {
             let range: Textual.TextRange
             switch h.strategy {
             case .offset(let start, let length):
-                guard let startPos = model.position(from: model.startPosition, offset: start),
-                      let endPos = model.position(from: startPos, offset: length)
+                guard let resolvedRange = resolvedTextRange(
+                    startOffset: start,
+                    length: length,
+                    blockText: blockText,
+                    model: model
+                )
                 else { continue }
-                range = Textual.TextRange(start: startPos, end: endPos)
+                range = resolvedRange
                 
             case .textSearch(let quote):
-                let fullRange = Textual.TextRange(start: model.startPosition, end: model.endPosition)
-                let blockText = model.text(in: fullRange)
                 guard let stringRange = blockText.range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]),
                       let lowerUTF16 = stringRange.lowerBound.samePosition(in: blockText.utf16),
                       let upperUTF16 = stringRange.upperBound.samePosition(in: blockText.utf16)
@@ -70,10 +74,14 @@ struct HighlightInteractionOverlay: ViewModifier {
                 let startOffset = blockText.utf16.distance(from: blockText.utf16.startIndex, to: lowerUTF16)
                 let length = blockText.utf16.distance(from: lowerUTF16, to: upperUTF16)
                 
-                guard let startPos = model.position(from: model.startPosition, offset: startOffset),
-                      let endPos = model.position(from: startPos, offset: length)
+                guard let resolvedRange = resolvedTextRange(
+                    startOffset: startOffset,
+                    length: length,
+                    blockText: blockText,
+                    model: model
+                )
                 else { continue }
-                range = Textual.TextRange(start: startPos, end: endPos)
+                range = resolvedRange
             }
             
             var rects: [CGRect] = []
@@ -89,6 +97,26 @@ struct HighlightInteractionOverlay: ViewModifier {
         }
         
         return result
+    }
+
+    private func resolvedTextRange(
+        startOffset: Int,
+        length: Int,
+        blockText: String,
+        model: TextSelectionModel
+    ) -> Textual.TextRange? {
+        let textLength = blockText.utf16.count
+        guard startOffset >= 0,
+              length > 0,
+              startOffset < textLength,
+              startOffset + length <= textLength
+        else { return nil }
+
+        guard let startPos = model.position(from: model.startPosition, offset: startOffset),
+              let endPos = model.position(from: model.startPosition, offset: startOffset + length)
+        else { return nil }
+
+        return Textual.TextRange(start: startPos, end: endPos)
     }
 }
 

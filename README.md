@@ -80,8 +80,10 @@ respectful of the user's files.
 
 ## Latest Release: 1.0.5
 
-Cribble 1.0.5 focuses on rebuilding highlights and expanding Markdown support:
+Cribble 1.0.5 is the stable rich-reading release with a crash fix for highlight hit-zones:
 
+- Fixed a startup crash caused by stale or empty Textual layout state while hover regions were being computed for saved highlights.
+- Fixed release checksum generation so public `.sha256` assets never include local machine paths.
 - Rebuilt text highlights using robust offset anchors (PDF-style) for stable, drift-resistant highlight ranges.
 - Fixed the inline-code highlight bug so monospace text runs color perfectly across style boundaries.
 - Added anchored right-click highlight notes, plus edit/remove actions that target the exact selected highlight even when repeated text appears in a document.

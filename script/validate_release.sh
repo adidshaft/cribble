@@ -5,6 +5,7 @@ VERSION="${1:-$(<VERSION)}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_PATH="${APP_PATH:-$ROOT_DIR/releases/stage/Cribble.app}"
 DMG_PATH="${DMG_PATH:-$ROOT_DIR/releases/Cribble-$VERSION.dmg}"
+CHECKSUM_PATH="$DMG_PATH.sha256"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Missing app bundle: $APP_PATH" >&2
@@ -13,6 +14,16 @@ fi
 
 if [[ ! -f "$DMG_PATH" ]]; then
   echo "Missing DMG: $DMG_PATH" >&2
+  exit 1
+fi
+
+if [[ ! -f "$CHECKSUM_PATH" ]]; then
+  echo "Missing checksum: $CHECKSUM_PATH" >&2
+  exit 1
+fi
+
+if /usr/bin/grep -q '/' "$CHECKSUM_PATH"; then
+  echo "Checksum file must contain only the DMG basename, not a local path" >&2
   exit 1
 fi
 

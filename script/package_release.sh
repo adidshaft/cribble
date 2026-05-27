@@ -214,7 +214,7 @@ else
   echo "         NOTARY_PROFILE=<keychain-profile> to notarize automatically." >&2
 fi
 
-/usr/bin/shasum -a 256 "$DMG_PATH" > "$CHECKSUM_PATH"
+/usr/bin/shasum -a 256 "$DMG_PATH" | /usr/bin/sed 's# .*/#  #' > "$CHECKSUM_PATH"
 
 echo "$DMG_PATH"
 echo "$CHECKSUM_PATH"

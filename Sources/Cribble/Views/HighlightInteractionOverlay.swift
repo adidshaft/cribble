@@ -58,41 +58,14 @@ struct HighlightInteractionOverlay: ViewModifier {
                                 self.regions = newRegions
                             }
 
-                        ForEach(highlights, id: \.id) { h in
-                            ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
-                                Rectangle()
-                                    // A fully clear SwiftUI shape can be skipped by
-                                    // AppKit hit-testing in some overlay stacks. A
-                                    // near-transparent fill keeps right-click notes
-                                    // reliable without changing the rendered text.
-                                    .fill(Color.white.opacity(0.001))
-                                    .contentShape(Rectangle())
-                                    .frame(width: rect.width, height: rect.height)
-                                    .position(x: rect.midX, y: rect.midY)
-                                    .onHover { hovering in
-                                        if hovering, !h.note.isEmpty {
-                                            hoveredHighlightID = h.id
-                                        } else if hoveredHighlightID == h.id {
-                                            hoveredHighlightID = nil
-                                        }
-                                    }
-                                    .onTapGesture(count: 2) {
-                                        beginInlineEditing(h)
-                                    }
-                                    .contextMenu {
-                                        Button(h.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note") {
-                                            beginInlineEditing(h)
-                                        }
-                                        if !h.note.isEmpty {
-                                            Button("Delete Highlight Note") {
-                                                onUpdateNote(h.id, "")
-                                            }
-                                        }
-                                    }
-                                    .allowsHitTesting(editingHighlightID == nil)
-                            }
-                        }
-
+                        // The AppKit TrackingView below is the SOLE authority
+                        // for hover / double-click / right-click over highlights.
+                        // We deliberately do NOT add SwiftUI .onHover rectangles
+                        // here: a SwiftUI overlay and an AppKit tracking view
+                        // both managing `hoveredHighlightID` race each other —
+                        // the AppKit view captures the mouse, the SwiftUI
+                        // rectangle then reports hovering=false and clears the
+                        // state, so the note card never stays visible.
                         if editingHighlightID == nil {
                             hoverTrackingSurface
                         }

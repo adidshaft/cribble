@@ -2,11 +2,18 @@ import AppKit
 import SwiftUI
 import Textual
 
+private struct HighlightHoverRegion: Equatable {
+    let highlightID: UUID
+    let rect: CGRect
+}
+
 struct HighlightInteractionOverlay: ViewModifier {
     let highlights: [ResolvedHighlight]
     let onUpdateNote: (UUID, String) -> Void
     @State private var model: TextSelectionModel?
     @State private var regions: [TextInteractionCursorRegion] = []
+    @State private var hoverRegions: [HighlightHoverRegion] = []
+    @State private var hoverNoteRegions: [TextInteractionHoverNoteRegion] = []
     @State private var hoveredHighlightID: UUID?
     @State private var pendingHoverClear: DispatchWorkItem?
     @State private var editingHighlightID: UUID?
@@ -15,6 +22,10 @@ struct HighlightInteractionOverlay: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.textInteractionCursorRegions, regions)
+            .environment(\.textInteractionHoverHandler) { location in
+                updateHover(from: location)
+            }
+            .environment(\.textInteractionHoverNoteRegions, hoverNoteRegions)
             .onPreferenceChange(TextSelectionModelPreferenceKey.self) { newModel in
                 self.model = newModel
             }
@@ -27,6 +38,17 @@ struct HighlightInteractionOverlay: ViewModifier {
                     
                     let allRects = rectsByHighlight.values.flatMap { $0 }
                     let newRegions = allRects.map { TextInteractionCursorRegion(rect: $0, cursor: .cribbleHighlightHand) }
+                    let newHoverRegions = highlights.flatMap { highlight in
+                        rectsByHighlight[highlight.id, default: []].map {
+                            HighlightHoverRegion(highlightID: highlight.id, rect: $0)
+                        }
+                    }
+                    let newHoverNoteRegions = highlights.flatMap { highlight in
+                        guard !highlight.note.isEmpty else { return [TextInteractionHoverNoteRegion]() }
+                        return rectsByHighlight[highlight.id, default: []].map {
+                            TextInteractionHoverNoteRegion(rect: $0, note: highlight.note)
+                        }
+                    }
                     let hoverTrackingSurface = HighlightHoverTrackingSurface(
                         rectsByHighlight: rectsByHighlight,
                         highlights: highlights,
@@ -51,8 +73,10 @@ struct HighlightInteractionOverlay: ViewModifier {
 
                         // Invisible active state to update state safely in the rendering cycle
                         Color.clear
-                            .onChange(of: newRegions.map(\.rect), initial: true) { _, _ in
+                            .onChange(of: hoverStateSignature(regions: newRegions, notes: newHoverNoteRegions), initial: true) { _, _ in
                                 self.regions = newRegions
+                                self.hoverRegions = newHoverRegions
+                                self.hoverNoteRegions = newHoverNoteRegions
                             }
 
                         if editingHighlightID == nil {
@@ -189,6 +213,15 @@ struct HighlightInteractionOverlay: ViewModifier {
         return highlight
     }
 
+    private func hoverStateSignature(
+        regions: [TextInteractionCursorRegion],
+        notes: [TextInteractionHoverNoteRegion]
+    ) -> String {
+        let rects = regions.map { "\($0.rect.origin.x),\($0.rect.origin.y),\($0.rect.size.width),\($0.rect.size.height)" }
+        let noteBits = notes.map { "\($0.rect.origin.x),\($0.rect.origin.y):\($0.note.hashValue)" }
+        return (rects + noteBits).joined(separator: "|")
+    }
+
     private func updateTrackedHover(_ highlightID: UUID?) {
         if let highlightID {
             pendingHoverClear?.cancel()
@@ -206,6 +239,24 @@ struct HighlightInteractionOverlay: ViewModifier {
         }
         pendingHoverClear = clear
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: clear)
+    }
+
+    private func updateHover(from location: CGPoint?) {
+        guard let location else {
+            updateTrackedHover(nil)
+            return
+        }
+
+        let highlightID = hoverRegions
+            .first { region in
+                guard highlights.first(where: { $0.id == region.highlightID })?.note.isEmpty == false else {
+                    return false
+                }
+                return region.rect.insetBy(dx: -2, dy: -2).contains(location)
+            }?
+            .highlightID
+
+        updateTrackedHover(highlightID)
     }
 
     private func activeEditingHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {

@@ -19,6 +19,8 @@
     // to inject "Add/Edit Highlight Note" and friends — without it, Textual's
     // own NSMenu shadowed Cribble's SwiftUI `.contextMenu`.
     var additionalMenuItemsProvider: TextInteractionMenuItemProvider?
+    var hoverHandler: TextInteractionHoverHandler?
+    var hoverNoteRegions: [TextInteractionHoverNoteRegion] = []
     public var sectionAnchor: String?
     public var blockIndex: Int = 0
     public var blockSignature: String?
@@ -28,17 +30,23 @@
 
     private var dragStart: TextPosition?
     private var selectionAnchor: TextPosition?
+    private var hoverNotePopover: NSPopover?
+    private var hoverNoteRegion: TextInteractionHoverNoteRegion?
 
     init(
       model: TextSelectionModel,
       exclusionRects: [CGRect],
       openURL: OpenURLAction,
-      additionalMenuItemsProvider: TextInteractionMenuItemProvider? = nil
+      additionalMenuItemsProvider: TextInteractionMenuItemProvider? = nil,
+      hoverHandler: TextInteractionHoverHandler? = nil,
+      hoverNoteRegions: [TextInteractionHoverNoteRegion] = []
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
       self.openURL = openURL
       self.additionalMenuItemsProvider = additionalMenuItemsProvider
+      self.hoverHandler = hoverHandler
+      self.hoverNoteRegions = hoverNoteRegions
 
       super.init(frame: .zero)
       self.wantsLayer = false
@@ -60,6 +68,37 @@
       } else {
         return super.hitTest(point)
       }
+    }
+
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      window?.acceptsMouseMovedEvents = true
+    }
+
+    override func updateTrackingAreas() {
+      super.updateTrackingAreas()
+      trackingAreas.forEach(removeTrackingArea)
+      addTrackingArea(
+        NSTrackingArea(
+          rect: bounds,
+          options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect],
+          owner: self,
+          userInfo: nil
+        )
+      )
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+      reportHover(event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+      reportHover(event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+      hoverHandler?(nil)
+      closeHoverNote()
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -113,6 +152,47 @@
       updateSelectionForContextMenu(at: location)
 
       NSMenu.popUpContextMenu(makeContextMenu(), with: event, for: self)
+    }
+
+    private func reportHover(_ event: NSEvent) {
+      let location = convert(event.locationInWindow, from: nil)
+      if exclusionRects.contains(where: { $0.contains(location) }) {
+        hoverHandler?(nil)
+        closeHoverNote()
+      } else {
+        hoverHandler?(location)
+        updateHoverNote(at: location)
+      }
+    }
+
+    private func updateHoverNote(at location: CGPoint) {
+      guard let region = hoverNoteRegions.first(where: { $0.rect.insetBy(dx: -3, dy: -3).contains(location) }) else {
+        closeHoverNote()
+        return
+      }
+
+      if hoverNoteRegion == region, hoverNotePopover?.isShown == true {
+        return
+      }
+
+      closeHoverNote()
+      hoverNoteRegion = region
+
+      let popover = NSPopover()
+      popover.behavior = .semitransient
+      popover.animates = true
+      popover.contentSize = NSSize(width: 320, height: 112)
+      popover.contentViewController = NSHostingController(
+        rootView: TextInteractionHoverNoteCard(note: region.note)
+      )
+      popover.show(relativeTo: region.rect, of: self, preferredEdge: .maxY)
+      hoverNotePopover = popover
+    }
+
+    private func closeHoverNote() {
+      hoverNotePopover?.close()
+      hoverNotePopover = nil
+      hoverNoteRegion = nil
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
@@ -349,6 +429,33 @@
       default:
         return true
       }
+    }
+  }
+
+  private struct TextInteractionHoverNoteCard: View {
+    let note: String
+
+    var body: some View {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Highlight Note")
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(.primary)
+
+        Text(note)
+          .font(.system(size: 12))
+          .foregroundStyle(.secondary)
+          .lineLimit(5)
+          .multilineTextAlignment(.leading)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .padding(14)
+      .frame(width: 320, alignment: .leading)
+      .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+      .overlay {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+          .strokeBorder(.white.opacity(0.18))
+      }
+      .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
     }
   }
 

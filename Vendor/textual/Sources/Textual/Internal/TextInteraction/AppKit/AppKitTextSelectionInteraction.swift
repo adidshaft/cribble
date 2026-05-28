@@ -90,8 +90,21 @@
     public init(rect: NSRect, cursor: NSCursor) { self.rect = rect; self.cursor = cursor }
   }
 
+  public struct TextInteractionHoverNoteRegion: Equatable {
+    public let rect: NSRect       // in the AppKitTextInteractionOverlay's coord space
+    public let note: String
+    public init(rect: NSRect, note: String) {
+      self.rect = rect
+      self.note = note
+    }
+  }
+
   private struct TextInteractionCursorRegionsKey: EnvironmentKey {
     nonisolated(unsafe) static let defaultValue: [TextInteractionCursorRegion] = []
+  }
+
+  private struct TextInteractionHoverNoteRegionsKey: EnvironmentKey {
+    nonisolated(unsafe) static let defaultValue: [TextInteractionHoverNoteRegion] = []
   }
 
   private struct TextInteractionSectionAnchorKey: EnvironmentKey {
@@ -110,6 +123,10 @@
     public var textInteractionCursorRegions: [TextInteractionCursorRegion] {
       get { self[TextInteractionCursorRegionsKey.self] }
       set { self[TextInteractionCursorRegionsKey.self] = newValue }
+    }
+    public var textInteractionHoverNoteRegions: [TextInteractionHoverNoteRegion] {
+      get { self[TextInteractionHoverNoteRegionsKey.self] }
+      set { self[TextInteractionHoverNoteRegionsKey.self] = newValue }
     }
     public var textInteractionSectionAnchor: String? {
       get { self[TextInteractionSectionAnchorKey.self] }
@@ -201,6 +218,13 @@
     static let defaultValue: TextInteractionMenuItemProvider? = nil
   }
 
+  public typealias TextInteractionHoverHandler =
+    @MainActor (_ location: CGPoint?) -> Void
+
+  private struct TextInteractionHoverHandlerKey: EnvironmentKey {
+    static let defaultValue: TextInteractionHoverHandler? = nil
+  }
+
   extension EnvironmentValues {
     /// When set, Textual splices the items returned by this closure into
     /// the selection context menu (above Share / Copy). The closure receives
@@ -209,6 +233,15 @@
     public var textInteractionAdditionalMenuItems: TextInteractionMenuItemProvider? {
       get { self[TextInteractionAdditionalMenuItemsKey.self] }
       set { self[TextInteractionAdditionalMenuItemsKey.self] = newValue }
+    }
+
+    /// Reports mouse movement inside Textual's AppKit interaction view.
+    /// Host apps can use this to drive hover affordances that must sit above
+    /// selectable text. SwiftUI overlays do not reliably receive hover because
+    /// the AppKit interaction view intentionally owns mouse events.
+    public var textInteractionHoverHandler: TextInteractionHoverHandler? {
+      get { self[TextInteractionHoverHandlerKey.self] }
+      set { self[TextInteractionHoverHandlerKey.self] = newValue }
     }
   }
 

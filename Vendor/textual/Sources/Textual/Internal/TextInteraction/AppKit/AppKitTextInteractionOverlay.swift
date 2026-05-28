@@ -24,7 +24,9 @@
         model: model,
         exclusionRects: overflowFrames,
         openURL: context.environment.openURL,
-        additionalMenuItemsProvider: context.environment.textInteractionAdditionalMenuItems
+        additionalMenuItemsProvider: context.environment.textInteractionAdditionalMenuItems,
+        hoverHandler: context.environment.textInteractionHoverHandler,
+        hoverNoteRegions: context.environment.textInteractionHoverNoteRegions
       )
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
@@ -37,6 +39,8 @@
       nsView.exclusionRects = overflowFrames
       nsView.openURL = context.environment.openURL
       nsView.additionalMenuItemsProvider = context.environment.textInteractionAdditionalMenuItems
+      nsView.hoverHandler = context.environment.textInteractionHoverHandler
+      nsView.hoverNoteRegions = context.environment.textInteractionHoverNoteRegions
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
       nsView.blockSignature = context.environment.textInteractionBlockSignature

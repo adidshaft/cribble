@@ -493,8 +493,8 @@ private struct HighlightNoteHoverCard: View {
                 .foregroundStyle(.primary)
 
             Text(note)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.86))
                 .lineLimit(5)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)

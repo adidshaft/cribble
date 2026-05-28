@@ -18,6 +18,12 @@ struct HighlightInteractionOverlay: ViewModifier {
     @State private var pendingHoverClear: DispatchWorkItem?
     @State private var editingHighlightID: UUID?
     @State private var editingNote: String = ""
+    // Anchor rect captured at the moment editing begins. The inline editor is
+    // positioned from THIS, never from the live `rectsByHighlight`, so a
+    // transient empty-layout frame can't tear down and recreate the editor
+    // (which would reset @FocusState and drop the user's keystrokes — the
+    // "edit note is flaky" bug).
+    @State private var editingAnchorRect: CGRect?
 
     func body(content: Content) -> some View {
         content
@@ -26,9 +32,6 @@ struct HighlightInteractionOverlay: ViewModifier {
                 updateHover(from: location)
             }
             .environment(\.textInteractionHoverNoteRegions, hoverNoteRegions)
-            .environment(\.textInteractionHighlightNoteActionHandler) { highlightID, action in
-                handleTextualNoteAction(highlightID: highlightID, action: action)
-            }
             .onPreferenceChange(TextSelectionModelPreferenceKey.self) { newModel in
                 self.model = newModel
             }
@@ -48,10 +51,24 @@ struct HighlightInteractionOverlay: ViewModifier {
                         }
                     }
                     let newHoverNoteRegions = highlights.flatMap { highlight in
+                        guard !highlight.note.isEmpty else { return [TextInteractionHoverNoteRegion]() }
                         return localRectsByHighlight[highlight.id, default: []].map {
-                            TextInteractionHoverNoteRegion(rect: $0, note: highlight.note, highlightID: highlight.id)
+                            TextInteractionHoverNoteRegion(rect: $0, note: highlight.note)
                         }
                     }
+                    let hoverTrackingSurface = HighlightHoverTrackingSurface(
+                        rectsByHighlight: rectsByHighlight,
+                        highlights: highlights,
+                        onBeginEditing: { highlightID in
+                            guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
+                            beginInlineEditing(highlight, anchorRect: rectsByHighlight[highlightID]?.first)
+                        },
+                        onDeleteNote: { highlightID in
+                            onUpdateNote(highlightID, "")
+                        }
+                    )
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    
                     ZStack(alignment: .topLeading) {
                         if editingHighlightID != nil {
                             Color.clear
@@ -69,6 +86,46 @@ struct HighlightInteractionOverlay: ViewModifier {
                                 self.hoverNoteRegions = newHoverNoteRegions
                             }
 
+                        if editingHighlightID == nil {
+                            hoverTrackingSurface
+                        }
+
+                        ForEach(highlights, id: \.id) { h in
+                            ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
+                                Rectangle()
+                                    // These tiny overlays own hover-card
+                                    // visibility. The AppKit tracking view is
+                                    // retained for cursor/right-click fallback,
+                                    // but relying on NSTrackingArea alone proved
+                                    // too lifecycle-sensitive inside Textual.
+                                    .fill(Color.white.opacity(0.001))
+                                    .contentShape(Rectangle())
+                                    .frame(width: rect.width, height: rect.height)
+                                    .position(x: rect.midX, y: rect.midY)
+                                    .onHover { hovering in
+                                        if hovering, !h.note.isEmpty {
+                                            updateTrackedHover(h.id)
+                                        } else if hoveredHighlightID == h.id {
+                                            updateTrackedHover(nil)
+                                        }
+                                    }
+                                    .onTapGesture(count: 2) {
+                                        beginInlineEditing(h, anchorRect: rect)
+                                    }
+                                    .contextMenu {
+                                        Button(h.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note") {
+                                            beginInlineEditing(h, anchorRect: rect)
+                                        }
+                                        if !h.note.isEmpty {
+                                            Button("Delete Highlight Note") {
+                                                onUpdateNote(h.id, "")
+                                            }
+                                        }
+                                    }
+                                    .allowsHitTesting(editingHighlightID == nil)
+                            }
+                        }
+
                         if let h = activeHoverHighlight(
                             rectsByHighlight: rectsByHighlight
                         ), editingHighlightID == nil {
@@ -77,38 +134,21 @@ struct HighlightInteractionOverlay: ViewModifier {
                                     x: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
                                     y: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
                                 )
-                                .onHover { hovering in
-                                    if hovering {
-                                        updateTrackedHover(h.id)
-                                    } else {
-                                        updateTrackedHover(nil)
-                                    }
-                                }
                                 .onTapGesture {
-                                    beginInlineEditing(h)
-                                }
-                                .contextMenu {
-                                    Button("Edit Highlight Note") {
-                                        beginInlineEditing(h)
-                                    }
-                                    Button("Delete Highlight Note") {
-                                        onUpdateNote(h.id, "")
-                                        hoveredHighlightID = nil
-                                    }
+                                    beginInlineEditing(h, anchorRect: rectsByHighlight[h.id]?.first)
                                 }
                         }
 
-                        if let h = activeEditingHighlight(
-                            rectsByHighlight: rectsByHighlight
-                        ) {
+                        if editingHighlightID != nil {
+                            // Prefer the rect captured at edit-start; fall back
+                            // to the live rect only if we somehow have none.
+                            let anchorRects: [CGRect] = editingAnchorRect.map { [$0] }
+                                ?? rectsByHighlight[editingHighlightID!, default: []]
                             HighlightInlineNoteEditor(
                                 note: $editingNote,
                                 onSubmit: { saveInlineEditor() }
                             )
-                            .position(
-                                x: editorPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
-                                y: editorPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
-                            )
+                            .position(editorPosition(for: anchorRects, in: geometry.size))
                         }
                     }
                 }
@@ -246,44 +286,22 @@ struct HighlightInteractionOverlay: ViewModifier {
         updateTrackedHover(highlightID)
     }
 
-    private func activeEditingHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {
-        guard let editingHighlightID,
-              let highlight = highlights.first(where: { $0.id == editingHighlightID }),
-              rectsByHighlight[highlight.id]?.isEmpty == false
-        else { return nil }
-        return highlight
-    }
 
-    private func beginInlineEditing(_ highlight: ResolvedHighlight) {
+    private func beginInlineEditing(_ highlight: ResolvedHighlight, anchorRect: CGRect?) {
+        // Cancel any pending hover-clear so the editor isn't fighting hover state.
         pendingHoverClear?.cancel()
         pendingHoverClear = nil
-        editingHighlightID = highlight.id
-        editingNote = highlight.note
         hoveredHighlightID = nil
-    }
-
-    private func handleTextualNoteAction(
-        highlightID: UUID,
-        action: TextInteractionHighlightNoteAction
-    ) {
-        switch action {
-        case .edit:
-            guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
-            beginInlineEditing(highlight)
-        case .deleteNote:
-            onUpdateNote(highlightID, "")
-            if editingHighlightID == highlightID {
-                editingHighlightID = nil
-                editingNote = ""
-            }
-            hoveredHighlightID = nil
-        }
+        editingNote = highlight.note
+        editingAnchorRect = anchorRect
+        editingHighlightID = highlight.id
     }
 
     private func saveInlineEditor() {
         guard let editingHighlightID else { return }
         onUpdateNote(editingHighlightID, editingNote)
         self.editingHighlightID = nil
+        editingAnchorRect = nil
         editingNote = ""
         DispatchQueue.main.async {
             NSApp.keyWindow?.makeFirstResponder(nil)
@@ -516,13 +534,24 @@ private struct HighlightInlineNoteEditor: View {
                             .strokeBorder(.secondary.opacity(0.28), lineWidth: 0.75)
                     }
                     .focused($focused)
-                    .onSubmit(onSubmit)
+                    // Return saves; Shift+Return falls through to insert a
+                    // newline. A vertical-axis TextField treats plain Return as
+                    // a newline by default and never fires onSubmit, so we
+                    // intercept the key explicitly.
+                    .onKeyPress(keys: [.return], phases: .down) { keyPress in
+                        if keyPress.modifiers.contains(.shift) {
+                            return .ignored
+                        }
+                        onSubmit()
+                        return .handled
+                    }
 
                 Image(systemName: "arrow.turn.down.left")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.tertiary)
                     .padding(.trailing, 8)
                     .padding(.bottom, 7)
+                    .help("Return to save · Shift+Return for a new line")
             }
         }
         .padding(12)

@@ -21,7 +21,6 @@
     var additionalMenuItemsProvider: TextInteractionMenuItemProvider?
     var hoverHandler: TextInteractionHoverHandler?
     var hoverNoteRegions: [TextInteractionHoverNoteRegion] = []
-    var highlightNoteActionHandler: TextInteractionHighlightNoteActionHandler?
     public var sectionAnchor: String?
     public var blockIndex: Int = 0
     public var blockSignature: String?
@@ -40,8 +39,7 @@
       openURL: OpenURLAction,
       additionalMenuItemsProvider: TextInteractionMenuItemProvider? = nil,
       hoverHandler: TextInteractionHoverHandler? = nil,
-      hoverNoteRegions: [TextInteractionHoverNoteRegion] = [],
-      highlightNoteActionHandler: TextInteractionHighlightNoteActionHandler? = nil
+      hoverNoteRegions: [TextInteractionHoverNoteRegion] = []
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
@@ -49,7 +47,6 @@
       self.additionalMenuItemsProvider = additionalMenuItemsProvider
       self.hoverHandler = hoverHandler
       self.hoverNoteRegions = hoverNoteRegions
-      self.highlightNoteActionHandler = highlightNoteActionHandler
 
       super.init(frame: .zero)
       self.wantsLayer = false
@@ -117,12 +114,7 @@
         }
         dragStart = model.closestPosition(to: location)
       case 2:
-        if let region = highlightRegion(at: location), let highlightID = region.highlightID {
-          closeHoverNote()
-          DispatchQueue.main.async { [weak self] in
-            self?.highlightNoteActionHandler?(highlightID, .edit)
-          }
-        } else if let position = model.closestPosition(to: location) {
+        if let position = model.closestPosition(to: location) {
           model.selectedRange = model.wordRange(for: position)
         }
         dragStart = nil
@@ -157,12 +149,6 @@
 
     override func rightMouseDown(with event: NSEvent) {
       let location = convert(event.locationInWindow, from: nil)
-      if let region = highlightRegion(at: location), let highlightID = region.highlightID {
-        closeHoverNote()
-        NSMenu.popUpContextMenu(makeHighlightNoteMenu(for: region, highlightID: highlightID), with: event, for: self)
-        return
-      }
-
       updateSelectionForContextMenu(at: location)
 
       NSMenu.popUpContextMenu(makeContextMenu(), with: event, for: self)
@@ -180,7 +166,7 @@
     }
 
     private func updateHoverNote(at location: CGPoint) {
-      guard let region = highlightRegion(at: location), !region.note.isEmpty else {
+      guard let region = hoverNoteRegions.first(where: { $0.rect.insetBy(dx: -3, dy: -3).contains(location) }) else {
         closeHoverNote()
         return
       }
@@ -201,40 +187,6 @@
       )
       popover.show(relativeTo: region.rect, of: self, preferredEdge: .maxY)
       hoverNotePopover = popover
-    }
-
-    private func highlightRegion(at location: CGPoint) -> TextInteractionHoverNoteRegion? {
-      hoverNoteRegions.first { $0.rect.insetBy(dx: -3, dy: -3).contains(location) }
-    }
-
-    private func makeHighlightNoteMenu(
-      for region: TextInteractionHoverNoteRegion,
-      highlightID: UUID
-    ) -> NSMenu {
-      let menu = NSMenu()
-      let editTitle = region.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        ? "Add Highlight Note"
-        : "Edit Highlight Note"
-
-      let editItem = HighlightNoteMenuItem(title: editTitle) { [weak self] in
-        self?.closeHoverNote()
-        DispatchQueue.main.async { [weak self] in
-          self?.highlightNoteActionHandler?(highlightID, .edit)
-        }
-      }
-      menu.addItem(editItem)
-
-      if !region.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        let deleteItem = HighlightNoteMenuItem(title: "Delete Highlight Note") { [weak self] in
-          self?.closeHoverNote()
-          DispatchQueue.main.async { [weak self] in
-            self?.highlightNoteActionHandler?(highlightID, .deleteNote)
-          }
-        }
-        menu.addItem(deleteItem)
-      }
-
-      return menu
     }
 
     private func closeHoverNote() {
@@ -504,25 +456,6 @@
           .strokeBorder(.white.opacity(0.18))
       }
       .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
-    }
-  }
-
-  private final class HighlightNoteMenuItem: NSMenuItem {
-    private let handler: @MainActor () -> Void
-
-    init(title: String, handler: @escaping @MainActor () -> Void) {
-      self.handler = handler
-      super.init(title: title, action: nil, keyEquivalent: "")
-      self.target = self
-      self.action = #selector(invoke)
-    }
-
-    required init(coder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
-    }
-
-    @MainActor @objc private func invoke() {
-      handler()
     }
   }
 

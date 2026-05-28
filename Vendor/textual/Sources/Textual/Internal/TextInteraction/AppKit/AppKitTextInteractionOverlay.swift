@@ -26,8 +26,7 @@
         openURL: context.environment.openURL,
         additionalMenuItemsProvider: context.environment.textInteractionAdditionalMenuItems,
         hoverHandler: context.environment.textInteractionHoverHandler,
-        hoverNoteRegions: context.environment.textInteractionHoverNoteRegions,
-        highlightNoteActionHandler: context.environment.textInteractionHighlightNoteActionHandler
+        hoverNoteRegions: context.environment.textInteractionHoverNoteRegions
       )
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
@@ -42,7 +41,6 @@
       nsView.additionalMenuItemsProvider = context.environment.textInteractionAdditionalMenuItems
       nsView.hoverHandler = context.environment.textInteractionHoverHandler
       nsView.hoverNoteRegions = context.environment.textInteractionHoverNoteRegions
-      nsView.highlightNoteActionHandler = context.environment.textInteractionHighlightNoteActionHandler
       nsView.sectionAnchor = context.environment.textInteractionSectionAnchor
       nsView.blockIndex = context.environment.textInteractionBlockIndex
       nsView.blockSignature = context.environment.textInteractionBlockSignature

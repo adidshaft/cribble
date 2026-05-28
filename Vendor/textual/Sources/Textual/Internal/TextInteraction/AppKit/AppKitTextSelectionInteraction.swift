@@ -104,11 +104,9 @@
   public struct TextInteractionHoverNoteRegion: Equatable {
     public let rect: NSRect       // in the AppKitTextInteractionOverlay's coord space
     public let note: String
-    public let highlightID: UUID?
-    public init(rect: NSRect, note: String, highlightID: UUID? = nil) {
+    public init(rect: NSRect, note: String) {
       self.rect = rect
       self.note = note
-      self.highlightID = highlightID
     }
   }
 
@@ -234,20 +232,8 @@
   public typealias TextInteractionHoverHandler =
     @MainActor (_ location: CGPoint?) -> Void
 
-  public enum TextInteractionHighlightNoteAction {
-    case edit
-    case deleteNote
-  }
-
-  public typealias TextInteractionHighlightNoteActionHandler =
-    @MainActor (_ highlightID: UUID, _ action: TextInteractionHighlightNoteAction) -> Void
-
   private struct TextInteractionHoverHandlerKey: EnvironmentKey {
     static let defaultValue: TextInteractionHoverHandler? = nil
-  }
-
-  private struct TextInteractionHighlightNoteActionHandlerKey: EnvironmentKey {
-    static let defaultValue: TextInteractionHighlightNoteActionHandler? = nil
   }
 
   extension EnvironmentValues {
@@ -267,11 +253,6 @@
     public var textInteractionHoverHandler: TextInteractionHoverHandler? {
       get { self[TextInteractionHoverHandlerKey.self] }
       set { self[TextInteractionHoverHandlerKey.self] = newValue }
-    }
-
-    public var textInteractionHighlightNoteActionHandler: TextInteractionHighlightNoteActionHandler? {
-      get { self[TextInteractionHighlightNoteActionHandlerKey.self] }
-      set { self[TextInteractionHighlightNoteActionHandlerKey.self] = newValue }
     }
   }
 

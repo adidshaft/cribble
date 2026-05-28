@@ -134,7 +134,13 @@ private struct HighlightNoteEditor: View {
                             .strokeBorder(.secondary.opacity(0.28), lineWidth: 0.75)
                     }
                     .focused($fieldFocused)
-                    .onSubmit { onSave(note) }
+                    .onKeyPress(keys: [.return], phases: .down) { keyPress in
+                        if keyPress.modifiers.contains(.shift) {
+                            return .ignored
+                        }
+                        onSave(note)
+                        return .handled
+                    }
                     .onChange(of: note) { _, newValue in
                         onChange(newValue)
                     }

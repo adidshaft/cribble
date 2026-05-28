@@ -42,11 +42,21 @@ final class ReadingAnnotationsStore: ObservableObject {
         guard !trimmedQuote.isEmpty else { return nil }
         let key = self.key(for: documentURL)
         var documentHighlights = highlights[key] ?? []
+        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let index = documentHighlights.firstIndex(where: { highlightOverlaps($0, anchor: anchor) }) {
+            if !trimmedNote.isEmpty {
+                documentHighlights[index].note = trimmedNote
+                highlights[key] = documentHighlights
+                save()
+            }
+            return documentHighlights[index]
+        }
+
         let highlight = ReadingHighlight(
             id: UUID(),
             documentPath: key,
             quote: trimmedQuote,
-            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+            note: trimmedNote,
             createdAt: Date(),
             anchor: anchor
         )
@@ -206,6 +216,18 @@ final class ReadingAnnotationsStore: ObservableObject {
         let selected = quote.normalizedAnnotationText
         guard !stored.isEmpty, !selected.isEmpty else { return false }
         return stored == selected || stored.contains(selected) || selected.contains(stored)
+    }
+
+    private func highlightOverlaps(_ highlight: ReadingHighlight, anchor: HighlightAnchor) -> Bool {
+        guard let existing = highlight.anchor,
+              existing.sectionAnchor == anchor.sectionAnchor,
+              existing.blockIndex == anchor.blockIndex,
+              existing.blockSignature == anchor.blockSignature
+        else { return false }
+
+        let existingRange = existing.startOffset..<(existing.startOffset + existing.length)
+        let newRange = anchor.startOffset..<(anchor.startOffset + anchor.length)
+        return existingRange.overlaps(newRange)
     }
 
     private static func defaultFileURL() -> URL {

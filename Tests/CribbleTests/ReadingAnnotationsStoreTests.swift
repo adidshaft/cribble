@@ -88,4 +88,30 @@ final class ReadingAnnotationsStoreTests: XCTestCase {
         XCTAssertEqual(highlights.first(where: { $0.id == first?.id })?.note, "")
         XCTAssertEqual(highlights.first(where: { $0.id == second?.id })?.note, "second only")
     }
+
+    func testAnchoredHighlightsDoNotDuplicateWhenRangesOverlap() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let storeURL = directory.appendingPathComponent("ReadingAnnotations.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let documentURL = directory.appendingPathComponent("Note.md").standardizedFileURL
+        let store = ReadingAnnotationsStore(fileURL: storeURL)
+
+        let first = store.addHighlight(
+            for: documentURL,
+            quote: "same object",
+            note: "",
+            anchor: HighlightAnchor(sectionAnchor: "a", blockIndex: 0, blockSignature: "one", startOffset: 10, length: 11)
+        )
+        let second = store.addHighlight(
+            for: documentURL,
+            quote: "same object",
+            note: "clearer note",
+            anchor: HighlightAnchor(sectionAnchor: "a", blockIndex: 0, blockSignature: "one", startOffset: 12, length: 4)
+        )
+
+        XCTAssertEqual(first?.id, second?.id)
+        XCTAssertEqual(store.highlights(for: documentURL).count, 1)
+        XCTAssertEqual(store.highlights(for: documentURL).first?.note, "clearer note")
+    }
 }

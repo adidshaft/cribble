@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct CribbleApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var updater = AppUpdater.shared
     @StateObject private var library = MarkdownLibraryStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var diagnostics = DiagnosticsCenter.shared
@@ -58,6 +59,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate()
         AppIconManager.applyForSystemAppearance()
         DiagnosticsCenter.shared.markLaunch()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.installCheckForUpdatesMenuItem()
+        }
 
         appearanceObserver = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
@@ -68,6 +72,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppIconManager.applyForSystemAppearance()
             }
         }
+    }
+
+    private func installCheckForUpdatesMenuItem() {
+        guard let appMenu = NSApp.mainMenu?.items.first(where: { $0.title.hasPrefix("Cribble") })?.submenu,
+              !appMenu.items.contains(where: { $0.title == "Check for Updates..." })
+        else { return }
+
+        let item = NSMenuItem(
+            title: "Check for Updates...",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        item.target = self
+
+        let insertionIndex = min(1, appMenu.items.count)
+        appMenu.insertItem(item, at: insertionIndex)
+    }
+
+    @objc private func checkForUpdates() {
+        AppUpdater.shared.checkForUpdates()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

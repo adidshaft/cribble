@@ -67,6 +67,12 @@ struct CribbleCommands: Commands {
                 .keyboardShortcut("p", modifiers: [])
         }
 
+        CommandMenu("Updates") {
+            Button("Check for Updates...") {
+                AppUpdater.shared.checkForUpdates()
+            }
+        }
+
         CommandMenu("Diagnostics") {
             Button("Show Diagnostic Report", action: { showDiagnostics?() })
                 .keyboardShortcut("d", modifiers: [.command, .shift])

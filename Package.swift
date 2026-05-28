@@ -12,6 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "Vendor/textual"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.7.0"),
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
     ],
     targets: [
@@ -25,6 +26,7 @@ let package = Package(
         .executableTarget(
             name: "Cribble",
             dependencies: [
+                .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "Textual", package: "textual"),
                 .product(name: "Markdown", package: "swift-markdown"),
                 "CribbleBundleRedirect"

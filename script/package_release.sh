@@ -6,8 +6,8 @@ DISPLAY_NAME="Cribble: Markdown Knowledge Base Manager"
 BUNDLE_ID="com.cribble.reader"
 MIN_SYSTEM_VERSION="15.0"
 VERSION="${1:-$(<VERSION)}"
-BUILD_NUMBER="${BUILD_NUMBER:-1}"
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Aman Pandey (JP4HU7X6G7)}"
+BUILD_NUMBER="${BUILD_NUMBER:-$(/usr/bin/awk -F. '{ printf "%d%02d%02d", $1, $2, $3 }' <<<"$VERSION")}"
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 # Architectures to build, space-separated. Default to a universal binary so
 # Intel Macs aren't silently locked out. Set ARCHS="arm64" to opt back into
 # Apple-Silicon-only.
@@ -17,11 +17,13 @@ ARCHS="${ARCHS:-arm64 x86_64}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENTITLEMENTS_PATH="${ENTITLEMENTS_PATH:-$ROOT_DIR/Cribble.DeveloperID.entitlements}"
 OUT_DIR="$ROOT_DIR/releases"
 STAGE_DIR="$OUT_DIR/stage"
 APP_BUNDLE="$STAGE_DIR/$APP_NAME.app"
 APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
+APP_FRAMEWORKS="$APP_CONTENTS/Frameworks"
 APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
@@ -31,6 +33,13 @@ APP_NOTARY_ZIP="$OUT_DIR/$APP_NAME-$VERSION-app-notary.zip"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 PYTHON_DEPS="$OUT_DIR/python-deps"
+SPARKLE_PUBLIC_ED_KEY="YfAh7JbGoiQoB9KqD7U9S+Olejk9jDNSUc7Z0I+o820="
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://github.com/adidshaft/cribble/releases/download/stable/appcast.xml}"
+SPARKLE_DOWNLOAD_URL_PREFIX="${SPARKLE_DOWNLOAD_URL_PREFIX:-https://github.com/adidshaft/cribble/releases/download/v$VERSION/}"
+SPARKLE_GENERATE_APPCAST="${SPARKLE_GENERATE_APPCAST:-0}"
+SPARKLE_TOOLS_DIR="$ROOT_DIR/.build/artifacts/sparkle/Sparkle/bin"
+APPCAST_PATH="$OUT_DIR/appcast.xml"
+APPCAST_STAGE="$STAGE_DIR/appcast"
 DMG_ROOT="$STAGE_DIR/dmg-root"
 DMG_BACKGROUND_DIR="$DMG_ROOT/.background"
 DMG_BACKGROUND_PATH="$DMG_BACKGROUND_DIR/background.png"
@@ -39,7 +48,13 @@ DMG_MOUNT="$STAGE_DIR/mount"
 cd "$ROOT_DIR"
 
 rm -rf "$STAGE_DIR"
-mkdir -p "$APP_MACOS" "$APP_RESOURCES" "$OUT_DIR"
+mkdir -p "$APP_MACOS" "$APP_FRAMEWORKS" "$APP_RESOURCES" "$OUT_DIR"
+
+if [[ "$SIGN_IDENTITY" == "-" ]]; then
+  CODESIGN_ARGS=(--force --options runtime --sign -)
+else
+  CODESIGN_ARGS=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
+fi
 
 resolve_executable() {
   local build_dir="$1"
@@ -78,6 +93,7 @@ else
   cp "${SLICE_BINARIES[0]}" "$APP_BINARY"
 fi
 chmod +x "$APP_BINARY"
+/usr/bin/install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_BINARY" 2>/dev/null || true
 # Sanity-check the final binary's architectures and minimum macOS — these
 # are the two things that most often make the DMG refuse to launch on
 # someone else's Mac.
@@ -113,6 +129,13 @@ fi
 for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 done
+
+if [[ -d "$BUILD_DIR/Sparkle.framework" ]]; then
+  /usr/bin/ditto "$BUILD_DIR/Sparkle.framework" "$APP_FRAMEWORKS/Sparkle.framework"
+else
+  echo "error: Sparkle.framework missing from $BUILD_DIR" >&2
+  exit 1
+fi
 
 REQUIRED_RESOURCE_BUNDLES=(
   "Cribble_Cribble.bundle"
@@ -156,6 +179,12 @@ cat >"$INFO_PLIST" <<PLIST
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>SUFeedURL</key>
+  <string>$SPARKLE_FEED_URL</string>
+  <key>SUPublicEDKey</key>
+  <string>$SPARKLE_PUBLIC_ED_KEY</string>
+  <key>SUEnableInstallerLauncherService</key>
+  <true/>
 </dict>
 </plist>
 PLIST
@@ -164,7 +193,17 @@ chmod -R u+w "$APP_BUNDLE"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 find "$APP_BUNDLE" -name '._*' -delete
 
-/usr/bin/codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_BUNDLE"
+if [[ -d "$APP_FRAMEWORKS/Sparkle.framework" ]]; then
+  /usr/bin/codesign "${CODESIGN_ARGS[@]}" "$APP_FRAMEWORKS/Sparkle.framework/Versions/B/XPCServices/Installer.xpc"
+  if [[ -d "$APP_FRAMEWORKS/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc" ]]; then
+    /usr/bin/codesign "${CODESIGN_ARGS[@]}" --preserve-metadata=entitlements "$APP_FRAMEWORKS/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc"
+  fi
+  /usr/bin/codesign "${CODESIGN_ARGS[@]}" "$APP_FRAMEWORKS/Sparkle.framework/Versions/B/Autoupdate"
+  /usr/bin/codesign "${CODESIGN_ARGS[@]}" "$APP_FRAMEWORKS/Sparkle.framework/Versions/B/Updater.app"
+  /usr/bin/codesign "${CODESIGN_ARGS[@]}" "$APP_FRAMEWORKS/Sparkle.framework"
+fi
+
+/usr/bin/codesign "${CODESIGN_ARGS[@]}" --entitlements "$ENTITLEMENTS_PATH" "$APP_BUNDLE"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 chmod -R u+w "$APP_BUNDLE"
 /usr/bin/xattr -cr "$APP_BUNDLE"
@@ -216,5 +255,26 @@ fi
 
 /usr/bin/shasum -a 256 "$DMG_PATH" | /usr/bin/sed 's# .*/#  #' > "$CHECKSUM_PATH"
 
+if [[ "$SPARKLE_GENERATE_APPCAST" == "1" && -x "$SPARKLE_TOOLS_DIR/generate_appcast" ]]; then
+  rm -rf "$APPCAST_STAGE"
+  mkdir -p "$APPCAST_STAGE"
+  cp "$DMG_PATH" "$APPCAST_STAGE/"
+  "$SPARKLE_TOOLS_DIR/generate_appcast" \
+    --download-url-prefix "$SPARKLE_DOWNLOAD_URL_PREFIX" \
+    --link "https://github.com/adidshaft/cribble" \
+    --maximum-versions 1 \
+    -o "$APPCAST_STAGE/appcast.xml" \
+    "$APPCAST_STAGE"
+  cp "$APPCAST_STAGE/appcast.xml" "$APPCAST_PATH"
+elif [[ "$SPARKLE_GENERATE_APPCAST" == "1" ]]; then
+  echo "warning: Sparkle generate_appcast tool not found at $SPARKLE_TOOLS_DIR/generate_appcast" >&2
+else
+  echo "warning: SPARKLE_GENERATE_APPCAST=0 — skipping signed appcast generation." >&2
+  echo "         Set SPARKLE_GENERATE_APPCAST=1 for release publishing." >&2
+fi
+
 echo "$DMG_PATH"
 echo "$CHECKSUM_PATH"
+if [[ -f "$APPCAST_PATH" ]]; then
+  echo "$APPCAST_PATH"
+fi

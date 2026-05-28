@@ -6,6 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_PATH="${APP_PATH:-$ROOT_DIR/releases/stage/Cribble.app}"
 DMG_PATH="${DMG_PATH:-$ROOT_DIR/releases/Cribble-$VERSION.dmg}"
 CHECKSUM_PATH="$DMG_PATH.sha256"
+APPCAST_PATH="${APPCAST_PATH:-$ROOT_DIR/releases/appcast.xml}"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Missing app bundle: $APP_PATH" >&2
@@ -19,6 +20,11 @@ fi
 
 if [[ ! -f "$CHECKSUM_PATH" ]]; then
   echo "Missing checksum: $CHECKSUM_PATH" >&2
+  exit 1
+fi
+
+if [[ "${REQUIRE_APPCAST:-0}" == "1" && ! -f "$APPCAST_PATH" ]]; then
+  echo "Missing appcast: $APPCAST_PATH" >&2
   exit 1
 fi
 
@@ -40,6 +46,18 @@ echo "== Code signature =="
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
 echo
+echo "== Sparkle updater =="
+/bin/test -d "$APP_PATH/Contents/Frameworks/Sparkle.framework"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_PATH/Contents/Frameworks/Sparkle.framework"
+/usr/libexec/PlistBuddy -c "Print :SUFeedURL" "$APP_PATH/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP_PATH/Contents/Info.plist" >/dev/null
+/usr/libexec/PlistBuddy -c "Print :SUEnableInstallerLauncherService" "$APP_PATH/Contents/Info.plist"
+/usr/bin/otool -L "$APP_PATH/Contents/MacOS/Cribble" | /usr/bin/grep -q '@rpath/Sparkle.framework'
+if [[ -f "$APPCAST_PATH" ]]; then
+  /usr/bin/grep -q "Cribble-$VERSION.dmg" "$APPCAST_PATH"
+fi
+
+echo
 echo "== Resource bundles =="
 REQUIRED_RESOURCE_BUNDLES=(
   "Cribble_Cribble.bundle"
@@ -53,12 +71,20 @@ done
 
 echo
 echo "== Gatekeeper app assessment =="
-/usr/sbin/spctl -a -vv --type execute "$APP_PATH"
+if [[ "${REQUIRE_GATEKEEPER:-0}" == "1" ]]; then
+  /usr/sbin/spctl -a -vv --type execute "$APP_PATH"
+else
+  echo "skipped (set REQUIRE_GATEKEEPER=1 for Developer ID/notarized release validation)"
+fi
 
 echo
 echo "== Notarization tickets =="
-/usr/bin/xcrun stapler validate "$APP_PATH"
-/usr/bin/xcrun stapler validate "$DMG_PATH"
+if [[ "${REQUIRE_NOTARIZATION:-0}" == "1" ]]; then
+  /usr/bin/xcrun stapler validate "$APP_PATH"
+  /usr/bin/xcrun stapler validate "$DMG_PATH"
+else
+  echo "skipped (set REQUIRE_NOTARIZATION=1 for notarized release validation)"
+fi
 
 echo
 echo "== DMG contents =="

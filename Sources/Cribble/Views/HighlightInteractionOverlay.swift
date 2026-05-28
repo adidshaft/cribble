@@ -35,17 +35,18 @@ struct HighlightInteractionOverlay: ViewModifier {
                         layouts: layouts,
                         geometry: geometry
                     )
+                    let localRectsByHighlight = computeLocalRects()
                     
-                    let allRects = rectsByHighlight.values.flatMap { $0 }
+                    let allRects = localRectsByHighlight.values.flatMap { $0 }
                     let newRegions = allRects.map { TextInteractionCursorRegion(rect: $0, cursor: .cribbleHighlightHand) }
                     let newHoverRegions = highlights.flatMap { highlight in
-                        rectsByHighlight[highlight.id, default: []].map {
+                        localRectsByHighlight[highlight.id, default: []].map {
                             HighlightHoverRegion(highlightID: highlight.id, rect: $0)
                         }
                     }
                     let newHoverNoteRegions = highlights.flatMap { highlight in
                         guard !highlight.note.isEmpty else { return [TextInteractionHoverNoteRegion]() }
-                        return rectsByHighlight[highlight.id, default: []].map {
+                        return localRectsByHighlight[highlight.id, default: []].map {
                             TextInteractionHoverNoteRegion(rect: $0, note: highlight.note)
                         }
                     }
@@ -159,34 +160,8 @@ struct HighlightInteractionOverlay: ViewModifier {
         let blockText = model.text(in: fullRange)
         
         for h in highlights {
-            let range: Textual.TextRange
-            switch h.strategy {
-            case .offset(let start, let length):
-                guard let resolvedRange = resolvedTextRange(
-                    startOffset: start,
-                    length: length,
-                    blockText: blockText,
-                    model: model
-                )
-                else { continue }
-                range = resolvedRange
-                
-            case .textSearch(let quote):
-                guard let stringRange = blockText.range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]),
-                      let lowerUTF16 = stringRange.lowerBound.samePosition(in: blockText.utf16),
-                      let upperUTF16 = stringRange.upperBound.samePosition(in: blockText.utf16)
-                else { continue }
-                let startOffset = blockText.utf16.distance(from: blockText.utf16.startIndex, to: lowerUTF16)
-                let length = blockText.utf16.distance(from: lowerUTF16, to: upperUTF16)
-                
-                guard let resolvedRange = resolvedTextRange(
-                    startOffset: startOffset,
-                    length: length,
-                    blockText: blockText,
-                    model: model
-                )
-                else { continue }
-                range = resolvedRange
+            guard let range = resolvedRange(for: h, blockText: blockText, model: model) else {
+                continue
             }
             
             var rects: [CGRect] = []
@@ -202,6 +177,53 @@ struct HighlightInteractionOverlay: ViewModifier {
         }
         
         return result
+    }
+
+    private func computeLocalRects() -> [UUID: [CGRect]] {
+        guard let model, model.hasText else { return [:] }
+        let fullRange = Textual.TextRange(start: model.startPosition, end: model.endPosition)
+        let blockText = model.text(in: fullRange)
+        var result: [UUID: [CGRect]] = [:]
+
+        for highlight in highlights {
+            guard let range = resolvedRange(for: highlight, blockText: blockText, model: model) else {
+                continue
+            }
+            result[highlight.id] = model.selectionRects(for: range).map(\.rect)
+        }
+
+        return result
+    }
+
+    private func resolvedRange(
+        for highlight: ResolvedHighlight,
+        blockText: String,
+        model: TextSelectionModel
+    ) -> Textual.TextRange? {
+        switch highlight.strategy {
+        case .offset(let start, let length):
+            return resolvedTextRange(
+                startOffset: start,
+                length: length,
+                blockText: blockText,
+                model: model
+            )
+
+        case .textSearch(let quote):
+            guard let stringRange = blockText.range(of: quote, options: [.caseInsensitive, .diacriticInsensitive]),
+                  let lowerUTF16 = stringRange.lowerBound.samePosition(in: blockText.utf16),
+                  let upperUTF16 = stringRange.upperBound.samePosition(in: blockText.utf16)
+            else { return nil }
+
+            let startOffset = blockText.utf16.distance(from: blockText.utf16.startIndex, to: lowerUTF16)
+            let length = blockText.utf16.distance(from: lowerUTF16, to: upperUTF16)
+            return resolvedTextRange(
+                startOffset: startOffset,
+                length: length,
+                blockText: blockText,
+                model: model
+            )
+        }
     }
 
     private func activeHoverHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {

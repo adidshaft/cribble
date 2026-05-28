@@ -21,6 +21,7 @@
     // sample, so any custom cursor never appeared over actual text.
     @Environment(\.textInteractionCursorOverride) private var cursorOverride
     @Environment(\.textInteractionCursorRegions) private var cursorRegions
+    @Environment(\.textInteractionHoverHandler) private var hoverHandler
 
     private let model: TextSelectionModel
 
@@ -37,8 +38,18 @@
           AppKitTextInteractionOverlay(model: model, overflowFrames: frames)
             .onContinuousHover { phase in
               updateCursor(for: phase, model: model)
+              updateHover(for: phase)
             }
         }
+    }
+
+    private func updateHover(for phase: HoverPhase) {
+      switch phase {
+      case .active(let location):
+        hoverHandler?(location)
+      case .ended:
+        hoverHandler?(nil)
+      }
     }
 
     private func updateCursor(for phase: HoverPhase, model: TextSelectionModel) {

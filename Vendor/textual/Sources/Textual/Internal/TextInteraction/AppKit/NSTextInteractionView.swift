@@ -118,7 +118,9 @@
         dragStart = model.closestPosition(to: location)
       case 2:
         if let region = highlightRegion(at: location), let highlightID = region.highlightID {
-          highlightNoteActionHandler?(highlightID, .edit)
+          DispatchQueue.main.async { [weak self] in
+            self?.highlightNoteActionHandler?(highlightID, .edit)
+          }
         } else if let position = model.closestPosition(to: location) {
           model.selectedRange = model.wordRange(for: position)
         }
@@ -214,13 +216,17 @@
         : "Edit Highlight Note"
 
       let editItem = HighlightNoteMenuItem(title: editTitle) { [weak self] in
-        self?.highlightNoteActionHandler?(highlightID, .edit)
+        DispatchQueue.main.async { [weak self] in
+          self?.highlightNoteActionHandler?(highlightID, .edit)
+        }
       }
       menu.addItem(editItem)
 
       if !region.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         let deleteItem = HighlightNoteMenuItem(title: "Delete Highlight Note") { [weak self] in
-          self?.highlightNoteActionHandler?(highlightID, .deleteNote)
+          DispatchQueue.main.async { [weak self] in
+            self?.highlightNoteActionHandler?(highlightID, .deleteNote)
+          }
         }
         menu.addItem(deleteItem)
       }

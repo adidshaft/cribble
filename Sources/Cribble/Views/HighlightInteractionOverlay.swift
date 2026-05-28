@@ -77,8 +77,24 @@ struct HighlightInteractionOverlay: ViewModifier {
                                     x: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
                                     y: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
                                 )
+                                .onHover { hovering in
+                                    if hovering {
+                                        updateTrackedHover(h.id)
+                                    } else {
+                                        updateTrackedHover(nil)
+                                    }
+                                }
                                 .onTapGesture {
                                     beginInlineEditing(h)
+                                }
+                                .contextMenu {
+                                    Button("Edit Highlight Note") {
+                                        beginInlineEditing(h)
+                                    }
+                                    Button("Delete Highlight Note") {
+                                        onUpdateNote(h.id, "")
+                                        hoveredHighlightID = nil
+                                    }
                                 }
                         }
 

@@ -15,11 +15,19 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
     ],
     targets: [
+        // Objective-C target whose load-time constructor installs the
+        // NSBundle path redirect before any Swift `Bundle.module` initializer
+        // runs. Kept separate because SPM can't mix .m and .swift in one
+        // target.
+        .target(
+            name: "CribbleBundleRedirect"
+        ),
         .executableTarget(
             name: "Cribble",
             dependencies: [
                 .product(name: "Textual", package: "textual"),
-                .product(name: "Markdown", package: "swift-markdown")
+                .product(name: "Markdown", package: "swift-markdown"),
+                "CribbleBundleRedirect"
             ],
             resources: [
                 .process("Resources/AppIconLight.png"),

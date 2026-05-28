@@ -118,6 +118,7 @@
         dragStart = model.closestPosition(to: location)
       case 2:
         if let region = highlightRegion(at: location), let highlightID = region.highlightID {
+          closeHoverNote()
           DispatchQueue.main.async { [weak self] in
             self?.highlightNoteActionHandler?(highlightID, .edit)
           }
@@ -216,6 +217,7 @@
         : "Edit Highlight Note"
 
       let editItem = HighlightNoteMenuItem(title: editTitle) { [weak self] in
+        self?.closeHoverNote()
         DispatchQueue.main.async { [weak self] in
           self?.highlightNoteActionHandler?(highlightID, .edit)
         }
@@ -224,6 +226,7 @@
 
       if !region.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         let deleteItem = HighlightNoteMenuItem(title: "Delete Highlight Note") { [weak self] in
+          self?.closeHoverNote()
           DispatchQueue.main.async { [weak self] in
             self?.highlightNoteActionHandler?(highlightID, .deleteNote)
           }

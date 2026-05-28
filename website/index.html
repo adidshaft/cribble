@@ -610,7 +610,7 @@
   <div class="hero-meta">
     <b>Direct DMG available</b><span class="dot">•</span>
     <b>macOS 15+</b><span class="dot">•</span>
-    <span data-release-size>11&nbsp;MB</span>
+    <span data-release-size>8.9&nbsp;MB</span>
   </div>
 
   <div class="hero-shot">
@@ -622,7 +622,7 @@
 <section class="page" id="download">
   <div class="section-head">
     <h2>Download</h2>
-    <span class="kicker"><span data-release-tag>v1.0.5</span> · <span data-release-size>11 MB</span> · macOS 15+</span>
+    <span class="kicker"><span data-release-tag>v1.0.5</span> · <span data-release-size>8.9 MB</span> · macOS 15+</span>
   </div>
 
   <div class="download-grid">
@@ -639,7 +639,7 @@
       <div class="download-version">
         <div class="item"><span class="label">Version</span><span class="value"><span data-version-value>1.0.5</span> (build 1)</span></div>
         <div class="item"><span class="label">Released</span><span class="value" data-release-date>May 28, 2026</span></div>
-        <div class="item"><span class="label">Size</span><span class="value" data-release-size>11 MB</span></div>
+        <div class="item"><span class="label">Size</span><span class="value" data-release-size>8.9 MB</span></div>
       </div>
     </div>
 
@@ -680,7 +680,7 @@
     </div>
     <div class="release-note">
       <h4>Stability Fixes</h4>
-      <p>1.0.5 includes highlight anchoring fixes, hover-note crash hardening, resource bundle checks, notarized packaging, and basename-only checksums.</p>
+      <p>1.0.5 includes highlight anchoring fixes, readable hover notes, inline note editing fixes, resource bundle checks, notarized packaging, and basename-only checksums.</p>
     </div>
   </div>
 </section>
@@ -851,7 +851,7 @@
   const appStoreBuild = '1';
 
   function formatBytes(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '11 MB';
+    if (!Number.isFinite(bytes) || bytes <= 0) return '8.9 MB';
     const mb = bytes / (1024 * 1024);
     return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
   }

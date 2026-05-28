@@ -3,6 +3,7 @@ import SwiftUI
 struct SidebarView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var semanticIndex: SemanticSearchIndex
 
     var body: some View {
         VStack(spacing: 0) {
@@ -10,39 +11,29 @@ struct SidebarView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
 
-            if library.filteredNodes.isEmpty {
-                VStack {
-                    Spacer()
-                    ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
-                        .padding(.vertical, 24)
-                    Spacer()
+            if !semanticIndex.results.isEmpty {
+                SemanticResultsSection(results: semanticIndex.results) { url in
+                    library.selectedURL = url
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            if library.filteredNodes.isEmpty {
+                if semanticIndex.results.isEmpty {
+                    VStack {
+                        Spacer()
+                        ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
+                            .padding(.vertical, 24)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // No literal filename matches, but semantic matches exist —
+                    // let the Related section above carry the result.
+                    Spacer(minLength: 0)
+                }
             } else {
                 List(library.filteredNodes, children: \.childNodes, selection: $library.selectedURL) { node in
-                    SidebarRow(node: node)
-                        .tag(Optional(node.url))
-                        .contextMenu {
-                            if library.isImportedRoot(node.url) {
-                                Text(node.url.path)
-
-                                Divider()
-
-                                Button("Rename Folder...", systemImage: "pencil") {
-                                    library.renameImportedFolder(node.url)
-                                }
-
-                                Button("Copy Actual Path", systemImage: "doc.on.doc") {
-                                    library.copyActualPath(for: node.url)
-                                }
-
-                                Divider()
-
-                                Button("Remove Folder", systemImage: "folder.badge.minus", role: .destructive) {
-                                    library.removeFolder(node.url)
-                                }
-                            }
-                        }
+                    sidebarRow(node)
                 }
                 .listStyle(.sidebar)
             }
@@ -52,6 +43,126 @@ struct SidebarView: View {
         .onChange(of: library.selectedURL) { _, newValue in
             library.select(url: newValue)
         }
+        .onChange(of: library.searchText) { _, query in
+            semanticIndex.search(query: query)
+        }
+    }
+
+    /// Extracted from the `List` builder to keep the generic row expression
+    /// within the type-checker's budget.
+    @ViewBuilder
+    private func sidebarRow(_ node: MarkdownNode) -> some View {
+        SidebarRow(node: node)
+            .tag(Optional(node.url))
+            .modifier(PathfinderDragDrop(node: node) { source, target in
+                library.pathfinderRequest = PathfinderRequest(source: source, target: target)
+            })
+            .contextMenu {
+                if library.isImportedRoot(node.url) {
+                    Text(node.url.path)
+
+                    Divider()
+
+                    Button("Rename Folder...", systemImage: "pencil") {
+                        library.renameImportedFolder(node.url)
+                    }
+
+                    Button("Copy Actual Path", systemImage: "doc.on.doc") {
+                        library.copyActualPath(for: node.url)
+                    }
+
+                    Divider()
+
+                    Button("Remove Folder", systemImage: "folder.badge.minus", role: .destructive) {
+                        library.removeFolder(node.url)
+                    }
+                }
+            }
+    }
+}
+
+/// Makes a markdown row a Pathfinder drag source and drop target: drop one note
+/// onto another to bridge them. Folders are left untouched.
+private struct PathfinderDragDrop: ViewModifier {
+    let node: MarkdownNode
+    let onBridge: (URL, URL) -> Void
+
+    @State private var isTargeted = false
+
+    func body(content: Content) -> some View {
+        if node.isMarkdownFile {
+            content
+                .draggable(node.url) {
+                    Label(node.name, systemImage: "doc.text")
+                        .padding(6)
+                }
+                .dropDestination(for: URL.self) { items, _ in
+                    guard let source = items.first?.standardizedFileURL else { return false }
+                    let target = node.url.standardizedFileURL
+                    guard source != target, source.pathExtension.lowercased() == "md" else { return false }
+                    onBridge(source, target)
+                    return true
+                } isTargeted: { isTargeted = $0 }
+                .overlay {
+                    if isTargeted {
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.accentColor, lineWidth: 2)
+                    }
+                }
+        } else {
+            content
+        }
+    }
+}
+
+/// Compact "Related" section listing the top semantic matches for the current
+/// query — surfaces notes that mean the same thing even when the filename
+/// shares no keywords (e.g. searching "installation" → "Quick Setup").
+private struct SemanticResultsSection: View {
+    let results: [SemanticHit]
+    let onSelect: (URL) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 5) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("Related")
+                    .font(.system(size: 11, weight: .semibold))
+                    .textCase(.uppercase)
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.top, 4)
+            .padding(.bottom, 3)
+
+            ForEach(results) { hit in
+                Button {
+                    onSelect(hit.url)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                        Text(hit.title)
+                            .font(.system(size: 12))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer(minLength: 4)
+                    }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .pointingHandOnHover()
+            }
+
+            Divider()
+                .padding(.top, 5)
+        }
+        .padding(.bottom, 2)
     }
 }
 

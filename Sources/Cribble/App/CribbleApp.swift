@@ -8,6 +8,8 @@ struct CribbleApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var diagnostics = DiagnosticsCenter.shared
     @StateObject private var readingAnnotations = ReadingAnnotationsStore()
+    @StateObject private var readingTrail = ReadingTrailStore()
+    @StateObject private var semanticIndex = SemanticSearchIndex()
 
     init() {
         // Runs at the very top of App.main(), before SwiftUI evaluates the
@@ -26,6 +28,8 @@ struct CribbleApp: App {
                 .environmentObject(settings)
                 .environmentObject(diagnostics)
                 .environmentObject(readingAnnotations)
+                .environmentObject(readingTrail)
+                .environmentObject(semanticIndex)
                 .frame(minWidth: 820, minHeight: 560)
         }
         .commands {

@@ -95,6 +95,67 @@ struct AIService {
         return UnifiedDiffParser.parse(UnifiedDiffParser.extractDiffText(from: output))
     }
 
+    /// Spawns the local Claude/Codex CLI (read-only, no file mutations) to
+    /// reason about how two notes connect through the rest of the folder.
+    /// Returns the model's prose explanation. Reused by Semantic Pathfinding.
+    func explainRelationship(
+        provider: AIProvider,
+        sourceTitle: String,
+        targetTitle: String,
+        folderURL: URL
+    ) async throws -> String {
+        let prompt = Self.relationshipPrompt(sourceTitle: sourceTitle, targetTitle: targetTitle)
+
+        switch provider {
+        case .codex:
+            let outputFile = FileManager.default.temporaryDirectory
+                .appendingPathComponent("cribble-codex-\(UUID().uuidString).txt")
+            return try await run(
+                executable: "/usr/bin/env",
+                arguments: [
+                    "codex",
+                    "--ask-for-approval", "never",
+                    "-c", "model_reasoning_effort=\"low\"",
+                    "exec",
+                    "--model", provider.lowestModelName,
+                    "-C", folderURL.path,
+                    "--skip-git-repo-check",
+                    "--sandbox", "read-only",
+                    "--color", "never",
+                    "--ephemeral",
+                    "-o", outputFile.path,
+                    prompt
+                ],
+                currentDirectory: folderURL,
+                provider: provider,
+                outputFile: outputFile
+            )
+        case .claude:
+            return try await run(
+                executable: "/usr/bin/env",
+                arguments: [
+                    "claude",
+                    "--print",
+                    "--no-session-persistence",
+                    "--model", provider.lowestModelName,
+                    "--permission-mode", "plan",
+                    "--allowedTools", "Read Grep Glob",
+                    "--output-format", "text",
+                    "--add-dir", folderURL.path,
+                    prompt
+                ],
+                currentDirectory: folderURL,
+                provider: provider
+            )
+        }
+    }
+
+    private static func relationshipPrompt(sourceTitle: String, targetTitle: String) -> String {
+        """
+        Analyze the relationship between the note titled "\(sourceTitle)" and the note titled "\(targetTitle)" in this folder of Markdown notes. Find a logical chain of semantic connections that bridges them, using other notes in this folder where helpful. Output a short structured path of the form `A -> B -> C` followed by one sentence explaining each step. Keep the whole answer under 120 words. Do not modify, create, or write any files.
+        """
+    }
+
     private func run(
         executable: String,
         arguments: [String],

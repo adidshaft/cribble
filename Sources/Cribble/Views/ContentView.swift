@@ -5,6 +5,7 @@ struct ContentView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var diagnostics: DiagnosticsCenter
+    @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     @State private var showingAIProviderSheet = false
     @State private var showingDiagnosticsReport = false
     @State private var showingPreviousSessionIssue = false
@@ -89,6 +90,9 @@ struct ContentView: View {
                     library.cancelPendingDiff()
                 }
             }
+            .sheet(item: $library.pathfinderRequest) { request in
+                PathfinderSheet(request: request)
+            }
     }
 
     private var behaviorContent: some View {
@@ -101,6 +105,12 @@ struct ContentView: View {
             }
             .onChange(of: diagnostics.previousSessionDidNotCloseCleanly) { _, didNotCloseCleanly in
                 showingPreviousSessionIssue = didNotCloseCleanly
+            }
+            // `nodes` and `documents` are set together after a scan, so reacting
+            // to the published `nodes` keeps the semantic index in sync. Cheap
+            // when nothing changed (unchanged files are skipped by hash).
+            .onChange(of: library.nodes, initial: true) {
+                semanticIndex.reindex(documents: library.documents)
             }
     }
 

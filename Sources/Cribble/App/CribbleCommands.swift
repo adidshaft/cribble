@@ -62,6 +62,9 @@ struct CribbleCommands: Commands {
 
             Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
                 .keyboardShortcut("h", modifiers: [])
+
+            Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
+                .keyboardShortcut("p", modifiers: [])
         }
 
         CommandMenu("Diagnostics") {

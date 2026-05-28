@@ -61,6 +61,7 @@ private struct ReaderDocumentView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var readingAnnotations: ReadingAnnotationsStore
+    @EnvironmentObject private var readingTrail: ReadingTrailStore
     // Reference type so the bridge's per-scroll-tick writes don't invalidate
     // this view's body (which used to re-trigger LazyVStack diffing and
     // updateNSView on every pixel of scrolling — the dominant lag source).
@@ -71,6 +72,7 @@ private struct ReaderDocumentView: View {
     @State private var isHighlightMode = false
     @State private var lastHighlightedQuote: String?
     @State private var shortcutToken = UUID()
+    @State private var zoomRequest: ZoomOverlayRequest?
     // Cached section partitioning + highlight assignments. Rebuilt only when
     // the document body or its highlight set changes, so scroll-triggered
     // re-renders no longer pay O(sections * highlights * text-length) for
@@ -86,6 +88,30 @@ private struct ReaderDocumentView: View {
     let onSelectLink: (LinkedFileSummary) -> Void
     let onOpenURL: (URL) -> OpenURLAction.Result
     let onFillReadme: (AIProvider) -> Void
+
+    /// The right-docked panels (headings outline + reading trail). Extracted
+    /// from `body` to keep the main view expression within the type-checker's
+    /// budget.
+    @ViewBuilder
+    private var sidePanels: some View {
+        if settings.showOutline && !settings.isFocusMode {
+            Divider()
+            OutlineView()
+                .frame(width: 220)
+                .transition(.move(edge: .trailing))
+        }
+
+        if readingTrail.isPanelVisible {
+            Divider()
+            ReadingTrailPanel {
+                withAnimation(.snappy(duration: 0.2)) {
+                    readingTrail.isPanelVisible = false
+                }
+            }
+            .frame(width: 290)
+            .transition(.move(edge: .trailing))
+        }
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -190,12 +216,7 @@ private struct ReaderDocumentView: View {
                 }
             }
 
-            if settings.showOutline && !settings.isFocusMode {
-                Divider()
-                OutlineView()
-                    .frame(width: 220)
-                    .transition(.move(edge: .trailing))
-            }
+            sidePanels
         }
         .highlightModeCursor(isHighlightMode)
         // Textual installs its own I-beam via onContinuousHover on every
@@ -205,12 +226,18 @@ private struct ReaderDocumentView: View {
         // text, so highlight mode actually shows a visual signal.
         .environment(\.textInteractionCursorOverride, isHighlightMode ? NSCursor.cribbleHighlightLine : nil)
         .onAppear {
+            readingTrail.recordVisit(url: document.url, title: document.title)
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,
                 isHighlightMode: $isHighlightMode,
                 onDropBookmark: { dropReadingBookmark() },
                 onHighlightKey: { handleHighlightKey() },
-                onHighlightMouseUp: { captureHighlightFromSelection(keepModeActive: true) }
+                onHighlightMouseUp: { captureHighlightFromSelection(keepModeActive: true) },
+                onToggleTrail: {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        readingTrail.isPanelVisible.toggle()
+                    }
+                }
             )
         }
         .onDisappear {
@@ -231,6 +258,18 @@ private struct ReaderDocumentView: View {
             buildHighlightContextMenuItems(forSelection: selected, anchor: anchor)
         }
         .cribbleBackgroundExtension()
+        .environment(\.presentZoomOverlay) { request in
+            zoomRequest = request
+        }
+        .overlay {
+            if let zoomRequest {
+                DiagramZoomOverlay(request: zoomRequest) {
+                    self.zoomRequest = nil
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: zoomRequest)
         .navigationTitle(document.title)
     }
 
@@ -651,6 +690,7 @@ final class ReaderShortcutHub {
     private var onDropBookmark: (() -> Void)?
     private var onHighlightKey: (() -> Void)?
     private var onHighlightMouseUp: (() -> Void)?
+    private var onToggleTrail: (() -> Void)?
     nonisolated(unsafe) private var monitor: Any?
 
     private init() {}
@@ -660,13 +700,15 @@ final class ReaderShortcutHub {
         isHighlightMode: Binding<Bool>,
         onDropBookmark: @escaping () -> Void,
         onHighlightKey: @escaping () -> Void,
-        onHighlightMouseUp: @escaping () -> Void
+        onHighlightMouseUp: @escaping () -> Void,
+        onToggleTrail: @escaping () -> Void
     ) {
         activeToken = token
         self.isHighlightMode = isHighlightMode
         self.onDropBookmark = onDropBookmark
         self.onHighlightKey = onHighlightKey
         self.onHighlightMouseUp = onHighlightMouseUp
+        self.onToggleTrail = onToggleTrail
         installMonitorIfNeeded()
     }
 
@@ -677,6 +719,7 @@ final class ReaderShortcutHub {
         onDropBookmark = nil
         onHighlightKey = nil
         onHighlightMouseUp = nil
+        onToggleTrail = nil
     }
 
     func performDropBookmark() {
@@ -685,6 +728,10 @@ final class ReaderShortcutHub {
 
     func performHighlightKey() {
         onHighlightKey?()
+    }
+
+    func performToggleTrail() {
+        onToggleTrail?()
     }
 
     private func installMonitorIfNeeded() {
@@ -740,6 +787,9 @@ final class ReaderShortcutHub {
             return nil
         case "h":
             performHighlightKey()
+            return nil
+        case "p":
+            performToggleTrail()
             return nil
         default:
             return event
@@ -847,6 +897,7 @@ private struct ReaderMarkdownSection: View {
                         .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: markdown))
                         .highlightInteractionOverlay(blockHighlights, onUpdateNote: onUpdateHighlightNote)
                         .fixedSize(horizontal: false, vertical: true)
+                        .mathZoomAffordance(Self.displayMathSource(markdown))
                     }
 
                 case .fencedCode(_, let language, let code):
@@ -857,6 +908,26 @@ private struct ReaderMarkdownSection: View {
                 }
             }
         }
+    }
+
+    /// Returns the block's markdown when it is a *standalone* display equation
+    /// (`$$ … $$` or `\[ … \]`), otherwise nil. Used to attach the zoom
+    /// affordance only to whole equation blocks, never to prose with inline math.
+    static func displayMathSource(_ markdown: String) -> String? {
+        let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 4 else { return nil }
+
+        if trimmed.hasPrefix("$$"), trimmed.hasSuffix("$$") {
+            let inner = trimmed.dropFirst(2).dropLast(2)
+            // Reject blocks that pack several separate equations together.
+            return inner.contains("$$") ? nil : markdown
+        }
+
+        if trimmed.hasPrefix("\\["), trimmed.hasSuffix("\\]") {
+            return markdown
+        }
+
+        return nil
     }
 
     private func indexedBlocks(from markdown: String) -> [IndexedBlock] {
@@ -950,6 +1021,9 @@ private struct RichCodeBlockView: View {
                 )
                 .frame(height: mermaidHeight)
                 .allowsHitTesting(false)
+                .zoomAffordance(allowsDoubleClick: true) {
+                    ZoomOverlayRequest(title: "Mermaid Diagram", content: .mermaid(source: code))
+                }
                 .padding(12)
             } else if ["dot", "graphviz", "vega", "vega-lite", "vegalite", "chart", "graph"].contains(normalizedLanguage) {
                 DiagramSourceView(source: code, fontScale: fontScale, iconName: "chart.xyaxis.line")
@@ -1044,119 +1118,10 @@ private struct MermaidWebDiagramView: NSViewRepresentable {
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         context.coordinator.height = $height
-        let nextHTML = html
+        let nextHTML = MermaidHTML.page(source: source, fontScale: fontScale, isDark: isDark, interactive: false)
         guard context.coordinator.loadedHTML != nextHTML else { return }
         context.coordinator.loadedHTML = nextHTML
         webView.loadHTMLString(nextHTML, baseURL: nil)
-    }
-
-    private var html: String {
-        let encodedSource = (try? String(data: JSONEncoder().encode(source), encoding: .utf8)) ?? "\"\""
-        let background = isDark ? "#151515" : "#ffffff"
-        let foreground = isDark ? "#f2f2f2" : "#202124"
-        let secondary = isDark ? "#a7a7a7" : "#5f6368"
-        let line = isDark ? "#8ab4f8" : "#1a73e8"
-        let nodeFill = isDark ? "#19324a" : "#e8f0fe"
-        let nodeBorder = isDark ? "#2f6ea6" : "#1a73e8"
-
-        return """
-        <!doctype html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <script>\(mermaidScript)</script>
-          <style>
-            html, body {
-              margin: 0;
-              padding: 0;
-              background: transparent;
-              color: \(foreground);
-              font: \(max(12, 13 * fontScale))px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-              overflow: hidden;
-            }
-            #diagram {
-              box-sizing: border-box;
-              width: 100%;
-              min-height: 180px;
-              padding: 10px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-            svg {
-              max-width: 100%;
-              height: auto !important;
-            }
-            .error {
-              white-space: pre-wrap;
-              font: \(max(12, 13 * fontScale))px ui-monospace, SFMono-Regular, Menlo, monospace;
-              color: \(secondary);
-              text-align: left;
-              width: 100%;
-            }
-          </style>
-        </head>
-        <body>
-          <div id="diagram"></div>
-          <script>
-            const source = \(encodedSource);
-            const root = document.getElementById('diagram');
-            const reportHeight = () => {
-              const rect = document.documentElement.getBoundingClientRect();
-              window.webkit.messageHandlers.height.postMessage(Math.ceil(rect.height));
-            };
-            const escapeHTML = value => String(value).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-            const showError = error => {
-              root.innerHTML = '<pre class="error">' + escapeHTML(error) + '</pre>';
-              requestAnimationFrame(reportHeight);
-            };
-            try {
-              if (!globalThis.mermaid) throw new Error('Bundled Mermaid renderer did not load.');
-              globalThis.mermaid.initialize({
-                startOnLoad: false,
-                securityLevel: 'strict',
-                theme: 'base',
-                themeVariables: {
-                  background: 'transparent',
-                  mainBkg: '\(nodeFill)',
-                  primaryColor: '\(nodeFill)',
-                  primaryBorderColor: '\(nodeBorder)',
-                  primaryTextColor: '\(foreground)',
-                  secondaryColor: '\(background)',
-                  tertiaryColor: '\(background)',
-                  lineColor: '\(line)',
-                  textColor: '\(foreground)',
-                  edgeLabelBackground: '\(background)',
-                  clusterBkg: '\(background)',
-                  clusterBorder: '\(nodeBorder)',
-                  fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, sans-serif'
-                }
-              });
-              globalThis.mermaid.render('cribble-mermaid-' + Math.random().toString(36).slice(2), source)
-                .then(({ svg }) => {
-                  root.innerHTML = svg;
-                  requestAnimationFrame(reportHeight);
-                })
-                .catch(showError);
-              new ResizeObserver(reportHeight).observe(document.body);
-            } catch (error) {
-              showError(error);
-            }
-          </script>
-        </body>
-        </html>
-        """
-    }
-
-    private var mermaidScript: String {
-        guard let url = MarkdownLibraryStore.bundledResourceURL(forResource: "mermaid.min", withExtension: "js", subdirectory: "Mermaid")
-                ?? MarkdownLibraryStore.bundledResourceURL(forResource: "mermaid.min", withExtension: "js"),
-              let script = try? String(contentsOf: url, encoding: .utf8)
-        else {
-            return "window.__cribbleMermaidMissing = true;"
-        }
-        return script.replacingOccurrences(of: "</script", with: "<\\/script")
     }
 
     final class NonInteractiveMermaidWebView: WKWebView {

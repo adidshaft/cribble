@@ -37,6 +37,7 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var isRunningAI = false
     @Published var pendingDiff: UnifiedDiff?
     @Published var pendingDiffError: String?
+    @Published var pathfinderRequest: PathfinderRequest?
     @Published private var rootDisplayNames: [String: String] = [:]
 
     private let loader = DocumentLoader()
@@ -48,6 +49,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var pendingDiffRootURL: URL?
     private var pendingDiffMode: AIMode?
+    private var pendingDiffSuccessMessage: String?
 
     // LRU render cache. Keyed by document URL; entries are invalidated when
     // the underlying file content changes (we compare a hash of rawMarkdown).
@@ -89,6 +91,11 @@ final class MarkdownLibraryStore: ObservableObject {
     var selectedRootURL: URL? {
         guard let selectedURL else { return nil }
         return rootURLs.first { selectedURL.isSameFileOrDescendant(of: $0) }
+    }
+
+    func rootURL(for url: URL) -> URL? {
+        let standardized = url.standardizedFileURL
+        return rootURLs.first { standardized.isSameFileOrDescendant(of: $0) } ?? activeRootURL
     }
 
     var filteredNodes: [MarkdownNode] {
@@ -686,12 +693,14 @@ final class MarkdownLibraryStore: ObservableObject {
         do {
             try DiffApplier().apply(pendingDiff, rootURL: rootURL)
             let appliedMode = pendingDiffMode
+            let successMessage = pendingDiffSuccessMessage
             self.pendingDiff = nil
             self.pendingDiffError = nil
             self.pendingDiffRootURL = nil
             self.pendingDiffMode = nil
+            self.pendingDiffSuccessMessage = nil
             refresh()
-            statusMessage = appliedMode == .updateReadme ? "Applied README changes" : "Applied AI link suggestions"
+            statusMessage = successMessage ?? (appliedMode == .updateReadme ? "Applied README changes" : "Applied AI link suggestions")
         } catch {
             pendingDiffError = error.localizedDescription
             statusMessage = "Could not apply AI changes"
@@ -699,11 +708,144 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func cancelPendingDiff() {
+        let discardMessage = pendingDiffSuccessMessage == nil ? "AI link changes discarded" : "Discarded proposed note"
         pendingDiff = nil
         pendingDiffError = nil
         pendingDiffRootURL = nil
         pendingDiffMode = nil
-        statusMessage = "AI link changes discarded"
+        pendingDiffSuccessMessage = nil
+        statusMessage = discardMessage
+    }
+
+    /// Proposes creating a brand-new Markdown file as a unified diff so it flows
+    /// through the same safe preview/apply path as AI edits. Used by Reading
+    /// Trails to write a synthesized note without ever silently touching disk.
+    func presentNewNoteProposal(fileName: String, content: String, rootURL: URL? = nil) {
+        guard let root = rootURL ?? activeRootURL else {
+            errorMessage = "Open a folder before saving a note."
+            return
+        }
+
+        let relativePath = uniqueRelativeFileName(for: fileName, in: root)
+        let bodyLines = content.components(separatedBy: "\n")
+        let hunk = DiffHunk(
+            header: "@@ -0,0 +1,\(bodyLines.count) @@",
+            lines: bodyLines.map { DiffLine(kind: .addition, text: $0) }
+        )
+        let file = DiffFile(oldPath: "/dev/null", newPath: relativePath, hunks: [hunk])
+
+        pendingDiffRootURL = root
+        pendingDiffMode = nil
+        pendingDiffError = nil
+        pendingDiffSuccessMessage = "Created \(relativePath)"
+        pendingDiff = UnifiedDiff(files: [file])
+    }
+
+    /// Title for a document URL, used by the Pathfinder HUD and link proposals.
+    func title(for url: URL) -> String {
+        let standardized = url.standardizedFileURL
+        return documents.first { $0.url.standardizedFileURL == standardized }?.title
+            ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    /// Breadth-first shortest path between two notes over the (undirected)
+    /// wiki-link graph. Returns the chain of URLs including both endpoints, or
+    /// nil when no link path connects them.
+    func wikiLinkPath(from source: URL, to target: URL) -> [URL]? {
+        let start = source.standardizedFileURL
+        let goal = target.standardizedFileURL
+        guard start != goal else { return [start] }
+        guard let linkIndex else { return nil }
+
+        var adjacency: [URL: Set<URL>] = [:]
+        for document in documents {
+            let from = document.url.standardizedFileURL
+            for link in document.outboundLinks {
+                guard let to = linkIndex.resolve(link).targetURL?.standardizedFileURL, to != from else { continue }
+                adjacency[from, default: []].insert(to)
+                adjacency[to, default: []].insert(from)
+            }
+        }
+
+        var queue: [URL] = [start]
+        var head = 0
+        var previous: [URL: URL] = [:]
+        var visited: Set<URL> = [start]
+
+        while head < queue.count {
+            let node = queue[head]
+            head += 1
+            if node == goal {
+                var path: [URL] = [goal]
+                var cursor = goal
+                while let parent = previous[cursor] {
+                    path.append(parent)
+                    cursor = parent
+                }
+                return path.reversed()
+            }
+            for neighbour in adjacency[node] ?? [] where !visited.contains(neighbour) {
+                visited.insert(neighbour)
+                previous[neighbour] = node
+                queue.append(neighbour)
+            }
+        }
+        return nil
+    }
+
+    /// Proposes adding a `[[wiki link]]` from `source` to `target` as a unified
+    /// diff (safe preview/apply), appending a "## Related" reference.
+    func presentLinkProposal(from source: URL, to target: URL) {
+        let sourceURL = source.standardizedFileURL
+        guard let root = rootURLs.first(where: { sourceURL.isSameFileOrDescendant(of: $0) }) ?? activeRootURL else {
+            errorMessage = "Open a folder before linking notes."
+            return
+        }
+        guard let existing = try? String(contentsOf: sourceURL, encoding: .utf8) else {
+            errorMessage = "Could not read \(sourceURL.lastPathComponent)."
+            return
+        }
+
+        let targetTitle = title(for: target)
+        let relativePath = sourceURL.relativePath(from: root)
+
+        let lines = existing.components(separatedBy: "\n")
+        let lastIndex = max(0, lines.count - 1)
+        let contextLine = lines.isEmpty ? "" : lines[lastIndex]
+
+        let additions = ["", "## Related", "", "- [[\(targetTitle)]]"]
+        var hunkLines = [DiffLine(kind: .context, text: contextLine)]
+        hunkLines.append(contentsOf: additions.map { DiffLine(kind: .addition, text: $0) })
+
+        let header = "@@ -\(lastIndex + 1),1 +\(lastIndex + 1),\(1 + additions.count) @@"
+        let file = DiffFile(
+            oldPath: relativePath,
+            newPath: relativePath,
+            hunks: [DiffHunk(header: header, lines: hunkLines)]
+        )
+
+        pendingDiffRootURL = root
+        pendingDiffMode = nil
+        pendingDiffError = nil
+        pendingDiffSuccessMessage = "Linked [[\(targetTitle)]] into \(sourceURL.lastPathComponent)"
+        pendingDiff = UnifiedDiff(files: [file])
+    }
+
+    private func uniqueRelativeFileName(for fileName: String, in root: URL) -> String {
+        let sanitized = fileName
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        let nsName = sanitized as NSString
+        let ext = nsName.pathExtension.isEmpty ? "md" : nsName.pathExtension
+        let base = nsName.deletingPathExtension
+
+        var candidate = "\(base).\(ext)"
+        var counter = 2
+        while FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path) {
+            candidate = "\(base) \(counter).\(ext)"
+            counter += 1
+        }
+        return candidate
     }
 
     func folderURLForAI(mode: AIMode) -> URL? {
@@ -772,14 +914,16 @@ final class MarkdownLibraryStore: ObservableObject {
     private func seedBundledDemoIfNeeded() {
         let defaults = UserDefaults.standard
         let alreadySeeded = defaults.string(forKey: Keys.bundledDemoNotesVersion) == Self.bundledDemoNotesVersion
+        let installedDemoURL = Self.applicationSupportDirectory()
+            .appendingPathComponent("DemoNotes", isDirectory: true)
+            .standardizedFileURL
+        let shouldInstallDemo = rootURLs.isEmpty || rootURLs.contains(installedDemoURL)
         guard !alreadySeeded,
-              rootURLs.isEmpty,
+              shouldInstallDemo,
               let bundledDemoURL = Self.bundledResourceURL(forResource: "DemoNotes", withExtension: nil)
         else { return }
 
         do {
-            let installedDemoURL = Self.applicationSupportDirectory()
-                .appendingPathComponent("DemoNotes", isDirectory: true)
             let fileManager = FileManager.default
             try fileManager.createDirectory(
                 at: installedDemoURL.deletingLastPathComponent(),
@@ -789,7 +933,9 @@ final class MarkdownLibraryStore: ObservableObject {
                 try fileManager.removeItem(at: installedDemoURL)
             }
             try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
-            rootURLs.append(installedDemoURL.standardizedFileURL)
+            if !rootURLs.contains(installedDemoURL) {
+                rootURLs.append(installedDemoURL)
+            }
             defaults.set(Self.bundledDemoNotesVersion, forKey: Keys.bundledDemoNotesVersion)
         } catch {
             DiagnosticsCenter.shared.record(level: .error, message: "Failed to install DemoNotes: \(error.localizedDescription)")
@@ -995,7 +1141,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.0.5"
+    private static let bundledDemoNotesVersion = "1.1.0"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

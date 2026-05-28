@@ -21,7 +21,11 @@ enum HighlightNotePopover {
         popover.behavior = .transient
         popover.animates = true
 
-        let coordinator = NotePopoverCoordinator(initialNote: initialNote, completion: completion)
+        let coordinator = NotePopoverCoordinator(
+            initialNote: initialNote,
+            restoreView: anchorView,
+            completion: completion
+        )
 
         let hosting = NSHostingController(
             rootView: HighlightNoteEditor(
@@ -59,10 +63,16 @@ enum HighlightNotePopover {
 private final class NotePopoverCoordinator: NSObject, NSPopoverDelegate {
     private var completion: ((HighlightNotePopoverResult) -> Void)?
     private var retainedPopover: NSPopover?
+    private weak var restoreView: NSView?
     var currentNote: String
 
-    init(initialNote: String, completion: @escaping (HighlightNotePopoverResult) -> Void) {
+    init(
+        initialNote: String,
+        restoreView: NSView?,
+        completion: @escaping (HighlightNotePopoverResult) -> Void
+    ) {
         self.currentNote = initialNote
+        self.restoreView = restoreView
         self.completion = completion
     }
 
@@ -88,6 +98,10 @@ private final class NotePopoverCoordinator: NSObject, NSPopoverDelegate {
     func popoverDidClose(_ notification: Notification) {
         finalize(.saved(currentNote))
         retainedPopover = nil
+        DispatchQueue.main.async { [weak restoreView] in
+            guard let restoreView, restoreView.window != nil else { return }
+            restoreView.window?.makeFirstResponder(restoreView)
+        }
     }
 
     private static var associationKey: UInt8 = 0
@@ -137,7 +151,9 @@ private struct HighlightNoteEditor: View {
         .onAppear {
             note = initialNote
             onChange(initialNote)
-            fieldFocused = true
+            DispatchQueue.main.async {
+                fieldFocused = true
+            }
         }
     }
 }

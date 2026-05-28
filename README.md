@@ -89,6 +89,8 @@ Cribble 1.0.5 is the stable rich-reading release with a crash fix for highlight 
 - Added anchored right-click highlight notes with a no-button note editor that saves on Return or outside click, deletes empty notes, and shows saved notes immediately on hover.
 - Added custom highlight hand cursor (`cribbleHighlightHand`) driving visual feedback when hovering over highlighted text.
 - Added bundled Mermaid rendering and restored Prism-backed syntax highlighting for fenced code blocks.
+- Fixed Mermaid diagram scroll capture so the main reader keeps scrolling when the pointer is over a rendered diagram.
+- Fixed highlight note menu timing and hover-card refresh so adding a note stays open and saved notes appear when hovering the highlight.
 - Patched Markdown support for footnotes (dynamic Unicode superscript references and final glossary block generation) and expanded task list checkbox markers.
 - Ships the DemoNotes sample library with every new install; it can be removed from Cribble without deleting user files.
 

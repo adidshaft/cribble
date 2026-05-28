@@ -8,6 +8,7 @@ struct HighlightInteractionOverlay: ViewModifier {
     @State private var model: TextSelectionModel?
     @State private var regions: [TextInteractionCursorRegion] = []
     @State private var hoveredHighlightID: UUID?
+    @State private var pendingHoverClear: DispatchWorkItem?
     @State private var editingHighlightID: UUID?
     @State private var editingNote: String = ""
 
@@ -26,6 +27,21 @@ struct HighlightInteractionOverlay: ViewModifier {
                     
                     let allRects = rectsByHighlight.values.flatMap { $0 }
                     let newRegions = allRects.map { TextInteractionCursorRegion(rect: $0, cursor: .cribbleHighlightHand) }
+                    let hoverTrackingSurface = HighlightHoverTrackingSurface(
+                        rectsByHighlight: rectsByHighlight,
+                        highlights: highlights,
+                        onHoverChange: { highlightID in
+                            updateTrackedHover(highlightID)
+                        },
+                        onBeginEditing: { highlightID in
+                            guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
+                            beginInlineEditing(highlight)
+                        },
+                        onDeleteNote: { highlightID in
+                            onUpdateNote(highlightID, "")
+                        }
+                    )
+                    .frame(width: geometry.size.width, height: geometry.size.height)
                     
                     ZStack(alignment: .topLeading) {
                         if editingHighlightID != nil {
@@ -45,7 +61,11 @@ struct HighlightInteractionOverlay: ViewModifier {
                         ForEach(highlights, id: \.id) { h in
                             ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
                                 Rectangle()
-                                    .fill(Color.clear)
+                                    // A fully clear SwiftUI shape can be skipped by
+                                    // AppKit hit-testing in some overlay stacks. A
+                                    // near-transparent fill keeps right-click notes
+                                    // reliable without changing the rendered text.
+                                    .fill(Color.white.opacity(0.001))
                                     .contentShape(Rectangle())
                                     .frame(width: rect.width, height: rect.height)
                                     .position(x: rect.midX, y: rect.midY)
@@ -56,8 +76,7 @@ struct HighlightInteractionOverlay: ViewModifier {
                                             hoveredHighlightID = nil
                                         }
                                     }
-                                    .onTapGesture {
-                                        guard !h.note.isEmpty else { return }
+                                    .onTapGesture(count: 2) {
                                         beginInlineEditing(h)
                                     }
                                     .contextMenu {
@@ -72,6 +91,10 @@ struct HighlightInteractionOverlay: ViewModifier {
                                     }
                                     .allowsHitTesting(editingHighlightID == nil)
                             }
+                        }
+
+                        if editingHighlightID == nil {
+                            hoverTrackingSurface
                         }
 
                         if let h = activeHoverHighlight(
@@ -168,6 +191,25 @@ struct HighlightInteractionOverlay: ViewModifier {
         return highlight
     }
 
+    private func updateTrackedHover(_ highlightID: UUID?) {
+        if let highlightID {
+            pendingHoverClear?.cancel()
+            pendingHoverClear = nil
+            if hoveredHighlightID != highlightID {
+                hoveredHighlightID = highlightID
+            }
+            return
+        }
+
+        guard hoveredHighlightID != nil, pendingHoverClear == nil else { return }
+        let clear = DispatchWorkItem {
+            hoveredHighlightID = nil
+            pendingHoverClear = nil
+        }
+        pendingHoverClear = clear
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: clear)
+    }
+
     private func activeEditingHighlight(rectsByHighlight: [UUID: [CGRect]]) -> ResolvedHighlight? {
         guard let editingHighlightID,
               let highlight = highlights.first(where: { $0.id == editingHighlightID }),
@@ -187,6 +229,9 @@ struct HighlightInteractionOverlay: ViewModifier {
         onUpdateNote(editingHighlightID, editingNote)
         self.editingHighlightID = nil
         editingNote = ""
+        DispatchQueue.main.async {
+            NSApp.keyWindow?.makeFirstResponder(nil)
+        }
     }
 
     private func cardPosition(for rects: [CGRect], in size: CGSize) -> CGPoint {
@@ -236,6 +281,182 @@ extension View {
         onUpdateNote: @escaping (UUID, String) -> Void
     ) -> some View {
         modifier(HighlightInteractionOverlay(highlights: highlights, onUpdateNote: onUpdateNote))
+    }
+}
+
+private struct HighlightHoverTrackingSurface: NSViewRepresentable {
+    let rectsByHighlight: [UUID: [CGRect]]
+    let highlights: [ResolvedHighlight]
+    let onHoverChange: (UUID?) -> Void
+    let onBeginEditing: (UUID) -> Void
+    let onDeleteNote: (UUID) -> Void
+
+    func makeNSView(context: Context) -> TrackingView {
+        let view = TrackingView()
+        view.onHoverChange = onHoverChange
+        view.onBeginEditing = onBeginEditing
+        view.onDeleteNote = onDeleteNote
+        return view
+    }
+
+    func updateNSView(_ view: TrackingView, context: Context) {
+        view.rectsByHighlight = rectsByHighlight
+        view.highlightsByID = Dictionary(uniqueKeysWithValues: highlights.map { ($0.id, $0) })
+        view.onHoverChange = onHoverChange
+        view.onBeginEditing = onBeginEditing
+        view.onDeleteNote = onDeleteNote
+        view.refreshTrackingArea()
+        view.updateHoverFromCurrentMouseLocation()
+    }
+
+    final class TrackingView: NSView {
+        var rectsByHighlight: [UUID: [CGRect]] = [:]
+        var highlightsByID: [UUID: ResolvedHighlight] = [:]
+        var onHoverChange: ((UUID?) -> Void)?
+        var onBeginEditing: ((UUID) -> Void)?
+        var onDeleteNote: ((UUID) -> Void)?
+        private var menuHighlightID: UUID?
+        private var lastHoverID: UUID?
+
+        override var isFlipped: Bool { true }
+        override var acceptsFirstResponder: Bool { false }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.acceptsMouseMovedEvents = true
+            refreshTrackingArea()
+            updateHoverFromCurrentMouseLocation()
+        }
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            let localPoint = convert(point, from: superview)
+            return highlightID(at: localPoint, includeEmptyNotes: true) == nil ? nil : self
+        }
+
+        func refreshTrackingArea() {
+            trackingAreas.forEach(removeTrackingArea)
+
+            for (highlightID, rects) in rectsByHighlight {
+                for rect in rects {
+                    let area = NSTrackingArea(
+                        rect: rect.insetBy(dx: -3, dy: -3),
+                        options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved],
+                        owner: self,
+                        userInfo: ["highlightID": highlightID.uuidString]
+                    )
+                    addTrackingArea(area)
+                }
+            }
+        }
+
+        func updateHoverFromCurrentMouseLocation() {
+            guard let window else {
+                publishHover(nil)
+                return
+            }
+
+            let location = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+            updateHover(at: location)
+        }
+
+        override func mouseEntered(with event: NSEvent) {
+            if let highlightID = highlightID(from: event.trackingArea) {
+                publishHover(highlightID)
+            } else {
+                updateHover(at: convert(event.locationInWindow, from: nil))
+            }
+        }
+
+        override func mouseMoved(with event: NSEvent) {
+            if let highlightID = highlightID(from: event.trackingArea) {
+                publishHover(highlightID)
+            } else {
+                updateHover(at: convert(event.locationInWindow, from: nil))
+            }
+        }
+
+        override func mouseExited(with event: NSEvent) {
+            publishHover(nil)
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            guard event.clickCount >= 2,
+                  let highlightID = highlightID(at: convert(event.locationInWindow, from: nil), includeEmptyNotes: true)
+            else { return }
+            DispatchQueue.main.async { [onBeginEditing] in
+                onBeginEditing?(highlightID)
+            }
+        }
+
+        override func rightMouseDown(with event: NSEvent) {
+            let point = convert(event.locationInWindow, from: nil)
+            guard let highlightID = highlightID(at: point, includeEmptyNotes: true),
+                  let highlight = highlightsByID[highlightID]
+            else { return }
+
+            menuHighlightID = highlightID
+            let menu = NSMenu()
+            let editTitle = highlight.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note"
+            let editItem = NSMenuItem(title: editTitle, action: #selector(editHighlightNote), keyEquivalent: "")
+            editItem.target = self
+            menu.addItem(editItem)
+
+            if !highlight.note.isEmpty {
+                let deleteItem = NSMenuItem(title: "Delete Highlight Note", action: #selector(deleteHighlightNote), keyEquivalent: "")
+                deleteItem.target = self
+                menu.addItem(deleteItem)
+            }
+
+            NSMenu.popUpContextMenu(menu, with: event, for: self)
+        }
+
+        @objc private func editHighlightNote() {
+            guard let menuHighlightID else { return }
+            DispatchQueue.main.async { [onBeginEditing] in
+                onBeginEditing?(menuHighlightID)
+            }
+        }
+
+        @objc private func deleteHighlightNote() {
+            guard let menuHighlightID else { return }
+            DispatchQueue.main.async { [onDeleteNote] in
+                onDeleteNote?(menuHighlightID)
+            }
+        }
+
+        private func updateHover(at point: CGPoint) {
+            guard bounds.contains(point) else {
+                publishHover(nil)
+                return
+            }
+
+            let next = highlightID(at: point, includeEmptyNotes: false)
+
+            publishHover(next)
+        }
+
+        private func highlightID(at point: CGPoint, includeEmptyNotes: Bool) -> UUID? {
+            rectsByHighlight.first { highlightID, rects in
+                guard includeEmptyNotes || highlightsByID[highlightID]?.note.isEmpty == false else { return false }
+                return rects.contains { $0.insetBy(dx: -2, dy: -2).contains(point) }
+            }?.key
+        }
+
+        private func highlightID(from trackingArea: NSTrackingArea?) -> UUID? {
+            guard let raw = trackingArea?.userInfo?["highlightID"] as? String,
+                  let highlightID = UUID(uuidString: raw),
+                  highlightsByID[highlightID]?.note.isEmpty == false
+            else { return nil }
+            return highlightID
+        }
+
+        private func publishHover(_ highlightID: UUID?) {
+            guard lastHoverID != highlightID else { return }
+            lastHoverID = highlightID
+            DispatchQueue.main.async { [onHoverChange] in
+                onHoverChange?(highlightID)
+            }
+        }
     }
 }
 
@@ -307,6 +528,10 @@ private struct HighlightInlineNoteEditor: View {
                 .strokeBorder(.white.opacity(0.18))
         }
         .shadow(color: .black.opacity(0.25), radius: 22, y: 12)
-        .onAppear { focused = true }
+        .onAppear {
+            DispatchQueue.main.async {
+                focused = true
+            }
+        }
     }
 }

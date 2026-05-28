@@ -106,6 +106,7 @@ public struct StructuredText: View {
 
   private let markup: String
   private let parser: any MarkupParser
+  private let reparseToken: AnyHashable?
 
   /// Creates a structured-text view by parsing `markup` with a custom parser.
   ///
@@ -113,6 +114,18 @@ public struct StructuredText: View {
   public init(_ markup: String, parser: any MarkupParser) {
     self.markup = markup
     self.parser = parser
+    self.reparseToken = nil
+  }
+
+  /// Same as ``init(_:parser:)`` but re-parses whenever `reparseToken`
+  /// changes, even if `markup` is unchanged. This lets a host drive a
+  /// re-parse when only the parser's *configuration* changed (e.g. the set
+  /// of highlights to paint) WITHOUT forcing a `.id()`-based view teardown,
+  /// which inside a `LazyVStack` can leave the block momentarily collapsed.
+  public init(_ markup: String, parser: any MarkupParser, reparseToken: AnyHashable?) {
+    self.markup = markup
+    self.parser = parser
+    self.reparseToken = reparseToken
   }
 
   public var body: some View {
@@ -123,6 +136,9 @@ public struct StructuredText: View {
     }
     .coordinateSpace(.textContainer)
     .onChange(of: markup, initial: true) {
+      markupDidChange(markup)
+    }
+    .onChange(of: reparseToken) {
       markupDidChange(markup)
     }
     // Disable line limit to avoid per-fragment truncation

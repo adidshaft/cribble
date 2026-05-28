@@ -333,13 +333,13 @@ private struct ReaderDocumentView: View {
                     addHighlightForCapturedSelection(cleaned, snapshot: snapshot)
                 },
                 TextInteractionMenuItem(title: "Highlight with Note") { [self] in
-                    presentNoteEditor(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
+                    presentNoteEditorAfterContextMenu(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
                 }
             ]
         } else {
             items = [
                 TextInteractionMenuItem(title: existing?.note.isEmpty == false ? "Edit Highlight Note" : "Add Highlight Note") { [self] in
-                    presentNoteEditor(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
+                    presentNoteEditorAfterContextMenu(forQuote: cleaned, anchor: anchor, selectionSnapshot: snapshot)
                 }
             ]
             if existing?.note.isEmpty == false, let existing {
@@ -361,6 +361,20 @@ private struct ReaderDocumentView: View {
             }
         )
         return items
+    }
+
+    private func presentNoteEditorAfterContextMenu(
+        forQuote quote: String,
+        anchor: TextInteractionContextAnchor,
+        selectionSnapshot: TextInteractionSelectionSnapshot?
+    ) {
+        // AppKit is still unwinding NSMenu tracking when a custom menu item
+        // fires. Presenting the transient popover synchronously lets that menu
+        // close immediately dismiss the editor too, which made "Add Note" look
+        // like it vanished. Defer one run-loop tick so the popover owns focus.
+        DispatchQueue.main.async {
+            presentNoteEditor(forQuote: quote, anchor: anchor, selectionSnapshot: selectionSnapshot)
+        }
     }
 
     private func addHighlightForCapturedSelection(
@@ -796,7 +810,6 @@ private struct ReaderMarkdownSection: View {
 
     var body: some View {
         let blocks = indexedBlocks(from: section.markdown)
-        let allSectionHighlights = highlightsByBlock.filter { $0.key.sectionAnchor == section.anchor }.flatMap { $0.value }
 
         VStack(alignment: .leading, spacing: 12) {
             ForEach(blocks) { indexedBlock in
@@ -809,7 +822,16 @@ private struct ReaderMarkdownSection: View {
                             parser: HighlightedMarkdownParser(
                                 baseURL: baseURL,
                                 highlights: blockHighlights
-                            )
+                            ),
+                            // Re-parse in place when this block's highlights
+                            // change. Previously the whole section VStack used
+                            // `.id(highlightIdentity)`, which tore down and
+                            // recreated every StructuredText on each highlight
+                            // change — inside the LazyVStack that left the
+                            // section blank/collapsed (the "delete removes the
+                            // section" bug). The token re-parses without
+                            // destroying the view.
+                            reparseToken: highlightIdentity(for: blockHighlights)
                         )
                         .font(.system(size: 17 * fontScale))
                         .textual.structuredTextStyle(.gitHub)
@@ -835,7 +857,6 @@ private struct ReaderMarkdownSection: View {
                 }
             }
         }
-        .id(highlightIdentity(for: allSectionHighlights))
     }
 
     private func indexedBlocks(from markdown: String) -> [IndexedBlock] {
@@ -855,7 +876,10 @@ private struct ReaderMarkdownSection: View {
     }
 
     private func highlightIdentity(for highlights: [ResolvedHighlight]) -> String {
-        let ids = highlights.map(\.id.uuidString).sorted().joined(separator: "|")
+        let ids = highlights
+            .map { "\($0.id.uuidString):\($0.note.hashValue)" }
+            .sorted()
+            .joined(separator: "|")
         return "\(section.id)#\(ids)"
     }
 }
@@ -925,6 +949,7 @@ private struct RichCodeBlockView: View {
                     height: $mermaidHeight
                 )
                 .frame(height: mermaidHeight)
+                .allowsHitTesting(false)
                 .padding(12)
             } else if ["dot", "graphviz", "vega", "vega-lite", "vegalite", "chart", "graph"].contains(normalizedLanguage) {
                 DiagramSourceView(source: code, fontScale: fontScale, iconName: "chart.xyaxis.line")
@@ -1009,7 +1034,7 @@ private struct MermaidWebDiagramView: NSViewRepresentable {
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.userContentController.add(context.coordinator, name: "height")
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = NonInteractiveMermaidWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.setValue(false, forKey: "drawsBackground")
         webView.allowsMagnification = false
@@ -1132,6 +1157,14 @@ private struct MermaidWebDiagramView: NSViewRepresentable {
             return "window.__cribbleMermaidMissing = true;"
         }
         return script.replacingOccurrences(of: "</script", with: "<\\/script")
+    }
+
+    final class NonInteractiveMermaidWebView: WKWebView {
+        override var acceptsFirstResponder: Bool { false }
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            nil
+        }
     }
 
     @MainActor

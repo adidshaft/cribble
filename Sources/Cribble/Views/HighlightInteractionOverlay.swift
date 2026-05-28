@@ -26,6 +26,9 @@ struct HighlightInteractionOverlay: ViewModifier {
                 updateHover(from: location)
             }
             .environment(\.textInteractionHoverNoteRegions, hoverNoteRegions)
+            .environment(\.textInteractionHighlightNoteActionHandler) { highlightID, action in
+                handleTextualNoteAction(highlightID: highlightID, action: action)
+            }
             .onPreferenceChange(TextSelectionModelPreferenceKey.self) { newModel in
                 self.model = newModel
             }
@@ -45,24 +48,10 @@ struct HighlightInteractionOverlay: ViewModifier {
                         }
                     }
                     let newHoverNoteRegions = highlights.flatMap { highlight in
-                        guard !highlight.note.isEmpty else { return [TextInteractionHoverNoteRegion]() }
                         return localRectsByHighlight[highlight.id, default: []].map {
-                            TextInteractionHoverNoteRegion(rect: $0, note: highlight.note)
+                            TextInteractionHoverNoteRegion(rect: $0, note: highlight.note, highlightID: highlight.id)
                         }
                     }
-                    let hoverTrackingSurface = HighlightHoverTrackingSurface(
-                        rectsByHighlight: rectsByHighlight,
-                        highlights: highlights,
-                        onBeginEditing: { highlightID in
-                            guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
-                            beginInlineEditing(highlight)
-                        },
-                        onDeleteNote: { highlightID in
-                            onUpdateNote(highlightID, "")
-                        }
-                    )
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    
                     ZStack(alignment: .topLeading) {
                         if editingHighlightID != nil {
                             Color.clear
@@ -79,46 +68,6 @@ struct HighlightInteractionOverlay: ViewModifier {
                                 self.hoverRegions = newHoverRegions
                                 self.hoverNoteRegions = newHoverNoteRegions
                             }
-
-                        if editingHighlightID == nil {
-                            hoverTrackingSurface
-                        }
-
-                        ForEach(highlights, id: \.id) { h in
-                            ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
-                                Rectangle()
-                                    // These tiny overlays own hover-card
-                                    // visibility. The AppKit tracking view is
-                                    // retained for cursor/right-click fallback,
-                                    // but relying on NSTrackingArea alone proved
-                                    // too lifecycle-sensitive inside Textual.
-                                    .fill(Color.white.opacity(0.001))
-                                    .contentShape(Rectangle())
-                                    .frame(width: rect.width, height: rect.height)
-                                    .position(x: rect.midX, y: rect.midY)
-                                    .onHover { hovering in
-                                        if hovering, !h.note.isEmpty {
-                                            updateTrackedHover(h.id)
-                                        } else if hoveredHighlightID == h.id {
-                                            updateTrackedHover(nil)
-                                        }
-                                    }
-                                    .onTapGesture(count: 2) {
-                                        beginInlineEditing(h)
-                                    }
-                                    .contextMenu {
-                                        Button(h.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note") {
-                                            beginInlineEditing(h)
-                                        }
-                                        if !h.note.isEmpty {
-                                            Button("Delete Highlight Note") {
-                                                onUpdateNote(h.id, "")
-                                            }
-                                        }
-                                    }
-                                    .allowsHitTesting(editingHighlightID == nil)
-                            }
-                        }
 
                         if let h = activeHoverHighlight(
                             rectsByHighlight: rectsByHighlight
@@ -290,9 +239,29 @@ struct HighlightInteractionOverlay: ViewModifier {
     }
 
     private func beginInlineEditing(_ highlight: ResolvedHighlight) {
+        pendingHoverClear?.cancel()
+        pendingHoverClear = nil
         editingHighlightID = highlight.id
         editingNote = highlight.note
         hoveredHighlightID = nil
+    }
+
+    private func handleTextualNoteAction(
+        highlightID: UUID,
+        action: TextInteractionHighlightNoteAction
+    ) {
+        switch action {
+        case .edit:
+            guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
+            beginInlineEditing(highlight)
+        case .deleteNote:
+            onUpdateNote(highlightID, "")
+            if editingHighlightID == highlightID {
+                editingHighlightID = nil
+                editingNote = ""
+            }
+            hoveredHighlightID = nil
+        }
     }
 
     private func saveInlineEditor() {

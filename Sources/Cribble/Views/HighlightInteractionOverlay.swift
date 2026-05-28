@@ -30,9 +30,6 @@ struct HighlightInteractionOverlay: ViewModifier {
                     let hoverTrackingSurface = HighlightHoverTrackingSurface(
                         rectsByHighlight: rectsByHighlight,
                         highlights: highlights,
-                        onHoverChange: { highlightID in
-                            updateTrackedHover(highlightID)
-                        },
                         onBeginEditing: { highlightID in
                             guard let highlight = highlights.first(where: { $0.id == highlightID }) else { return }
                             beginInlineEditing(highlight)
@@ -58,16 +55,44 @@ struct HighlightInteractionOverlay: ViewModifier {
                                 self.regions = newRegions
                             }
 
-                        // The AppKit TrackingView below is the SOLE authority
-                        // for hover / double-click / right-click over highlights.
-                        // We deliberately do NOT add SwiftUI .onHover rectangles
-                        // here: a SwiftUI overlay and an AppKit tracking view
-                        // both managing `hoveredHighlightID` race each other —
-                        // the AppKit view captures the mouse, the SwiftUI
-                        // rectangle then reports hovering=false and clears the
-                        // state, so the note card never stays visible.
                         if editingHighlightID == nil {
                             hoverTrackingSurface
+                        }
+
+                        ForEach(highlights, id: \.id) { h in
+                            ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
+                                Rectangle()
+                                    // These tiny overlays own hover-card
+                                    // visibility. The AppKit tracking view is
+                                    // retained for cursor/right-click fallback,
+                                    // but relying on NSTrackingArea alone proved
+                                    // too lifecycle-sensitive inside Textual.
+                                    .fill(Color.white.opacity(0.001))
+                                    .contentShape(Rectangle())
+                                    .frame(width: rect.width, height: rect.height)
+                                    .position(x: rect.midX, y: rect.midY)
+                                    .onHover { hovering in
+                                        if hovering, !h.note.isEmpty {
+                                            updateTrackedHover(h.id)
+                                        } else if hoveredHighlightID == h.id {
+                                            updateTrackedHover(nil)
+                                        }
+                                    }
+                                    .onTapGesture(count: 2) {
+                                        beginInlineEditing(h)
+                                    }
+                                    .contextMenu {
+                                        Button(h.note.isEmpty ? "Add Highlight Note" : "Edit Highlight Note") {
+                                            beginInlineEditing(h)
+                                        }
+                                        if !h.note.isEmpty {
+                                            Button("Delete Highlight Note") {
+                                                onUpdateNote(h.id, "")
+                                            }
+                                        }
+                                    }
+                                    .allowsHitTesting(editingHighlightID == nil)
+                            }
                         }
 
                         if let h = activeHoverHighlight(
@@ -260,13 +285,11 @@ extension View {
 private struct HighlightHoverTrackingSurface: NSViewRepresentable {
     let rectsByHighlight: [UUID: [CGRect]]
     let highlights: [ResolvedHighlight]
-    let onHoverChange: (UUID?) -> Void
     let onBeginEditing: (UUID) -> Void
     let onDeleteNote: (UUID) -> Void
 
     func makeNSView(context: Context) -> TrackingView {
         let view = TrackingView()
-        view.onHoverChange = onHoverChange
         view.onBeginEditing = onBeginEditing
         view.onDeleteNote = onDeleteNote
         return view
@@ -275,21 +298,17 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
     func updateNSView(_ view: TrackingView, context: Context) {
         view.rectsByHighlight = rectsByHighlight
         view.highlightsByID = Dictionary(uniqueKeysWithValues: highlights.map { ($0.id, $0) })
-        view.onHoverChange = onHoverChange
         view.onBeginEditing = onBeginEditing
         view.onDeleteNote = onDeleteNote
         view.refreshTrackingArea()
-        view.updateHoverFromCurrentMouseLocation()
     }
 
     final class TrackingView: NSView {
         var rectsByHighlight: [UUID: [CGRect]] = [:]
         var highlightsByID: [UUID: ResolvedHighlight] = [:]
-        var onHoverChange: ((UUID?) -> Void)?
         var onBeginEditing: ((UUID) -> Void)?
         var onDeleteNote: ((UUID) -> Void)?
         private var menuHighlightID: UUID?
-        private var lastHoverID: UUID?
 
         override var isFlipped: Bool { true }
         override var acceptsFirstResponder: Bool { false }
@@ -298,7 +317,6 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
             super.viewDidMoveToWindow()
             window?.acceptsMouseMovedEvents = true
             refreshTrackingArea()
-            updateHoverFromCurrentMouseLocation()
         }
 
         override func hitTest(_ point: NSPoint) -> NSView? {
@@ -308,6 +326,14 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
 
         func refreshTrackingArea() {
             trackingAreas.forEach(removeTrackingArea)
+
+            let fullSurfaceArea = NSTrackingArea(
+                rect: bounds,
+                options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect],
+                owner: self,
+                userInfo: nil
+            )
+            addTrackingArea(fullSurfaceArea)
 
             for (highlightID, rects) in rectsByHighlight {
                 for rect in rects {
@@ -322,34 +348,9 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
             }
         }
 
-        func updateHoverFromCurrentMouseLocation() {
-            guard let window else {
-                publishHover(nil)
-                return
-            }
-
-            let location = convert(window.mouseLocationOutsideOfEventStream, from: nil)
-            updateHover(at: location)
-        }
-
-        override func mouseEntered(with event: NSEvent) {
-            if let highlightID = highlightID(from: event.trackingArea) {
-                publishHover(highlightID)
-            } else {
-                updateHover(at: convert(event.locationInWindow, from: nil))
-            }
-        }
-
-        override func mouseMoved(with event: NSEvent) {
-            if let highlightID = highlightID(from: event.trackingArea) {
-                publishHover(highlightID)
-            } else {
-                updateHover(at: convert(event.locationInWindow, from: nil))
-            }
-        }
-
-        override func mouseExited(with event: NSEvent) {
-            publishHover(nil)
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            refreshTrackingArea()
         }
 
         override func mouseDown(with event: NSEvent) {
@@ -397,38 +398,11 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
             }
         }
 
-        private func updateHover(at point: CGPoint) {
-            guard bounds.contains(point) else {
-                publishHover(nil)
-                return
-            }
-
-            let next = highlightID(at: point, includeEmptyNotes: false)
-
-            publishHover(next)
-        }
-
         private func highlightID(at point: CGPoint, includeEmptyNotes: Bool) -> UUID? {
             rectsByHighlight.first { highlightID, rects in
                 guard includeEmptyNotes || highlightsByID[highlightID]?.note.isEmpty == false else { return false }
                 return rects.contains { $0.insetBy(dx: -2, dy: -2).contains(point) }
             }?.key
-        }
-
-        private func highlightID(from trackingArea: NSTrackingArea?) -> UUID? {
-            guard let raw = trackingArea?.userInfo?["highlightID"] as? String,
-                  let highlightID = UUID(uuidString: raw),
-                  highlightsByID[highlightID]?.note.isEmpty == false
-            else { return nil }
-            return highlightID
-        }
-
-        private func publishHover(_ highlightID: UUID?) {
-            guard lastHoverID != highlightID else { return }
-            lastHoverID = highlightID
-            DispatchQueue.main.async { [onHoverChange] in
-                onHoverChange?(highlightID)
-            }
         }
     }
 }

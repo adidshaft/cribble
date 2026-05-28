@@ -1150,8 +1150,8 @@ private struct MermaidWebDiagramView: NSViewRepresentable {
     }
 
     private var mermaidScript: String {
-        guard let url = Bundle.module.url(forResource: "mermaid.min", withExtension: "js", subdirectory: "Mermaid")
-                ?? Bundle.module.url(forResource: "mermaid.min", withExtension: "js"),
+        guard let url = MarkdownLibraryStore.bundledResourceURL(forResource: "mermaid.min", withExtension: "js", subdirectory: "Mermaid")
+                ?? MarkdownLibraryStore.bundledResourceURL(forResource: "mermaid.min", withExtension: "js"),
               let script = try? String(contentsOf: url, encoding: .utf8)
         else {
             return "window.__cribbleMermaidMissing = true;"

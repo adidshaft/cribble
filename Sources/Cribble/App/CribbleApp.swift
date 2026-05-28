@@ -9,6 +9,16 @@ struct CribbleApp: App {
     @StateObject private var diagnostics = DiagnosticsCenter.shared
     @StateObject private var readingAnnotations = ReadingAnnotationsStore()
 
+    init() {
+        // Runs at the very top of App.main(), before SwiftUI evaluates the
+        // @StateObject autoclosures above. The crash on other machines was
+        // MarkdownLibraryStore()'s init touching a SwiftPM resource bundle
+        // before AppDelegate.init had installed the redirect hook. Installing
+        // it here covers that window (and protects Textual's own
+        // Bundle.module resources, which are loaded during rendering).
+        SPMBundleAccessorFix.ensureInstalled()
+    }
+
     var body: some Scene {
         WindowGroup("Cribble: Markdown Knowledge Base Manager") {
             ContentView()

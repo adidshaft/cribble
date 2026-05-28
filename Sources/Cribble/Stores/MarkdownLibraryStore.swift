@@ -774,7 +774,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let alreadySeeded = defaults.string(forKey: Keys.bundledDemoNotesVersion) == Self.bundledDemoNotesVersion
         guard !alreadySeeded,
               rootURLs.isEmpty,
-              let bundledDemoURL = Bundle.module.url(forResource: "DemoNotes", withExtension: nil)
+              let bundledDemoURL = Self.bundledResourceURL(forResource: "DemoNotes", withExtension: nil)
         else { return }
 
         do {
@@ -794,6 +794,73 @@ final class MarkdownLibraryStore: ObservableObject {
         } catch {
             DiagnosticsCenter.shared.record(level: .error, message: "Failed to install DemoNotes: \(error.localizedDescription)")
         }
+    }
+
+    /// Locate a bundled resource WITHOUT ever touching SwiftPM's generated
+    /// `Bundle.module` accessor.
+    ///
+    /// `Bundle.module` is a `static let` whose generated initializer calls
+    /// `fatalError("unable to find bundle …")` when the resource bundle isn't
+    /// at one of its hard-coded paths. In a packaged/notarized `.app` the
+    /// SwiftPM resource bundle lives at `Contents/Resources/<Name>.bundle`,
+    /// which that accessor doesn't reliably check — so on other machines the
+    /// very first access trapped at launch (EXC_BREAKPOINT) inside
+    /// `seedBundledDemoIfNeeded()`. We instead probe candidate locations with
+    /// the non-trapping `Bundle(url:)` initializer and return `nil` when the
+    /// resource genuinely isn't present, letting callers degrade gracefully.
+    static func bundledResourceURL(
+        forResource name: String,
+        withExtension ext: String?,
+        subdirectory: String? = nil
+    ) -> URL? {
+        func lookup(in bundle: Bundle) -> URL? {
+            if let subdirectory,
+               let url = bundle.url(forResource: name, withExtension: ext, subdirectory: subdirectory) {
+                return url
+            }
+            return bundle.url(forResource: name, withExtension: ext)
+        }
+
+        // 1. Flat in the app's main bundle (Contents/Resources/<name>).
+        if let url = lookup(in: .main) {
+            return url
+        }
+
+        let moduleBundleName = "Cribble_Cribble.bundle"
+        let classBundle = Bundle(for: MarkdownLibraryStore.self)
+
+        // 2. Inside the SwiftPM resource bundle at known candidate roots.
+        var searchBases: [URL] = []
+        if let resourceURL = Bundle.main.resourceURL { searchBases.append(resourceURL) }
+        searchBases.append(Bundle.main.bundleURL)
+        searchBases.append(Bundle.main.bundleURL.appendingPathComponent("Contents/Resources"))
+        if let resourceURL = classBundle.resourceURL { searchBases.append(resourceURL) }
+        searchBases.append(classBundle.bundleURL)
+
+        for base in searchBases {
+            let candidate = base.appendingPathComponent(moduleBundleName)
+            if let bundle = Bundle(url: candidate), let url = lookup(in: bundle) {
+                return url
+            }
+        }
+
+        // 3. Last resort: scan resource directories for any *.bundle that
+        //    happens to carry the resource (covers unexpected layouts).
+        let scanDirs = [Bundle.main.resourceURL, classBundle.resourceURL].compactMap { $0 }
+        let fileManager = FileManager.default
+        for dir in scanDirs {
+            guard let entries = try? fileManager.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: nil
+            ) else { continue }
+            for entry in entries where entry.pathExtension == "bundle" {
+                if let bundle = Bundle(url: entry), let url = lookup(in: bundle) {
+                    return url
+                }
+            }
+        }
+
+        return nil
     }
 
     private func persistFolders() {

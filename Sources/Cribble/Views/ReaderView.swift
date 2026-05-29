@@ -947,7 +947,10 @@ private struct ReaderMarkdownSection: View {
                         baseURL: baseURL,
                         fontScale: fontScale,
                         ordinalBase: taskOrdinalBase + indexedBlock.taskBaseInSection,
-                        onToggle: onToggleTask
+                        sectionAnchor: section.anchor,
+                        highlightsByBlock: highlightsByBlock,
+                        onToggle: onToggleTask,
+                        onUpdateHighlightNote: onUpdateHighlightNote
                     )
                 }
             }
@@ -1516,7 +1519,7 @@ struct HighlightedMarkdownParser: MarkupParser {
     }
 }
 
-private struct ReadingSection: Identifiable, Hashable {
+struct ReadingSection: Identifiable, Hashable {
     let id: String
     let anchor: String
     let title: String?
@@ -1588,7 +1591,18 @@ struct BlockKey: Hashable {
     let blockIndex: Int
 }
 
-private struct ReaderSectionPlan {
+/// Task-list items are highlightable units too, but they live outside the
+/// normal markdown-block index sequence. We give each one a synthetic block
+/// index in a high, non-colliding namespace (a document won't have a million
+/// prose blocks), derived from the checkbox's document-global ordinal. Both the
+/// renderer (capture) and the section plan (resolution) use this, so a highlight
+/// anchored to a task item resolves back to it.
+enum HighlightBlockSpace {
+    static let taskBase = 1_000_000
+    static func taskBlockIndex(globalOrdinal: Int) -> Int { taskBase + globalOrdinal }
+}
+
+struct ReaderSectionPlan {
     let sections: [ReadingSection]
     // (sectionAnchor, blockIndex) -> highlights to apply
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
@@ -1639,6 +1653,7 @@ private struct ReaderSectionPlan {
         for section in sections {
             let blocks = RichMarkdownBlock.blocks(from: section.markdown)
             var markdownIdx = 0
+            var taskIdxInSection = 0
             for block in blocks {
                 switch block {
                 case .markdown(_, let text):
@@ -1652,7 +1667,22 @@ private struct ReaderSectionPlan {
                         normalizedText: text.normalizedReadingText
                     )
                     markdownIdx += 1
-                case .fencedCode, .taskList:
+                case .taskList(_, let items):
+                    // Each task item's label is its own highlightable unit.
+                    let base = taskBases[section.anchor] ?? 0
+                    for item in items {
+                        let blockIndex = HighlightBlockSpace.taskBlockIndex(globalOrdinal: base + taskIdxInSection)
+                        let key = BlockKey(sectionAnchor: section.anchor, blockIndex: blockIndex)
+                        blockMetadatas[key] = BlockMetadata(
+                            sectionAnchor: section.anchor,
+                            blockIndex: blockIndex,
+                            signature: TextInteractionSelectionSnapshot.signature(for: item.label),
+                            rawText: item.label,
+                            normalizedText: item.label.normalizedReadingText
+                        )
+                        taskIdxInSection += 1
+                    }
+                case .fencedCode:
                     break
                 }
             }

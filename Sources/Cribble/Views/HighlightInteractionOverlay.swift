@@ -93,12 +93,15 @@ struct HighlightInteractionOverlay: ViewModifier {
                         ForEach(highlights, id: \.id) { h in
                             ForEach(Array(rectsByHighlight[h.id, default: []].enumerated()), id: \.offset) { _, rect in
                                 Rectangle()
-                                    // These tiny overlays own hover-card
-                                    // visibility. The AppKit tracking view is
-                                    // retained for cursor/right-click fallback,
-                                    // but relying on NSTrackingArea alone proved
-                                    // too lifecycle-sensitive inside Textual.
-                                    .fill(Color.white.opacity(0.001))
+                                    // Draw the highlight as a translucent layer
+                                    // over the range. Unlike the parser's
+                                    // AttributedString `backgroundColor`, this
+                                    // shows on content that renders as a
+                                    // non-text element (math/LaTeX, attachments),
+                                    // so those highlights are actually visible.
+                                    // These rects also own hover-card visibility
+                                    // and the edit/right-click gestures.
+                                    .fill(Color(nsColor: .systemYellow).opacity(0.22))
                                     .contentShape(Rectangle())
                                     .frame(width: rect.width, height: rect.height)
                                     .position(x: rect.midX, y: rect.midY)

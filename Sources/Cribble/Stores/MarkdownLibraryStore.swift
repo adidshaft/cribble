@@ -265,24 +265,31 @@ final class MarkdownLibraryStore: ObservableObject {
         loadTask?.cancel()
         let concurrency = Self.loadConcurrency
         loadTask = Task {
-            do {
-                let result = try await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocument], linkIndex: LinkIndex?) in
+            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocument], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
+                    var failedRoots: [URL] = []
                     for rootURL in roots {
-                        let values = try rootURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
-                        let children = try FolderScanner(fileSortMode: sort).scan(rootURL: rootURL)
-                        let readmeURL = rootURL.appendingPathComponent("README.md")
-                        let displayName = displayNames[rootURL.standardizedFileURL.path] ?? rootURL.lastPathComponent
-                        nodesList.append(MarkdownNode(
-                            id: rootURL.standardizedFileURL,
-                            name: displayName,
-                            url: rootURL,
-                            kind: .folder,
-                            createdAt: values.creationDate,
-                            modifiedAt: values.contentModificationDate,
-                            readmeURL: readmeURL,
-                            children: children
-                        ))
+                        // A single unscannable root (permissions, an offline
+                        // iCloud folder, etc.) must not take down every other
+                        // folder — skip it and report it instead.
+                        do {
+                            let values = try rootURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+                            let children = try FolderScanner(fileSortMode: sort).scan(rootURL: rootURL)
+                            let readmeURL = rootURL.appendingPathComponent("README.md")
+                            let displayName = displayNames[rootURL.standardizedFileURL.path] ?? rootURL.lastPathComponent
+                            nodesList.append(MarkdownNode(
+                                id: rootURL.standardizedFileURL,
+                                name: displayName,
+                                url: rootURL,
+                                kind: .folder,
+                                createdAt: values.creationDate,
+                                modifiedAt: values.contentModificationDate,
+                                readmeURL: readmeURL,
+                                children: children
+                            ))
+                        } catch {
+                            failedRoots.append(rootURL)
+                        }
                     }
 
                     func collect(_ nodes: [MarkdownNode]) -> [URL] {
@@ -299,28 +306,39 @@ final class MarkdownLibraryStore: ObservableObject {
                     let urls = collect(nodesList).uniqued()
                     let loader = DocumentLoader()
 
-                    // Bounded-concurrency fan-out. Reads + heading/wiki-link
-                    // parsing is the dominant cost during refresh; serial
-                    // mapping pegged one core and idled the rest. This
-                    // pattern keeps `concurrency` tasks in-flight at any
-                    // moment and preserves the original strict-throw
-                    // semantics (a failed file aborts the whole refresh).
-                    let docs: [MarkdownDocument] = try await withThrowingTaskGroup(of: MarkdownDocument.self) { group in
+                    // Bounded-concurrency fan-out. Each file loads independently:
+                    // a file that can't be read (unsupported encoding handled in
+                    // DocumentLoader, an offline iCloud placeholder, a permission
+                    // error) is skipped and reported rather than aborting the
+                    // whole folder open — real Obsidian/iCloud vaults routinely
+                    // contain such files.
+                    let outcomes = await withTaskGroup(of: (URL, MarkdownDocument?).self) { group -> [(URL, MarkdownDocument?)] in
                         var iterator = urls.makeIterator()
                         var inFlight = 0
                         while inFlight < concurrency, let url = iterator.next() {
-                            group.addTask { try loader.load(url: url) }
+                            group.addTask { (url, try? loader.load(url: url)) }
                             inFlight += 1
                         }
-                        var collected: [MarkdownDocument] = []
+                        var collected: [(URL, MarkdownDocument?)] = []
                         collected.reserveCapacity(urls.count)
-                        while let doc = try await group.next() {
-                            collected.append(doc)
+                        while let outcome = await group.next() {
+                            collected.append(outcome)
                             if let url = iterator.next() {
-                                group.addTask { try loader.load(url: url) }
+                                group.addTask { (url, try? loader.load(url: url)) }
                             }
                         }
                         return collected
+                    }
+
+                    var docs: [MarkdownDocument] = []
+                    docs.reserveCapacity(outcomes.count)
+                    var skippedFiles: [URL] = []
+                    for (url, document) in outcomes {
+                        if let document {
+                            docs.append(document)
+                        } else {
+                            skippedFiles.append(url)
+                        }
                     }
 
                     let index: LinkIndex?
@@ -330,7 +348,7 @@ final class MarkdownLibraryStore: ObservableObject {
                         index = nil
                     }
 
-                    return (nodesList, docs, index)
+                    return (nodesList, docs, index, skippedFiles, failedRoots)
                 }.value
 
                 guard !Task.isCancelled else { return }
@@ -352,13 +370,23 @@ final class MarkdownLibraryStore: ObservableObject {
                     self.select(url: first)
                 }
 
-                if !keepStatusQuiet {
-                    self.statusMessage = "Loaded \(result.documents.count) Markdown files"
+                for failedRoot in result.failedRoots {
+                    DiagnosticsCenter.shared.record(level: .warning, message: "Couldn't open folder (skipped): \(failedRoot.path)")
                 }
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.errorMessage = error.localizedDescription
-            }
+                if !result.skippedFiles.isEmpty {
+                    let names = result.skippedFiles.prefix(5).map(\.lastPathComponent).joined(separator: ", ")
+                    let suffix = result.skippedFiles.count > 5 ? ", …" : ""
+                    DiagnosticsCenter.shared.record(
+                        level: .warning,
+                        message: "Skipped \(result.skippedFiles.count) unreadable file(s): \(names)\(suffix)"
+                    )
+                }
+
+                if !keepStatusQuiet {
+                    let skippedCount = result.skippedFiles.count
+                    let skippedSuffix = skippedCount > 0 ? " · \(skippedCount) skipped" : ""
+                    self.statusMessage = "Loaded \(result.documents.count) Markdown files\(skippedSuffix)"
+                }
         }
     }
 

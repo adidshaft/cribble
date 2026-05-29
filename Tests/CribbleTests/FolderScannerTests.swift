@@ -18,6 +18,26 @@ final class FolderScannerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Nested/README.md").path))
     }
 
+    func testScannerNeverOverwritesAnExistingReadme() throws {
+        let root = try Fixture.makeFolder()
+        let rootReadme = root.appendingPathComponent("README.md")
+        let rootContent = "# My Vault\n\nHand-written overview I want to keep."
+        try rootContent.write(to: rootReadme, atomically: true, encoding: .utf8)
+
+        let sub = root.appendingPathComponent("Sub")
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        try "# Sub note".write(to: sub.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
+        let subReadme = sub.appendingPathComponent("README.md")
+        let subContent = "# Existing Sub README"
+        try subContent.write(to: subReadme, atomically: true, encoding: .utf8)
+
+        _ = try FolderScanner().scan(rootURL: root)
+
+        // Existing READMEs are treated as primary and left exactly as they were.
+        XCTAssertEqual(try String(contentsOf: rootReadme, encoding: .utf8), rootContent)
+        XCTAssertEqual(try String(contentsOf: subReadme, encoding: .utf8), subContent)
+    }
+
     func testScannerSortsMarkdownFilesByModifiedDateNewestFirst() throws {
         let root = try Fixture.makeFolder()
         let older = root.appendingPathComponent("older.md")

@@ -1,6 +1,6 @@
 # Feature Demos
 
-This folder is seeded to demonstrate Cribble 1.1.0.
+This folder is seeded to demonstrate Cribble 1.1.1.
 
 | # | Feature |
 | ---: | --- |

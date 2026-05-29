@@ -58,10 +58,19 @@ struct SidebarView: View {
                 library.pathfinderRequest = PathfinderRequest(source: source, target: target)
             })
             .contextMenu {
-                if library.isImportedRoot(node.url) {
-                    Text(node.url.path)
+                if node.kind == .folder {
+                    Button(
+                        library.isPinned(node.url) ? "Unpin Folder" : "Pin Folder",
+                        systemImage: library.isPinned(node.url) ? "pin.slash" : "pin"
+                    ) {
+                        library.togglePin(node.url)
+                    }
+                }
 
+                if library.isImportedRoot(node.url) {
                     Divider()
+
+                    Text(node.url.path)
 
                     Button("Rename Folder...", systemImage: "pencil") {
                         library.renameImportedFolder(node.url)
@@ -235,12 +244,24 @@ private struct SidebarControls: View {
 }
 
 private struct SidebarRow: View {
+    @EnvironmentObject private var library: MarkdownLibraryStore
     let node: MarkdownNode
+
+    private var isPinned: Bool {
+        node.kind == .folder && library.isPinned(node.url)
+    }
 
     var body: some View {
         Label {
-            Text(node.name)
-                .lineLimit(1)
+            HStack(spacing: 4) {
+                Text(node.name)
+                    .lineLimit(1)
+                if isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                }
+            }
         } icon: {
             Image(systemName: node.kind == .folder ? "folder" : "doc.text")
                 .foregroundStyle(.secondary)

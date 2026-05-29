@@ -47,12 +47,11 @@ shopt -s nullglob
 RESOURCE_BUNDLES=("$BUILD_DIR"/*.bundle)
 shopt -u nullglob
 for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
+  # Resources live in Contents/Resources (the standard location the app's
+  # bundle-lookup redirect resolves). NOTE: do NOT also copy these beside
+  # Contents/ — loose items at the .app root are "unsealed contents" that make
+  # the code signature invalid, and the kernel then SIGKILLs the app on launch.
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
-  # SwiftPM's generated Bundle.module accessors first look beside the .app
-  # bundle itself. Keep root copies in dev/local installs so dependency
-  # resources (Textual syntax highlighting, SwiftUIMath fonts) work even
-  # before release codesigning layout is involved.
-  cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/"
 done
 
 cat >"$INFO_PLIST" <<PLIST
@@ -94,7 +93,24 @@ cat >"$INFO_PLIST" <<PLIST
 </plist>
 PLIST
 
-/usr/bin/codesign --force --deep --sign - "$APP_BUNDLE"
+# Sign inside-out. A single `--deep` ad-hoc pass mis-signs Sparkle's nested
+# signed code (XPC services + helpers), producing an invalid signature the
+# kernel kills on launch. Sign the nested pieces, then the framework, then the
+# main executable, then the app bundle.
+SPK="$APP_FRAMEWORKS/Sparkle.framework"
+if [[ -d "$SPK" ]]; then
+  SPK_V="$SPK/Versions/B"
+  for item in \
+    "$SPK_V/XPCServices/Installer.xpc" \
+    "$SPK_V/XPCServices/Downloader.xpc" \
+    "$SPK_V/Autoupdate" \
+    "$SPK_V/Updater.app"; do
+    [[ -e "$item" ]] && /usr/bin/codesign --force --sign - "$item"
+  done
+  /usr/bin/codesign --force --sign - "$SPK"
+fi
+/usr/bin/codesign --force --sign - "$APP_BINARY"
+/usr/bin/codesign --force --sign - "$APP_BUNDLE"
 
 open_app() {
   /usr/bin/open -n "$APP_BUNDLE"

@@ -13,8 +13,9 @@ Try this sequence:
 - Open this note.
 - Open [[Local Semantic Search]].
 - Return here, then open [[Semantic Pathfinding CLI]].
-- Toggle the Reading Trail panel and synthesize the trail into a Markdown note.
+- Press **P** to open the Reading Trail panel and watch your path build into a tree, with how long you spent on each note.
+- Click **Create Trail Note** — Cribble synthesizes the path, your highlights, and your notes into a new Markdown file, shown first as a safe diff preview before anything is written.
 
-The generated trail note should preserve the path and timing, making exploration feel like a reusable research artifact instead of a vanishing browser history.
+The generated trail note preserves the path and timing, making exploration a reusable research artifact instead of a vanishing browser history.
 
-Related: [[Project Plan]]
+Related: [[Getting Started]] · [[Home]]

@@ -38,6 +38,9 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var pendingDiff: UnifiedDiff?
     @Published var pendingDiffError: String?
     @Published var pathfinderRequest: PathfinderRequest?
+    @Published private(set) var pinnedPaths: Set<String> = [] {
+        didSet { cachedFilteredNodes = nil }
+    }
     @Published private var rootDisplayNames: [String: String] = [:]
 
     private let loader = DocumentLoader()
@@ -73,6 +76,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     init(restore: Bool = true, includeBundledDemo: Bool = true) {
         if restore {
+            pinnedPaths = Set(UserDefaults.standard.stringArray(forKey: Keys.pinnedFolders) ?? [])
             restoreFolders(includeBundledDemo: includeBundledDemo)
         }
     }
@@ -101,14 +105,46 @@ final class MarkdownLibraryStore: ObservableObject {
     var filteredNodes: [MarkdownNode] {
         if let cachedFilteredNodes { return cachedFilteredNodes }
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let result: [MarkdownNode]
+        let base: [MarkdownNode]
         if query.isEmpty {
-            result = nodes
+            base = nodes
         } else {
-            result = nodes.compactMap { filter($0, query: query) }
+            base = nodes.compactMap { filter($0, query: query) }
         }
+        let result = pinnedPaths.isEmpty ? base : floatingPinnedFolders(in: base)
         cachedFilteredNodes = result
         return result
+    }
+
+    func isPinned(_ url: URL) -> Bool {
+        pinnedPaths.contains(url.standardizedFileURL.path)
+    }
+
+    /// Pin/unpin a folder so it floats to the top of its sibling group. Pinning
+    /// is purely a sidebar-ordering preference; it never moves files on disk.
+    func togglePin(_ url: URL) {
+        let key = url.standardizedFileURL.path
+        if pinnedPaths.contains(key) {
+            pinnedPaths.remove(key)
+        } else {
+            pinnedPaths.insert(key)
+        }
+        UserDefaults.standard.set(Array(pinnedPaths), forKey: Keys.pinnedFolders)
+    }
+
+    /// Recursively reorders so pinned folders come first within each level,
+    /// preserving the existing order otherwise (a stable partition).
+    private func floatingPinnedFolders(in nodes: [MarkdownNode]) -> [MarkdownNode] {
+        let reordered = nodes.map { node -> MarkdownNode in
+            guard node.kind == .folder, !node.children.isEmpty else { return node }
+            var copy = node
+            copy.children = floatingPinnedFolders(in: node.children)
+            return copy
+        }
+        let pinned = reordered.filter { $0.kind == .folder && pinnedPaths.contains($0.url.standardizedFileURL.path) }
+        guard !pinned.isEmpty else { return reordered }
+        let pinnedIDs = Set(pinned.map(\.id))
+        return pinned + reordered.filter { !pinnedIDs.contains($0.id) }
     }
 
     func chooseFolder(sortMode: FileSortMode) {
@@ -1141,7 +1177,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.1.0"
+    private static let bundledDemoNotesVersion = "1.1.1"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -1153,6 +1189,7 @@ final class MarkdownLibraryStore: ObservableObject {
         static let folderBookmarks = "folderBookmarks"
         static let folderDisplayNames = "folderDisplayNames"
         static let folderPaths = "folderPaths"
+        static let pinnedFolders = "pinnedFolders"
         static let legacyLastFolderPath = "lastFolderPath"
         static let bundledDemoNotesVersion = "bundledDemoNotesVersion"
     }

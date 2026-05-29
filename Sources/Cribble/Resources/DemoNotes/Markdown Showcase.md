@@ -1,6 +1,6 @@
 # Markdown Showcase
 
-This showcase demonstrates and verifies all the rich Markdown elements supported in Cribble, including inline/block math, GFM tables, nested blockquotes, task lists, footnotes, syntax-highlighted code blocks, and Mermaid diagrams.
+A reference for every rich Markdown element Cribble renders: inline & block math, GFM tables, nested blockquotes, task lists, footnotes, syntax-highlighted code, and Mermaid diagrams. It's also a great page to practice on — select any line and press **H** to highlight it.
 
 ---
 
@@ -12,24 +12,30 @@ $$\int_0^1 x^2 dx = \frac{1}{3}$$
 ---
 
 ## 2. Mermaid Diagram
+
+Double-click the diagram to open it in the zoom overlay.
+
 ```mermaid
 graph TD;
-    A[Start Selection] --> B{Has Highlight?};
-    B -- Yes --> C[Show Edit/Remove Popover];
-    B -- No --> D[Create Offset-Anchored Highlight];
-    D --> E[Render Custom Yellow Hand Cursor];
+    A[Open a note] --> B{Found what you need?};
+    B -- Yes --> C[Highlight it: press H];
+    B -- No --> D[Follow a wiki link];
+    D --> E[Cribble tracks your Reading Trail];
+    C --> F[Add a margin note];
 ```
 
 ---
 
 ## 3. GitHub Flavored Markdown (GFM) Table
 
-| Feature | Legacy Rebuild | Offset-Anchored Rebuild | Correctness |
-| :--- | :--- | :--- | :--- |
-| **Inline Code Highlights** | ❌ Broken run bounds |  Run-spanning support | 100% |
-| **Tooltips** | ❌ Missing popovers |  Interactive SwiftUI overlay | 100% |
-| **Task Lists** | ⚠️ Partial formatting |  Fully enriched markers | 100% |
-| **Footnotes** | ❌ Completely ignored |  Glossary prepending + markers | 100% |
+Tables support column alignment, **bold**, `inline code`, and emoji.
+
+| Feature | How to use it | Saved? |
+| :--- | :--- | :---: |
+| **Highlight** | Select text, press `H` | ✅ |
+| **Margin note** | Right-click a highlight | ✅ |
+| **Reading bookmark** | Press `B` | ✅ |
+| **Wiki link** | Type `[[Note Name]]` | ✅ |
 
 ---
 
@@ -50,10 +56,10 @@ And another one pointing to a second note[^second_ref].
 ---
 
 ## 6. Task Lists
-- [x] Make `TextSelectionModel` public and accessible
-- [x] Fix inline-code monospace run boundary highlight coloring
-- [ ] This is an uncompleted task to verify [ ] formatting
-- [x] Completed task using standard markdown checkbox
+- [x] Open a Markdown folder
+- [x] Highlight a sentence and add a note
+- [ ] Build a Reading Trail and synthesize it into a note
+- [ ] Drag one note onto another to find a path
 
 ---
 
@@ -61,15 +67,14 @@ And another one pointing to a second note[^second_ref].
 
 ### Swift Code
 ```swift
-func calculateAnchor(for selection: TextSelection) -> HighlightAnchor {
-    return HighlightAnchor(
-        sectionAnchor: selection.section,
-        blockIndex: selection.blockIndex,
-        blockSignature: selection.signature,
-        startOffset: selection.start,
-        length: selection.length
-    )
+struct Note: Identifiable {
+    let id = UUID()
+    var title: String
+    var tags: [String]
 }
+
+let note = Note(title: "Welcome", tags: ["demo", "guide"])
+print("Opened \(note.title)")
 ```
 
 ### JavaScript Code

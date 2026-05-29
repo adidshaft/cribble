@@ -237,6 +237,17 @@ private struct ReaderDocumentView: View {
                     withAnimation(.snappy(duration: 0.2)) {
                         readingTrail.isPanelVisible.toggle()
                     }
+                },
+                onEscape: {
+                    // Routed through the (reliable) shortcut hub because a
+                    // custom `.overlay` isn't in the responder chain, so the
+                    // overlay's own `.onExitCommand` / `.cancelAction` don't see
+                    // Escape — especially with a WKWebView present.
+                    guard zoomRequest != nil else { return false }
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        zoomRequest = nil
+                    }
+                    return true
                 }
             )
         }
@@ -691,6 +702,8 @@ final class ReaderShortcutHub {
     private var onHighlightKey: (() -> Void)?
     private var onHighlightMouseUp: (() -> Void)?
     private var onToggleTrail: (() -> Void)?
+    // Returns true if Escape was consumed (e.g. an overlay was dismissed).
+    private var onEscape: (() -> Bool)?
     nonisolated(unsafe) private var monitor: Any?
 
     private init() {}
@@ -701,7 +714,8 @@ final class ReaderShortcutHub {
         onDropBookmark: @escaping () -> Void,
         onHighlightKey: @escaping () -> Void,
         onHighlightMouseUp: @escaping () -> Void,
-        onToggleTrail: @escaping () -> Void
+        onToggleTrail: @escaping () -> Void,
+        onEscape: @escaping () -> Bool
     ) {
         activeToken = token
         self.isHighlightMode = isHighlightMode
@@ -709,6 +723,7 @@ final class ReaderShortcutHub {
         self.onHighlightKey = onHighlightKey
         self.onHighlightMouseUp = onHighlightMouseUp
         self.onToggleTrail = onToggleTrail
+        self.onEscape = onEscape
         installMonitorIfNeeded()
     }
 
@@ -720,6 +735,7 @@ final class ReaderShortcutHub {
         onHighlightKey = nil
         onHighlightMouseUp = nil
         onToggleTrail = nil
+        onEscape = nil
     }
 
     func performDropBookmark() {
@@ -770,6 +786,9 @@ final class ReaderShortcutHub {
         guard flags.isEmpty else { return event }
 
         if event.keyCode == 53 {
+            if onEscape?() == true {
+                return nil
+            }
             if isHighlightMode?.wrappedValue == true {
                 isHighlightMode?.wrappedValue = false
                 return nil

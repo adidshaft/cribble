@@ -153,6 +153,9 @@ struct DiagramZoomOverlay: View {
             .scaleEffect(appeared ? 1 : 0.97)
             .opacity(appeared ? 1 : 0)
         }
+        // Escape is handled by ReaderShortcutHub (a custom `.overlay` isn't in
+        // the responder chain, so `.onExitCommand` here is unreliable). Kept as
+        // a harmless fallback for contexts where it does fire.
         .onExitCommand(perform: onClose)
         .onAppear {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
@@ -310,7 +313,7 @@ private struct ZoomableMermaidWebView: NSViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = NonFocusableMermaidWebView(frame: .zero, configuration: configuration)
         webView.setValue(false, forKey: "drawsBackground")
         webView.allowsMagnification = true
         webView.loadHTMLString(MermaidHTML.page(source: source, fontScale: 1.0, isDark: isDark, interactive: true), baseURL: nil)
@@ -320,6 +323,13 @@ private struct ZoomableMermaidWebView: NSViewRepresentable {
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         controller.webView = webView
+    }
+
+    /// Pinch-zoom and scroll-to-pan are gesture/scroll-wheel driven and don't
+    /// need first-responder status — so we refuse it. Otherwise the web content
+    /// swallows the Escape key and the overlay can't be dismissed with it.
+    final class NonFocusableMermaidWebView: WKWebView {
+        override var acceptsFirstResponder: Bool { false }
     }
 }
 

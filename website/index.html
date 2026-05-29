@@ -610,7 +610,7 @@
   <div class="hero-meta">
     <b>Direct DMG available</b><span class="dot">•</span>
     <b>macOS 15+</b><span class="dot">•</span>
-    <span data-release-size>11&nbsp;MB</span>
+    <span data-release-size>13 MB</span>
   </div>
 
   <div class="hero-shot">
@@ -845,22 +845,12 @@
     });
   });
 
-  const githubRepo = 'adidshaft/cribble';
   const directReleaseTag = 'v1.1.2';
   const appStoreVersion = '1.1.2';
   const appStoreBuild = '1';
-
-  function formatBytes(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '13 MB';
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
-  }
-
-  function formatDate(value) {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'May 29, 2026';
-    return new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric' }).format(date);
-  }
+  const releaseUrl = 'https://github.com/adidshaft/cribble/releases/tag/v1.1.2';
+  const dmgUrl = 'https://github.com/adidshaft/cribble/releases/download/v1.1.2/Cribble-1.1.2.dmg';
+  const checksumUrl = 'https://github.com/adidshaft/cribble/releases/download/v1.1.2/Cribble-1.1.2.dmg.sha256';
 
   function setText(selector, value) {
     document.querySelectorAll(selector).forEach(el => {
@@ -874,37 +864,19 @@
     });
   }
 
-  function fetchRelease(tag) {
-    return fetch(`https://api.github.com/repos/${githubRepo}/releases/tags/${tag}`, { headers: { Accept: 'application/vnd.github+json' } })
-      .then(response => response.ok ? response.json() : Promise.reject(new Error('Release metadata unavailable')));
-  }
-
-  fetchRelease(directReleaseTag)
-    .catch(() => fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
-      .then(response => response.ok ? response.json() : Promise.reject(new Error('Release metadata unavailable'))))
-    .then(release => {
-      const dmg = (release.assets || []).find(asset => asset.name && asset.name.endsWith('.dmg'));
-      const checksum = (release.assets || []).find(asset => asset.name && asset.name.endsWith('.sha256'));
-      const tag = release.name?.match(/v\d+\.\d+\.\d+/)?.[0] || release.tag_name || 'v1.1.2';
-      const version = tag.replace(/^v/, '');
-      const releaseUrl = release.html_url || `https://github.com/${githubRepo}/releases/tag/${directReleaseTag}`;
-      const dmgUrl = dmg?.browser_download_url || releaseUrl;
-      const checksumUrl = checksum?.browser_download_url || `https://github.com/${githubRepo}/releases/download/${directReleaseTag}/Cribble-1.1.2.dmg.sha256`;
-      const size = formatBytes(dmg?.size);
-
-      setText('[data-release-tag]', tag);
-      setText('[data-version-value]', version);
-      setText('[data-release-date]', formatDate(release.published_at));
-      setText('[data-release-size]', size);
-      setText('[data-version-eyebrow]', `Version ${appStoreVersion} — build ${appStoreBuild}`);
-      setHref('[data-release-link]', releaseUrl);
-      setHref('[data-release-notes-link]', releaseUrl);
-      setHref('[data-dmg-link]', dmgUrl);
-      setHref('[data-checksum-link]', checksumUrl);
-    })
-    .catch(() => {
-      setText('[data-version-eyebrow]', `Version ${appStoreVersion} — build ${appStoreBuild}`);
-    });
+  // Keep the public page static and deterministic. Earlier versions fetched
+  // GitHub release metadata on every visit, which made the landing page depend
+  // on a third-party API, ad blockers, CORS edge cases, and rate limits even
+  // though the release values are already known at deploy time.
+  setText('[data-release-tag]', directReleaseTag);
+  setText('[data-version-value]', directReleaseTag.replace(/^v/, ''));
+  setText('[data-release-date]', 'May 29, 2026');
+  setText('[data-release-size]', '13 MB');
+  setText('[data-version-eyebrow]', `Version ${appStoreVersion} — build ${appStoreBuild}`);
+  setHref('[data-release-link]', releaseUrl);
+  setHref('[data-release-notes-link]', releaseUrl);
+  setHref('[data-dmg-link]', dmgUrl);
+  setHref('[data-checksum-link]', checksumUrl);
 </script>
 
 </body>

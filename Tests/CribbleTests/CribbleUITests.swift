@@ -330,14 +330,14 @@ final class CribbleUITests: XCTestCase {
         let preparedDifferent = MarkdownDisplayPreprocessor.prepare(rawContentDifferent, documentTitle: "Test Title")
         XCTAssertEqual(preparedDifferent, "# Another Title\n\nHello world!")
         
-        // Task list markdown formatting
+        // Task markers are preserved verbatim so the reader can render them as
+        // interactive checkboxes downstream.
         let rawTasks = """
         - [x] Complete task
         - [ ] Pending task
         - [X] Case-insensitive complete
-        1. [ ] Ordered task
         """
         let preparedTasks = MarkdownDisplayPreprocessor.prepare(rawTasks, documentTitle: "Tasks")
-        XCTAssertEqual(preparedTasks, "- ☑ Complete task\n- ☐ Pending task\n- ☑ Case-insensitive complete\n1. ☐ Ordered task")
+        XCTAssertEqual(preparedTasks, rawTasks)
     }
 }

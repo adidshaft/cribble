@@ -53,6 +53,9 @@ final class MarkdownLibraryStore: ObservableObject {
     private var pendingDiffRootURL: URL?
     private var pendingDiffMode: AIMode?
     private var pendingDiffSuccessMessage: String?
+    // While set (briefly after a checkbox write), the file monitor ignores the
+    // filesystem echo of our own write instead of triggering a full rescan.
+    private var selfWriteSuppressionDeadline: Date?
 
     // LRU render cache. Keyed by document URL; entries are invalidated when
     // the underlying file content changes (we compare a hash of rawMarkdown).
@@ -947,7 +950,55 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private func startMonitoring() {
         monitor.start(rootURLs: rootURLs) { [weak self] in
-            self?.refresh(keepStatusQuiet: true)
+            guard let self else { return }
+            // Ignore the filesystem echo of our own checkbox write — we already
+            // updated the document in place, and a full rescan here would be
+            // wasteful and could fight the optimistic UI.
+            if let deadline = self.selfWriteSuppressionDeadline, Date() < deadline {
+                return
+            }
+            self.refresh(keepStatusQuiet: true)
+        }
+    }
+
+    /// Flips a single Markdown task checkbox (the only in-reader write Cribble
+    /// makes to a note). Writes one byte, then reloads just that document in
+    /// place so the change is reflected without a full library rescan.
+    func toggleTaskCheckbox(in documentURL: URL, ordinal: Int, currentlyChecked: Bool) {
+        let url = documentURL.standardizedFileURL
+        do {
+            let result = try TaskCheckbox.toggle(
+                fileURL: url,
+                ordinal: ordinal,
+                expectedCurrentChecked: currentlyChecked
+            )
+            switch result {
+            case .toggled:
+                selfWriteSuppressionDeadline = Date().addingTimeInterval(1.5)
+                reloadDocumentInPlace(url)
+            case .stateMismatch:
+                // The on-disk checkbox no longer matches what we rendered (edited
+                // elsewhere). Reload so the reader reflects the real state.
+                reloadDocumentInPlace(url)
+                statusMessage = "Checkbox changed on disk — reloaded"
+            case .notFound:
+                DiagnosticsCenter.shared.record(level: .warning, message: "Could not locate task checkbox #\(ordinal) in \(url.lastPathComponent)")
+            }
+        } catch {
+            errorMessage = "Couldn't update the checkbox: \(error.localizedDescription)"
+        }
+    }
+
+    private func reloadDocumentInPlace(_ url: URL) {
+        guard let reloaded = try? loader.load(url: url) else { return }
+        if let index = documents.firstIndex(where: { $0.url.standardizedFileURL == url }) {
+            documents[index] = reloaded
+        }
+        renderCache.removeValue(forKey: reloaded.url)
+        renderCacheOrder.removeAll { $0 == reloaded.url }
+        if selectedDocument?.url.standardizedFileURL == url {
+            selectedDocument = reloaded
+            scheduleRender(for: reloaded)
         }
     }
 

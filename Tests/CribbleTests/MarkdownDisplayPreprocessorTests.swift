@@ -18,32 +18,18 @@ final class MarkdownDisplayPreprocessorTests: XCTestCase {
         XCTAssertEqual(prepared, "Body")
     }
 
-    func testEnrichesTaskListMarkers() {
-        let prepared = MarkdownDisplayPreprocessor.prepare(
-            """
-            - [x] Done
-            - [ ] Next
-            * [X] Shouted
-            + [ ] Plus
-              - [ ] Nested
-            1. [ ] Ordered
-            2) [x] Parenthesized
-            """,
-            documentTitle: "Tasks"
-        )
-
-        XCTAssertEqual(
-            prepared,
-            """
-            - ☑ Done
-            - ☐ Next
-            * ☑ Shouted
-            + ☐ Plus
-              - ☐ Nested
-            1. ☐ Ordered
-            2) ☑ Parenthesized
-            """
-        )
+    func testPreservesTaskListMarkers() {
+        // Task markers are intentionally left intact so the reader can render
+        // them as interactive checkboxes (TaskListView) rather than glyphs.
+        let input = """
+        - [x] Done
+        - [ ] Next
+        * [X] Shouted
+        + [ ] Plus
+          - [ ] Nested
+        """
+        let prepared = MarkdownDisplayPreprocessor.prepare(input, documentTitle: "Tasks")
+        XCTAssertEqual(prepared, input)
     }
 
     func testDetectsAutoCreatedReadmeAsEssentiallyEmpty() {

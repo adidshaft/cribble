@@ -167,6 +167,14 @@ private struct ReaderDocumentView: View {
                                         highlightsByBlock: sectionPlan.highlightsByBlock,
                                         onUpdateHighlightNote: { highlightID, note in
                                             updateHighlightNote(id: highlightID, note: note)
+                                        },
+                                        taskOrdinalBase: sectionPlan.taskBases[section.anchor] ?? 0,
+                                        onToggleTask: { ordinal, currentlyChecked in
+                                            library.toggleTaskCheckbox(
+                                                in: document.url,
+                                                ordinal: ordinal,
+                                                currentlyChecked: currentlyChecked
+                                            )
                                         }
                                     )
                                     .id(section.anchor)
@@ -868,6 +876,9 @@ private struct IndexedBlock: Identifiable {
     let id: String
     let block: RichMarkdownBlock
     let markdownIndex: Int?
+    // For `.taskList` blocks: the number of task items that precede this block
+    // within its section, so a per-item document-global ordinal can be derived.
+    var taskBaseInSection: Int = 0
 }
 
 private struct ReaderMarkdownSection: View {
@@ -876,6 +887,11 @@ private struct ReaderMarkdownSection: View {
     let fontScale: Double
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
     let onUpdateHighlightNote: (UUID, String) -> Void
+    // Number of task checkboxes in all sections before this one — added to a
+    // block's in-section base to get each checkbox's document-global ordinal.
+    let taskOrdinalBase: Int
+    // (globalOrdinal, currentlyChecked) -> persist the flip to the file.
+    let onToggleTask: (Int, Bool) -> Void
 
     var body: some View {
         let blocks = indexedBlocks(from: section.markdown)
@@ -924,6 +940,15 @@ private struct ReaderMarkdownSection: View {
                     // are rendered by RichCodeBlockView (a separate non-Textual view)
                     // and don't participate in the HighlightedMarkdownParser pipeline.
                     RichCodeBlockView(language: language, code: code, fontScale: fontScale)
+
+                case .taskList(_, let items):
+                    TaskListView(
+                        items: items,
+                        baseURL: baseURL,
+                        fontScale: fontScale,
+                        ordinalBase: taskOrdinalBase + indexedBlock.taskBaseInSection,
+                        onToggle: onToggleTask
+                    )
                 }
             }
         }
@@ -953,6 +978,7 @@ private struct ReaderMarkdownSection: View {
         let rawBlocks = RichMarkdownBlock.blocks(from: markdown)
         var result: [IndexedBlock] = []
         var markdownCount = 0
+        var taskCount = 0
         for block in rawBlocks {
             switch block {
             case .markdown:
@@ -960,6 +986,9 @@ private struct ReaderMarkdownSection: View {
                 markdownCount += 1
             case .fencedCode:
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil))
+            case .taskList(_, let items):
+                result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil, taskBaseInSection: taskCount))
+                taskCount += items.count
             }
         }
         return result
@@ -1563,13 +1592,34 @@ private struct ReaderSectionPlan {
     let sections: [ReadingSection]
     // (sectionAnchor, blockIndex) -> highlights to apply
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
+    // sectionAnchor -> number of task checkboxes in all prior sections, so each
+    // checkbox can be addressed by a stable document-global ordinal.
+    let taskBases: [String: Int]
 
-    static let empty = ReaderSectionPlan(sections: [], highlightsByBlock: [:])
+    static let empty = ReaderSectionPlan(sections: [], highlightsByBlock: [:], taskBases: [:])
+
+    /// Prefix-sum of task-checkbox counts per section. Cheap-guarded: documents
+    /// with no checkboxes skip the per-section block parse entirely.
+    private static func taskBases(for sections: [ReadingSection], rendered: String) -> [String: Int] {
+        guard rendered.contains("[ ]") || rendered.contains("[x]") || rendered.contains("[X]") else { return [:] }
+        var bases: [String: Int] = [:]
+        var running = 0
+        for section in sections {
+            bases[section.anchor] = running
+            for block in RichMarkdownBlock.blocks(from: section.markdown) {
+                if case .taskList(_, let items) = block {
+                    running += items.count
+                }
+            }
+        }
+        return bases
+    }
 
     static func build(rendered: String, highlights: [ReadingHighlight]) -> ReaderSectionPlan {
         let sections = ReadingSection.sections(from: rendered)
+        let taskBases = taskBases(for: sections, rendered: rendered)
         guard !sections.isEmpty, !highlights.isEmpty else {
-            return ReaderSectionPlan(sections: sections, highlightsByBlock: [:])
+            return ReaderSectionPlan(sections: sections, highlightsByBlock: [:], taskBases: taskBases)
         }
 
         var highlightsByBlock: [BlockKey: [ResolvedHighlight]] = [:]
@@ -1602,7 +1652,7 @@ private struct ReaderSectionPlan {
                         normalizedText: text.normalizedReadingText
                     )
                     markdownIdx += 1
-                case .fencedCode:
+                case .fencedCode, .taskList:
                     break
                 }
             }
@@ -1672,7 +1722,7 @@ private struct ReaderSectionPlan {
             }
         }
 
-        return ReaderSectionPlan(sections: sections, highlightsByBlock: highlightsByBlock)
+        return ReaderSectionPlan(sections: sections, highlightsByBlock: highlightsByBlock, taskBases: taskBases)
     }
 }
 

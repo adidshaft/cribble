@@ -5,7 +5,11 @@ enum MarkdownDisplayPreprocessor {
         let withoutFrontMatter = stripFrontMatter(markdown)
         let withoutDuplicateTitle = stripLeadingTitle(withoutFrontMatter, title: documentTitle)
         let withFootnotes = renderFootnotes(withoutDuplicateTitle)
-        return enrichTaskListMarkers(withFootnotes)
+        // NOTE: task-list markers (`- [ ]` / `- [x]`) are intentionally left
+        // untouched here. The reader detects them downstream and renders them as
+        // interactive checkboxes (`TaskListView`); rewriting them to ☐/☑ glyphs
+        // would both look worse (bullet + box) and hide them from that detector.
+        return withFootnotes
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -41,20 +45,6 @@ enum MarkdownDisplayPreprocessor {
             lines.removeFirst()
         }
         return lines.joined(separator: "\n")
-    }
-
-    private static func enrichTaskListMarkers(_ markdown: String) -> String {
-        markdown
-            .replacingOccurrences(
-                of: #"(?m)^(\s*)((?:[-*+])|(?:\d+[.)]))\s+\[[xX]\]\s+"#,
-                with: "$1$2 ☑ ",
-                options: .regularExpression
-            )
-            .replacingOccurrences(
-                of: #"(?m)^(\s*)((?:[-*+])|(?:\d+[.)]))\s+\[ \]\s+"#,
-                with: "$1$2 ☐ ",
-                options: .regularExpression
-            )
     }
 
     private static func renderFootnotes(_ markdown: String) -> String {

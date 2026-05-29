@@ -3,10 +3,11 @@ import Foundation
 enum RichMarkdownBlock: Identifiable, Equatable {
     case markdown(id: String, text: String)
     case fencedCode(id: String, language: String?, code: String)
+    case taskList(id: String, items: [TaskListItem])
 
     var id: String {
         switch self {
-        case .markdown(let id, _), .fencedCode(let id, _, _):
+        case .markdown(let id, _), .fencedCode(let id, _, _), .taskList(let id, _):
             id
         }
     }
@@ -18,12 +19,48 @@ enum RichMarkdownBlock: Identifiable, Equatable {
         var index = 0
         var blockIndex = 0
 
+        // Flush the accumulated non-fence lines, splitting out contiguous runs
+        // of GFM task-list items into their own `.taskList` blocks so the reader
+        // can render interactive checkboxes. Prose between/around task runs stays
+        // as ordinary `.markdown` blocks.
         func appendMarkdown() {
-            let text = markdownLines.joined(separator: "\n").trimmingCharacters(in: .newlines)
+            let pending = markdownLines
             markdownLines.removeAll(keepingCapacity: true)
-            guard !text.isEmpty else { return }
-            blocks.append(.markdown(id: "markdown-\(blockIndex)", text: text))
-            blockIndex += 1
+
+            func flushProse(_ proseLines: [String]) {
+                let text = proseLines.joined(separator: "\n").trimmingCharacters(in: .newlines)
+                guard !text.isEmpty else { return }
+                blocks.append(.markdown(id: "markdown-\(blockIndex)", text: text))
+                blockIndex += 1
+            }
+
+            var prose: [String] = []
+            var tasks: [TaskListItem] = []
+
+            func flushTasks() {
+                guard !tasks.isEmpty else { return }
+                blocks.append(.taskList(id: "task-\(blockIndex)", items: tasks))
+                blockIndex += 1
+                tasks.removeAll(keepingCapacity: true)
+            }
+
+            for line in pending {
+                if let parsed = TaskCheckbox.parse(line: line) {
+                    flushProse(prose)
+                    prose.removeAll(keepingCapacity: true)
+                    tasks.append(TaskListItem(
+                        id: "task-\(blockIndex)-\(tasks.count)",
+                        label: parsed.label,
+                        isChecked: parsed.isChecked,
+                        indent: parsed.indent
+                    ))
+                } else {
+                    flushTasks()
+                    prose.append(line)
+                }
+            }
+            flushTasks()
+            flushProse(prose)
         }
 
         while index < lines.count {

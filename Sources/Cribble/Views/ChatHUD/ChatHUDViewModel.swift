@@ -111,6 +111,11 @@ final class ChatHUDViewModel: ObservableObject {
         searchFiles(matching: "")
     }
 
+    /// Download / cloud state for a model, for the picker's state icons.
+    func availability(of model: LocalModel) -> ModelAvailability {
+        ModelInventory.availability(of: model)
+    }
+
     // MARK: - Conversation control
 
     func newChat() {

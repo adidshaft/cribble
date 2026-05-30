@@ -72,7 +72,7 @@ struct ChatHUDView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 if viewModel.messages.isEmpty {
-                    ChatEmptyState()
+                    ChatEmptyState(viewModel: viewModel)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 70)
                 } else {
@@ -98,8 +98,10 @@ struct ChatHUDView: View {
 }
 
 /// Soft welcome shown before the first message — the Cribble mark over a gentle
-/// glow, with a light prompt.
+/// glow, a light prompt, and a hint about the selected model so first-time users
+/// know whether a download is coming.
 struct ChatEmptyState: View {
+    @ObservedObject var viewModel: ChatHUDViewModel
     @State private var glowing = false
 
     var body: some View {
@@ -128,6 +130,38 @@ struct ChatEmptyState: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
                 .multilineTextAlignment(.center)
+
+            modelHint
         }
+    }
+
+    private var modelHint: some View {
+        let model = viewModel.selectedModel
+        let availability = viewModel.availability(of: model)
+        let (icon, text): (String, String) = {
+            switch availability {
+            case .cloud:
+                return ("cloud", "\(model.name) runs in the cloud — ready when you are.")
+            case .downloaded:
+                return ("checkmark.circle", "\(model.name) is on your Mac — ready to chat.")
+            case .notDownloaded:
+                return ("arrow.down.circle", "\(model.name) (\(model.approximateSize)) downloads the first time you send.")
+            }
+        }()
+
+        return HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 11))
+            Text(text)
+                .font(.system(size: 11, weight: .medium))
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(.white.opacity(0.55))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(Color.white.opacity(0.05), in: Capsule())
+        .overlay { Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
+        .padding(.horizontal, 24)
+        .padding(.top, 4)
     }
 }

@@ -125,7 +125,7 @@ struct ChatInputBar: View {
                 .focused($inputFocused)
                 .onSubmit(submit)
 
-            modelChip
+            ModelPickerButton(viewModel: viewModel)
             micButton
             sendButton
         }
@@ -170,44 +170,6 @@ struct ChatInputBar: View {
         .onHover { hovering in
             isPlusHovered = hovering
         }
-        .pointingHandOnHover()
-    }
-
-    private var modelChip: some View {
-        Menu {
-            ForEach(ModelCatalog.all) { model in
-                Button {
-                    viewModel.selectModel(model)
-                } label: {
-                    let isFlash = model.speedLabel.lowercased().contains("flash")
-                    let isSelected = model.id == viewModel.selectedModel.id
-                    Label(
-                        "\(model.name) · \(model.approximateSize)",
-                        systemImage: isSelected ? "checkmark" : (isFlash ? "bolt.fill" : "cpu")
-                    )
-                }
-            }
-        } label: {
-            HStack(spacing: 5) {
-                Circle()
-                    .fill(viewModel.selectedModel.speedLabel.lowercased().contains("flash") ? Color.green : Color.blue)
-                    .frame(width: 5, height: 5)
-                    .shadow(color: (viewModel.selectedModel.speedLabel.lowercased().contains("flash") ? Color.green : Color.blue).opacity(0.6), radius: 2)
-                Text(viewModel.selectedModel.speedLabel)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.white.opacity(0.08), in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75)
-            }
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Choose model")
         .pointingHandOnHover()
     }
 

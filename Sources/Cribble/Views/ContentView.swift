@@ -6,7 +6,9 @@ struct ContentView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var diagnostics: DiagnosticsCenter
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
+    @EnvironmentObject private var llmEntitlement: LLMEntitlementStore
     @State private var showingAIProviderSheet = false
+    @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
     @State private var showingPreviousSessionIssue = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -21,6 +23,7 @@ struct ContentView: View {
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
@@ -93,6 +96,19 @@ struct ContentView: View {
             .sheet(item: $library.pathfinderRequest) { request in
                 PathfinderSheet(request: request)
             }
+            .sheet(isPresented: $showingLLMUnlockSheet) {
+                LLMUnlockSheet(entitlement: llmEntitlement)
+            }
+    }
+
+    /// Opens the floating Local Chat HUD, or the unlock sheet if the LLM hasn't
+    /// been purchased (App Store build only — the DMG build is always unlocked).
+    private func openChatHUD() {
+        if llmEntitlement.isUnlocked {
+            ChatHUDController.shared.toggle(library: library)
+        } else {
+            showingLLMUnlockSheet = true
+        }
     }
 
     private var behaviorContent: some View {
@@ -193,6 +209,14 @@ struct ContentView: View {
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleGlassButton()
             .help("Ask a local AI tool to suggest wiki links with a patch preview")
+
+            Button {
+                openChatHUD()
+            } label: {
+                Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
+            }
+            .cribbleGlassButton()
+            .help("Open the on-device AI chat (⌥⌘C)")
         }
     }
 

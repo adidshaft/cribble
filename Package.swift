@@ -13,7 +13,15 @@ let package = Package(
     dependencies: [
         .package(path: "Vendor/textual"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.7.0"),
-        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
+        // On-device LLM engine for the Local Chat HUD (Apple MLX). Heavy native
+        // dependency; isolated to `MLXChatEngine.swift` via `canImport(MLXLLM)`.
+        // MLX's HuggingFace integration is "bring your own client": the
+        // `#hubDownloader()` / `#huggingFaceTokenizerLoader()` macros bridge to
+        // the `HuggingFace` and `Tokenizers` modules below.
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm", branch: "main"),
+        .package(url: "https://github.com/huggingface/swift-huggingface", from: "0.9.0"),
+        .package(url: "https://github.com/huggingface/swift-transformers", from: "1.3.0")
     ],
     targets: [
         // Objective-C target whose load-time constructor installs the
@@ -29,6 +37,11 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "Textual", package: "textual"),
                 .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "MLXLLM", package: "mlx-swift-lm"),
+                .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                .product(name: "MLXHuggingFace", package: "mlx-swift-lm"),
+                .product(name: "HuggingFace", package: "swift-huggingface"),
+                .product(name: "Tokenizers", package: "swift-transformers"),
                 "CribbleBundleRedirect"
             ],
             resources: [

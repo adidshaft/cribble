@@ -19,6 +19,7 @@ struct PathfinderSheet: View {
     @State private var cliExplanation: String?
     @State private var cliError: String?
     @State private var isExplaining = false
+    @State private var explainingLabel = "Reasoning…"
 
     private var sourceTitle: String { library.title(for: request.source) }
     private var targetTitle: String { library.title(for: request.target) }
@@ -150,21 +151,33 @@ struct PathfinderSheet: View {
         HStack(spacing: 10) {
             if isExplaining {
                 ProgressView().controlSize(.small)
-                Text("Reasoning locally with the CLI…")
+                Text(explainingLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             } else {
                 Menu {
-                    ForEach(AIProvider.allCases) { provider in
-                        Button(provider.rawValue) { explain(with: provider) }
+                    let downloaded = ModelCatalog.localModels.filter { ModelInventory.isDownloaded($0) }
+                    Section("On-device") {
+                        if downloaded.isEmpty {
+                            Button("Download a model in Cribble AI first") {}.disabled(true)
+                        } else {
+                            ForEach(downloaded) { model in
+                                Button(model.name) { explainLocally(model: model) }
+                            }
+                        }
+                    }
+                    Section("Cloud") {
+                        ForEach(AIProvider.allCases) { provider in
+                            Button(provider.rawValue) { explain(with: provider) }
+                        }
                     }
                 } label: {
-                    Label(cliExplanation == nil ? "Explain with Claude / Codex" : "Re-run explanation", systemImage: "sparkle")
+                    Label(cliExplanation == nil ? "Explain the connection" : "Re-run explanation", systemImage: "sparkle")
                         .font(.system(size: 12))
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help("Spawn the local Claude or Codex CLI (read-only) to explain how these notes connect")
+                .help("Explain how these notes connect, using an on-device model or the Claude / Codex CLI")
             }
         }
     }
@@ -234,6 +247,38 @@ struct PathfinderSheet: View {
 
     // MARK: - CLI
 
+    /// On-device explanation using a shared local MLX model.
+    private func explainLocally(model: LocalModel) {
+        cliError = nil
+        isExplaining = true
+        explainingLabel = "Loading \(model.name) on-device…"
+        let sourceURL = request.source
+        let targetURL = request.target
+        let sTitle = sourceTitle
+        let tTitle = targetTitle
+
+        Task {
+            defer { isExplaining = false }
+            do {
+                let sContent = (try? String(contentsOf: sourceURL, encoding: .utf8)) ?? ""
+                let tContent = (try? String(contentsOf: targetURL, encoding: .utf8)) ?? ""
+                let engine = LocalLLM.shared.engine(for: model)
+                try await engine.prepare(model: model) { _ in }
+                explainingLabel = "Reasoning on-device with \(model.name)…"
+                let messages = ContextAssembler.connectionMessages(
+                    modelName: model.name,
+                    source: ResolvedFile(filename: sTitle, content: sContent),
+                    target: ResolvedFile(filename: tTitle, content: tContent)
+                )
+                let text = try await engine.generate(messages: messages, maxTokens: 400) { _ in }
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                cliExplanation = trimmed.isEmpty ? "The model returned no explanation." : trimmed
+            } catch {
+                cliError = error.localizedDescription
+            }
+        }
+    }
+
     private func explain(with provider: AIProvider) {
         guard let folder = library.rootURL(for: request.source) else {
             cliError = "Open a folder first."
@@ -241,6 +286,7 @@ struct PathfinderSheet: View {
         }
         cliError = nil
         isExplaining = true
+        explainingLabel = "Reasoning with \(provider.rawValue)…"
         let source = sourceTitle
         let target = targetTitle
 

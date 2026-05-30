@@ -102,6 +102,36 @@ enum ContextAssembler {
         return messages
     }
 
+    /// Messages for Pathfinder: explain the conceptual bridge between two notes
+    /// in a single concise paragraph (the assistant's fourth job).
+    static func connectionMessages(
+        modelName: String,
+        source: ResolvedFile,
+        target: ResolvedFile
+    ) -> [EngineMessage] {
+        let system = """
+        You are the Cribble AI Assistant, running on \(modelName). Explain how two Markdown \
+        notes are conceptually connected, using ONLY the content provided. Reply with a single \
+        concise paragraph (at most ~90 words). Do not invent facts, do not output a list, and do \
+        not write any files.
+
+        --- BEGIN NOTE A: \(source.filename) ---
+        \(truncate(source.content))
+        --- END NOTE A: \(source.filename) ---
+
+        --- BEGIN NOTE B: \(target.filename) ---
+        \(truncate(target.content))
+        --- END NOTE B: \(target.filename) ---
+        """
+        return [
+            EngineMessage(role: .system, content: system),
+            EngineMessage(
+                role: .user,
+                content: "Explain the conceptual bridge between \"\(source.filename)\" and \"\(target.filename)\"."
+            )
+        ]
+    }
+
     private static func truncate(_ content: String) -> String {
         guard content.count > perFileCharacterBudget else { return content }
         let cutoff = content.index(content.startIndex, offsetBy: perFileCharacterBudget)

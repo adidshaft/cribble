@@ -45,8 +45,10 @@ resolve_executable() {
 rm -rf "$OUT_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 
-swift build -c release --arch arm64
-BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+# -DAPPSTORE gates the Local Chat HUD behind the StoreKit in-app purchase.
+# The direct-DMG build (package_release.sh) omits this flag and ships unlocked.
+swift build -c release --arch arm64 -Xswiftc -DAPPSTORE
+BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path -Xswiftc -DAPPSTORE)"
 BINARY_SOURCE="$(resolve_executable "$BUILD_DIR")"
 
 cp "$BINARY_SOURCE" "$APP_BINARY"
@@ -62,6 +64,13 @@ shopt -u nullglob
 for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 done
+
+# MLX's Metal shader library isn't produced by `swift build`; inject the cached
+# bundle (regenerate with script/build_metallib.sh) so on-device models work.
+MLX_METALLIB_BUNDLE="$ROOT_DIR/Vendor/MLXMetallib/mlx-swift_Cmlx.bundle"
+if [[ -d "$MLX_METALLIB_BUNDLE" ]]; then
+  cp -R "$MLX_METALLIB_BUNDLE" "$APP_RESOURCES/"
+fi
 
 REQUIRED_RESOURCE_BUNDLES=(
   "Cribble_Cribble.bundle"

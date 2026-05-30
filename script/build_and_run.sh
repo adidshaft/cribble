@@ -54,6 +54,13 @@ for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 done
 
+# MLX's Metal shader library can't be built by `swift build`; inject the cached
+# bundle (regenerate with script/build_metallib.sh) so on-device models work.
+MLX_METALLIB_BUNDLE="$ROOT_DIR/Vendor/MLXMetallib/mlx-swift_Cmlx.bundle"
+if [[ -d "$MLX_METALLIB_BUNDLE" ]]; then
+  cp -R "$MLX_METALLIB_BUNDLE" "$APP_RESOURCES/"
+fi
+
 cat >"$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

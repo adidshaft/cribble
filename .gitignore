@@ -12,3 +12,4 @@ Cribble_App_Icon_Exports/
 *.cer
 *.csr
 *.key
+.xcdd/

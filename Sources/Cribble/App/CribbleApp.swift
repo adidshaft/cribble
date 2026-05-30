@@ -11,6 +11,7 @@ struct CribbleApp: App {
     @StateObject private var readingAnnotations = ReadingAnnotationsStore()
     @StateObject private var readingTrail = ReadingTrailStore()
     @StateObject private var semanticIndex = SemanticSearchIndex()
+    @StateObject private var llmEntitlement = LLMEntitlementStore()
 
     init() {
         // Runs at the very top of App.main(), before SwiftUI evaluates the
@@ -31,7 +32,8 @@ struct CribbleApp: App {
                 .environmentObject(readingAnnotations)
                 .environmentObject(readingTrail)
                 .environmentObject(semanticIndex)
-                .frame(minWidth: 820, minHeight: 560)
+                .environmentObject(llmEntitlement)
+                .frame(minWidth: 380, minHeight: 480)
                 .preferredColorScheme(settings.appearance.colorScheme)
         }
         .commands {
@@ -49,6 +51,7 @@ struct CribbleApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appearanceObserver: NSObjectProtocol?
+    private var statusItem: NSStatusItem?
 
     override init() {
         SPMBundleAccessorFix.ensureInstalled()
@@ -61,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate()
         AppIconManager.applyForSystemAppearance()
         DiagnosticsCenter.shared.markLaunch()
+        installStatusItem()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.installCheckForUpdatesMenuItem()
         }
@@ -96,7 +100,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppUpdater.shared.checkForUpdates()
     }
 
+    /// Adds a menu-bar (top bar) item so the AI chat can be opened from anywhere
+    /// without bringing the main window forward first. The actual open is routed
+    /// through the main view so the purchase gate is still honored.
+    private func installStatusItem() {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        if let button = item.button {
+            let image = NSImage(
+                systemSymbolName: "bubble.left.and.text.bubble.right",
+                accessibilityDescription: "Cribble AI"
+            )
+            image?.isTemplate = true
+            button.image = image
+            button.action = #selector(toggleChatFromStatusItem)
+            button.target = self
+            button.toolTip = "Cribble AI chat"
+            ChatHUDController.shared.registerStatusButton(button)
+        }
+        statusItem = item
+    }
+
+    @objc private func toggleChatFromStatusItem() {
+        // Activate first so the popover/panel can show even when another app is
+        // frontmost; the controller honors the purchase gate.
+        NSApp.activate(ignoringOtherApps: true)
+        ChatHUDController.shared.handleStatusItemClick()
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
+        if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
         DiagnosticsCenter.shared.markCleanTermination()
 
         if let appearanceObserver {

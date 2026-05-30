@@ -6,10 +6,20 @@ struct ContentView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var diagnostics: DiagnosticsCenter
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
+    @EnvironmentObject private var llmEntitlement: LLMEntitlementStore
     @State private var showingAIProviderSheet = false
+    @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
     @State private var showingPreviousSessionIssue = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    /// True when the window is too narrow for a side-by-side sidebar; the
+    /// sidebar then becomes an on-demand overlay instead of a column.
+    @State private var isCompactWidth = false
+    /// Whether the overlay sidebar is showing in compact mode.
+    @State private var showCompactSidebar = false
+
+    /// Below this content width the sidebar collapses into an overlay.
+    private static let compactWidthThreshold: CGFloat = 640
 
     var body: some View {
         sceneConfiguredContent
@@ -21,6 +31,14 @@ struct ContentView: View {
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
+            .onAppear {
+                ChatHUDController.shared.configure(
+                    library: library,
+                    entitlement: llmEntitlement,
+                    onLocked: { showingLLMUnlockSheet = true }
+                )
+            }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
@@ -93,6 +111,15 @@ struct ContentView: View {
             .sheet(item: $library.pathfinderRequest) { request in
                 PathfinderSheet(request: request)
             }
+            .sheet(isPresented: $showingLLMUnlockSheet) {
+                LLMUnlockSheet(entitlement: llmEntitlement)
+            }
+    }
+
+    /// Toggles the floating Local Chat HUD. The controller honors the purchase
+    /// gate (App Store build only — the DMG build is always unlocked).
+    private func openChatHUD() {
+        ChatHUDController.shared.toggleFloating()
     }
 
     private var behaviorContent: some View {
@@ -130,6 +157,27 @@ struct ContentView: View {
     }
 
     private var content: some View {
+        GeometryReader { proxy in
+            Group {
+                if isCompactWidth {
+                    compactLayout
+                } else {
+                    splitLayout
+                }
+            }
+            .onChange(of: proxy.size.width, initial: true) { _, width in
+                updateCompactState(for: width)
+            }
+        }
+        // Selecting a note in the overlay sidebar dismisses it.
+        .onChange(of: library.selectedURL) {
+            if isCompactWidth, showCompactSidebar {
+                withAnimation(.easeInOut(duration: 0.2)) { showCompactSidebar = false }
+            }
+        }
+    }
+
+    private var splitLayout: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
@@ -138,9 +186,56 @@ struct ContentView: View {
         }
     }
 
+    /// Narrow windows: the reader fills the width and the sidebar slides in over
+    /// it on demand, never changing the window size.
+    private var compactLayout: some View {
+        ZStack(alignment: .leading) {
+            ReaderView()
+
+            if showCompactSidebar {
+                Color.black.opacity(0.35)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) { showCompactSidebar = false }
+                    }
+                    .transition(.opacity)
+
+                SidebarView()
+                    .frame(width: 260)
+                    .frame(maxHeight: .infinity)
+                    .background(.regularMaterial)
+                    .overlay(alignment: .trailing) {
+                        Rectangle().fill(.separator).frame(width: 1)
+                    }
+                    .shadow(color: .black.opacity(0.3), radius: 18, x: 6)
+                    .transition(.move(edge: .leading))
+                    .zIndex(1)
+            }
+        }
+    }
+
+    private func updateCompactState(for width: CGFloat) {
+        let compact = width < Self.compactWidthThreshold
+        guard compact != isCompactWidth else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isCompactWidth = compact
+            if compact { showCompactSidebar = false }
+        }
+    }
+
     @ToolbarContentBuilder
     private var navigationToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .navigation) {
+            if isCompactWidth {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showCompactSidebar.toggle() }
+                } label: {
+                    Label("Sidebar", systemImage: "sidebar.left")
+                }
+                .cribbleGlassButton(prominent: showCompactSidebar)
+                .help("Show or hide the file sidebar")
+            }
+
             Button {
                 library.navigateBack()
             } label: {
@@ -193,6 +288,14 @@ struct ContentView: View {
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleGlassButton()
             .help("Ask a local AI tool to suggest wiki links with a patch preview")
+
+            Button {
+                openChatHUD()
+            } label: {
+                Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
+            }
+            .cribbleGlassButton()
+            .help("Open the on-device AI chat (C)")
         }
     }
 

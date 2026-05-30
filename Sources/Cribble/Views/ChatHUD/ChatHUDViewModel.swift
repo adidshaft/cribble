@@ -396,8 +396,8 @@ final class ChatHUDViewModel: ObservableObject {
         var files: [ResolvedFile] = []
         for message in messages where message.role == .user {
             for token in message.attachments where seen.insert(token.fileURL).inserted {
-                if let content = try? String(contentsOf: token.fileURL, encoding: .utf8) {
-                    files.append(ResolvedFile(filename: token.filename, content: content))
+                if let content = readContents(of: token.fileURL) {
+                    files.append(ResolvedFile(filename: token.pathLabel, content: content))
                 }
             }
         }
@@ -419,27 +419,72 @@ final class ChatHUDViewModel: ObservableObject {
 
         let hits = await semanticIndex.relatedNotes(to: query, limit: 3, excluding: excluding)
         return hits.compactMap { hit in
-            guard let content = try? String(contentsOf: hit.url, encoding: .utf8) else { return nil }
+            guard let content = readContents(of: hit.url) else { return nil }
             let trimmed = content.count > 3000 ? String(content.prefix(3000)) + "\n…" : content
             return ResolvedFile(filename: hit.url.lastPathComponent, content: trimmed)
         }
+    }
+
+    /// Reads a file, honoring security scope for files attached via Finder.
+    private func readContents(of url: URL) -> String? {
+        let didAccess = url.startAccessingSecurityScopedResource()
+        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+        return try? String(contentsOf: url, encoding: .utf8)
     }
 
     private func searchFiles(matching query: String) -> [TaggedFileToken] {
         let documents = library.documents
         let ranked: [MarkdownDocument]
         if query.isEmpty {
-            ranked = Array(documents.prefix(5))
+            ranked = Array(documents.prefix(6))
         } else {
+            // Path-aware: match the relative path (so "folder/file" and folder
+            // names work), the filename, and the title.
             let lowered = query.lowercased()
-            let contains = documents.filter {
-                $0.url.deletingPathExtension().lastPathComponent.lowercased().contains(lowered)
-                    || $0.title.lowercased().contains(lowered)
+            let contains = documents.filter { doc in
+                let rel = (library.relativePath(for: doc.url) ?? doc.url.lastPathComponent).lowercased()
+                return rel.contains(lowered) || doc.title.lowercased().contains(lowered)
             }
             ranked = contains.isEmpty ? library.fuzzyMatches(for: query) : contains
         }
-        return ranked.prefix(5).map {
-            TaggedFileToken(filename: $0.url.lastPathComponent, fileURL: $0.url)
+        return ranked.prefix(6).map { token(for: $0.url) }
+    }
+
+    private func token(for url: URL) -> TaggedFileToken {
+        TaggedFileToken(
+            filename: url.lastPathComponent,
+            fileURL: url,
+            relativePath: library.relativePath(for: url)
+        )
+    }
+
+    /// Total notes available to attach (for the "Attach all" menu item).
+    var allNotesCount: Int { library.documents.count }
+
+    /// Attaches every note in the workspace as context.
+    func attachAllNotes() {
+        for doc in library.documents { addAttachment(token(for: doc.url)) }
+    }
+
+    /// Opens a Finder panel to attach any file as context — including files that
+    /// aren't part of the workspace (used, not added).
+    func chooseFileToAttach() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose files to use as context"
+        panel.prompt = "Attach"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        if let folder = library.activeRootURL { panel.directoryURL = folder }
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls {
+            let rel = library.relativePath(for: url)
+            addAttachment(TaggedFileToken(
+                filename: url.lastPathComponent,
+                fileURL: url,
+                relativePath: rel,
+                isExternal: rel == nil
+            ))
         }
     }
 

@@ -38,16 +38,28 @@ struct TaggedFileToken: Identifiable, Hashable {
     let id: UUID
     let filename: String
     let fileURL: URL
+    /// Path relative to the workspace root (e.g. "Projects/Auth.md"), when the
+    /// file lives in the library. `nil` for files browsed in from elsewhere.
+    let relativePath: String?
+    /// True when attached via Finder from outside the workspace (context only).
+    let isExternal: Bool
 
-    init(id: UUID = UUID(), filename: String, fileURL: URL) {
+    init(id: UUID = UUID(), filename: String, fileURL: URL, relativePath: String? = nil, isExternal: Bool = false) {
         self.id = id
         self.filename = filename
         self.fileURL = fileURL
+        self.relativePath = relativePath
+        self.isExternal = isExternal
     }
 
     /// The label shown inside the inline capsule / badge.
     var displayName: String {
         fileURL.deletingPathExtension().lastPathComponent
+    }
+
+    /// Folder-aware label for autocomplete rows ("Projects/Auth.md").
+    var pathLabel: String {
+        relativePath ?? filename
     }
 }
 

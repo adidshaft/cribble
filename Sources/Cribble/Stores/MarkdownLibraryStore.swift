@@ -863,6 +863,19 @@ final class MarkdownLibraryStore: ObservableObject {
         pendingDiff = UnifiedDiff(files: [file])
     }
 
+    /// Path of a file relative to whichever opened root contains it (e.g.
+    /// "Projects/Auth.md"), or nil if it isn't inside an opened folder.
+    func relativePath(for url: URL) -> String? {
+        let path = url.standardizedFileURL.path
+        for root in rootURLs {
+            let rootPath = root.standardizedFileURL.path
+            if path.hasPrefix(rootPath + "/") {
+                return String(path.dropFirst(rootPath.count + 1))
+            }
+        }
+        return nil
+    }
+
     /// Title for a document URL, used by the Pathfinder HUD and link proposals.
     func title(for url: URL) -> String {
         let standardized = url.standardizedFileURL

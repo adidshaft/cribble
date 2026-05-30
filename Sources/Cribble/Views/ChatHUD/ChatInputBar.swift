@@ -194,11 +194,20 @@ struct ChatInputBar: View {
 
     private var attachMenu: some View {
         Menu {
-            if viewModel.quickAttachFiles.isEmpty {
-                Text("Open a folder to tag notes")
-            } else {
-                ForEach(viewModel.quickAttachFiles) { token in
-                    Button(token.displayName) { viewModel.addAttachment(token) }
+            Button("Choose File…", systemImage: "folder") {
+                viewModel.chooseFileToAttach()
+            }
+            if viewModel.allNotesCount > 0 {
+                Button("Attach All Notes (\(viewModel.allNotesCount))", systemImage: "doc.on.doc") {
+                    viewModel.attachAllNotes()
+                }
+            }
+            if !viewModel.quickAttachFiles.isEmpty {
+                Divider()
+                Section("Recent notes") {
+                    ForEach(viewModel.quickAttachFiles) { token in
+                        Button(token.pathLabel) { viewModel.addAttachment(token) }
+                    }
                 }
             }
         } label: {
@@ -296,9 +305,18 @@ struct AutocompleteRow: View {
                 Image(systemName: "doc.text")
                     .font(.system(size: 12))
                     .foregroundStyle(isHovered ? .blue : .white.opacity(0.7))
-                Text(token.displayName)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isHovered ? .white : .white.opacity(0.9))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(token.displayName)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(isHovered ? .white : .white.opacity(0.9))
+                    if let rel = token.relativePath, rel != token.filename {
+                        Text(rel)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.white.opacity(0.4))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
                 Spacer()
                 Image(systemName: "return")
                     .font(.system(size: 9))

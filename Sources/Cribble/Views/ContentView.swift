@@ -32,8 +32,12 @@ struct ContentView: View {
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
-            .onReceive(NotificationCenter.default.publisher(for: .cribbleToggleChatHUD)) { _ in
-                openChatHUD()
+            .onAppear {
+                ChatHUDController.shared.configure(
+                    library: library,
+                    entitlement: llmEntitlement,
+                    onLocked: { showingLLMUnlockSheet = true }
+                )
             }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
@@ -112,14 +116,10 @@ struct ContentView: View {
             }
     }
 
-    /// Opens the floating Local Chat HUD, or the unlock sheet if the LLM hasn't
-    /// been purchased (App Store build only — the DMG build is always unlocked).
+    /// Toggles the floating Local Chat HUD. The controller honors the purchase
+    /// gate (App Store build only — the DMG build is always unlocked).
     private func openChatHUD() {
-        if llmEntitlement.isUnlocked {
-            ChatHUDController.shared.toggle(library: library)
-        } else {
-            showingLLMUnlockSheet = true
-        }
+        ChatHUDController.shared.toggleFloating()
     }
 
     private var behaviorContent: some View {

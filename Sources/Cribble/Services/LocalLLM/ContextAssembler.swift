@@ -8,62 +8,92 @@ struct ResolvedFile: Equatable {
     let content: String
 }
 
-/// Builds the prompt handed to the on-device model. Pure string assembly — no
-/// file IO, no MLX — so the prompt format is locked down by unit tests.
+/// Builds the prompt handed to the model. Pure string assembly — no file IO, no
+/// MLX — so the format is locked down by unit tests. Describes the four jobs the
+/// assistant does inside Cribble (Q&A, wiki-linking, note synthesis, connection
+/// explanations) and how to format each so Cribble can route the output safely.
 enum ContextAssembler {
     /// Hard cap on how much of any single file we inline, so a huge note can't
     /// blow the context window. Trimmed files are marked as truncated.
     static let perFileCharacterBudget = 12_000
 
-    static func systemPrompt(modelName: String, files: [ResolvedFile]) -> String {
+    static func systemPrompt(
+        modelName: String,
+        currentNote: ResolvedFile?,
+        files: [ResolvedFile]
+    ) -> String {
         var sections: [String] = []
         sections.append(
-            "You are the Cribble AI Assistant, running locally on \(modelName). "
-            + "You help with a personal Markdown knowledge base. Be concise and accurate, "
-            + "and never invent files or facts that aren't in the provided notes."
+            "You are the Cribble AI Assistant, a careful helper for a personal Markdown "
+            + "knowledge base, running on \(modelName). Never invent files, links, or facts "
+            + "that are not present in the notes provided below."
         )
 
-        if files.isEmpty {
-            sections.append("The user has not attached any notes to this message.")
-        } else {
-            sections.append("Below is the content of the referenced notes from the user's workspace:")
+        if let currentNote {
+            sections.append(
+                "CURRENT NOTE — this is the note the user is reading right now. When they say "
+                + "\"this note\", \"here\", or \"this section\", they mean this file:\n"
+                + "--- BEGIN CURRENT NOTE: \(currentNote.filename) ---\n\(truncate(currentNote.content))\n"
+                + "--- END CURRENT NOTE: \(currentNote.filename) ---"
+            )
+        }
+
+        if !files.isEmpty {
+            sections.append("REFERENCED NOTES — files the user tagged with @:")
             for file in files {
-                let body = truncate(file.content)
                 sections.append(
-                    "--- BEGIN FILE: \(file.filename) ---\n\(body)\n--- END FILE: \(file.filename) ---"
+                    "--- BEGIN FILE: \(file.filename) ---\n\(truncate(file.content))\n--- END FILE: \(file.filename) ---"
                 )
             }
         }
 
+        if currentNote == nil && files.isEmpty {
+            sections.append("No notes are attached to this message yet.")
+        }
+
         sections.append(
             """
-            Output rules:
-            - If the user asks to modify or link existing files, reply ONLY with a standard \
-            Unified Diff. Start each file with "--- a/<path>" and "+++ b/<path>" headers \
-            and use "@@" hunks. Do not wrap the diff in Markdown fences or add commentary.
-            - If the user asks to organize, structure, or create a NEW file, output the \
-            proposed Markdown inside a single fenced block whose info string is \
-            "CREATE: filename.md" (for example: ```CREATE: ideas.md```).
-            - For any other question, answer normally in Markdown.
+            You can do four things. Pick the one that matches the user's request and format \
+            your reply EXACTLY as described:
+
+            1. ANSWER A QUESTION about the current or referenced notes (explanations, summaries, \
+            "what are the setup steps here?"). Reply in normal Markdown prose. This is the default.
+
+            2. AUTO-LINK NOTES: when the user asks to link, connect, or cross-reference the tagged \
+            notes, insert sparse, high-confidence `[[Wiki Links]]` where one note clearly refers to \
+            another. Reply with ONLY a standard Unified Diff — each file starting with `--- a/<path>` \
+            and `+++ b/<path>` and using `@@` hunks. No prose, no Markdown fences around it.
+
+            3. CREATE A NEW NOTE: when the user asks to synthesize, index, summarize-into-a-file, or \
+            generate a dashboard/overview, output the new note's full Markdown inside ONE fenced block \
+            whose info string is `CREATE: filename.md` (for example: ```CREATE: bug-status-index.md```).
+
+            4. EXPLAIN A CONNECTION between two notes: reply with a single concise paragraph describing \
+            the conceptual bridge between them.
+
+            Default to plain answers (mode 1) unless the user clearly asks to link (2), create a file (3), \
+            or explain a connection (4).
             """
         )
 
         return sections.joined(separator: "\n\n")
     }
 
-    /// Full message array for a send: a system turn carrying the file context
-    /// and rules, followed by the running conversation.
+    /// Full message array for a send: a system turn carrying the context and
+    /// rules, then the running conversation.
     static func engineMessages(
         modelName: String,
         history: [ChatMessage],
+        currentNote: ResolvedFile?,
         files: [ResolvedFile]
     ) -> [EngineMessage] {
         var messages: [EngineMessage] = [
-            EngineMessage(role: .system, content: systemPrompt(modelName: modelName, files: files))
+            EngineMessage(
+                role: .system,
+                content: systemPrompt(modelName: modelName, currentNote: currentNote, files: files)
+            )
         ]
         for message in history {
-            // Skip empty placeholder turns (e.g. the streaming assistant bubble
-            // before any tokens arrive).
             let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }
             let role: EngineMessage.Role = message.role == .user ? .user : .assistant

@@ -6,10 +6,9 @@ import SwiftUI
 /// this is the layer safe to restyle without touching `ChatHUDViewModel`.
 struct ChatHUDView: View {
     @ObservedObject var viewModel: ChatHUDViewModel
+    var presentation: ChatHUDPresentation = .floating
     let onClose: () -> Void
-
-    @State private var isNewChatHovered = false
-    @State private var isCloseHovered = false
+    var onToggleMode: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +16,7 @@ struct ChatHUDView: View {
             transcript
             ChatInputBar(viewModel: viewModel)
         }
-        .frame(minWidth: 320, minHeight: 480)
+        .frame(minWidth: 320, minHeight: 460)
         .background(
             LinearGradient(
                 colors: [Color.black.opacity(0.25), Color.black.opacity(0.45)],
@@ -25,6 +24,7 @@ struct ChatHUDView: View {
                 endPoint: .bottomTrailing
             )
         )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay {
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
@@ -32,39 +32,27 @@ struct ChatHUDView: View {
         .foregroundStyle(.white)
     }
 
-    // Minimal floating controls — no title bar. Just New Chat + Close, top-right.
+    // No bar — just three floating controls, top-right, over the content.
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Spacer()
 
-            Button {
-                viewModel.newChat()
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(isNewChatHovered ? 1.0 : 0.55))
-                    .scaleEffect(isNewChatHovered ? 1.06 : 1.0)
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isGenerating || !viewModel.hasConversation)
-            .help("New chat")
-            .onHover { isNewChatHovered = $0 }
-            .pointingHandOnHover()
+            HeaderIcon(
+                systemName: "square.and.pencil",
+                help: "New chat",
+                disabled: viewModel.isGenerating || !viewModel.hasConversation
+            ) { viewModel.newChat() }
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(isCloseHovered ? 1.0 : 0.55))
-                    .scaleEffect(isCloseHovered ? 1.06 : 1.0)
-            }
-            .buttonStyle(.plain)
-            .help("Close")
-            .onHover { isCloseHovered = $0 }
-            .pointingHandOnHover()
+            HeaderIcon(
+                systemName: presentation == .floating ? "chevron.up" : "chevron.down",
+                help: presentation == .floating ? "Send to menu bar" : "Pop out to window"
+            ) { onToggleMode() }
+
+            HeaderIcon(systemName: "xmark", help: "Close") { onClose() }
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)
-        .padding(.bottom, 6)
+        .padding(.bottom, 4)
         .contentShape(Rectangle())
     }
 
@@ -94,6 +82,31 @@ struct ChatHUDView: View {
             }
         }
         .frame(maxHeight: .infinity)
+    }
+}
+
+/// A small, hover-responsive header control.
+private struct HeaderIcon: View {
+    let systemName: String
+    let help: String
+    var disabled: Bool = false
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white.opacity(hovered ? 1.0 : 0.5))
+                .scaleEffect(hovered ? 1.08 : 1.0)
+                .frame(width: 18, height: 18)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .help(help)
+        .onHover { hovered = $0 }
+        .pointingHandOnHover()
     }
 }
 
@@ -141,7 +154,7 @@ struct ChatEmptyState: View {
         let (icon, text): (String, String) = {
             switch availability {
             case .cloud:
-                return ("cloud", "\(model.name) runs in the cloud — ready when you are.")
+                return ("cloud", "\(model.name) utilizes the sessions logged in your Terminal already.")
             case .downloaded:
                 return ("checkmark.circle", "\(model.name) is on your Mac — ready to chat.")
             case .notDownloaded:

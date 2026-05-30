@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The model "chip" in the input bar. Opens a popover that groups on-device and
 /// cloud models and shows each model's state with a light trailing icon:
-/// download arrow (not downloaded), check (downloaded), cloud (cloud provider).
+/// download arrow (tap to download), check (downloaded), cloud (cloud provider).
 struct ModelPickerButton: View {
     @ObservedObject var viewModel: ChatHUDViewModel
     @State private var showPopover = false
@@ -63,16 +63,16 @@ struct ModelPickerList: View {
             }
 
             Divider().padding(.vertical, 4)
-            Text("On-device models download once (~1–3 GB) the first time you use them. Cloud models run through your installed CLI.")
+            Text("On-device models download once (~1–3 GB); tap ↓ to download. Cloud models (Claude/Codex) use the sessions already logged in your Terminal.")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
-                .frame(width: 260, alignment: .leading)
+                .frame(width: 264, alignment: .leading)
         }
         .padding(8)
-        .frame(width: 280)
+        .frame(width: 284)
     }
 
     private func section(title: String, models: [LocalModel]) -> some View {
@@ -88,11 +88,16 @@ struct ModelPickerList: View {
                 ModelRow(
                     model: model,
                     isSelected: model.id == viewModel.selectedModel.id,
-                    availability: viewModel.availability(of: model)
-                ) {
-                    viewModel.selectModel(model)
-                    onSelect()
-                }
+                    availability: viewModel.availability(of: model),
+                    download: viewModel.downloadDisplay(for: model),
+                    onSelect: {
+                        viewModel.selectModel(model)
+                        onSelect()
+                    },
+                    onDownload: {
+                        viewModel.downloadModel(model)
+                    }
+                )
             }
         }
     }
@@ -102,54 +107,74 @@ private struct ModelRow: View {
     let model: LocalModel
     let isSelected: Bool
     let availability: ModelAvailability
-    let action: () -> Void
+    let download: ChatHUDViewModel.DownloadDisplay
+    let onSelect: () -> Void
+    let onDownload: () -> Void
 
     @State private var hovered = false
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 12))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary.opacity(0.4))
+        HStack(spacing: 8) {
+            Button(action: onSelect) {
+                HStack(spacing: 8) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 12))
+                        .foregroundStyle(isSelected ? Color.accentColor : .secondary.opacity(0.4))
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(model.name)
-                        .font(.system(size: 12, weight: .medium))
-                    Text(model.kind.isCloud ? model.speedLabel : model.approximateSize)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(model.name)
+                            .font(.system(size: 12, weight: .medium))
+                        Text(subtitle)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
                 }
-
-                Spacer(minLength: 8)
-
-                stateIcon
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(hovered ? Color.primary.opacity(0.06) : .clear, in: RoundedRectangle(cornerRadius: 7))
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .pointingHandOnHover()
+
+            trailing
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(hovered ? Color.primary.opacity(0.06) : .clear, in: RoundedRectangle(cornerRadius: 7))
         .onHover { hovered = $0 }
-        .pointingHandOnHover()
+    }
+
+    private var subtitle: String {
+        if download.isActive {
+            if download.loading { return "Loading…" }
+            if let f = download.fraction { return "Downloading… \(Int(f * 100))%" }
+            return "Downloading…"
+        }
+        return model.kind.isCloud ? model.speedLabel : model.approximateSize
     }
 
     @ViewBuilder
-    private var stateIcon: some View {
-        switch availability {
-        case .cloud:
-            Image(systemName: "cloud")
-                .foregroundStyle(.secondary)
-                .help("Runs in the cloud")
-        case .downloaded:
-            Image(systemName: "checkmark.circle")
-                .foregroundStyle(.green)
-                .help("Downloaded")
-        case .notDownloaded:
-            Image(systemName: "arrow.down.circle")
-                .foregroundStyle(.blue)
-                .help("Downloads on first use")
+    private var trailing: some View {
+        if download.isActive {
+            if let f = download.fraction {
+                ProgressView(value: f).progressViewStyle(.circular).controlSize(.small)
+            } else {
+                ProgressView().controlSize(.small)
+            }
+        } else {
+            switch availability {
+            case .cloud:
+                Image(systemName: "cloud").foregroundStyle(.secondary).help("Runs via your Terminal session")
+            case .downloaded:
+                Image(systemName: "checkmark.circle").foregroundStyle(.green).help("Downloaded")
+            case .notDownloaded:
+                Button(action: onDownload) {
+                    Image(systemName: "arrow.down.circle")
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                .help("Download now (~\(model.approximateSize))")
+                .pointingHandOnHover()
+            }
         }
     }
 }

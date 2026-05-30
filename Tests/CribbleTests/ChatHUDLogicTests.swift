@@ -128,6 +128,22 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(messages.last?.role, .user)
     }
 
+    func testConnectionMessagesIncludeBothNotes() {
+        let messages = ContextAssembler.connectionMessages(
+            modelName: "Gemma 4",
+            source: ResolvedFile(filename: "Auth.md", content: "tokens and login"),
+            target: ResolvedFile(filename: "API.md", content: "endpoints and keys")
+        )
+        XCTAssertEqual(messages.first?.role, .system)
+        let system = messages.first?.content ?? ""
+        XCTAssertTrue(system.contains("NOTE A: Auth.md"))
+        XCTAssertTrue(system.contains("tokens and login"))
+        XCTAssertTrue(system.contains("NOTE B: API.md"))
+        XCTAssertTrue(system.contains("endpoints and keys"))
+        XCTAssertTrue(system.contains("single concise paragraph"))
+        XCTAssertEqual(messages.last?.role, .user)
+    }
+
     func testPerFileTruncation() {
         let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
         let prompt = ContextAssembler.systemPrompt(

@@ -39,8 +39,6 @@ final class ChatHUDViewModel: ObservableObject {
     private let library: MarkdownLibraryStore
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
-    /// One engine instance per kind, created lazily.
-    private var engineCache: [ModelKind: LocalChatEngine] = [:]
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
 
@@ -52,13 +50,10 @@ final class ChatHUDViewModel: ObservableObject {
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
     }
 
-    /// The engine for the currently selected model (cached per kind).
+    /// The engine for the currently selected model, shared process-wide so the
+    /// HUD and Pathfinder reuse one loaded on-device model.
     private func currentEngine() -> LocalChatEngine {
-        if let injectedEngine { return injectedEngine }
-        if let existing = engineCache[selectedModel.kind] { return existing }
-        let engine = LocalChatEngineFactory.make(for: selectedModel)
-        engineCache[selectedModel.kind] = engine
-        return engine
+        injectedEngine ?? LocalLLM.shared.engine(for: selectedModel)
     }
 
     var hasConversation: Bool { !messages.isEmpty }

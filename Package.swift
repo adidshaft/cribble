@@ -29,7 +29,13 @@ let package = Package(
         // runs. Kept separate because SPM can't mix .m and .swift in one
         // target.
         .target(
-            name: "CribbleBundleRedirect"
+            name: "CribbleBundleRedirect",
+            // The NSBundle `initWithPath:` swizzle hand-calls the original IMP,
+            // which belongs to the ObjC `init` family (+1 return). Under ARC the
+            // C-style call is treated as +0, so the caller over-releases — a
+            // latent bug that MLX's Metal-library probing triggers into a crash.
+            // Compiling this one file without ARC restores correct MRC ownership.
+            cSettings: [.unsafeFlags(["-fno-objc-arc"])]
         ),
         .executableTarget(
             name: "Cribble",

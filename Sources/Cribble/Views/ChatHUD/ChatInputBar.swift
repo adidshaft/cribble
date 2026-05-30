@@ -115,7 +115,7 @@ struct ChatInputBar: View {
     // MARK: Pill
 
     private var pill: some View {
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             attachMenu
 
             TextField("Ask anything, @ to tag a note…", text: draftBinding, axis: .vertical)

@@ -37,16 +37,28 @@ final class ChatHUDViewModel: ObservableObject {
     let greetingName: String
 
     private let library: MarkdownLibraryStore
-    private let engine: LocalChatEngine
+    /// Test/preview override; when set it's used for every model.
+    private let injectedEngine: LocalChatEngine?
+    /// One engine instance per kind, created lazily.
+    private var engineCache: [ModelKind: LocalChatEngine] = [:]
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
 
     init(library: MarkdownLibraryStore, engine: LocalChatEngine? = nil) {
         self.library = library
-        self.engine = engine ?? LocalChatEngineFactory.make()
+        self.injectedEngine = engine
         self.selectedModel = ModelCatalog.defaultModel
         let fullName = NSFullUserName()
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
+    }
+
+    /// The engine for the currently selected model (cached per kind).
+    private func currentEngine() -> LocalChatEngine {
+        if let injectedEngine { return injectedEngine }
+        if let existing = engineCache[selectedModel.kind] { return existing }
+        let engine = LocalChatEngineFactory.make(for: selectedModel)
+        engineCache[selectedModel.kind] = engine
+        return engine
     }
 
     var hasConversation: Bool { !messages.isEmpty }
@@ -127,7 +139,7 @@ final class ChatHUDViewModel: ObservableObject {
 
     func cancel() {
         generationTask?.cancel()
-        let engine = self.engine
+        let engine = currentEngine()
         Task { await engine.cancelGeneration() }
     }
 
@@ -155,7 +167,7 @@ final class ChatHUDViewModel: ObservableObject {
             files: resolved
         )
 
-        let engine = self.engine
+        let engine = currentEngine()
         let (stream, continuation) = AsyncStream<String>.makeStream()
         let producer = Task<Result<String, Error>, Never> {
             do {
@@ -190,9 +202,10 @@ final class ChatHUDViewModel: ObservableObject {
         if modelPhase == .ready, loadedModelID == selectedModel.id {
             return true
         }
-        modelPhase = .downloading(0)
+        modelPhase = selectedModel.kind.isCloud ? .loading : .downloading(0)
         statusMessage = "Preparing \(selectedModel.name)…"
         let model = selectedModel
+        let engine = currentEngine()
         do {
             try await engine.prepare(model: model) { fraction in
                 Task { @MainActor [weak self] in

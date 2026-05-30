@@ -127,7 +127,27 @@ final class ChatHUDLogicTests: XCTestCase {
 
     func testCatalogHasDefaultAndUniqueIDs() {
         XCTAssertFalse(ModelCatalog.all.isEmpty)
-        XCTAssertEqual(ModelCatalog.defaultModel.id, ModelCatalog.all[0].id)
+        XCTAssertTrue(ModelCatalog.all.contains { $0.id == ModelCatalog.defaultModel.id })
         XCTAssertEqual(Set(ModelCatalog.all.map(\.id)).count, ModelCatalog.all.count)
+    }
+
+    func testCatalogHasLocalAndCloudModels() {
+        XCTAssertFalse(ModelCatalog.localModels.isEmpty)
+        XCTAssertFalse(ModelCatalog.cloudModels.isEmpty)
+        // Default works out of the box → must be a cloud provider.
+        XCTAssertTrue(ModelCatalog.defaultModel.kind.isCloud)
+    }
+
+    func testCLIFlattenIncludesSystemAndTurns() {
+        let prompt = CLIChatEngine.flatten([
+            EngineMessage(role: .system, content: "RULES"),
+            EngineMessage(role: .user, content: "hello"),
+            EngineMessage(role: .assistant, content: "hi"),
+            EngineMessage(role: .user, content: "again")
+        ])
+        XCTAssertTrue(prompt.contains("RULES"))
+        XCTAssertTrue(prompt.contains("User: hello"))
+        XCTAssertTrue(prompt.contains("Assistant: hi"))
+        XCTAssertTrue(prompt.hasSuffix("Assistant:"))
     }
 }

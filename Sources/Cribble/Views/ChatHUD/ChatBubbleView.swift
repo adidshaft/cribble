@@ -5,10 +5,11 @@ import SwiftUI
 /// streaming caret.
 struct ChatBubbleView: View {
     let message: ChatMessage
+    @State private var caretVisible = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
-            if message.role == .user { Spacer(minLength: 32) }
+            if message.role == .user { Spacer(minLength: 40) }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
                 if !message.attachments.isEmpty {
@@ -17,28 +18,48 @@ struct ChatBubbleView: View {
                 bubble
             }
 
-            if message.role == .assistant { Spacer(minLength: 32) }
+            if message.role == .assistant { Spacer(minLength: 40) }
         }
     }
 
     private var bubble: some View {
         Group {
             if message.text.isEmpty && message.isStreaming {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(.white)
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(.white)
+                    Text("Thinking…")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             } else {
-                Text(renderedText)
-                    .font(.system(size: 13))
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
+                let textContent = Text(renderedText)
+                Group {
+                    if message.role == .assistant && message.isStreaming {
+                        textContent + Text(" ▍")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(Color.accentColor.opacity(caretVisible ? 1.0 : 0.15))
+                    } else {
+                        textContent
+                    }
+                }
+                .font(.system(size: 13))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .background(bubbleBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .foregroundStyle(.white.opacity(message.role == .user ? 1 : 0.92))
+        .foregroundStyle(message.role == .user ? .white : .white.opacity(0.95))
+        .onAppear {
+            if message.role == .assistant && message.isStreaming {
+                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                    caretVisible = false
+                }
+            }
+        }
     }
 
     /// Lightweight Markdown rendering for inline emphasis / code / links. Falls
@@ -53,20 +74,56 @@ struct ChatBubbleView: View {
     @ViewBuilder
     private var bubbleBackground: some View {
         if message.role == .user {
-            Color.accentColor.opacity(0.85)
+            let shape = UnevenRoundedRectangle(
+                topLeadingRadius: 16,
+                bottomLeadingRadius: 16,
+                bottomTrailingRadius: 4,
+                topTrailingRadius: 16
+            )
+            shape
+                .fill(
+                    LinearGradient(
+                        colors: [Color.accentColor.opacity(0.95), Color.accentColor],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    shape.strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                }
         } else {
-            Color.white.opacity(0.08)
+            let shape = UnevenRoundedRectangle(
+                topLeadingRadius: 4,
+                bottomLeadingRadius: 16,
+                bottomTrailingRadius: 16,
+                topTrailingRadius: 16
+            )
+            shape
+                .fill(Color.white.opacity(0.06))
+                .overlay {
+                    shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
+                }
+                .cribbleGlass(in: shape)
         }
     }
 
     private var attachmentBadges: some View {
         HStack(spacing: 6) {
             ForEach(message.attachments) { token in
-                Label(token.displayName, systemImage: "doc.text")
-                    .font(.system(size: 11, weight: .medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.12), in: Capsule())
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text")
+                        .foregroundStyle(.blue.opacity(0.9))
+                    Text(token.displayName)
+                }
+                .font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.06))
+                .overlay {
+                    Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
+                }
+                .clipShape(Capsule())
+                .pointingHandOnHover()
             }
         }
     }

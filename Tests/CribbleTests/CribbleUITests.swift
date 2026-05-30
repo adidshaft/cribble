@@ -6,31 +6,31 @@ final class CribbleUITests: XCTestCase {
     
     func testAppSettingsFontScaleLimits() {
         let settings = AppSettings()
-        
+
         // Reset and check medium preset
         settings.resetFontSize()
-        XCTAssertEqual(settings.readerFontScale, 1.0)
-        
-        // Increase multiple times and check scale matches next preset
-        settings.increaseFontSize() // to L: 1.15
-        XCTAssertEqual(settings.readerFontScale, 1.15)
-        
-        settings.increaseFontSize() // to XL: 1.35
-        XCTAssertEqual(settings.readerFontScale, 1.35)
-        
-        settings.increaseFontSize() // to XXL: 1.65
-        XCTAssertEqual(settings.readerFontScale, 1.65)
-        
-        // Try to increase beyond XXL (should stay 1.65)
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.medium.scale)
+
+        // Increase steps through the presets in order.
         settings.increaseFontSize()
-        XCTAssertEqual(settings.readerFontScale, 1.65)
-        
-        // Decrease back
-        settings.decreaseFontSize() // to XL: 1.35
-        XCTAssertEqual(settings.readerFontScale, 1.35)
-        
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.large.scale)
+
+        settings.increaseFontSize()
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.xl.scale)
+
+        settings.increaseFontSize()
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.xxl.scale)
+
+        // Can't go beyond the largest preset.
+        settings.increaseFontSize()
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.xxl.scale)
+
+        // Decrease back.
+        settings.decreaseFontSize()
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.xl.scale)
+
         settings.setFontSize(.small)
-        XCTAssertEqual(settings.readerFontScale, 0.9)
+        XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.small.scale)
     }
     
     func testLibraryStoreSearchFiltering() throws {

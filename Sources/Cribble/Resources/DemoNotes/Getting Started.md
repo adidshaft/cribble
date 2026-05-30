@@ -1,18 +1,39 @@
 ---
-aliases: [getting started, basics, how to, tutorial]
-keywords: [highlight, note, bookmark, wiki link, outline, focus mode, search, pin folder, shortcuts]
+aliases: [getting started, basics, how to, tutorial, shortcuts]
+keywords: [highlight, note, bookmark, wiki link, outline, focus mode, search, pin folder, shortcuts, keyboard]
 tags: [demo, guide, basics]
 ---
 # Getting Started
 
-A two-minute tour of the everyday features. Try each one right here in this note — nothing you do is permanent, and you can always reopen the bundled library from **Help → Reset Demo Notes** (or just open this folder again).
+A two-minute tour of the everyday features. Try each one right here in this note — nothing you do is permanent.
 
-## Reading
+## Keyboard Shortcuts
 
-- **Open a folder of Markdown** with the toolbar's *Open Folder* button (or `⌘O`). Cribble keeps it in the sidebar; your files are never modified unless you approve a change.
-- **Navigate** between notes you've visited with `⌘[` (back) and `⌘]` (forward).
-- **Outline** — toggle a heading outline with `⌥⌘O` to jump around long notes.
-- **Focus Mode** — `⌥⌘F` hides the sidebar and narrows the column for distraction-free reading.
+| Shortcut | Action |
+| :--- | :--- |
+| `H` | Highlight the selected text (toggles highlight mode) |
+| `B` | Drop a reading bookmark at your scroll position |
+| `P` | Toggle the Reading Trail panel |
+| `Esc` | Exit highlight mode · close the zoom overlay |
+| `⌘ [` | Back |
+| `⌘ ]` | Forward |
+| `⌥ ⌘ O` | Toggle the headings outline |
+| `⌥ ⌘ F` | Toggle Focus Mode |
+| `⌘ O` | Open a folder |
+| `⌘ R` | Refresh folders |
+| `⌘ ⇧ E` | Open the current file in your external editor |
+| `⌘ ⇧ L` | AI Link Notes |
+| `⌘ ,` | Open Settings |
+
+## Mouse & Trackpad
+
+| Gesture | What it does |
+| :--- | :--- |
+| Right-click a highlight | Add, edit, or remove its note |
+| Hover a highlight | Peek at its note |
+| Double-click a diagram or equation | Open the zoom overlay |
+| Drag one note onto another (sidebar) | Open Pathfinder between them |
+| Right-click a folder | Pin it, or choose a custom icon |
 
 ## Highlights
 
@@ -39,9 +60,13 @@ Links to a note that doesn't exist yet — like [[A Note I Haven't Written]] —
 
 Type in the toolbar search field. Beyond plain filename matching, Cribble runs an on-device semantic index, so a **Related** section surfaces notes that *mean* the same thing. Try searching `keep my place while reading` — the [[Getting Started]] and bookmark ideas should surface even though those words aren't in the titles. Learn more in [[Feature Demos/Local Semantic Search|Local Semantic Search]].
 
-## Pinning folders
+## Folders: pin & customize
 
-Right-click any folder in the sidebar and choose **Pin Folder** to float it to the top of its group (a small pin appears next to its name). Right-click again to **Unpin**. Pinning only reorders the sidebar — it never moves files on disk.
+Right-click any folder in the sidebar to **Pin Folder** (floats it to the top, with a small pin marker) or **Choose Icon…** (pick a native SF Symbol that shows tinted in the sidebar). Both are just sidebar preferences — they never move or rename files on disk.
+
+## Appearance & fonts
+
+Open **Settings** (`⌘ ,`) to switch the theme (System · Light · Dark) and choose your own **Primary Text** and **Monospace** fonts from any font installed on your Mac. Adjust reading size from the toolbar's **AA** menu.
 
 ## Where to next
 

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -5,10 +6,35 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Appearance") {
+                Picker("Theme", selection: $settings.appearance) {
+                    ForEach(AppAppearance.allCases) { appearance in
+                        Text(appearance.title).tag(appearance)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section("Fonts") {
+                FontFamilyPicker(
+                    title: "Primary Text",
+                    selection: $settings.readerFontName,
+                    families: SystemFonts.families
+                )
+                FontFamilyPicker(
+                    title: "Monospace",
+                    selection: $settings.monospaceFontName,
+                    families: SystemFonts.monospaceFamilies
+                )
+                Text("Used for document text and code. Choose any font installed on your Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Reading") {
                 HStack {
                     Text("Text size")
-                    Slider(value: $settings.readerFontScale, in: 0.65...1.65, step: 0.05)
+                    Slider(value: $settings.readerFontScale, in: 0.55...1.3, step: 0.05)
                         .help("Fine-tune reader text size")
                     Text("\(Int(settings.readerFontScale * 100))%")
                         .foregroundStyle(.secondary)
@@ -53,6 +79,37 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding(20)
-        .frame(width: 520)
+        .frame(width: 540)
     }
+}
+
+private struct FontFamilyPicker: View {
+    let title: String
+    @Binding var selection: String?
+    let families: [String]
+
+    var body: some View {
+        Picker(title, selection: $selection) {
+            Text("System Default").tag(String?.none)
+            Divider()
+            ForEach(families, id: \.self) { family in
+                Text(family).tag(String?.some(family))
+            }
+        }
+    }
+}
+
+/// Cached lists of installed font families for the pickers.
+private enum SystemFonts {
+    static let families: [String] = NSFontManager.shared.availableFontFamilies.sorted()
+
+    static let monospaceFamilies: [String] = NSFontManager.shared.availableFontFamilies
+        .filter { family in
+            guard let members = NSFontManager.shared.availableMembers(ofFontFamily: family),
+                  let postScriptName = members.first?.first as? String,
+                  let font = NSFont(name: postScriptName, size: 12)
+            else { return false }
+            return font.isFixedPitch
+        }
+        .sorted()
 }

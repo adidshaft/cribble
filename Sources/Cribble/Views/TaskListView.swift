@@ -50,6 +50,8 @@ private struct TaskRow: View {
     let onToggle: (_ currentlyChecked: Bool) -> Void
     let onUpdateHighlightNote: (UUID, String) -> Void
 
+    @Environment(\.readerPrimaryFontName) private var primaryFontName
+    @Environment(\.readerMonospaceFontName) private var monospaceFontName
     @State private var checked: Bool
 
     init(
@@ -103,11 +105,11 @@ private struct TaskRow: View {
                 parser: HighlightedMarkdownParser(baseURL: baseURL, highlights: highlights),
                 reparseToken: highlightToken
             )
-            .font(.system(size: 17 * fontScale))
+            .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
             .textual.structuredTextStyle(.gitHub)
             .textual.inlineStyle(
                 InlineStyle()
-                    .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                    .code(.font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale)))
                     .strong(.fontWeight(.semibold))
             )
             .textual.imageAttachmentLoader(.image(relativeTo: baseURL))

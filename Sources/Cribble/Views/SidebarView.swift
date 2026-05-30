@@ -4,6 +4,7 @@ struct SidebarView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
+    @State private var iconPickerTarget: FolderIconTarget?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,6 +47,14 @@ struct SidebarView: View {
         .onChange(of: library.searchText) { _, query in
             semanticIndex.search(query: query)
         }
+        .sheet(item: $iconPickerTarget) { target in
+            FolderIconPicker(
+                folderName: target.name,
+                currentSymbol: library.folderIcon(for: target.url)
+            ) { symbol in
+                library.setFolderIcon(symbol, for: target.url)
+            }
+        }
     }
 
     /// Extracted from the `List` builder to keep the generic row expression
@@ -65,12 +74,19 @@ struct SidebarView: View {
                     ) {
                         library.togglePin(node.url)
                     }
+
+                    Button("Choose Icon\u{2026}", systemImage: "square.grid.2x2") {
+                        iconPickerTarget = FolderIconTarget(url: node.url, name: node.name)
+                    }
+                    if library.folderIcon(for: node.url) != nil {
+                        Button("Reset Icon", systemImage: "arrow.uturn.backward") {
+                            library.setFolderIcon(nil, for: node.url)
+                        }
+                    }
                 }
 
                 if library.isImportedRoot(node.url) {
                     Divider()
-
-                    Text(node.url.path)
 
                     Button("Rename Folder...", systemImage: "pencil") {
                         library.renameImportedFolder(node.url)
@@ -243,12 +259,27 @@ private struct SidebarControls: View {
     }
 }
 
+struct FolderIconTarget: Identifiable {
+    let id = UUID()
+    let url: URL
+    let name: String
+}
+
 private struct SidebarRow: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     let node: MarkdownNode
 
     private var isPinned: Bool {
         node.kind == .folder && library.isPinned(node.url)
+    }
+
+    private var customIcon: String? {
+        node.kind == .folder ? library.folderIcon(for: node.url) : nil
+    }
+
+    private var iconName: String {
+        if let customIcon { return customIcon }
+        return node.kind == .folder ? "folder" : "doc.text"
     }
 
     var body: some View {
@@ -263,8 +294,11 @@ private struct SidebarRow: View {
                 }
             }
         } icon: {
-            Image(systemName: node.kind == .folder ? "folder" : "doc.text")
-                .foregroundStyle(.secondary)
+            // Custom folder icons take the accent tint so they read as a
+            // deliberate choice (like a colored Finder folder); defaults stay
+            // secondary to keep the sidebar calm.
+            Image(systemName: iconName)
+                .foregroundStyle(customIcon != nil ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
         }
         .notePreviewPopover(url: node.kind == .markdown ? node.url : nil)
     }

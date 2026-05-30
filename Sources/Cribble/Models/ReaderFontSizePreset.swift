@@ -25,13 +25,13 @@ enum ReaderFontSizePreset: String, CaseIterable, Identifiable {
 
     var scale: Double {
         switch self {
-        case .xxs: 0.65
-        case .xs: 0.8
-        case .small: 0.9
+        case .xxs: 0.55
+        case .xs: 0.68
+        case .small: 0.82
         case .medium: 1.0
-        case .large: 1.15
-        case .xl: 1.35
-        case .xxl: 1.65
+        case .large: 1.1
+        case .xl: 1.2
+        case .xxl: 1.3
         }
     }
 

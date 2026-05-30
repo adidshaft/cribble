@@ -2,6 +2,32 @@
 
 All notable changes to Cribble are documented here.
 
+## 1.2.1 — Smarter, more connected Cribble AI
+
+Builds on 1.2.0 with deeper note awareness, faster actions, and important
+reliability fixes.
+
+### ✨ New
+- **Vault-aware answers** — the chat automatically pulls in the most relevant
+  notes from your workspace (via the on-device semantic index), so it can answer
+  about your whole library, not just the open or tagged note.
+- **Quick actions & slash commands** — one-tap chips (Summarize, Find related,
+  Suggest links, Create index, Explain simply) and a `/` command palette.
+- **Message actions** — Copy, **Save as new note**, and **Insert into current
+  note** (appended via the safe diff preview) on every answer.
+- **Attach anything** — the `+` button can **Choose File…** from Finder to use a
+  file as context (even files outside the workspace), plus **Attach All Notes**.
+  The `@` search is now folder-aware (type `folder/file`).
+
+### 🐞 Fixes
+- **Claude / Codex now load reliably** — the CLIs run through your login shell,
+  so they inherit Terminal's PATH and signed-in session.
+- **Download progress no longer appears stuck at 0%** — shows honest progress
+  for large single-file models.
+- Compact model chip and a tidier input bar.
+
+---
+
 ## 1.2.0 — Cribble AI (on-device assistant)
 
 The headline of 1.2.0 is **Cribble AI**: a private AI assistant that runs fully

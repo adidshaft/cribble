@@ -17,8 +17,9 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
 
     var body: some Commands {
-        CommandMenu("Library") {
-            Button("Open Folder...", action: { openFolder?() })
+        // File — folder operations (replaces the default "New" group).
+        CommandGroup(replacing: .newItem) {
+            Button("Open Folder…", action: { openFolder?() })
                 .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
 
@@ -31,8 +32,44 @@ struct CribbleCommands: Commands {
             Button("Open in Editor", action: { openInEditor?() })
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(openInEditor == nil)
+        }
 
-            Button("AI Link Notes...", action: { runAILinking?() })
+        // View — navigation, layout, and reading actions, merged into the
+        // system View menu (no more duplicate "View").
+        CommandGroup(after: .sidebar) {
+            Divider()
+
+            Button("Back", action: { navigateBack?() })
+                .keyboardShortcut("[", modifiers: [.command])
+                .disabled(navigateBack == nil)
+
+            Button("Forward", action: { navigateForward?() })
+                .keyboardShortcut("]", modifiers: [.command])
+                .disabled(navigateForward == nil)
+
+            Divider()
+
+            Button("Toggle Outline", action: { toggleOutline?() })
+                .keyboardShortcut("o", modifiers: [.command, .option])
+                .disabled(toggleOutline == nil)
+
+            Button("Toggle Focus Mode", action: { toggleFocusMode?() })
+                .keyboardShortcut("f", modifiers: [.command, .option])
+                .disabled(toggleFocusMode == nil)
+
+            Divider()
+
+            Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
+                .keyboardShortcut("b", modifiers: [])
+            Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
+                .keyboardShortcut("h", modifiers: [])
+            Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
+                .keyboardShortcut("p", modifiers: [])
+        }
+
+        // AI — the two LLM entry points.
+        CommandMenu("AI") {
+            Button("AI Link Notes…", action: { runAILinking?() })
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(runAILinking == nil)
 
@@ -41,44 +78,9 @@ struct CribbleCommands: Commands {
                 .disabled(toggleChatHUD == nil)
         }
 
-        CommandMenu("Go") {
-            Button("Back", action: { navigateBack?() })
-                .keyboardShortcut("[", modifiers: [.command])
-                .disabled(navigateBack == nil)
-
-            Button("Forward", action: { navigateForward?() })
-                .keyboardShortcut("]", modifiers: [.command])
-                .disabled(navigateForward == nil)
-        }
-
-        CommandMenu("View") {
-            Button("Toggle Outline", action: { toggleOutline?() })
-                .keyboardShortcut("o", modifiers: [.command, .option])
-                .disabled(toggleOutline == nil)
-
-            Button("Toggle Focus Mode", action: { toggleFocusMode?() })
-                .keyboardShortcut("f", modifiers: [.command, .option])
-                .disabled(toggleFocusMode == nil)
-        }
-
-        CommandMenu("Reading") {
-            Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
-                .keyboardShortcut("b", modifiers: [])
-
-            Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
-                .keyboardShortcut("h", modifiers: [])
-
-            Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
-                .keyboardShortcut("p", modifiers: [])
-        }
-
-        CommandMenu("Updates") {
-            Button("Check for Updates...") {
-                AppUpdater.shared.checkForUpdates()
-            }
-        }
-
-        CommandMenu("Diagnostics") {
+        // Help — diagnostics live here instead of a top-level menu. (Check for
+        // Updates is in the Cribble app menu, added by AppDelegate.)
+        CommandGroup(replacing: .help) {
             Button("Show Diagnostic Report", action: { showDiagnostics?() })
                 .keyboardShortcut("d", modifiers: [.command, .shift])
                 .disabled(showDiagnostics == nil)

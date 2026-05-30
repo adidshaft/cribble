@@ -41,6 +41,8 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published private(set) var pinnedPaths: Set<String> = [] {
         didSet { cachedFilteredNodes = nil }
     }
+    /// Folder path -> chosen SF Symbol name, for custom sidebar folder icons.
+    @Published private(set) var folderIcons: [String: String] = [:]
     @Published private var rootDisplayNames: [String: String] = [:]
 
     private let loader = DocumentLoader()
@@ -80,6 +82,7 @@ final class MarkdownLibraryStore: ObservableObject {
     init(restore: Bool = true, includeBundledDemo: Bool = true) {
         if restore {
             pinnedPaths = Set(UserDefaults.standard.stringArray(forKey: Keys.pinnedFolders) ?? [])
+            folderIcons = UserDefaults.standard.dictionary(forKey: Keys.folderIcons) as? [String: String] ?? [:]
             restoreFolders(includeBundledDemo: includeBundledDemo)
         }
     }
@@ -121,6 +124,22 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func isPinned(_ url: URL) -> Bool {
         pinnedPaths.contains(url.standardizedFileURL.path)
+    }
+
+    /// The chosen SF Symbol for a folder, or nil for the default folder icon.
+    func folderIcon(for url: URL) -> String? {
+        folderIcons[url.standardizedFileURL.path]
+    }
+
+    /// Assigns (or, with nil, clears) a custom SF Symbol icon for a folder.
+    func setFolderIcon(_ symbol: String?, for url: URL) {
+        let key = url.standardizedFileURL.path
+        if let symbol, !symbol.isEmpty {
+            folderIcons[key] = symbol
+        } else {
+            folderIcons.removeValue(forKey: key)
+        }
+        UserDefaults.standard.set(folderIcons, forKey: Keys.folderIcons)
     }
 
     /// Pin/unpin a folder so it floats to the top of its sibling group. Pinning
@@ -1256,7 +1275,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.1.1"
+    private static let bundledDemoNotesVersion = "1.1.3"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -1269,6 +1288,7 @@ final class MarkdownLibraryStore: ObservableObject {
         static let folderDisplayNames = "folderDisplayNames"
         static let folderPaths = "folderPaths"
         static let pinnedFolders = "pinnedFolders"
+        static let folderIcons = "folderIcons"
         static let legacyLastFolderPath = "lastFolderPath"
         static let bundledDemoNotesVersion = "bundledDemoNotesVersion"
     }

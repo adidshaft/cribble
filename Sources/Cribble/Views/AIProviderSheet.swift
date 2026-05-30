@@ -40,8 +40,8 @@ struct AIProviderSheet: View {
                         Label(provider.rawValue, systemImage: provider == .codex ? "terminal" : "sparkles")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    .cribbleGlassButton(prominent: true)
                     .help("Run \(provider.rawValue) locally for: \(mode.title)")
                 }
             }

@@ -49,6 +49,8 @@ struct ReaderView: View {
                 .padding(.bottom, 8)
             }
         }
+        .environment(\.readerPrimaryFontName, settings.readerFontName)
+        .environment(\.readerMonospaceFontName, settings.monospaceFontName)
     }
 }
 
@@ -134,7 +136,7 @@ private struct ReaderDocumentView: View {
                         }
 
                         Text(document.title)
-                            .font(.system(size: 30 * fontScale))
+                            .font(ReaderTypography.primary(settings.readerFontName, size: 30 * fontScale))
                             .fontWeight(.semibold)
                             .textSelection(.enabled)
 
@@ -893,6 +895,9 @@ private struct ReaderMarkdownSection: View {
     // (globalOrdinal, currentlyChecked) -> persist the flip to the file.
     let onToggleTask: (Int, Bool) -> Void
 
+    @Environment(\.readerPrimaryFontName) private var primaryFontName
+    @Environment(\.readerMonospaceFontName) private var monospaceFontName
+
     var body: some View {
         let blocks = indexedBlocks(from: section.markdown)
 
@@ -918,11 +923,12 @@ private struct ReaderMarkdownSection: View {
                             // destroying the view.
                             reparseToken: highlightIdentity(for: blockHighlights)
                         )
-                        .font(.system(size: 17 * fontScale))
+                        .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
                         .textual.structuredTextStyle(.gitHub)
+                        .textual.lineSpacing(.fontScaled(0.3))
                         .textual.inlineStyle(
                             InlineStyle()
-                                .code(.font(.system(size: 14 * fontScale, design: .monospaced)))
+                                .code(.font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale)))
                                 .strong(.fontWeight(.semibold))
                         )
                         .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
@@ -1114,9 +1120,11 @@ private struct SyntaxHighlightedCodeBlockView: View {
     let code: String
     let fontScale: Double
 
+    @Environment(\.readerMonospaceFontName) private var monospaceFontName
+
     var body: some View {
         StructuredText(markdown: fencedMarkdown)
-            .font(.system(size: 14 * fontScale, design: .monospaced))
+            .font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale))
             .textual.structuredTextStyle(.gitHub)
             .textual.textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
@@ -1943,8 +1951,8 @@ private struct EmptyReadmePanel: View {
                     } label: {
                         Label("Fill + Link with \(provider.rawValue)", systemImage: provider == .codex ? "terminal" : "sparkles")
                     }
-                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    .cribbleGlassButton(prominent: true)
                     .disabled(isRunningAI)
                     .help("Use \(provider.rawValue) \(provider.lowestModelName) to draft this README, then review the patch before applying")
                 }

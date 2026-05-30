@@ -37,7 +37,7 @@ struct CribbleCommands: Commands {
                 .disabled(runAILinking == nil)
 
             Button("Cribble AI Chat", action: { toggleChatHUD?() })
-                .keyboardShortcut("c", modifiers: [.command, .option])
+                .keyboardShortcut("c", modifiers: [])
                 .disabled(toggleChatHUD == nil)
         }
 

@@ -216,7 +216,7 @@ struct ContentView: View {
                 Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
             }
             .cribbleGlassButton()
-            .help("Open the on-device AI chat (⌥⌘C)")
+            .help("Open the on-device AI chat (C)")
         }
     }
 

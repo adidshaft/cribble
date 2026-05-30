@@ -128,6 +128,29 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(messages.last?.role, .user)
     }
 
+    func testRelatedNotesAppearInPrompt() {
+        let prompt = ContextAssembler.systemPrompt(
+            modelName: "M",
+            currentNote: nil,
+            files: [],
+            related: [ResolvedFile(filename: "Found.md", content: "auto retrieved")]
+        )
+        XCTAssertTrue(prompt.contains("RELATED NOTES"))
+        XCTAssertTrue(prompt.contains("BEGIN RELATED: Found.md"))
+        XCTAssertTrue(prompt.contains("auto retrieved"))
+    }
+
+    func testSuggestedFileNameFromHeading() {
+        XCTAssertEqual(ChatHUDViewModel.suggestedFileName(for: "# Bug Status Index\n\n- a"), "Bug Status Index")
+        XCTAssertEqual(ChatHUDViewModel.suggestedFileName(for: "\n\n   "), "AI Note")
+    }
+
+    func testSlashCommandsFilter() {
+        XCTAssertEqual(QuickActions.matching("").count, QuickActions.all.count)
+        XCTAssertTrue(QuickActions.matching("sum").contains { $0.id == "summarize" })
+        XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
+    }
+
     func testConnectionMessagesIncludeBothNotes() {
         let messages = ContextAssembler.connectionMessages(
             modelName: "Gemma 4",

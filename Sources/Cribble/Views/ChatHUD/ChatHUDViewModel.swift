@@ -26,6 +26,8 @@ final class ChatHUDViewModel: ObservableObject {
 
     // MARK: Autocomplete
     @Published private(set) var autocomplete: FileAutocompleteState?
+    /// Slash-command palette suggestions (non-empty when the draft starts "/").
+    @Published private(set) var slashCommands: [QuickAction] = []
 
     // MARK: Model
     @Published var selectedModel: LocalModel
@@ -37,13 +39,15 @@ final class ChatHUDViewModel: ObservableObject {
     let greetingName: String
 
     private let library: MarkdownLibraryStore
+    private let semanticIndex: SemanticSearchIndex?
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
 
-    init(library: MarkdownLibraryStore, engine: LocalChatEngine? = nil) {
+    init(library: MarkdownLibraryStore, semanticIndex: SemanticSearchIndex? = nil, engine: LocalChatEngine? = nil) {
         self.library = library
+        self.semanticIndex = semanticIndex
         self.injectedEngine = engine
         self.selectedModel = ModelCatalog.defaultModel
         let fullName = NSFullUserName()
@@ -68,6 +72,15 @@ final class ChatHUDViewModel: ObservableObject {
     /// the user types.
     func updateDraft(_ text: String) {
         draft = text
+
+        // `/` at the very start opens the command palette.
+        if text.hasPrefix("/") {
+            slashCommands = QuickActions.matching(String(text.dropFirst()))
+            autocomplete = nil
+            return
+        }
+        slashCommands = []
+
         guard let mention = Self.activeMentionQuery(in: text) else {
             autocomplete = nil
             return
@@ -76,6 +89,15 @@ final class ChatHUDViewModel: ObservableObject {
             query: mention.query,
             matches: searchFiles(matching: mention.query)
         )
+    }
+
+    /// Runs a quick action's prompt as a message.
+    func runQuickAction(_ action: QuickAction) {
+        guard !isGenerating else { return }
+        slashCommands = []
+        autocomplete = nil
+        draft = action.prompt
+        send()
     }
 
     /// Commits an autocomplete pick: strips the in-progress `@query` and pins
@@ -124,7 +146,10 @@ final class ChatHUDViewModel: ObservableObject {
         }
         switch modelPhase {
         case .downloading(let fraction):
-            return DownloadDisplay(isActive: true, fraction: fraction, loading: false)
+            // The Hub downloader often reports progress only per-file, so a big
+            // single-file model sits near 0 then jumps. Show an indeterminate
+            // spinner until there's real, non-trivial progress to display.
+            return DownloadDisplay(isActive: true, fraction: fraction > 0.01 ? fraction : nil, loading: false)
         case .loading:
             return DownloadDisplay(isActive: true, fraction: nil, loading: true)
         default:
@@ -148,6 +173,47 @@ final class ChatHUDViewModel: ObservableObject {
         statusMessage = nil
     }
 
+    // MARK: - Message actions
+
+    var canInsertIntoCurrentNote: Bool { library.selectedDocument != nil }
+
+    func copyMessage(_ message: ChatMessage) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(message.text, forType: .string)
+        statusMessage = "Copied to clipboard"
+    }
+
+    func saveMessageAsNote(_ message: ChatMessage) {
+        library.presentNewNoteProposal(
+            fileName: Self.suggestedFileName(for: message.text),
+            content: message.text
+        )
+        bringMainWindowForward()
+        statusMessage = "Review the new note in the main window"
+    }
+
+    func insertMessageIntoCurrentNote(_ message: ChatMessage) {
+        guard let url = library.selectedDocument?.url else {
+            statusMessage = "Open a note first to insert into it"
+            return
+        }
+        library.presentAppendProposal(to: url, content: message.text)
+        bringMainWindowForward()
+        statusMessage = "Review the insertion in the main window"
+    }
+
+    /// Derives a filename from the answer's first heading/line.
+    nonisolated static func suggestedFileName(for text: String) -> String {
+        let firstLine = text
+            .components(separatedBy: .newlines)
+            .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? "AI Note"
+        let cleaned = firstLine
+            .replacingOccurrences(of: "#", with: "")
+            .trimmingCharacters(in: .whitespaces)
+        let title = cleaned.isEmpty ? "AI Note" : String(cleaned.prefix(50))
+        return title
+    }
+
     func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isGenerating else { return }
@@ -156,6 +222,7 @@ final class ChatHUDViewModel: ObservableObject {
         draft = ""
         attachments = []
         autocomplete = nil
+        slashCommands = []
 
         let placeholder = ChatMessage(role: .assistant, text: "", isStreaming: true)
         messages.append(placeholder)
@@ -189,12 +256,13 @@ final class ChatHUDViewModel: ObservableObject {
             return
         }
 
-        let context = resolveContext()
+        let context = await resolveContext()
         let prompt = ContextAssembler.engineMessages(
             modelName: selectedModel.name,
             history: messages,
             currentNote: context.current,
-            files: context.files
+            files: context.files,
+            related: context.related
         )
 
         let engine = currentEngine()
@@ -317,7 +385,7 @@ final class ChatHUDViewModel: ObservableObject {
     /// Builds the model context: the note currently open in the reader (so "this
     /// note" / "here" works without tagging) plus every file tagged across the
     /// conversation, deduped by URL.
-    private func resolveContext() -> (current: ResolvedFile?, files: [ResolvedFile]) {
+    private func resolveContext() async -> (current: ResolvedFile?, files: [ResolvedFile], related: [ResolvedFile]) {
         var seen = Set<URL>()
         var current: ResolvedFile?
         if let doc = library.selectedDocument {
@@ -333,7 +401,28 @@ final class ChatHUDViewModel: ObservableObject {
                 }
             }
         }
-        return (current, files)
+
+        // Vault-aware: pull a few semantically-related notes for the latest
+        // question so the assistant can answer about the whole workspace, not
+        // just what's open or tagged.
+        let related = await resolveRelatedNotes(excluding: seen)
+        return (current, files, related)
+    }
+
+    /// Up to 3 related notes found by the on-device semantic index for the most
+    /// recent user message. Each is trimmed so the prompt stays lean.
+    private func resolveRelatedNotes(excluding: Set<URL>) async -> [ResolvedFile] {
+        guard let semanticIndex,
+              let query = messages.last(where: { $0.role == .user })?.text,
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return [] }
+
+        let hits = await semanticIndex.relatedNotes(to: query, limit: 3, excluding: excluding)
+        return hits.compactMap { hit in
+            guard let content = try? String(contentsOf: hit.url, encoding: .utf8) else { return nil }
+            let trimmed = content.count > 3000 ? String(content.prefix(3000)) + "\n…" : content
+            return ResolvedFile(filename: hit.url.lastPathComponent, content: trimmed)
+        }
     }
 
     private func searchFiles(matching query: String) -> [TaggedFileToken] {

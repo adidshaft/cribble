@@ -5,7 +5,12 @@ import SwiftUI
 /// streaming caret.
 struct ChatBubbleView: View {
     let message: ChatMessage
+    var viewModel: ChatHUDViewModel?
     @State private var caretVisible = true
+
+    private var showActions: Bool {
+        message.role == .assistant && !message.isStreaming && !message.text.isEmpty && viewModel != nil
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -16,10 +21,29 @@ struct ChatBubbleView: View {
                     attachmentBadges
                 }
                 bubble
+                if showActions { actions }
             }
 
             if message.role == .assistant { Spacer(minLength: 40) }
         }
+    }
+
+    private var actions: some View {
+        HStack(spacing: 4) {
+            BubbleAction(icon: "doc.on.doc", help: "Copy") {
+                viewModel?.copyMessage(message)
+            }
+            BubbleAction(icon: "doc.badge.plus", help: "Save as new note") {
+                viewModel?.saveMessageAsNote(message)
+            }
+            if viewModel?.canInsertIntoCurrentNote == true {
+                BubbleAction(icon: "text.insert", help: "Insert into current note") {
+                    viewModel?.insertMessageIntoCurrentNote(message)
+                }
+            }
+        }
+        .padding(.leading, 2)
+        .padding(.top, 1)
     }
 
     private var bubble: some View {
@@ -104,6 +128,28 @@ struct ChatBubbleView: View {
                     shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
                 }
                 .cribbleGlass(in: shape)
+        }
+    }
+
+    private struct BubbleAction: View {
+        let icon: String
+        let help: String
+        let action: () -> Void
+        @State private var hovered = false
+
+        var body: some View {
+            Button(action: action) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(hovered ? 0.95 : 0.45))
+                    .frame(width: 22, height: 20)
+                    .background(Color.white.opacity(hovered ? 0.1 : 0), in: RoundedRectangle(cornerRadius: 5))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(help)
+            .onHover { hovered = $0 }
+            .pointingHandOnHover()
         }
     }
 

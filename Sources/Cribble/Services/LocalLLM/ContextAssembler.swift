@@ -20,7 +20,8 @@ enum ContextAssembler {
     static func systemPrompt(
         modelName: String,
         currentNote: ResolvedFile?,
-        files: [ResolvedFile]
+        files: [ResolvedFile],
+        related: [ResolvedFile] = []
     ) -> String {
         var sections: [String] = []
         sections.append(
@@ -47,7 +48,16 @@ enum ContextAssembler {
             }
         }
 
-        if currentNote == nil && files.isEmpty {
+        if !related.isEmpty {
+            sections.append("RELATED NOTES — automatically found in the workspace by semantic search; use them if relevant:")
+            for file in related {
+                sections.append(
+                    "--- BEGIN RELATED: \(file.filename) ---\n\(truncate(file.content))\n--- END RELATED: \(file.filename) ---"
+                )
+            }
+        }
+
+        if currentNote == nil && files.isEmpty && related.isEmpty {
             sections.append("No notes are attached to this message yet.")
         }
 
@@ -85,12 +95,13 @@ enum ContextAssembler {
         modelName: String,
         history: [ChatMessage],
         currentNote: ResolvedFile?,
-        files: [ResolvedFile]
+        files: [ResolvedFile],
+        related: [ResolvedFile] = []
     ) -> [EngineMessage] {
         var messages: [EngineMessage] = [
             EngineMessage(
                 role: .system,
-                content: systemPrompt(modelName: modelName, currentNote: currentNote, files: files)
+                content: systemPrompt(modelName: modelName, currentNote: currentNote, files: files, related: related)
             )
         ]
         for message in history {

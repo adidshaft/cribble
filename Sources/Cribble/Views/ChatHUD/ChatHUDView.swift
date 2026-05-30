@@ -66,7 +66,7 @@ struct ChatHUDView: View {
                 } else {
                     LazyVStack(alignment: .leading, spacing: 14) {
                         ForEach(viewModel.messages) { message in
-                            ChatBubbleView(message: message)
+                            ChatBubbleView(message: message, viewModel: viewModel)
                                 .id(message.id)
                         }
                     }
@@ -144,8 +144,40 @@ struct ChatEmptyState: View {
                 .foregroundStyle(.white.opacity(0.85))
                 .multilineTextAlignment(.center)
 
+            quickActions
+
             modelHint
         }
+    }
+
+    private var quickActions: some View {
+        VStack(spacing: 6) {
+            ForEach(QuickActions.all.prefix(4)) { action in
+                Button {
+                    viewModel.runQuickAction(action)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: action.icon)
+                            .font(.system(size: 11))
+                            .frame(width: 16)
+                        Text(action.title)
+                            .font(.system(size: 12, weight: .medium))
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(width: 200)
+                    .background(Color.white.opacity(0.06), in: Capsule())
+                    .overlay { Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75) }
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .pointingHandOnHover()
+            }
+        }
+        .padding(.top, 4)
+        .disabled(viewModel.isGenerating)
     }
 
     private var modelHint: some View {

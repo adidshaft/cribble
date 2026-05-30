@@ -217,6 +217,28 @@ final class SemanticSearchIndex: ObservableObject {
         results = []
     }
 
+    /// Returns the top semantically-related notes for a free-text query — used by
+    /// the chat assistant to pull relevant notes into context automatically.
+    /// Excludes the given URLs (e.g. the note already in context).
+    func relatedNotes(to query: String, limit: Int, excluding: Set<URL> = []) async -> [SemanticHit] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 3, availability == .available, !entries.isEmpty else { return [] }
+
+        let snapshot = entries
+        let excludedPaths = Set(excluding.map { $0.standardizedFileURL.path })
+        guard let queryVector = await engine.vector(for: trimmed) else { return [] }
+
+        return snapshot.compactMap { path, entry -> SemanticHit? in
+            guard !excludedPaths.contains(path) else { return nil }
+            let score = Self.cosine(queryVector, entry.vector)
+            guard score > 0.16 else { return nil }
+            return SemanticHit(url: URL(fileURLWithPath: path), title: entry.title, score: Double(score))
+        }
+        .sorted { $0.score > $1.score }
+        .prefix(limit)
+        .map { $0 }
+    }
+
     /// Finds conceptual "stepping stone" notes that bridge `source` to `target`
     /// using embedding similarity — a greedy walk that hops toward the target
     /// while staying connected to where it currently is. Returns the

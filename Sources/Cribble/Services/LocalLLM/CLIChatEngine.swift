@@ -2,9 +2,13 @@ import Foundation
 
 /// Cloud chat engine that drives the local `claude` / `codex` CLIs — the same
 /// tools the AI-Link-Notes feature uses. No Metal needed, so this works in the
-/// SwiftPM-CLI build where on-device MLX can't run. The model context (including
-/// `@file` contents) is already inlined into the prompt by `ContextAssembler`,
-/// so the CLI is run without filesystem access.
+/// SwiftPM-CLI build where on-device MLX can't run.
+///
+/// The CLIs are run through the user's **login shell** (`$SHELL -lc`) so they
+/// inherit the same PATH and environment as Terminal — this is what makes the
+/// binary discoverable AND lets the CLI find its existing login/session. The
+/// prompt is passed via an environment variable (`CRIBBLE_PROMPT`) so arbitrary
+/// content needs no shell quoting and can't be injected.
 final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
     enum Provider {
         case claude
@@ -23,8 +27,8 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
     func prepare(model: LocalModel, onProgress: @escaping @Sendable (Double) -> Void) async throws {
         guard Self.executableExists(provider.executableName) else {
             throw LocalChatEngineError.modelLoadFailed(
-                "`\(provider.executableName)` isn't installed or isn't on your PATH. "
-                + "Install it, run `\(provider.executableName)` once in Terminal to sign in, then try again."
+                "`\(provider.executableName)` wasn't found in your shell's PATH. Install it, run "
+                + "`\(provider.executableName)` once in Terminal to sign in, then try again."
             )
         }
         onProgress(1.0)
@@ -38,21 +42,21 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         let prompt = Self.flatten(messages)
         switch provider {
         case .claude:
+            // `claude --print` streams plain text; prompt comes from $CRIBBLE_PROMPT.
             return try await run(
-                arguments: ["--print", "--output-format", "text", prompt],
+                command: "claude --print --output-format text \"$CRIBBLE_PROMPT\"",
+                prompt: prompt,
                 streaming: true,
                 onToken: onToken
             )
         case .codex:
             // Codex prints progress chatter to stdout, so capture the clean final
-            // message via an output file (matching AIService's approach).
+            // message via an output file.
             let outputFile = FileManager.default.temporaryDirectory
                 .appendingPathComponent("cribble-hud-codex-\(UUID().uuidString).txt")
             let text = try await run(
-                arguments: [
-                    "exec", "--skip-git-repo-check", "--color", "never",
-                    "--sandbox", "read-only", "-o", outputFile.path, prompt
-                ],
+                command: "codex exec --skip-git-repo-check --color never --sandbox read-only -o \"$CRIBBLE_OUT\" \"$CRIBBLE_PROMPT\"",
+                prompt: prompt,
                 streaming: false,
                 onToken: onToken,
                 outputFile: outputFile
@@ -70,17 +74,23 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
     // MARK: - Process runner
 
     private func run(
-        arguments: [String],
+        command: String,
+        prompt: String,
         streaming: Bool,
         onToken: @escaping @Sendable (String) -> Void,
         outputFile: URL? = nil
     ) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = [provider.executableName] + arguments
+            process.executableURL = URL(fileURLWithPath: Self.loginShell())
+            // `-l` sources the login profile (full PATH/env); `-c` runs the command.
+            process.arguments = ["-l", "-c", command]
             process.currentDirectoryURL = FileManager.default.temporaryDirectory
-            process.environment = Self.processEnvironment()
+
+            var environment = ProcessInfo.processInfo.environment
+            environment["CRIBBLE_PROMPT"] = prompt
+            if let outputFile { environment["CRIBBLE_OUT"] = outputFile.path }
+            process.environment = environment
 
             let outputPipe = Pipe()
             let errorPipe = Pipe()
@@ -118,7 +128,7 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
 
                 if proc.terminationStatus != 0 && output.isEmpty {
                     continuation.resume(throwing: LocalChatEngineError.generationFailed(
-                        errorText.isEmpty ? "\(self.provider.executableName) exited with code \(proc.terminationStatus)." : errorText
+                        Self.friendlyError(provider: self.provider, status: proc.terminationStatus, stderr: errorText)
                     ))
                 } else {
                     continuation.resume(returning: output)
@@ -150,11 +160,29 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         return parts.joined(separator: "\n\n")
     }
 
+    private static func friendlyError(provider: Provider, status: Int32, stderr: String) -> String {
+        let raw = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.localizedCaseInsensitiveContains("logged in") == false,
+           raw.localizedCaseInsensitiveContains("login") || raw.localizedCaseInsensitiveContains("auth")
+            || raw.localizedCaseInsensitiveContains("401") {
+            return "\(provider.executableName) isn't signed in. Run `\(provider.executableName)` in Terminal to log in, then try again.\n\n\(raw)"
+        }
+        return raw.isEmpty ? "\(provider.executableName) exited with code \(status)." : raw
+    }
+
+    private static func loginShell() -> String {
+        let shell = ProcessInfo.processInfo.environment["SHELL"]
+        if let shell, !shell.isEmpty, FileManager.default.isExecutableFile(atPath: shell) {
+            return shell
+        }
+        return "/bin/zsh"
+    }
+
+    /// Checks the binary is reachable from the login shell (same PATH as Terminal).
     private static func executableExists(_ name: String) -> Bool {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["which", name]
-        process.environment = processEnvironment()
+        process.executableURL = URL(fileURLWithPath: loginShell())
+        process.arguments = ["-l", "-c", "command -v \(name)"]
         process.standardOutput = Pipe()
         process.standardError = Pipe()
         do {
@@ -164,18 +192,6 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         } catch {
             return false
         }
-    }
-
-    private static func processEnvironment() -> [String: String] {
-        var environment = ProcessInfo.processInfo.environment
-        let extraPaths = [
-            "/opt/homebrew/bin", "/usr/local/bin", "\(NSHomeDirectory())/.local/bin",
-            "/usr/bin", "/bin", "/usr/sbin", "/sbin"
-        ]
-        let existing = (environment["PATH"] ?? "").split(separator: ":").map(String.init)
-        var seen = Set<String>()
-        environment["PATH"] = (extraPaths + existing).filter { seen.insert($0).inserted }.joined(separator: ":")
-        return environment
     }
 }
 

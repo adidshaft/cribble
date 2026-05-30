@@ -35,6 +35,7 @@ struct ContentView: View {
             .onAppear {
                 ChatHUDController.shared.configure(
                     library: library,
+                    semanticIndex: semanticIndex,
                     entitlement: llmEntitlement,
                     onLocked: { showingLLMUnlockSheet = true }
                 )

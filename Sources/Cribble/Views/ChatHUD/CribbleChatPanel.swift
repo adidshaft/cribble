@@ -56,6 +56,7 @@ final class ChatHUDController {
     private var viewModel: ChatHUDViewModel?
 
     private weak var library: MarkdownLibraryStore?
+    private weak var semanticIndex: SemanticSearchIndex?
     private weak var entitlement: LLMEntitlementStore?
     private var onLocked: (() -> Void)?
     private weak var statusButton: NSStatusBarButton?
@@ -66,10 +67,12 @@ final class ChatHUDController {
     /// controller can build the view model and honor the purchase gate.
     func configure(
         library: MarkdownLibraryStore,
+        semanticIndex: SemanticSearchIndex,
         entitlement: LLMEntitlementStore,
         onLocked: @escaping () -> Void
     ) {
         self.library = library
+        self.semanticIndex = semanticIndex
         self.entitlement = entitlement
         self.onLocked = onLocked
     }
@@ -153,7 +156,7 @@ final class ChatHUDController {
     private func ensureViewModel() -> ChatHUDViewModel? {
         if let viewModel { return viewModel }
         guard let library else { return nil }
-        let vm = ChatHUDViewModel(library: library)
+        let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
         viewModel = vm
         return vm
     }

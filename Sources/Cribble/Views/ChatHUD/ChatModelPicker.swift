@@ -34,14 +34,15 @@ struct ModelPickerButton: View {
                 .fill(dotColor)
                 .frame(width: 5, height: 5)
                 .shadow(color: dotColor.opacity(0.6), radius: 2)
-            Text(viewModel.selectedModel.name)
+            Text(viewModel.selectedModel.shortName)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
             Image(systemName: "chevron.up.chevron.down")
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.4))
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .padding(.vertical, 4)
         .background(Color.white.opacity(0.08), in: Capsule())
         .overlay { Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75) }

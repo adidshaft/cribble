@@ -10,6 +10,7 @@ struct ChatInputBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             statusLine
+            slashCommandList
             autocompleteList
             attachmentChips
             pill
@@ -25,7 +26,11 @@ struct ChatInputBar: View {
     private var statusLine: some View {
         switch viewModel.modelPhase {
         case .downloading(let fraction):
-            phaseLabel("Downloading \(viewModel.selectedModel.name) — \(Int(fraction * 100))%", system: "arrow.down.circle")
+            if fraction > 0.01 {
+                phaseLabel("Downloading \(viewModel.selectedModel.name) — \(Int(fraction * 100))%", system: "arrow.down.circle")
+            } else {
+                phaseLabel("Downloading \(viewModel.selectedModel.name) (\(viewModel.selectedModel.approximateSize))… this can take a few minutes", system: "arrow.down.circle")
+            }
         case .loading:
             phaseLabel("Loading \(viewModel.selectedModel.name)…", system: "cpu")
         case .failed(let message):
@@ -60,6 +65,50 @@ struct ChatInputBar: View {
         .overlay {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
+        }
+    }
+
+    // MARK: Slash commands
+
+    @ViewBuilder
+    private var slashCommandList: some View {
+        if !viewModel.slashCommands.isEmpty {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("COMMANDS")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .padding(.horizontal, 10)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+
+                ForEach(viewModel.slashCommands) { action in
+                    Button {
+                        viewModel.runQuickAction(action)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: action.icon)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .frame(width: 16)
+                            Text(action.title)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.9))
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .pointingHandOnHover()
+                }
+            }
+            .background(Color.black.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.12), lineWidth: 1) }
+            .cribbleGlass(in: RoundedRectangle(cornerRadius: 12))
+            .shadow(color: Color.black.opacity(0.25), radius: 10, y: 5)
+            .padding(.horizontal, 2)
         }
     }
 
@@ -126,7 +175,6 @@ struct ChatInputBar: View {
                 .onSubmit(submit)
 
             ModelPickerButton(viewModel: viewModel)
-            micButton
             sendButton
         }
         .padding(.horizontal, 10)
@@ -171,19 +219,6 @@ struct ChatInputBar: View {
             isPlusHovered = hovering
         }
         .pointingHandOnHover()
-    }
-
-    private var micButton: some View {
-        Button {} label: {
-            Image(systemName: "mic")
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.2))
-                .frame(width: 26, height: 26)
-                .background(Color.white.opacity(0.02), in: Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(true)
-        .help("Dictation (coming soon)")
     }
 
     private var sendButton: some View {

@@ -34,6 +34,12 @@ struct LocalModel: Identifiable, Hashable {
     var kind: ModelKind = .localMLX
 
     var huggingFaceRepo: String { id }
+
+    /// Compact label for the input-bar chip (keeps it narrow).
+    var shortName: String {
+        if speedLabel == "Flash" { return "Flash" }
+        return name.split(separator: " ").first.map(String.init) ?? name
+    }
 }
 
 /// The curated set of models offered in the HUD. Ordering is the menu order.

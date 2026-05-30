@@ -827,6 +827,42 @@ final class MarkdownLibraryStore: ObservableObject {
         pendingDiff = UnifiedDiff(files: [file])
     }
 
+    /// Proposes appending content to the end of an existing note, routed through
+    /// the same safe diff preview/apply path. Used by the chat HUD's "Insert into
+    /// current note" action. The whole file is shown as context so the patch
+    /// always applies cleanly.
+    func presentAppendProposal(to url: URL, content: String, rootURL: URL? = nil) {
+        guard let root = rootURL ?? activeRootURL else {
+            errorMessage = "Open a folder before inserting into a note."
+            return
+        }
+        guard let existing = try? String(contentsOf: url, encoding: .utf8) else {
+            errorMessage = "Couldn't read \(url.lastPathComponent)."
+            return
+        }
+
+        let rootPath = root.standardizedFileURL.path
+        let relativePath = url.standardizedFileURL.path.hasPrefix(rootPath + "/")
+            ? String(url.standardizedFileURL.path.dropFirst(rootPath.count + 1))
+            : url.lastPathComponent
+
+        let existingLines = existing.components(separatedBy: "\n")
+        let addedLines = ["", "---", ""] + content.components(separatedBy: "\n")
+        let hunkLines = existingLines.map { DiffLine(kind: .context, text: $0) }
+            + addedLines.map { DiffLine(kind: .addition, text: $0) }
+        let hunk = DiffHunk(
+            header: "@@ -1,\(existingLines.count) +1,\(existingLines.count + addedLines.count) @@",
+            lines: hunkLines
+        )
+        let file = DiffFile(oldPath: relativePath, newPath: relativePath, hunks: [hunk])
+
+        pendingDiffRootURL = root
+        pendingDiffMode = nil
+        pendingDiffError = nil
+        pendingDiffSuccessMessage = "Inserted into \(relativePath)"
+        pendingDiff = UnifiedDiff(files: [file])
+    }
+
     /// Title for a document URL, used by the Pathfinder HUD and link proposals.
     func title(for url: URL) -> String {
         let standardized = url.standardizedFileURL

@@ -45,8 +45,10 @@ resolve_executable() {
 rm -rf "$OUT_DIR"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 
-swift build -c release --arch arm64
-BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+# -DAPPSTORE gates the Local Chat HUD behind the StoreKit in-app purchase.
+# The direct-DMG build (package_release.sh) omits this flag and ships unlocked.
+swift build -c release --arch arm64 -Xswiftc -DAPPSTORE
+BUILD_DIR="$(swift build -c release --arch arm64 --show-bin-path -Xswiftc -DAPPSTORE)"
 BINARY_SOURCE="$(resolve_executable "$BUILD_DIR")"
 
 cp "$BINARY_SOURCE" "$APP_BINARY"

@@ -1,12 +1,6 @@
 import AppKit
 import SwiftUI
 
-extension Notification.Name {
-    /// Posted by the menu-bar item to ask the main view to toggle the chat HUD
-    /// (routed through the view so the purchase gate is honored).
-    static let cribbleToggleChatHUD = Notification.Name("CribbleToggleChatHUD")
-}
-
 @main
 struct CribbleApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -121,15 +115,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.action = #selector(toggleChatFromStatusItem)
             button.target = self
             button.toolTip = "Cribble AI chat"
+            ChatHUDController.shared.registerStatusButton(button)
         }
         statusItem = item
     }
 
     @objc private func toggleChatFromStatusItem() {
-        // Activate first so the panel (which hides on deactivate) can show even
-        // when another app is frontmost.
+        // Activate first so the popover/panel can show even when another app is
+        // frontmost; the controller honors the purchase gate.
         NSApp.activate(ignoringOtherApps: true)
-        NotificationCenter.default.post(name: .cribbleToggleChatHUD, object: nil)
+        ChatHUDController.shared.handleStatusItemClick()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

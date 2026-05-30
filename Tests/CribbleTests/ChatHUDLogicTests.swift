@@ -87,6 +87,7 @@ final class ChatHUDLogicTests: XCTestCase {
     func testSystemPromptInlinesAttachedFiles() {
         let prompt = ContextAssembler.systemPrompt(
             modelName: "Gemma 4",
+            currentNote: nil,
             files: [ResolvedFile(filename: "A.md", content: "alpha")]
         )
         XCTAssertTrue(prompt.contains("--- BEGIN FILE: A.md ---"))
@@ -96,9 +97,20 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(prompt.contains("CREATE:"))
     }
 
-    func testSystemPromptWithoutFiles() {
-        let prompt = ContextAssembler.systemPrompt(modelName: "Gemma 4", files: [])
-        XCTAssertTrue(prompt.contains("not attached any notes"))
+    func testSystemPromptIncludesCurrentNote() {
+        let prompt = ContextAssembler.systemPrompt(
+            modelName: "Gemma 4",
+            currentNote: ResolvedFile(filename: "Reading.md", content: "setup steps"),
+            files: []
+        )
+        XCTAssertTrue(prompt.contains("BEGIN CURRENT NOTE: Reading.md"))
+        XCTAssertTrue(prompt.contains("setup steps"))
+        XCTAssertTrue(prompt.contains("this note"))
+    }
+
+    func testSystemPromptWithoutNotes() {
+        let prompt = ContextAssembler.systemPrompt(modelName: "Gemma 4", currentNote: nil, files: [])
+        XCTAssertTrue(prompt.contains("No notes are attached"))
         XCTAssertFalse(prompt.contains("BEGIN FILE"))
     }
 
@@ -107,7 +119,9 @@ final class ChatHUDLogicTests: XCTestCase {
             ChatMessage(role: .user, text: "hi"),
             ChatMessage(role: .assistant, text: "", isStreaming: true)
         ]
-        let messages = ContextAssembler.engineMessages(modelName: "M", history: history, files: [])
+        let messages = ContextAssembler.engineMessages(
+            modelName: "M", history: history, currentNote: nil, files: []
+        )
         // system + user only; the empty streaming placeholder is dropped.
         XCTAssertEqual(messages.count, 2)
         XCTAssertEqual(messages.first?.role, .system)
@@ -118,6 +132,7 @@ final class ChatHUDLogicTests: XCTestCase {
         let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
         let prompt = ContextAssembler.systemPrompt(
             modelName: "M",
+            currentNote: nil,
             files: [ResolvedFile(filename: "Big.md", content: big)]
         )
         XCTAssertTrue(prompt.contains("[truncated]"))

@@ -116,6 +116,35 @@ final class ChatHUDViewModel: ObservableObject {
         ModelInventory.availability(of: model)
     }
 
+    /// Live download UI state for a model row in the picker.
+    struct DownloadDisplay {
+        var isActive: Bool
+        var fraction: Double?
+        var loading: Bool
+    }
+
+    func downloadDisplay(for model: LocalModel) -> DownloadDisplay {
+        guard model.id == selectedModel.id else {
+            return DownloadDisplay(isActive: false, fraction: nil, loading: false)
+        }
+        switch modelPhase {
+        case .downloading(let fraction):
+            return DownloadDisplay(isActive: true, fraction: fraction, loading: false)
+        case .loading:
+            return DownloadDisplay(isActive: true, fraction: nil, loading: true)
+        default:
+            return DownloadDisplay(isActive: false, fraction: nil, loading: false)
+        }
+    }
+
+    /// Explicitly downloads (and warms) an on-device model so the user can watch
+    /// it complete before chatting, instead of it downloading on first send.
+    func downloadModel(_ model: LocalModel) {
+        guard model.kind == .localMLX, !ModelInventory.isDownloaded(model) else { return }
+        if model.id != selectedModel.id { selectModel(model) }
+        Task { _ = await ensureModelReady() }
+    }
+
     // MARK: - Conversation control
 
     func newChat() {
@@ -165,11 +194,12 @@ final class ChatHUDViewModel: ObservableObject {
             return
         }
 
-        let resolved = resolveAttachments()
+        let context = resolveContext()
         let prompt = ContextAssembler.engineMessages(
             modelName: selectedModel.name,
             history: messages,
-            files: resolved
+            currentNote: context.current,
+            files: context.files
         )
 
         let engine = currentEngine()
@@ -289,19 +319,26 @@ final class ChatHUDViewModel: ObservableObject {
         messages.first(where: { $0.id == assistantID })?.text ?? ""
     }
 
-    /// Reads the contents of every file tagged across the conversation, deduped
-    /// by URL, so follow-up questions keep their note context.
-    private func resolveAttachments() -> [ResolvedFile] {
+    /// Builds the model context: the note currently open in the reader (so "this
+    /// note" / "here" works without tagging) plus every file tagged across the
+    /// conversation, deduped by URL.
+    private func resolveContext() -> (current: ResolvedFile?, files: [ResolvedFile]) {
         var seen = Set<URL>()
-        var resolved: [ResolvedFile] = []
+        var current: ResolvedFile?
+        if let doc = library.selectedDocument {
+            current = ResolvedFile(filename: doc.url.lastPathComponent, content: doc.rawMarkdown)
+            seen.insert(doc.url)
+        }
+
+        var files: [ResolvedFile] = []
         for message in messages where message.role == .user {
             for token in message.attachments where seen.insert(token.fileURL).inserted {
                 if let content = try? String(contentsOf: token.fileURL, encoding: .utf8) {
-                    resolved.append(ResolvedFile(filename: token.filename, content: content))
+                    files.append(ResolvedFile(filename: token.filename, content: content))
                 }
             }
         }
-        return resolved
+        return (current, files)
     }
 
     private func searchFiles(matching query: String) -> [TaggedFileToken] {

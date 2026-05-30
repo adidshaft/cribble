@@ -130,6 +130,13 @@ for RESOURCE_BUNDLE in "${RESOURCE_BUNDLES[@]}"; do
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 done
 
+# MLX's Metal shader library isn't produced by `swift build`; inject the cached
+# bundle (regenerate with script/build_metallib.sh) so on-device models work.
+MLX_METALLIB_BUNDLE="$ROOT_DIR/Vendor/MLXMetallib/mlx-swift_Cmlx.bundle"
+if [[ -d "$MLX_METALLIB_BUNDLE" ]]; then
+  cp -R "$MLX_METALLIB_BUNDLE" "$APP_RESOURCES/"
+fi
+
 if [[ -d "$BUILD_DIR/Sparkle.framework" ]]; then
   /usr/bin/ditto "$BUILD_DIR/Sparkle.framework" "$APP_FRAMEWORKS/Sparkle.framework"
 else

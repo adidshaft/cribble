@@ -5,6 +5,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
     @FocusedValue(\.openInEditorAction) private var openInEditor
     @FocusedValue(\.runAILinkingAction) private var runAILinking
+    @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
     @FocusedValue(\.showDiagnosticsAction) private var showDiagnostics
     @FocusedValue(\.copyDiagnosticsAction) private var copyDiagnostics
     @FocusedValue(\.revealCrashReportAction) private var revealCrashReport
@@ -16,8 +17,9 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
 
     var body: some Commands {
-        CommandMenu("Library") {
-            Button("Open Folder...", action: { openFolder?() })
+        // File — folder operations (replaces the default "New" group).
+        CommandGroup(replacing: .newItem) {
+            Button("Open Folder…", action: { openFolder?() })
                 .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
 
@@ -30,13 +32,13 @@ struct CribbleCommands: Commands {
             Button("Open in Editor", action: { openInEditor?() })
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(openInEditor == nil)
-
-            Button("AI Link Notes...", action: { runAILinking?() })
-                .keyboardShortcut("l", modifiers: [.command, .shift])
-                .disabled(runAILinking == nil)
         }
 
-        CommandMenu("Go") {
+        // View — navigation, layout, and reading actions, merged into the
+        // system View menu (no more duplicate "View").
+        CommandGroup(after: .sidebar) {
+            Divider()
+
             Button("Back", action: { navigateBack?() })
                 .keyboardShortcut("[", modifiers: [.command])
                 .disabled(navigateBack == nil)
@@ -44,9 +46,9 @@ struct CribbleCommands: Commands {
             Button("Forward", action: { navigateForward?() })
                 .keyboardShortcut("]", modifiers: [.command])
                 .disabled(navigateForward == nil)
-        }
 
-        CommandMenu("View") {
+            Divider()
+
             Button("Toggle Outline", action: { toggleOutline?() })
                 .keyboardShortcut("o", modifiers: [.command, .option])
                 .disabled(toggleOutline == nil)
@@ -54,26 +56,31 @@ struct CribbleCommands: Commands {
             Button("Toggle Focus Mode", action: { toggleFocusMode?() })
                 .keyboardShortcut("f", modifiers: [.command, .option])
                 .disabled(toggleFocusMode == nil)
-        }
 
-        CommandMenu("Reading") {
+            Divider()
+
             Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
                 .keyboardShortcut("b", modifiers: [])
-
             Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
                 .keyboardShortcut("h", modifiers: [])
-
             Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
                 .keyboardShortcut("p", modifiers: [])
         }
 
-        CommandMenu("Updates") {
-            Button("Check for Updates...") {
-                AppUpdater.shared.checkForUpdates()
-            }
+        // AI — the two LLM entry points.
+        CommandMenu("AI") {
+            Button("AI Link Notes…", action: { runAILinking?() })
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(runAILinking == nil)
+
+            Button("Cribble AI Chat", action: { toggleChatHUD?() })
+                .keyboardShortcut("c", modifiers: [])
+                .disabled(toggleChatHUD == nil)
         }
 
-        CommandMenu("Diagnostics") {
+        // Help — diagnostics live here instead of a top-level menu. (Check for
+        // Updates is in the Cribble app menu, added by AppDelegate.)
+        CommandGroup(replacing: .help) {
             Button("Show Diagnostic Report", action: { showDiagnostics?() })
                 .keyboardShortcut("d", modifiers: [.command, .shift])
                 .disabled(showDiagnostics == nil)
@@ -109,6 +116,10 @@ private struct OpenInEditorActionKey: FocusedValueKey {
 }
 
 private struct RunAILinkingActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ToggleChatHUDActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -175,6 +186,11 @@ extension FocusedValues {
     var runAILinkingAction: (() -> Void)? {
         get { self[RunAILinkingActionKey.self] }
         set { self[RunAILinkingActionKey.self] = newValue }
+    }
+
+    var toggleChatHUDAction: (() -> Void)? {
+        get { self[ToggleChatHUDActionKey.self] }
+        set { self[ToggleChatHUDActionKey.self] = newValue }
     }
 
     var showDiagnosticsAction: (() -> Void)? {

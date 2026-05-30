@@ -39,7 +39,7 @@ struct CribbleApp: App {
                 .environmentObject(readingTrail)
                 .environmentObject(semanticIndex)
                 .environmentObject(llmEntitlement)
-                .frame(minWidth: 820, minHeight: 560)
+                .frame(minWidth: 380, minHeight: 480)
                 .preferredColorScheme(settings.appearance.colorScheme)
         }
         .commands {

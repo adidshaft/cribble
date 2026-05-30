@@ -1,7 +1,20 @@
 import Foundation
 
-/// A downloadable on-device model the HUD can run. Pure data — no MLX types —
-/// so this list is trivially editable and is safe to reference from any layer.
+/// How a catalog entry is executed.
+enum ModelKind: String, Hashable {
+    /// On-device Apple MLX model (requires the Metal library; Xcode build).
+    case localMLX
+    /// Anthropic Claude via the local `claude` CLI (cloud).
+    case claudeCLI
+    /// OpenAI Codex via the local `codex` CLI (cloud).
+    case codexCLI
+
+    var isCloud: Bool { self != .localMLX }
+}
+
+/// A model the HUD can run — either an on-device MLX model or a cloud CLI
+/// provider. Pure data (no MLX types), so this list is trivially editable and
+/// safe to reference from any layer.
 struct LocalModel: Identifiable, Hashable {
     /// Hugging Face repo id, e.g. `mlx-community/gemma-4-e4b-it-4bit`.
     /// Doubles as the stable identity used for download bookkeeping.
@@ -17,6 +30,8 @@ struct LocalModel: Identifiable, Hashable {
     /// Recommended minimum unified memory (GB). Drives a soft warning for the
     /// heavier models so users don't kick off an unusable download.
     let recommendedMemoryGB: Int
+    /// Execution backend for this entry. Defaults to on-device MLX.
+    var kind: ModelKind = .localMLX
 
     var huggingFaceRepo: String { id }
 }
@@ -49,11 +64,36 @@ enum ModelCatalog {
             approximateSize: "~2.9 GB",
             blurb: "Alibaba Qwen — strong logic and structured-edit reasoning.",
             recommendedMemoryGB: 12
+        ),
+        LocalModel(
+            id: "cloud:claude",
+            name: "Claude",
+            speedLabel: "Cloud",
+            approximateSize: "CLI",
+            blurb: "Anthropic Claude via the local claude CLI. Needs claude installed.",
+            recommendedMemoryGB: 0,
+            kind: .claudeCLI
+        ),
+        LocalModel(
+            id: "cloud:codex",
+            name: "Codex",
+            speedLabel: "Cloud",
+            approximateSize: "CLI",
+            blurb: "OpenAI Codex via the local codex CLI. Needs codex installed.",
+            recommendedMemoryGB: 0,
+            kind: .codexCLI
         )
     ]
 
-    /// The model selected on first launch.
-    static var defaultModel: LocalModel { all[0] }
+    /// On-device MLX models (need the Metal library / Xcode build).
+    static var localModels: [LocalModel] { all.filter { $0.kind == .localMLX } }
+    /// Cloud CLI providers (work in any build with the CLI installed).
+    static var cloudModels: [LocalModel] { all.filter { $0.kind.isCloud } }
+
+    /// The model selected on first launch. Defaults to a cloud provider so the
+    /// HUD works out of the box even in SwiftPM-CLI builds where MLX's Metal
+    /// library isn't compiled; on-device models are one tap away in the picker.
+    static var defaultModel: LocalModel { cloudModels.first ?? all[0] }
 
     static func model(withID id: String) -> LocalModel? {
         all.first { $0.id == id }

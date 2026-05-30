@@ -24,6 +24,9 @@ struct ContentView: View {
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
+            .onReceive(NotificationCenter.default.publisher(for: .cribbleToggleChatHUD)) { _ in
+                openChatHUD()
+            }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })

@@ -14,7 +14,11 @@ final class CribbleChatPanel: NSPanel {
 
         isFloatingPanel = true
         level = .floating
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        // Companion to Cribble's window, not a global overlay: it floats above
+        // Cribble's own windows but steps aside (hides) when another app is
+        // active, so it isn't on top of everything all the time.
+        hidesOnDeactivate = true
+        collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
         standardWindowButton(.miniaturizeButton)?.isHidden = true

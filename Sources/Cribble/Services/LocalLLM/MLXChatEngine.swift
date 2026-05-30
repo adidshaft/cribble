@@ -30,6 +30,18 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
         let alreadyLoaded = lock.withLock { loadedModelID == model.id && container != nil }
         if alreadyLoaded { return }
 
+        // mlx-swift can only build its Metal shader library under an Xcode build;
+        // a plain `swift build` produces no `default.metallib`. Calling into MLX
+        // without it crashes deep in C++ during Metal device init, so refuse up
+        // front with a clear, non-fatal message and let the user pick a cloud
+        // model instead.
+        guard Self.metalLibraryAvailable() else {
+            throw LocalChatEngineError.modelLoadFailed(
+                "On-device models need the full (Xcode) build of Cribble — this build can't run them. "
+                + "Pick Claude or Codex from the model menu to chat now."
+            )
+        }
+
         // Cap memory growth so a large model can't balloon the working set on
         // smaller Macs; MLX recycles its buffer cache against this budget.
         MLX.GPU.set(cacheLimit: 256 * 1024 * 1024)
@@ -103,6 +115,22 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
     func cancelGeneration() async {
         lock.withLock { cancelRequested = true }
     }
+
+    /// True only if MLX's compiled Metal library is bundled (Xcode builds embed
+    /// `default.metallib` inside `mlx-swift_Cmlx.bundle`). Called rarely, so the
+    /// resource scan is fine without caching.
+    private static func metalLibraryAvailable() -> Bool {
+        if Bundle.main.url(forResource: "default", withExtension: "metallib") != nil {
+            return true
+        }
+        guard let resourceURL = Bundle.main.resourceURL,
+              let enumerator = FileManager.default.enumerator(at: resourceURL, includingPropertiesForKeys: nil)
+        else { return false }
+        for case let url as URL in enumerator where url.pathExtension == "metallib" {
+            return true
+        }
+        return false
+    }
 }
 #endif
 
@@ -124,13 +152,20 @@ final class UnavailableChatEngine: LocalChatEngine, @unchecked Sendable {
     func cancelGeneration() async {}
 }
 
-/// Resolves the concrete engine for this build.
+/// Resolves the concrete engine for a given model.
 enum LocalChatEngineFactory {
-    static func make() -> LocalChatEngine {
-        #if canImport(MLXLLM)
-        return MLXChatEngine()
-        #else
-        return UnavailableChatEngine()
-        #endif
+    static func make(for model: LocalModel) -> LocalChatEngine {
+        switch model.kind {
+        case .claudeCLI:
+            return CLIChatEngine(provider: .claude)
+        case .codexCLI:
+            return CLIChatEngine(provider: .codex)
+        case .localMLX:
+            #if canImport(MLXLLM)
+            return MLXChatEngine()
+            #else
+            return UnavailableChatEngine()
+            #endif
+        }
     }
 }

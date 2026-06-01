@@ -1,4 +1,5 @@
 import SwiftUI
+import Textual
 
 /// A single chat turn. User turns are right-aligned tinted bubbles with file
 /// badges; assistant turns are left-aligned with Markdown rendering and a
@@ -64,10 +65,24 @@ struct ChatBubbleView: View, Equatable {
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.6))
                 }
+            } else if message.role == .assistant && !message.isStreaming {
+                // Settled assistant turns get full GitHub-flavored block Markdown
+                // (headings, lists, tables, fenced code) via the same Textual
+                // pipeline the reader uses. Forced to the dark scheme so GitHub's
+                // adaptive colors resolve to their light-on-dark variants — the
+                // HUD bubble is always dark regardless of system appearance.
+                StructuredText(markdown: message.text)
+                    .font(.system(size: 13))
+                    .textual.structuredTextStyle(.gitHub)
+                    .textual.textSelection(.enabled)
+                    .environment(\.colorScheme, .dark)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
+                // User turns, and assistant turns still streaming: fast inline
+                // text (no block parse) with the streaming caret.
                 let textContent = Text(renderedText)
                 let styled = Group {
-                    if message.role == .assistant && message.isStreaming {
+                    if message.isStreaming {
                         textContent + Text(" ▍")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color.accentColor.opacity(caretVisible ? 1.0 : 0.15))

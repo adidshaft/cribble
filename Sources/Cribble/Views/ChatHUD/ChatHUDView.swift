@@ -67,6 +67,7 @@ struct ChatHUDView: View {
                     LazyVStack(alignment: .leading, spacing: 14) {
                         ForEach(viewModel.messages) { message in
                             ChatBubbleView(message: message, viewModel: viewModel)
+                                .equatable()
                                 .id(message.id)
                         }
                     }
@@ -76,9 +77,10 @@ struct ChatHUDView: View {
             }
             .onChange(of: viewModel.messages.last?.text) {
                 guard let last = viewModel.messages.last else { return }
-                withAnimation(.easeOut(duration: 0.15)) {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                }
+                // No animation while streaming: an animated scrollTo per token
+                // floods the run loop with overlapping animations and forces a
+                // full ScrollView content-frame recompute on every delta.
+                proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
         .frame(maxHeight: .infinity)

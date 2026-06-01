@@ -3,10 +3,17 @@ import SwiftUI
 /// A single chat turn. User turns are right-aligned tinted bubbles with file
 /// badges; assistant turns are left-aligned with Markdown rendering and a
 /// streaming caret.
-struct ChatBubbleView: View {
+struct ChatBubbleView: View, Equatable {
     let message: ChatMessage
     var viewModel: ChatHUDViewModel?
     @State private var caretVisible = true
+
+    /// Diff on the message alone. `viewModel` is identity-stable for the panel's
+    /// lifetime, so excluding it lets `.equatable()` skip re-rendering every
+    /// settled bubble when only the streaming turn's text changes.
+    nonisolated static func == (lhs: ChatBubbleView, rhs: ChatBubbleView) -> Bool {
+        lhs.message == rhs.message
+    }
 
     private var showActions: Bool {
         message.role == .assistant && !message.isStreaming && !message.text.isEmpty && viewModel != nil
@@ -59,7 +66,7 @@ struct ChatBubbleView: View {
                 }
             } else {
                 let textContent = Text(renderedText)
-                Group {
+                let styled = Group {
                     if message.role == .assistant && message.isStreaming {
                         textContent + Text(" ▍")
                             .font(.system(size: 13, weight: .bold))
@@ -69,8 +76,8 @@ struct ChatBubbleView: View {
                     }
                 }
                 .font(.system(size: 13))
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
+                selectableWhenSettled(styled)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 14)
@@ -86,13 +93,54 @@ struct ChatBubbleView: View {
         }
     }
 
+    /// Text selection rebuilds an expensive layout collection for the whole
+    /// transcript; only enable it once a turn has settled so it doesn't run on
+    /// every streamed token. (A ternary won't work here — `.enabled`/`.disabled`
+    /// are different concrete `TextSelectability` types.)
+    @ViewBuilder
+    private func selectableWhenSettled<V: View>(_ view: V) -> some View {
+        if message.isStreaming {
+            view
+        } else {
+            view.textSelection(.enabled)
+        }
+    }
+
     /// Lightweight Markdown rendering for inline emphasis / code / links. Falls
     /// back to the raw string when the Markdown can't be parsed.
+    ///
+    /// While a turn is streaming we render the raw string with no Markdown parse:
+    /// the text changes on every token, so parsing here would re-run the parser
+    /// hundreds of times per answer (and mid-stream Markdown is often malformed
+    /// anyway). The parse — memoized by text — runs once the turn settles.
     private var renderedText: AttributedString {
-        (try? AttributedString(
-            markdown: message.text,
+        if message.isStreaming {
+            return AttributedString(message.text)
+        }
+        return Self.renderMarkdown(message.text)
+    }
+
+    /// Process-wide cache of parsed Markdown, keyed by the exact source string,
+    /// so a settled bubble parses once no matter how often its `body` re-runs.
+    private static let markdownCache = NSCache<NSString, NSAttributedStringBox>()
+
+    private static func renderMarkdown(_ text: String) -> AttributedString {
+        let key = text as NSString
+        if let cached = markdownCache.object(forKey: key) {
+            return cached.value
+        }
+        let rendered = (try? AttributedString(
+            markdown: text,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(message.text)
+        )) ?? AttributedString(text)
+        markdownCache.setObject(NSAttributedStringBox(rendered), forKey: key)
+        return rendered
+    }
+
+    /// Boxes an `AttributedString` (a value type) so it can live in `NSCache`.
+    private final class NSAttributedStringBox {
+        let value: AttributedString
+        init(_ value: AttributedString) { self.value = value }
     }
 
     @ViewBuilder

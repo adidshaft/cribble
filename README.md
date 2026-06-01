@@ -78,21 +78,14 @@ respectful of the user's files.
   request actions for quick user reports.
 - Ships as a signed, notarized macOS DMG with a drag-to-install Finder layout.
 
-## Latest Release: 1.0.5
+## Latest Release: 1.2.1
 
-Cribble 1.0.5 is the stable rich-reading release with a crash fix for highlight hit-zones:
+Cribble 1.2.1 is the stable Cribble AI release:
 
-- Fixed a startup crash caused by stale or empty Textual layout state while hover regions were being computed for saved highlights.
-- Fixed release checksum generation so public `.sha256` assets never include local machine paths.
-- Rebuilt text highlights using robust offset anchors (PDF-style) for stable, drift-resistant highlight ranges.
-- Fixed the inline-code highlight bug so monospace text runs color perfectly across style boundaries.
-- Added anchored right-click highlight notes with a no-button note editor that saves on Return or outside click, deletes empty notes, and shows saved notes immediately on hover.
-- Added custom highlight hand cursor (`cribbleHighlightHand`) driving visual feedback when hovering over highlighted text.
-- Added bundled Mermaid rendering and restored Prism-backed syntax highlighting for fenced code blocks.
-- Fixed Mermaid diagram scroll capture so the main reader keeps scrolling when the pointer is over a rendered diagram.
-- Fixed highlight note menu timing and hover-card refresh so adding a note stays open and saved notes appear when hovering the highlight.
-- Patched Markdown support for footnotes (dynamic Unicode superscript references and final glossary block generation) and expanded task list checkbox markers.
-- Ships the DemoNotes sample library with every new install; it can be removed from Cribble without deleting user files.
+- Added a private Cribble AI chat HUD with on-device MLX models plus Claude/Codex CLI support.
+- Added vault-aware answers, quick actions, slash commands, message actions, file attachments, and folder-aware `@` search.
+- Fixed CLI streaming reliability, UTF-8 chunk-boundary decoding, block Markdown rendering in chat answers, and download progress reporting.
+- Direct DMG downloads include Local AI unlocked; the Mac App Store build uses a one-time Local AI unlock.
 
 
 ## Reading Workflow
@@ -167,7 +160,7 @@ swift test
 After packaging and notarization, run:
 
 ```sh
-./script/validate_release.sh 1.0.5
+./script/validate_release.sh 1.2.1
 ```
 
 The script checks the Apple Silicon binary, minimum macOS version, code signing,
@@ -179,10 +172,10 @@ unified-diff parsing/apply logic.
 
 ## Release
 
-Current version: `1.0.5`
+Current version: `1.2.1`
 
 ```sh
-./script/package_release.sh 1.0.5
+./script/package_release.sh 1.2.1
 ```
 
 The release script:
@@ -196,28 +189,28 @@ The release script:
 - copies the SPM resource bundle (`Bundle.module`) and fails loudly if it
   is missing, so the bundled app icon can't silently disappear
 - signs with Developer ID
-- creates `releases/Cribble-1.0.5.dmg`
+- creates `releases/Cribble-1.2.1.dmg`
 - if `NOTARY_PROFILE=<keychain-profile>` is set, submits the DMG to
   Apple's notary service and staples the ticket
 - writes a SHA-256 checksum
 
 ```sh
 # Apple Silicon + Intel, signed only (Gatekeeper will block on other Macs):
-./script/package_release.sh 1.0.5
+./script/package_release.sh 1.2.1
 
 # Apple Silicon + Intel, signed + notarized + stapled (recommended for
 # public sharing):
-NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.0.5
+NOTARY_PROFILE=cribble-notary ./script/package_release.sh 1.2.1
 
 # Apple Silicon only:
-ARCHS=arm64 ./script/package_release.sh 1.0.5
+ARCHS=arm64 ./script/package_release.sh 1.2.1
 ```
 
 If you'd rather notarize by hand:
 
 ```sh
-xcrun notarytool submit releases/Cribble-1.0.5.dmg --keychain-profile cribble-notary --wait
-xcrun stapler staple releases/Cribble-1.0.5.dmg
+xcrun notarytool submit releases/Cribble-1.2.1.dmg --keychain-profile cribble-notary --wait
+xcrun stapler staple releases/Cribble-1.2.1.dmg
 ```
 
 Stable release:

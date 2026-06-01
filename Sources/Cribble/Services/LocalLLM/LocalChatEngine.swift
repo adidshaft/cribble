@@ -8,18 +8,31 @@ struct EngineMessage: Sendable, Hashable {
     let content: String
 }
 
+/// Download/load progress surfaced by local engines. The Hub downloader reports
+/// aggregate progress across snapshot files and, when available, current
+/// transfer throughput.
+struct ModelLoadProgress: Equatable, Sendable {
+    let fraction: Double
+    let bytesPerSecond: Double?
+
+    init(fraction: Double, bytesPerSecond: Double? = nil) {
+        self.fraction = min(max(fraction, 0), 1)
+        self.bytesPerSecond = bytesPerSecond
+    }
+}
+
 /// Abstraction over the on-device text generator. Kept free of any MLX types
 /// so the whole app (and the test suite) compiles and runs without the MLX
 /// toolchain — only `MLXChatEngine` imports MLX. The HUD view model talks to
 /// this protocol exclusively, which is also what makes it unit-testable.
 protocol LocalChatEngine: AnyObject, Sendable {
     /// Downloads (if needed) and loads the given model into memory. `onProgress`
-    /// reports download fraction in `0...1`; loading/compile may report 1.0
-    /// repeatedly. Safe to call repeatedly; a no-op when already prepared for
-    /// the same model.
+    /// reports download fraction in `0...1` plus current speed when available;
+    /// loading/compile may report 1.0 repeatedly. Safe to call repeatedly; a
+    /// no-op when already prepared for the same model.
     func prepare(
         model: LocalModel,
-        onProgress: @escaping @Sendable (Double) -> Void
+        onProgress: @escaping @Sendable (ModelLoadProgress) -> Void
     ) async throws
 
     /// Streams a completion for `messages`, invoking `onToken` on the main actor

@@ -85,6 +85,7 @@ Cribble 1.2.1 is the stable Cribble AI release:
 - Added a private Cribble AI chat HUD with on-device MLX models plus Claude/Codex CLI support.
 - Added vault-aware answers, quick actions, slash commands, message actions, file attachments, and folder-aware `@` search.
 - Fixed CLI streaming reliability, UTF-8 chunk-boundary decoding, block Markdown rendering in chat answers, and download progress reporting.
+- Tightened Local AI download labels so on-device model sizes and live progress are clearer.
 - Direct DMG downloads include Local AI unlocked; the Mac App Store build uses a one-time Local AI unlock.
 
 

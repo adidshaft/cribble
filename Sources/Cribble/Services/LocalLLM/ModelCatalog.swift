@@ -51,7 +51,7 @@ enum ModelCatalog {
             id: "mlx-community/gemma-4-e4b-it-4bit",
             name: "Gemma 4",
             speedLabel: "Balanced",
-            approximateSize: "~2.0 GB",
+            approximateSize: "~4.9 GB",
             blurb: "Google Gemma 4 E4B — balanced default for notes and linking.",
             recommendedMemoryGB: 8
         ),
@@ -59,8 +59,8 @@ enum ModelCatalog {
             id: "mlx-community/gemma-4-e2b-it-4bit",
             name: "Gemma 4 Flash",
             speedLabel: "Flash",
-            approximateSize: "~1.2 GB",
-            blurb: "Google Gemma 4 E2B — fastest, lightest, great on any Mac.",
+            approximateSize: "~3.4 GB",
+            blurb: "Google Gemma 4 E2B — fastest Gemma option, but still a multi-GB download.",
             recommendedMemoryGB: 8
         ),
         LocalModel(

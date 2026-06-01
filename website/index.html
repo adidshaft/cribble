@@ -591,7 +591,7 @@
 <header class="hero" id="top">
   <span class="hero-eyebrow">
     <span class="pulse"></span>
-    <span data-version-eyebrow>Version 1.2.1 — build 10201</span>
+    <span data-version-eyebrow>Version 1.2.1 — build 10202</span>
   </span>
   <h1>A calm Markdown<br/>reader for <span class="accent">macOS.</span></h1>
   <p>Cribble turns ordinary Markdown folders into a quiet reading surface with rich Markdown, Mermaid diagrams, reading marks, and a private AI assistant that understands your notes. No database. No lock-in.</p>
@@ -637,8 +637,8 @@
         <a href="https://github.com/adidshaft/cribble/releases/tag/v1.2.1" class="btn btn-secondary" data-release-notes-link>Release notes</a>
       </div>
       <div class="download-version">
-        <div class="item"><span class="label">Version</span><span class="value"><span data-version-value>1.2.1</span> (build 10201)</span></div>
-        <div class="item"><span class="label">Released</span><span class="value" data-release-date>May 31, 2026</span></div>
+        <div class="item"><span class="label">Version</span><span class="value"><span data-version-value>1.2.1</span> (build 10202)</span></div>
+        <div class="item"><span class="label">Released</span><span class="value" data-release-date>June 1, 2026</span></div>
         <div class="item"><span class="label">Size</span><span class="value" data-release-size>35 MB</span></div>
       </div>
     </div>
@@ -680,7 +680,7 @@
     </div>
     <div class="release-note">
       <h4>Cribble AI</h4>
-      <p>1.2 adds a private chat HUD, vault-aware answers, quick actions, file attachments, and safe previews before AI-generated changes touch disk.</p>
+      <p>1.2 adds a private chat HUD, vault-aware answers, quick actions, file attachments, safe previews, and clearer on-device model download progress.</p>
     </div>
   </div>
 </section>
@@ -847,7 +847,7 @@
 
   const directReleaseTag = 'v1.2.1';
   const appStoreVersion = '1.2.1';
-  const appStoreBuild = '10201';
+  const appStoreBuild = '10202';
   const releaseUrl = 'https://github.com/adidshaft/cribble/releases/tag/v1.2.1';
   const dmgUrl = 'https://github.com/adidshaft/cribble/releases/download/v1.2.1/Cribble-1.2.1.dmg';
   const checksumUrl = 'https://github.com/adidshaft/cribble/releases/download/v1.2.1/Cribble-1.2.1.dmg.sha256';
@@ -870,7 +870,7 @@
   // though the release values are already known at deploy time.
   setText('[data-release-tag]', directReleaseTag);
   setText('[data-version-value]', directReleaseTag.replace(/^v/, ''));
-  setText('[data-release-date]', 'May 31, 2026');
+  setText('[data-release-date]', 'June 1, 2026');
   setText('[data-release-size]', '35 MB');
   setText('[data-version-eyebrow]', `Version ${appStoreVersion} — build ${appStoreBuild}`);
   setHref('[data-release-link]', releaseUrl);

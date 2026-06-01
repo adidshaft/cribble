@@ -12,7 +12,7 @@ final class ChatHUDViewModel: ObservableObject {
     /// Lifecycle of the selected model.
     enum ModelPhase: Equatable {
         case idle
-        case downloading(Double)
+        case downloading(ModelLoadProgress)
         case loading
         case ready
         case failed(String)
@@ -145,23 +145,26 @@ final class ChatHUDViewModel: ObservableObject {
     struct DownloadDisplay {
         var isActive: Bool
         var fraction: Double?
+        var speed: String?
         var loading: Bool
     }
 
     func downloadDisplay(for model: LocalModel) -> DownloadDisplay {
         guard model.id == selectedModel.id else {
-            return DownloadDisplay(isActive: false, fraction: nil, loading: false)
+            return DownloadDisplay(isActive: false, fraction: nil, speed: nil, loading: false)
         }
         switch modelPhase {
-        case .downloading(let fraction):
-            // The Hub downloader often reports progress only per-file, so a big
-            // single-file model sits near 0 then jumps. Show an indeterminate
-            // spinner until there's real, non-trivial progress to display.
-            return DownloadDisplay(isActive: true, fraction: fraction > 0.01 ? fraction : nil, loading: false)
+        case .downloading(let progress):
+            return DownloadDisplay(
+                isActive: true,
+                fraction: progress.fraction > 0 ? progress.fraction : nil,
+                speed: Self.formatTransferSpeed(progress.bytesPerSecond),
+                loading: false
+            )
         case .loading:
-            return DownloadDisplay(isActive: true, fraction: nil, loading: true)
+            return DownloadDisplay(isActive: true, fraction: nil, speed: nil, loading: true)
         default:
-            return DownloadDisplay(isActive: false, fraction: nil, loading: false)
+            return DownloadDisplay(isActive: false, fraction: nil, speed: nil, loading: false)
         }
     }
 
@@ -324,15 +327,15 @@ final class ChatHUDViewModel: ObservableObject {
         if modelPhase == .ready, loadedModelID == selectedModel.id {
             return true
         }
-        modelPhase = selectedModel.kind.isCloud ? .loading : .downloading(0)
+        modelPhase = selectedModel.kind.isCloud ? .loading : .downloading(ModelLoadProgress(fraction: 0))
         statusMessage = "Preparing \(selectedModel.name)…"
         let model = selectedModel
         let engine = currentEngine()
         do {
-            try await engine.prepare(model: model) { fraction in
+            try await engine.prepare(model: model) { progress in
                 Task { @MainActor [weak self] in
                     guard let self, self.selectedModel.id == model.id else { return }
-                    self.modelPhase = fraction < 1 ? .downloading(fraction) : .loading
+                    self.modelPhase = progress.fraction < 1 ? .downloading(progress) : .loading
                 }
             }
             modelPhase = .ready
@@ -547,6 +550,14 @@ final class ChatHUDViewModel: ObservableObject {
         NSApp.windows
             .first(where: { $0.canBecomeMain && !($0 is CribbleChatPanel) })?
             .makeKeyAndOrderFront(nil)
+    }
+
+    nonisolated static func formatTransferSpeed(_ bytesPerSecond: Double?) -> String? {
+        guard let bytesPerSecond, bytesPerSecond.isFinite, bytesPerSecond > 0 else { return nil }
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytesPerSecond)) + "/s"
     }
 
     /// Locates an in-progress `@mention` at the caret (we treat end-of-string as

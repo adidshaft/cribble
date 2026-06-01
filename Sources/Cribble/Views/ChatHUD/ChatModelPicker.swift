@@ -147,7 +147,11 @@ private struct ModelRow: View {
     private var subtitle: String {
         if download.isActive {
             if download.loading { return "Loading…" }
+            if let speed = download.speed, let f = download.fraction {
+                return "Downloading… \(Int(f * 100))% at \(speed)"
+            }
             if let f = download.fraction { return "Downloading… \(Int(f * 100))%" }
+            if let speed = download.speed { return "Downloading… \(speed)" }
             return "Downloading…"
         }
         return model.kind.isCloud ? model.speedLabel : model.approximateSize

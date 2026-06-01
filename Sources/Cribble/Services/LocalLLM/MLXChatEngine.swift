@@ -25,7 +25,7 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
 
     func prepare(
         model: LocalModel,
-        onProgress: @escaping @Sendable (Double) -> Void
+        onProgress: @escaping @Sendable (ModelLoadProgress) -> Void
     ) async throws {
         let alreadyLoaded = lock.withLock { loadedModelID == model.id && container != nil }
         if alreadyLoaded { return }
@@ -53,13 +53,14 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
                 using: #huggingFaceTokenizerLoader(),
                 configuration: configuration
             ) { progress in
-                onProgress(progress.fractionCompleted)
+                let speed = progress.userInfo[.throughputKey] as? Double
+                onProgress(ModelLoadProgress(fraction: progress.fractionCompleted, bytesPerSecond: speed))
             }
             lock.withLock {
                 container = newContainer
                 loadedModelID = model.id
             }
-            onProgress(1.0)
+            onProgress(ModelLoadProgress(fraction: 1.0))
         } catch {
             throw LocalChatEngineError.modelLoadFailed(error.localizedDescription)
         }
@@ -137,7 +138,7 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
 /// Engine used when MLX is unavailable (e.g. a build without the dependency).
 /// Surfaces a clear error rather than crashing.
 final class UnavailableChatEngine: LocalChatEngine, @unchecked Sendable {
-    func prepare(model: LocalModel, onProgress: @escaping @Sendable (Double) -> Void) async throws {
+    func prepare(model: LocalModel, onProgress: @escaping @Sendable (ModelLoadProgress) -> Void) async throws {
         throw LocalChatEngineError.engineUnavailable
     }
 

@@ -24,14 +24,14 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         self.provider = provider
     }
 
-    func prepare(model: LocalModel, onProgress: @escaping @Sendable (Double) -> Void) async throws {
+    func prepare(model: LocalModel, onProgress: @escaping @Sendable (ModelLoadProgress) -> Void) async throws {
         guard Self.executableExists(provider.executableName) else {
             throw LocalChatEngineError.modelLoadFailed(
                 "`\(provider.executableName)` wasn't found in your shell's PATH. Install it, run "
                 + "`\(provider.executableName)` once in Terminal to sign in, then try again."
             )
         }
-        onProgress(1.0)
+        onProgress(ModelLoadProgress(fraction: 1.0))
     }
 
     func generate(

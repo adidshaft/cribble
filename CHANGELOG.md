@@ -30,6 +30,8 @@ reliability fixes.
   inside a total context budget.
 - **Download progress no longer appears stuck at 0%** — shows honest progress
   for large single-file models.
+- **Local model sizes are labeled accurately** — Gemma downloads now show their
+  real multi-GB footprint before you start them.
 - Compact model chip and a tidier input bar.
 
 ---
@@ -99,7 +101,7 @@ with safe, reviewable previews and nothing ever leaving your machine.
 - **Requirements:** macOS 15+ and an Apple Silicon (M-series) Mac for on-device
   models. Cloud models (Claude/Codex) require their CLI installed and signed in.
 - **First AI use:** pick a model in the chat; on-device models download once
-  (~1.2–2.9 GB). Tap the ↓ next to a model to download it ahead of time.
+  (~2.9–4.9 GB). Tap the ↓ next to a model to download it ahead of time.
 - Your notes, highlights, bookmarks, and settings are unchanged.
 
 ---

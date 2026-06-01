@@ -25,11 +25,15 @@ struct ChatInputBar: View {
     @ViewBuilder
     private var statusLine: some View {
         switch viewModel.modelPhase {
-        case .downloading(let fraction):
-            if fraction > 0.01 {
-                phaseLabel("Downloading \(viewModel.selectedModel.name) — \(Int(fraction * 100))%", system: "arrow.down.circle")
+        case .downloading(let progress):
+            let percent = Int(progress.fraction * 100)
+            let speed = ChatHUDViewModel.formatTransferSpeed(progress.bytesPerSecond)
+            if let speed {
+                phaseLabel("Downloading \(viewModel.selectedModel.name) — \(percent)% at \(speed)", system: "arrow.down.circle")
+            } else if progress.fraction > 0 {
+                phaseLabel("Downloading \(viewModel.selectedModel.name) — \(percent)%", system: "arrow.down.circle")
             } else {
-                phaseLabel("Downloading \(viewModel.selectedModel.name) (\(viewModel.selectedModel.approximateSize))… this can take a few minutes", system: "arrow.down.circle")
+                phaseLabel("Downloading \(viewModel.selectedModel.name) (\(viewModel.selectedModel.approximateSize))…", system: "arrow.down.circle")
             }
         case .loading:
             phaseLabel("Loading \(viewModel.selectedModel.name)…", system: "cpu")

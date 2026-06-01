@@ -17,6 +17,14 @@ enum ContextAssembler {
     /// blow the context window. Trimmed files are marked as truncated.
     static let perFileCharacterBudget = 12_000
 
+    /// Hard cap on the *combined* size of all inlined notes. Prevents an
+    /// "Attach All Notes" on a large vault from producing a multi-megabyte prompt
+    /// that blows the model's context window, balloons memory, or (on the CLI
+    /// path, where the prompt rides in an env var) exceeds the OS `ARG_MAX` and
+    /// fails the whole send with an opaque error. Files past the budget are
+    /// dropped and the model is told how many were omitted.
+    static let totalContextCharacterBudget = 60_000
+
     static func systemPrompt(
         modelName: String,
         currentNote: ResolvedFile?,
@@ -30,31 +38,79 @@ enum ContextAssembler {
             + "that are not present in the notes provided below."
         )
 
+        // Shared budget consumed in priority order: the current note first, then
+        // user-tagged files, then semantic matches — so the least important
+        // context (loose related notes) is the first to be dropped when space
+        // runs out.
+        var remaining = totalContextCharacterBudget
+        var omittedNotes = 0
+
+        // Fits as much of `content` as the shared budget allows (after the
+        // per-file cap), or nil when there's no meaningful room left.
+        func budgeted(_ content: String) -> String? {
+            let capped = truncate(content)
+            if capped.count <= remaining {
+                remaining -= capped.count
+                return capped
+            }
+            guard remaining > 500 else { return nil }
+            let slice = String(capped.prefix(remaining))
+            remaining = 0
+            return slice + "\n…[truncated]…"
+        }
+
         if let currentNote {
-            sections.append(
-                "CURRENT NOTE — this is the note the user is reading right now. When they say "
-                + "\"this note\", \"here\", or \"this section\", they mean this file:\n"
-                + "--- BEGIN CURRENT NOTE: \(currentNote.filename) ---\n\(truncate(currentNote.content))\n"
-                + "--- END CURRENT NOTE: \(currentNote.filename) ---"
-            )
+            if let body = budgeted(currentNote.content) {
+                sections.append(
+                    "CURRENT NOTE — this is the note the user is reading right now. When they say "
+                    + "\"this note\", \"here\", or \"this section\", they mean this file:\n"
+                    + "--- BEGIN CURRENT NOTE: \(currentNote.filename) ---\n\(body)\n"
+                    + "--- END CURRENT NOTE: \(currentNote.filename) ---"
+                )
+            } else {
+                omittedNotes += 1
+            }
         }
 
         if !files.isEmpty {
-            sections.append("REFERENCED NOTES — files the user tagged with @:")
+            var rendered: [String] = []
             for file in files {
-                sections.append(
-                    "--- BEGIN FILE: \(file.filename) ---\n\(truncate(file.content))\n--- END FILE: \(file.filename) ---"
-                )
+                if let body = budgeted(file.content) {
+                    rendered.append(
+                        "--- BEGIN FILE: \(file.filename) ---\n\(body)\n--- END FILE: \(file.filename) ---"
+                    )
+                } else {
+                    omittedNotes += 1
+                }
+            }
+            if !rendered.isEmpty {
+                sections.append("REFERENCED NOTES — files the user tagged with @:")
+                sections.append(contentsOf: rendered)
             }
         }
 
         if !related.isEmpty {
-            sections.append("RELATED NOTES — automatically found in the workspace by semantic search; use them if relevant:")
+            var rendered: [String] = []
             for file in related {
-                sections.append(
-                    "--- BEGIN RELATED: \(file.filename) ---\n\(truncate(file.content))\n--- END RELATED: \(file.filename) ---"
-                )
+                if let body = budgeted(file.content) {
+                    rendered.append(
+                        "--- BEGIN RELATED: \(file.filename) ---\n\(body)\n--- END RELATED: \(file.filename) ---"
+                    )
+                } else {
+                    omittedNotes += 1
+                }
             }
+            if !rendered.isEmpty {
+                sections.append("RELATED NOTES — automatically found in the workspace by semantic search; use them if relevant:")
+                sections.append(contentsOf: rendered)
+            }
+        }
+
+        if omittedNotes > 0 {
+            sections.append(
+                "NOTE: \(omittedNotes) attached file(s) were omitted to keep within the context limit. "
+                + "Answer from the notes shown above, and ask the user to narrow to specific files if needed."
+            )
         }
 
         if currentNote == nil && files.isEmpty && related.isEmpty {

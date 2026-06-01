@@ -45,6 +45,14 @@ final class ChatHUDViewModel: ObservableObject {
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
 
+    /// If no token (and no completion) arrives within this window after the model
+    /// is ready, the generation is treated as wedged and force-stopped, so the
+    /// HUD never stays stuck with `isGenerating == true` (which would lock out
+    /// Send and New Chat). The timer resets on every streamed token, so a slow-
+    /// but-progressing answer is never cut off.
+    private let generationStallLimit: TimeInterval = 240
+    private var lastGenerationActivity = Date()
+
     init(library: MarkdownLibraryStore, semanticIndex: SemanticSearchIndex? = nil, engine: LocalChatEngine? = nil) {
         self.library = library
         self.semanticIndex = semanticIndex
@@ -280,7 +288,23 @@ final class ChatHUDViewModel: ObservableObject {
             }
         }
 
+        // Backstop watchdog: force-stop a wedged generation so the HUD recovers
+        // on its own even if the user walks away. Resets on each token below.
+        lastGenerationActivity = Date()
+        let watchdog = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard let self else { return }
+                if Date().timeIntervalSince(self.lastGenerationActivity) > self.generationStallLimit {
+                    self.timeoutGeneration(assistantID: assistantID)
+                    return
+                }
+            }
+        }
+        defer { watchdog.cancel() }
+
         for await delta in stream {
+            lastGenerationActivity = Date()
             appendToken(delta, assistantID: assistantID)
         }
 
@@ -327,7 +351,19 @@ final class ChatHUDViewModel: ObservableObject {
         messages[index].text += delta
     }
 
+    /// Invoked by the watchdog when a generation stalls. Force-stops the engine
+    /// and surfaces a clear, recoverable message.
+    private func timeoutGeneration(assistantID: UUID) {
+        guard isGenerating else { return }
+        cancel()
+        failGeneration(
+            "Cribble stopped waiting — the model didn't respond. Try again, or pick a different model.",
+            assistantID: assistantID
+        )
+    }
+
     private func completeGeneration(finalText: String, assistantID: UUID) {
+        guard isGenerating else { return }
         if let index = messages.firstIndex(where: { $0.id == assistantID }) {
             messages[index].text = finalText.isEmpty ? messages[index].text : finalText
             messages[index].isStreaming = false
@@ -337,6 +373,7 @@ final class ChatHUDViewModel: ObservableObject {
     }
 
     private func markCancelled(assistantID: UUID) {
+        guard isGenerating else { return }
         if let index = messages.firstIndex(where: { $0.id == assistantID }) {
             messages[index].isStreaming = false
             if messages[index].text.isEmpty {
@@ -348,6 +385,7 @@ final class ChatHUDViewModel: ObservableObject {
     }
 
     private func failGeneration(_ message: String, assistantID: UUID) {
+        guard isGenerating else { return }
         if let index = messages.firstIndex(where: { $0.id == assistantID }) {
             if messages[index].text.isEmpty {
                 messages[index].text = "⚠️ \(message)"

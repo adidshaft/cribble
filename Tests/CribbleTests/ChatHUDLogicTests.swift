@@ -167,6 +167,44 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(messages.last?.role, .user)
     }
 
+    func testTotalContextBudgetOmitsExcessFiles() {
+        // 12 files × ~10k each = ~120k, well past the 60k aggregate budget.
+        let chunk = String(repeating: "x", count: 10_000)
+        let files = (0..<12).map { ResolvedFile(filename: "F\($0).md", content: chunk) }
+        let prompt = ContextAssembler.systemPrompt(modelName: "M", currentNote: nil, files: files)
+
+        XCTAssertTrue(prompt.contains("were omitted to keep within the context limit"))
+        // The inlined content must respect the aggregate budget (plus a little
+        // scaffolding for the intro, headers, and rules).
+        XCTAssertLessThan(prompt.count, ContextAssembler.totalContextCharacterBudget + 6_000)
+        // The first files survive; later ones are dropped.
+        XCTAssertTrue(prompt.contains("BEGIN FILE: F0.md"))
+        XCTAssertFalse(prompt.contains("BEGIN FILE: F11.md"))
+    }
+
+    func testTotalContextBudgetKeepsSmallContexts() {
+        // A handful of small files all fit — no omission notice.
+        let files = (0..<3).map { ResolvedFile(filename: "F\($0).md", content: "small") }
+        let prompt = ContextAssembler.systemPrompt(modelName: "M", currentNote: nil, files: files)
+        XCTAssertFalse(prompt.contains("were omitted"))
+        XCTAssertTrue(prompt.contains("BEGIN FILE: F2.md"))
+    }
+
+    func testCurrentNoteAndTaggedFilesPrioritizedOverRelated() {
+        // Budget exhausted by the current note + tagged file; loose related notes
+        // are the first to be dropped.
+        let big = String(repeating: "y", count: ContextAssembler.perFileCharacterBudget)
+        let prompt = ContextAssembler.systemPrompt(
+            modelName: "M",
+            currentNote: ResolvedFile(filename: "Open.md", content: big),
+            files: (0..<5).map { ResolvedFile(filename: "Tag\($0).md", content: big) },
+            related: [ResolvedFile(filename: "Loose.md", content: big)]
+        )
+        XCTAssertTrue(prompt.contains("BEGIN CURRENT NOTE: Open.md"))
+        XCTAssertFalse(prompt.contains("BEGIN RELATED: Loose.md"))
+        XCTAssertTrue(prompt.contains("were omitted"))
+    }
+
     func testPerFileTruncation() {
         let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
         let prompt = ContextAssembler.systemPrompt(

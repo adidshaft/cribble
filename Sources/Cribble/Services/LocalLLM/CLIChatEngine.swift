@@ -68,7 +68,15 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
 
     func cancelGeneration() async {
         let process = lock.withLock { current }
-        process?.terminate()
+        guard let process, process.isRunning else { return }
+        process.terminate() // SIGTERM
+        // Some CLIs trap or ignore SIGTERM; escalate to SIGKILL after a short
+        // grace period so Stop always works and the HUD never stays wedged on a
+        // child that refuses to die.
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
     }
 
     // MARK: - Process runner

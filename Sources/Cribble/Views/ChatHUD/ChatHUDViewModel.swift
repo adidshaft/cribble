@@ -387,12 +387,9 @@ final class ChatHUDViewModel: ObservableObject {
     /// conversation, deduped by URL.
     private func resolveContext() async -> (current: ResolvedFile?, files: [ResolvedFile], related: [ResolvedFile]) {
         var seen = Set<URL>()
-        var current: ResolvedFile?
-        if let doc = library.selectedDocument {
-            current = ResolvedFile(filename: doc.url.lastPathComponent, content: doc.rawMarkdown)
-            seen.insert(doc.url)
-        }
 
+        // Explicit `@`/`+` attachments are the authoritative context for the
+        // conversation — resolve them first.
         var files: [ResolvedFile] = []
         for message in messages where message.role == .user {
             for token in message.attachments where seen.insert(token.fileURL).inserted {
@@ -402,10 +399,29 @@ final class ChatHUDViewModel: ObservableObject {
             }
         }
 
-        // Vault-aware: pull a few semantically-related notes for the latest
-        // question so the assistant can answer about the whole workspace, not
-        // just what's open or tagged.
-        let related = await resolveRelatedNotes(excluding: seen)
+        // Whether the user has scoped this chat by attaching specific files. When
+        // they have, those files ARE the context: injecting the note that happens
+        // to be open in the reader (as "CURRENT NOTE") or loose semantic matches
+        // (as "RELATED NOTES") only confuses the model — e.g. a fresh "summarize
+        // these two files" chat answering about whatever unrelated note is open.
+        let userScopedWithAttachments = messages.contains {
+            $0.role == .user && !$0.attachments.isEmpty
+        }
+
+        // Ambient context — only when the user hasn't scoped with attachments.
+        var current: ResolvedFile?
+        var related: [ResolvedFile] = []
+        if !userScopedWithAttachments {
+            if let doc = library.selectedDocument {
+                current = ResolvedFile(filename: doc.url.lastPathComponent, content: doc.rawMarkdown)
+                seen.insert(doc.url)
+            }
+            // Vault-aware: pull a few semantically-related notes for the latest
+            // question so the assistant can answer about the whole workspace, not
+            // just what's open.
+            related = await resolveRelatedNotes(excluding: seen)
+        }
+
         return (current, files, related)
     }
 

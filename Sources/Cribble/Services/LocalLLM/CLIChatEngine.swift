@@ -98,32 +98,48 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
             process.standardError = errorPipe
             process.standardInput = FileHandle(forReadingAtPath: "/dev/null")
 
-            let accumulator = TextAccumulator()
-            if streaming {
-                outputPipe.fileHandleForReading.readabilityHandler = { handle in
-                    let chunk = handle.availableData
-                    guard !chunk.isEmpty, let text = String(data: chunk, encoding: .utf8) else { return }
-                    accumulator.append(text)
-                    onToken(text)
-                }
+            // Both pipes are drained continuously. macOS pipe buffers are ~64 KB;
+            // if either fills, the child blocks on write() and never exits — the
+            // termination handler then never fires and the continuation leaks.
+            // codex is the worst case: it streams progress chatter to stdout even
+            // though we read its real answer from a file, so stdout MUST be
+            // drained whether or not we forward it as tokens.
+            let stdoutReader = StreamingUTF8Decoder()
+            let stderrReader = StreamingUTF8Decoder()
+
+            outputPipe.fileHandleForReading.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                guard !chunk.isEmpty else { return }
+                let text = stdoutReader.consume(chunk)
+                if streaming, !text.isEmpty { onToken(text) }
+            }
+            errorPipe.fileHandleForReading.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                guard !chunk.isEmpty else { return }
+                _ = stderrReader.consume(chunk)
             }
 
             process.terminationHandler = { proc in
-                if streaming {
-                    outputPipe.fileHandleForReading.readabilityHandler = nil
-                    accumulator.append(
-                        String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                    )
-                }
-                let errorText = String(
-                    data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8
-                ) ?? ""
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+
+                // Drain whatever was buffered between the last read and exit, then
+                // flush any bytes held back at a partial UTF-8 boundary.
+                let tailOut = stdoutReader.consume(outputPipe.fileHandleForReading.readDataToEndOfFile())
+                if streaming, !tailOut.isEmpty { onToken(tailOut) }
+                let streamedTail = stdoutReader.finish()
+                if streaming, !streamedTail.isEmpty { onToken(streamedTail) }
+
+                _ = stderrReader.consume(errorPipe.fileHandleForReading.readDataToEndOfFile())
+                _ = stderrReader.finish()
+                let errorText = stderrReader.value
+
                 self.lock.withLock { self.current = nil }
 
                 let fileText = outputFile.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
                 if let outputFile { try? FileManager.default.removeItem(at: outputFile) }
 
-                let output = (fileText?.isEmpty == false ? fileText! : accumulator.value)
+                let output = (fileText?.isEmpty == false ? fileText! : stdoutReader.value)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
 
                 if proc.terminationStatus != 0 && output.isEmpty {
@@ -195,10 +211,71 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
     }
 }
 
-/// Thread-safe text accumulator for streaming stdout.
-private final class TextAccumulator: @unchecked Sendable {
+/// Thread-safe, UTF-8-aware accumulator for streaming pipe output.
+///
+/// A `Process` pipe hands us arbitrary byte boundaries, so a multi-byte UTF-8
+/// scalar (emoji, CJK, smart quotes, `…`) is frequently split across two reads.
+/// Decoding each raw chunk in isolation would return `nil` for the split chunk
+/// and silently drop it — losing characters and corrupting Markdown structure
+/// (a dropped ``` fence or `]` breaks the whole block). This decoder holds back
+/// the partial trailing sequence and prepends it to the next chunk.
+final class StreamingUTF8Decoder: @unchecked Sendable {
     private let lock = NSLock()
-    private var storage = ""
-    func append(_ text: String) { lock.withLock { storage += text } }
-    var value: String { lock.withLock { storage } }
+    private var pending = Data()   // bytes of an incomplete trailing scalar
+    private var text = ""          // everything decoded so far
+
+    /// Appends raw bytes and returns only the newly-decodable text.
+    func consume(_ data: Data) -> String {
+        guard !data.isEmpty else { return "" }
+        return lock.withLock {
+            pending.append(data)
+            let (decodable, remainder) = Self.splitOnScalarBoundary(pending)
+            pending = remainder
+            guard !decodable.isEmpty, let chunk = String(data: decodable, encoding: .utf8) else { return "" }
+            text += chunk
+            return chunk
+        }
+    }
+
+    /// Flushes any bytes still held back at end of stream. If they're genuinely
+    /// invalid UTF-8 they're decoded lossily (U+FFFD) rather than dropped.
+    func finish() -> String {
+        lock.withLock {
+            guard !pending.isEmpty else { return "" }
+            let chunk = String(decoding: pending, as: UTF8.self)
+            pending.removeAll()
+            text += chunk
+            return chunk
+        }
+    }
+
+    var value: String { lock.withLock { text } }
+
+    /// Splits `data` into (complete-scalars, incomplete-trailing-bytes) on a
+    /// UTF-8 scalar boundary.
+    static func splitOnScalarBoundary(_ data: Data) -> (Data, Data) {
+        let bytes = [UInt8](data)
+        guard !bytes.isEmpty else { return (Data(), Data()) }
+
+        // Walk back from the end to the lead byte of the final scalar (skip
+        // continuation bytes 0b10xxxxxx). A UTF-8 scalar is at most 4 bytes.
+        var i = bytes.count - 1
+        let lowerBound = max(0, bytes.count - 4)
+        while i > lowerBound, bytes[i] & 0b1100_0000 == 0b1000_0000 {
+            i -= 1
+        }
+
+        let lead = bytes[i]
+        let scalarLength: Int
+        if lead & 0b1000_0000 == 0 { scalarLength = 1 }
+        else if lead & 0b1110_0000 == 0b1100_0000 { scalarLength = 2 }
+        else if lead & 0b1111_0000 == 0b1110_0000 { scalarLength = 3 }
+        else if lead & 0b1111_1000 == 0b1111_0000 { scalarLength = 4 }
+        else { scalarLength = 1 } // invalid lead — treat as complete, decoded lossily
+
+        let available = bytes.count - i
+        // Complete final scalar (or it's already over-long/invalid) → all decodable.
+        let cut = available >= scalarLength ? bytes.count : i
+        return (Data(bytes[0..<cut]), Data(bytes[cut...]))
+    }
 }

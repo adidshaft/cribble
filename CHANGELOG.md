@@ -22,6 +22,12 @@ reliability fixes.
 ### 🐞 Fixes
 - **Claude / Codex now load reliably** — the CLIs run through your login shell,
   so they inherit Terminal's PATH and signed-in session.
+- **Attached files now stay authoritative** — when you scope a chat with `@` or
+  `+` attachments, Cribble no longer lets the open reader note or related-note
+  search distract the answer.
+- **Chat HUD reliability tightened** — stalled generations now recover cleanly,
+  Stop escalates stuck CLI processes, and large "Attach All Notes" prompts stay
+  inside a total context budget.
 - **Download progress no longer appears stuck at 0%** — shows honest progress
   for large single-file models.
 - Compact model chip and a tidier input bar.

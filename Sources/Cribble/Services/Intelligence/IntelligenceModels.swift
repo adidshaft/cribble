@@ -40,8 +40,19 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     }
 
     /// Whether running this job type requires a loaded intelligence provider
-    /// (a model). Tier 1 jobs are pure code and run even with no model present.
-    var requiresProvider: Bool { tier != .tier1 }
+    /// (a model). Some heavier jobs are still fully deterministic (dependency
+    /// diagram, drift) and must run even with no model present — so this is
+    /// per-type, not derived from tier.
+    var requiresProvider: Bool {
+        switch self {
+        case .summarizeFile, .summarizeDiff, .summarizeCommit,
+             .extractFallbackLogic, .buildArchitectureDiagram, .updateProjectIndex:
+            return true
+        case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports,
+             .buildDependencyDiagram, .detectArchitectureDrift:
+            return false
+        }
+    }
 }
 
 /// Scheduling tier. Higher tiers are heavier and gated more aggressively.
@@ -153,6 +164,26 @@ struct IntelligenceArtifact: Identifiable, Sendable, Equatable {
     /// Input file hashes that produced this artifact (for staleness checks).
     let sourceHashes: [String]
     var isPublished: Bool
+}
+
+/// A parsed symbol joined with its file path, for graph/index building.
+struct SymbolRecord: Sendable, Equatable {
+    let fileID: Int64
+    let filePath: String
+    let name: String
+    let kind: String   // SwiftSymbol.Kind raw value
+    let startLine: Int?
+    let endLine: Int?
+    let signature: String?
+}
+
+/// A git commit as tracked in `git_commits`.
+struct GitCommitRecord: Sendable, Equatable {
+    let sha: String
+    let message: String
+    let author: String
+    let timestamp: String
+    let isSummarized: Bool
 }
 
 /// Links a span of an artifact back to the exact source range that justifies it.

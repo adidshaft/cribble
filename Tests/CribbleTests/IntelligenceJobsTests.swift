@@ -1,0 +1,119 @@
+import XCTest
+@testable import Cribble
+
+private final class StubProvider: IntelligenceProvider {
+    let displayName = "Stub"
+    let text: String
+    init(text: String) { self.text = text }
+    func checkAvailability() async -> ProviderAvailability { .available }
+    func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String { text }
+    func embed(text: String) async throws -> [Float]? { nil }
+}
+
+final class IntelligenceJobsTests: XCTestCase {
+
+    // MARK: - DependencyGraph
+
+    func testDependencyGraphBuildsImportAndUsesEdges() {
+        let symbols = [
+            SymbolRecord(fileID: 1, filePath: "A.swift", name: "Foundation", kind: "import", startLine: 1, endLine: 1, signature: "import Foundation"),
+            SymbolRecord(fileID: 1, filePath: "A.swift", name: "Engine", kind: "type", startLine: 3, endLine: 9, signature: "struct Engine"),
+            SymbolRecord(fileID: 2, filePath: "B.swift", name: "run", kind: "function", startLine: 1, endLine: 3, signature: "func run(engine: Engine)")
+        ]
+        let graph = DependencyGraph.build(from: symbols)
+        XCTAssertTrue(graph.edges.contains(.init(from: "A.swift", to: "module:Foundation", label: "import")))
+        XCTAssertTrue(graph.edges.contains(.init(from: "B.swift", to: "A.swift", label: "uses")))
+        let mermaid = graph.mermaid()
+        XCTAssertTrue(OutputValidator.validateMermaid(mermaid).isValid)
+    }
+
+    func testDependencyGraphDrift() {
+        let base: [DependencyGraph.Edge] = [.init(from: "A", to: "B", label: "uses")]
+        let graph = DependencyGraph(nodes: ["A": "A", "C": "C"], edges: [.init(from: "A", to: "C", label: "uses")])
+        let drift = graph.drift(comparedToDocumented: base)
+        XCTAssertEqual(drift.count, 2)
+        XCTAssertTrue(drift.contains { $0.kind == .missingInCode && $0.edge.to == "B" })
+        XCTAssertTrue(drift.contains { $0.kind == .missingInDiagram && $0.edge.to == "C" })
+    }
+
+    // MARK: - OutputValidator
+
+    func testMarkdownValidatorFlagsUnknownPaths() {
+        let known: Set<String> = ["Sources/App/Engine.swift"]
+        XCTAssertTrue(OutputValidator.validateMarkdown("Uses Sources/App/Engine.swift here", knownPaths: known).isValid)
+        XCTAssertFalse(OutputValidator.validateMarkdown("See made/up/path.swift", knownPaths: known).isValid)
+        // Bare filename mention (no slash) is allowed.
+        XCTAssertTrue(OutputValidator.validateMarkdown("The Engine.swift file", knownPaths: known).isValid)
+    }
+
+    func testMermaidValidator() {
+        XCTAssertTrue(OutputValidator.validateMermaid("graph LR\n  a-->b").isValid)
+        XCTAssertFalse(OutputValidator.validateMermaid("not a diagram").isValid)
+        XCTAssertFalse(OutputValidator.validateMermaid("graph LR\n  a[unbalanced-->b").isValid)
+    }
+
+    // MARK: - GitInspector
+
+    func testGitInspectorOnNonRepoIsGraceful() async {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-nogit-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let git = GitInspector(rootURL: tmp)
+        let isRepo = await git.isRepository()
+        XCTAssertFalse(isRepo)
+        let commits = await git.recentCommits()
+        XCTAssertTrue(commits.isEmpty)
+    }
+
+    // MARK: - Expanded executors
+
+    func testRunnerProducesAggregateArtifacts() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-agg-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "import Foundation\nstruct Engine { func go() {} }".write(to: root.appendingPathComponent("Engine.swift"), atomically: true, encoding: .utf8)
+        try "struct Runner { func run(e: Engine) {} }".write(to: root.appendingPathComponent("Runner.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let scanner = WorkspaceScanner(db: db, projectID: "p", rootURL: root)
+        _ = await scanner.scan()
+
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let provider = StubProvider(text: "# Summary\n\nA concise description of behavior.")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+
+        // Drain the two file summaries first.
+        await runner.drain(limit: 10)
+        let files = await db.files(projectID: "p")
+        let combined = ContentHasher.combine(files.map(\.hash).sorted())
+
+        // Enqueue the aggregates and drain again.
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .buildDependencyDiagram, inputHash: combined, priority: 150))
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .detectArchitectureDrift, inputHash: combined, priority: 160))
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .updateProjectIndex, inputHash: combined, priority: 200))
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .buildArchitectureDiagram, inputHash: combined, priority: 210))
+        await runner.drain(limit: 20)
+
+        let produced = await db.artifacts(projectID: "p")
+        let types = Set(produced.map(\.type))
+        XCTAssertTrue(types.contains(.fileSummary))
+        XCTAssertTrue(types.contains(.dependencyDiagram))
+        XCTAssertTrue(types.contains(.driftReport))
+        XCTAssertTrue(types.contains(.projectIndex))
+        XCTAssertTrue(types.contains(.architectureDiagram))
+
+        // Dependency diagram should contain a valid mermaid block.
+        if let dep = produced.first(where: { $0.type == .dependencyDiagram }), let content = artifacts.content(for: dep) {
+            XCTAssertTrue(content.contains("```mermaid"))
+        } else {
+            XCTFail("missing dependency diagram content")
+        }
+
+        // No jobs left failed.
+        let failed = await db.jobs(projectID: "p", status: .failed).count
+        XCTAssertEqual(failed, 0)
+    }
+}

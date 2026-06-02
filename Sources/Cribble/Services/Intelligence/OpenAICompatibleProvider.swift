@@ -1,0 +1,122 @@
+import Foundation
+
+/// One provider for *any* OpenAI-compatible local runner — Ollama
+/// (`localhost:11434/v1`), llama.cpp's `llama-server` (`localhost:8080/v1`),
+/// LM Studio, vLLM, etc. The research doc (§3.1) recommends collapsing the
+/// separate Ollama/llama.cpp providers into this single client: they speak the
+/// same dialect, so "works with anything OpenAI-compatible on localhost" is both
+/// less code and a stronger story than naming specific runners.
+///
+/// `@unchecked Sendable`: holds only immutable config + a `URLSession`.
+final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable {
+    let displayName: String
+    private let baseURL: URL
+    private let apiKey: String?
+    private let model: String
+    private let embedModel: String?
+    private let session: URLSession
+
+    /// - Parameters:
+    ///   - baseURL: e.g. `http://localhost:11434/v1` or `http://localhost:8080/v1`.
+    ///   - model: chat model id served by the runner.
+    ///   - embedModel: embeddings model id, or nil to disable embeddings.
+    init(
+        baseURL: URL,
+        model: String,
+        embedModel: String? = nil,
+        apiKey: String? = nil,
+        displayName: String? = nil,
+        session: URLSession = .shared
+    ) {
+        self.baseURL = baseURL
+        self.model = model
+        self.embedModel = embedModel
+        self.apiKey = apiKey
+        self.displayName = displayName ?? "\(model) (\(baseURL.host ?? "local"))"
+        self.session = session
+    }
+
+    func checkAvailability() async -> ProviderAvailability {
+        // Probe `/models`; a 200 means the runner is up and reachable.
+        var request = URLRequest(url: baseURL.appendingPathComponent("models"))
+        request.timeoutInterval = 3
+        authorize(&request)
+        do {
+            let (_, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return .unavailable(reason: "Runner at \(baseURL.host ?? "localhost") not responding")
+            }
+            return .available
+        } catch {
+            return .unavailable(reason: "Can't reach \(baseURL.host ?? "localhost"): \(error.localizedDescription)")
+        }
+    }
+
+    func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String {
+        var body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "temperature": 0.2,
+            "messages": prompt.map { ["role": $0.role.rawValue, "content": $0.content] }
+        ]
+        // Schema-constrained generation when the caller supplied a hint. Runners
+        // that ignore `response_format` simply fall back to free-form text.
+        if let schema {
+            body["response_format"] = [
+                "type": "json_schema",
+                "json_schema": ["name": schema.name, "strict": false]
+            ]
+        }
+
+        var request = URLRequest(url: baseURL.appendingPathComponent("chat/completions"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        authorize(&request)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let detail = String(data: data, encoding: .utf8)?.prefix(200) ?? ""
+            throw LocalChatEngineError.generationFailed("HTTP error: \(detail)")
+        }
+        guard
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let message = choices.first?["message"] as? [String: Any],
+            let content = message["content"] as? String
+        else {
+            throw LocalChatEngineError.generationFailed("Unexpected response shape")
+        }
+        return content
+    }
+
+    func embed(text: String) async throws -> [Float]? {
+        guard let embedModel else { return nil }
+        let body: [String: Any] = ["model": embedModel, "input": text]
+        var request = URLRequest(url: baseURL.appendingPathComponent("embeddings"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        authorize(&request)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return nil }
+        guard
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let dataArray = json["data"] as? [[String: Any]],
+            let embedding = dataArray.first?["embedding"] as? [Double]
+        else { return nil }
+        return embedding.map(Float.init)
+    }
+
+    private func authorize(_ request: inout URLRequest) {
+        if let apiKey { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
+    }
+
+    /// Common local runner endpoints, probed in order during first-run setup.
+    static let knownLocalEndpoints: [(name: String, url: URL)] = [
+        ("Ollama", URL(string: "http://localhost:11434/v1")!),
+        ("llama.cpp", URL(string: "http://localhost:8080/v1")!),
+        ("LM Studio", URL(string: "http://localhost:1234/v1")!)
+    ]
+}

@@ -282,6 +282,30 @@ actor IntelligenceDatabase {
         }
     }
 
+    /// All symbols in a project, joined with their file paths. Used to build the
+    /// dependency graph and the project index without a model.
+    func allSymbols(projectID: String) -> [SymbolRecord] {
+        var rows: [SymbolRecord] = []
+        query("""
+        SELECT f.id, f.path, s.name, s.kind, s.start_line, s.end_line, s.signature
+        FROM symbols s JOIN files f ON s.file_id = f.id
+        WHERE f.project_id = ? ORDER BY f.path, s.start_line;
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            rows.append(SymbolRecord(
+                fileID: sqlite3_column_int64(stmt, 0),
+                filePath: Self.columnText(stmt, 1) ?? "",
+                name: Self.columnText(stmt, 2) ?? "",
+                kind: Self.columnText(stmt, 3) ?? "",
+                startLine: sqlite3_column_type(stmt, 4) == SQLITE_NULL ? nil : Int(sqlite3_column_int(stmt, 4)),
+                endLine: sqlite3_column_type(stmt, 5) == SQLITE_NULL ? nil : Int(sqlite3_column_int(stmt, 5)),
+                signature: Self.columnText(stmt, 6)
+            ))
+        }
+        return rows
+    }
+
     func symbolCount(fileID: Int64) -> Int {
         var count = 0
         query("SELECT COUNT(*) FROM symbols WHERE file_id = ?;") { stmt in
@@ -504,6 +528,31 @@ actor IntelligenceDatabase {
         return rows
     }
 
+    func artifacts(projectID: String, type: IntelligenceArtifactType) -> [IntelligenceArtifact] {
+        artifacts(projectID: projectID).filter { $0.type == type }
+    }
+
+    /// Total bytes recorded for a project's artifacts is not tracked in the DB
+    /// (content lives on disk); the engine computes disk usage from the cache
+    /// directory. This returns artifact ids ordered oldest-first for LRU eviction.
+    func artifactIDsOldestFirst(projectID: String) -> [String] {
+        var ids: [String] = []
+        query("SELECT id FROM artifacts WHERE project_id = ? AND is_published = 0 ORDER BY updated_at ASC;") { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            if let id = Self.columnText(stmt, 0) { ids.append(id) }
+        }
+        return ids
+    }
+
+    func deleteArtifact(id: String) {
+        run("DELETE FROM artifacts WHERE id = ?;") { stmt in bindText(stmt, 1, id) }
+    }
+
+    func markArtifactPublished(id: String) {
+        run("UPDATE artifacts SET is_published = 1 WHERE id = ?;") { stmt in bindText(stmt, 1, id) }
+    }
+
     /// Marks every artifact that was produced from `sourceHash` as stale, so the
     /// scheduler knows to regenerate it. Implements the bottom-up invalidation
     /// from the design plan (§7.3).
@@ -524,6 +573,54 @@ actor IntelligenceDatabase {
             count = Int(sqlite3_column_int64(stmt, 0))
         }
         return count
+    }
+
+    // MARK: - Git commits
+
+    /// Records a commit if not already present. Returns true if newly inserted.
+    @discardableResult
+    func recordCommitIfNeeded(projectID: String, sha: String, message: String, author: String, timestamp: String) -> Bool {
+        var exists = false
+        query("SELECT 1 FROM git_commits WHERE project_id = ? AND sha = ? LIMIT 1;") { stmt in
+            bindText(stmt, 1, projectID)
+            bindText(stmt, 2, sha)
+        } each: { _ in exists = true }
+        guard !exists else { return false }
+        run("INSERT INTO git_commits (project_id, sha, message, author, timestamp) VALUES (?, ?, ?, ?, ?);") { stmt in
+            bindText(stmt, 1, projectID)
+            bindText(stmt, 2, sha)
+            bindText(stmt, 3, message)
+            bindText(stmt, 4, author)
+            bindText(stmt, 5, timestamp)
+        }
+        return true
+    }
+
+    func unsummarizedCommits(projectID: String, limit: Int = 20) -> [GitCommitRecord] {
+        var rows: [GitCommitRecord] = []
+        query("""
+        SELECT sha, message, author, timestamp, is_summarized FROM git_commits
+        WHERE project_id = ? AND is_summarized = 0 ORDER BY timestamp DESC LIMIT ?;
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+            sqlite3_bind_int(stmt, 2, Int32(limit))
+        } each: { stmt in
+            rows.append(GitCommitRecord(
+                sha: Self.columnText(stmt, 0) ?? "",
+                message: Self.columnText(stmt, 1) ?? "",
+                author: Self.columnText(stmt, 2) ?? "",
+                timestamp: Self.columnText(stmt, 3) ?? "",
+                isSummarized: sqlite3_column_int(stmt, 4) == 1
+            ))
+        }
+        return rows
+    }
+
+    func markCommitSummarized(projectID: String, sha: String) {
+        run("UPDATE git_commits SET is_summarized = 1 WHERE project_id = ? AND sha = ?;") { stmt in
+            bindText(stmt, 1, projectID)
+            bindText(stmt, 2, sha)
+        }
     }
 
     // MARK: - Provenance

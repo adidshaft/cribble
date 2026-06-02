@@ -58,6 +58,7 @@ final class ChatHUDController {
     private weak var library: MarkdownLibraryStore?
     private weak var semanticIndex: SemanticSearchIndex?
     private weak var entitlement: LLMEntitlementStore?
+    private weak var intelligence: IntelligenceEngine?
     private var onLocked: (() -> Void)?
     private weak var statusButton: NSStatusBarButton?
 
@@ -69,11 +70,13 @@ final class ChatHUDController {
         library: MarkdownLibraryStore,
         semanticIndex: SemanticSearchIndex,
         entitlement: LLMEntitlementStore,
+        intelligence: IntelligenceEngine? = nil,
         onLocked: @escaping () -> Void
     ) {
         self.library = library
         self.semanticIndex = semanticIndex
         self.entitlement = entitlement
+        self.intelligence = intelligence
         self.onLocked = onLocked
     }
 
@@ -157,6 +160,7 @@ final class ChatHUDController {
         if let viewModel { return viewModel }
         guard let library else { return nil }
         let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
+        vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }
         viewModel = vm
         return vm
     }

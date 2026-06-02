@@ -40,6 +40,10 @@ final class ChatHUDViewModel: ObservableObject {
 
     private let library: MarkdownLibraryStore
     private let semanticIndex: SemanticSearchIndex?
+    /// Optional project-intelligence context (project index + summaries) folded
+    /// into chat answers as related notes (design plan Phase 1). Set by
+    /// `ChatHUDController` when an `IntelligenceEngine` is available.
+    var intelligenceContextProvider: (@MainActor () -> [ResolvedFile])?
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?
@@ -461,6 +465,12 @@ final class ChatHUDViewModel: ObservableObject {
             // question so the assistant can answer about the whole workspace, not
             // just what's open.
             related = await resolveRelatedNotes(excluding: seen)
+        }
+
+        // Fold in generated project intelligence (project index) when available,
+        // so chat answers benefit from the living knowledge base.
+        if let intelligenceContextProvider {
+            related.append(contentsOf: intelligenceContextProvider())
         }
 
         return (current, files, related)

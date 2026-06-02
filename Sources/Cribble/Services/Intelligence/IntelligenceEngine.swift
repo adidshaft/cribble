@@ -64,6 +64,13 @@ final class IntelligenceEngine: ObservableObject {
 
         let cacheDir = rootURL.appendingPathComponent(".cribble/cache")
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        // Self-contained ignore (design plan §4.1): keep the regenerable cache out
+        // of git while leaving published `intelligence/` artifacts trackable —
+        // without silently editing the user's root .gitignore.
+        let dotIgnore = rootURL.appendingPathComponent(".cribble/.gitignore")
+        if !FileManager.default.fileExists(atPath: dotIgnore.path) {
+            try? "cache/\n".write(to: dotIgnore, atomically: true, encoding: .utf8)
+        }
         guard let database = try? IntelligenceDatabase(path: cacheDir.appendingPathComponent("intelligence.db").path) else {
             status = .off
             return

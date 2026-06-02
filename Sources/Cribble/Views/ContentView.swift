@@ -39,6 +39,7 @@ struct ContentView: View {
                     library: library,
                     semanticIndex: semanticIndex,
                     entitlement: llmEntitlement,
+                    intelligence: intelligence,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
                 IntelligenceHUDController.shared.configure(

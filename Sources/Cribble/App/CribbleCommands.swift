@@ -6,6 +6,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openInEditorAction) private var openInEditor
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
+    @FocusedValue(\.toggleIntelligenceHUDAction) private var toggleIntelligenceHUD
     @FocusedValue(\.showDiagnosticsAction) private var showDiagnostics
     @FocusedValue(\.copyDiagnosticsAction) private var copyDiagnostics
     @FocusedValue(\.revealCrashReportAction) private var revealCrashReport
@@ -76,6 +77,10 @@ struct CribbleCommands: Commands {
             Button("Cribble AI Chat", action: { toggleChatHUD?() })
                 .keyboardShortcut("c", modifiers: [])
                 .disabled(toggleChatHUD == nil)
+
+            Button("Project Intelligence", action: { toggleIntelligenceHUD?() })
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .disabled(toggleIntelligenceHUD == nil)
         }
 
         // Help — diagnostics live here instead of a top-level menu. (Check for
@@ -120,6 +125,10 @@ private struct RunAILinkingActionKey: FocusedValueKey {
 }
 
 private struct ToggleChatHUDActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ToggleIntelligenceHUDActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -191,6 +200,11 @@ extension FocusedValues {
     var toggleChatHUDAction: (() -> Void)? {
         get { self[ToggleChatHUDActionKey.self] }
         set { self[ToggleChatHUDActionKey.self] = newValue }
+    }
+
+    var toggleIntelligenceHUDAction: (() -> Void)? {
+        get { self[ToggleIntelligenceHUDActionKey.self] }
+        set { self[ToggleIntelligenceHUDActionKey.self] = newValue }
     }
 
     var showDiagnosticsAction: (() -> Void)? {

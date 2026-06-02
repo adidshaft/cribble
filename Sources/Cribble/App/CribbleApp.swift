@@ -12,6 +12,7 @@ struct CribbleApp: App {
     @StateObject private var readingTrail = ReadingTrailStore()
     @StateObject private var semanticIndex = SemanticSearchIndex()
     @StateObject private var llmEntitlement = LLMEntitlementStore()
+    @StateObject private var intelligence = IntelligenceEngine(settings: IntelligenceSettings())
 
     init() {
         // Runs at the very top of App.main(), before SwiftUI evaluates the
@@ -33,6 +34,7 @@ struct CribbleApp: App {
                 .environmentObject(readingTrail)
                 .environmentObject(semanticIndex)
                 .environmentObject(llmEntitlement)
+                .environmentObject(intelligence)
                 .frame(minWidth: 380, minHeight: 480)
                 .preferredColorScheme(settings.appearance.colorScheme)
         }

@@ -4,6 +4,7 @@ struct SidebarView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
+    @EnvironmentObject private var intelligence: IntelligenceEngine
     @State private var iconPickerTarget: FolderIconTarget?
 
     var body: some View {
@@ -87,6 +88,15 @@ struct SidebarView: View {
 
                 if library.isImportedRoot(node.url) {
                     Divider()
+
+                    Button("Open Project Intelligence", systemImage: "brain") {
+                        Task {
+                            if !intelligence.isEnabled {
+                                await intelligence.enable(rootURL: node.url)
+                            }
+                            IntelligenceHUDController.shared.toggle()
+                        }
+                    }
 
                     Button("Rename Folder...", systemImage: "pencil") {
                         library.renameImportedFolder(node.url)
@@ -194,6 +204,7 @@ private struct SemanticResultsSection: View {
 private struct SidebarControls: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var intelligence: IntelligenceEngine
 
     var body: some View {
         #if compiler(>=6.1)
@@ -254,7 +265,50 @@ private struct SidebarControls: View {
             .disabled(!library.hasFolders)
             .help("Sort files inside folders by name, created date, or updated date")
 
+            Button {
+                IntelligenceHUDController.shared.toggle()
+            } label: {
+                Label("Project Intelligence", systemImage: intelligenceSymbol)
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(intelligenceTint)
+            }
+            .cribbleGlassButton()
+            .disabled(!library.hasFolders)
+            .help(intelligenceHelp)
+
             Spacer(minLength: 0)
+        }
+    }
+
+    /// The sidebar indicator reflects intelligence status (plan §9): distinct
+    /// shapes, not color alone, for accessibility.
+    private var intelligenceSymbol: String {
+        switch intelligence.status {
+        case .off: "brain"
+        case .ready: "brain.head.profile"
+        case .scanning, .working: "brain.head.profile.fill"
+        case .idle: "brain.head.profile.fill"
+        case .driftDetected: "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var intelligenceTint: Color {
+        switch intelligence.status {
+        case .off: .secondary
+        case .ready, .scanning, .working: .blue
+        case .idle: .green
+        case .driftDetected: .orange
+        }
+    }
+
+    private var intelligenceHelp: String {
+        switch intelligence.status {
+        case .off: "Build local project intelligence for this folder"
+        case .ready: "Intelligence ready"
+        case .scanning: "Scanning project…"
+        case .working: "Processing project intelligence…"
+        case .idle: "Project intelligence up to date"
+        case .driftDetected(let n): "\(n) architecture drift change(s) detected"
         }
     }
 }

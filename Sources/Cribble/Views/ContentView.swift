@@ -7,6 +7,7 @@ struct ContentView: View {
     @EnvironmentObject private var diagnostics: DiagnosticsCenter
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     @EnvironmentObject private var llmEntitlement: LLMEntitlementStore
+    @EnvironmentObject private var intelligence: IntelligenceEngine
     @State private var showingAIProviderSheet = false
     @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
@@ -32,6 +33,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
+            .focusedSceneValue(\.toggleIntelligenceHUDAction, { openIntelligenceHUD() })
             .onAppear {
                 ChatHUDController.shared.configure(
                     library: library,
@@ -39,6 +41,15 @@ struct ContentView: View {
                     entitlement: llmEntitlement,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
+                IntelligenceHUDController.shared.configure(
+                    engine: intelligence,
+                    library: library,
+                    entitlement: llmEntitlement,
+                    onLocked: { showingLLMUnlockSheet = true }
+                )
+                if let root = library.activeRootURL {
+                    Task { await intelligence.restoreIfEnabled(rootURL: root) }
+                }
             }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
@@ -121,6 +132,11 @@ struct ContentView: View {
     /// gate (App Store build only — the DMG build is always unlocked).
     private func openChatHUD() {
         ChatHUDController.shared.toggleFloating()
+    }
+
+    /// Toggles the floating Intelligence HUD (project-intelligence cockpit).
+    private func openIntelligenceHUD() {
+        IntelligenceHUDController.shared.toggle()
     }
 
     private var behaviorContent: some View {

@@ -161,6 +161,8 @@ final class ChatHUDController {
         guard let library else { return nil }
         let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
         vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }
+        vm.useProjectIntelligence = intelligence?.settings.useInChat ?? false
+        vm.onIntelligenceToggle = { [weak intelligence] on in intelligence?.settings.useInChat = on }
         viewModel = vm
         return vm
     }

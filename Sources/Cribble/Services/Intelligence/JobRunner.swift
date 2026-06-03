@@ -112,6 +112,7 @@ actor JobRunner {
         case .summarizeCommit:          return try await summarizeCommit(job)
         case .updateProjectIndex:       return try await updateProjectIndex(job)
         case .buildDependencyDiagram:   return try await buildDependencyDiagram(job)
+        case .buildConnectionsGraph:    return try await buildConnectionsGraph(job)
         case .buildArchitectureDiagram: return try await buildArchitectureDiagram(job)
         case .detectArchitectureDrift:  return try await detectArchitectureDrift(job)
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports:
@@ -246,6 +247,28 @@ actor JobRunner {
         let artifact = try await artifacts.store(
             type: .dependencyDiagram, relativePath: "architecture/dependency-map.md",
             title: "Dependency Map", content: content, sourceHashes: [job.inputHash]
+        )
+        return artifact.id
+    }
+
+    private func buildConnectionsGraph(_ job: IntelligenceJob) async throws -> String? {
+        let mdFiles = await db.files(projectID: projectID)
+            .filter { $0.language == SourceLanguage.markdown.rawValue }
+            .map { (path: $0.path, url: rootURL.appendingPathComponent($0.path)) }
+        let graph = NoteConnectionsGraph.build(markdownFiles: mdFiles)
+        let content: String
+        if graph.edges.isEmpty {
+            content = "# Connections\n\nNo `[[wiki links]]` between notes found yet. Add links like `[[Another Note]]` to see them connected here."
+        } else {
+            let mermaid = graph.mermaid(maxNodes: 60, clickable: true)
+            if let mermaidValidator, await mermaidValidator(mermaid) == false {
+                throw JobRunnerError.validationFailed(["mermaid failed headless render"])
+            }
+            content = "# Connections\n\nHow your notes link to each other (\(graph.edges.count) links).\n\n```mermaid\n\(mermaid)\n```\n"
+        }
+        let artifact = try await artifacts.store(
+            type: .connectionsGraph, relativePath: "connections/note-graph.md",
+            title: "Connections", content: content, sourceHashes: [job.inputHash]
         )
         return artifact.id
     }

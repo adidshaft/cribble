@@ -38,6 +38,16 @@ struct ChatHUDView: View {
             Spacer()
 
             HeaderIcon(
+                systemName: viewModel.useProjectIntelligence ? "brain.fill" : "brain",
+                help: viewModel.useProjectIntelligence ? "Project intelligence: ON (answers use this project's index)" : "Project intelligence: OFF"
+            ) { viewModel.useProjectIntelligence.toggle() }
+
+            HeaderIcon(
+                systemName: "brain.head.profile",
+                help: "Open Project Intelligence"
+            ) { IntelligenceHUDController.shared.toggle() }
+
+            HeaderIcon(
                 systemName: "square.and.pencil",
                 help: "New chat",
                 disabled: viewModel.isGenerating || !viewModel.hasConversation

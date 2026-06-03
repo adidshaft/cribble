@@ -39,6 +39,13 @@ final class IntelligenceSettings: ObservableObject {
         didSet { UserDefaults.standard.set(diskBudgetMB, forKey: Keys.diskBudgetMB) }
     }
 
+    /// When on, the Chat HUD folds the active project's intelligence into its
+    /// answers. Off by default so chat never gets polluted by project context the
+    /// user didn't ask for.
+    @Published var useInChat: Bool {
+        didSet { UserDefaults.standard.set(useInChat, forKey: Keys.useInChat) }
+    }
+
     init() {
         let stored = UserDefaults.standard.stringArray(forKey: Keys.enabledProjects) ?? []
         enabledProjectIDs = Set(stored)
@@ -47,7 +54,11 @@ final class IntelligenceSettings: ObservableObject {
         // CLI's auth-error text getting stored as artifacts). Prefer an on-device
         // model; if none is downloaded yet, deterministic jobs still run and model
         // jobs simply wait. Migrate the old cloud default to the local default.
-        let onDeviceDefault = ModelCatalog.localModels.first?.id ?? ModelCatalog.defaultModel.id
+        // Prefer, in order: a stored on-device choice → any already-downloaded
+        // local model (so we don't nag to download when one is present) → the
+        // local default.
+        let firstDownloaded = ModelCatalog.localModels.first(where: ModelInventory.isDownloaded)?.id
+        let onDeviceDefault = firstDownloaded ?? ModelCatalog.localModels.first?.id ?? ModelCatalog.defaultModel.id
         let storedModel = UserDefaults.standard.string(forKey: Keys.modelID)
         if let storedModel, let model = ModelCatalog.model(withID: storedModel), !model.kind.isCloud {
             modelID = storedModel
@@ -58,6 +69,7 @@ final class IntelligenceSettings: ObservableObject {
         pauseOnBattery = UserDefaults.standard.object(forKey: Keys.pauseOnBattery) as? Bool ?? true
         autoPublish = UserDefaults.standard.object(forKey: Keys.autoPublish) as? Bool ?? false
         diskBudgetMB = UserDefaults.standard.object(forKey: Keys.diskBudgetMB) as? Int ?? 500
+        useInChat = UserDefaults.standard.object(forKey: Keys.useInChat) as? Bool ?? false
     }
 
     func isEnabled(projectID: String) -> Bool { enabledProjectIDs.contains(projectID) }
@@ -74,5 +86,6 @@ final class IntelligenceSettings: ObservableObject {
         static let pauseOnBattery = "intelligence.pauseOnBattery"
         static let autoPublish = "intelligence.autoPublish"
         static let diskBudgetMB = "intelligence.diskBudgetMB"
+        static let useInChat = "intelligence.useInChat"
     }
 }

@@ -62,6 +62,7 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
+            if engine.isEnabled { modelMenu }
             statusPill
             if engine.isEnabled {
                 headerIcon("arrow.clockwise", help: "Run now") { Task { await engine.runNow() } }
@@ -98,6 +99,45 @@ struct IntelligenceHUDView: View {
             .background(color.opacity(0.22), in: Capsule())
             .overlay { Capsule().strokeBorder(color.opacity(0.5), lineWidth: 0.5) }
             .foregroundStyle(color)
+    }
+
+    /// Lets the user pick which on-device model (or cloud CLI) intelligence uses —
+    /// freedom to use any local model they've downloaded.
+    private var modelMenu: some View {
+        Menu {
+            Section("On-device") {
+                ForEach(ModelCatalog.localModels) { model in
+                    Button {
+                        Task { await engine.setModel(model) }
+                    } label: {
+                        let tag = ModelInventory.isDownloaded(model) ? "✓ " : "⤓ "
+                        let mark = engine.settings.modelID == model.id ? "● " : "  "
+                        Text("\(mark)\(tag)\(model.name) (\(model.approximateSize))")
+                    }
+                }
+            }
+            Section("Cloud CLI") {
+                ForEach(ModelCatalog.cloudModels) { model in
+                    Button {
+                        Task { await engine.setModel(model) }
+                    } label: {
+                        Text("\(engine.settings.modelID == model.id ? "● " : "  ")\(model.name)")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Image(systemName: "cpu").font(.system(size: 9))
+                Text(engine.activeModel?.shortName ?? "Model").font(.system(size: 10, weight: .medium))
+            }
+            .foregroundStyle(.white.opacity(0.7))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color.white.opacity(0.08), in: Capsule())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Choose the model intelligence uses")
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {
@@ -250,11 +290,20 @@ struct IntelligenceHUDView: View {
                             .font(.system(size: 14, weight: .semibold))
                         Spacer()
                         if !artifact.isPublished {
-                            Button("Publish…") { Task { await engine.publish(artifact) } }
-                                .font(.system(size: 10, weight: .semibold))
-                                .buttonStyle(.plain)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Color.white.opacity(0.1), in: Capsule())
+                            Button {
+                                Task { await engine.publish(artifact) }
+                            } label: {
+                                Label("Save to folder", systemImage: "square.and.arrow.down")
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Color.white.opacity(0.1), in: Capsule())
+                            .help("Write this into .cribble/intelligence/ in your project folder so it lives alongside your code (otherwise it stays in Cribble's private cache).")
+                        } else {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.green.opacity(0.8))
                         }
                     }
                     ArtifactBodyView(content: body, onOpenSource: onOpenSource)
@@ -359,6 +408,7 @@ struct IntelligenceHUDView: View {
     private var groupedArtifacts: [(String, [IntelligenceArtifact])] {
         let order: [(String, [IntelligenceArtifactType])] = [
             ("Overview", [.projectIndex]),
+            ("Connections", [.connectionsGraph]),
             ("Architecture", [.architectureDiagram, .dependencyDiagram]),
             ("Changes", [.diffSummary, .commitSummary]),
             ("Audits", [.fallbackAudit, .ioBehavior, .driftReport]),
@@ -375,6 +425,7 @@ private extension IntelligenceArtifactType {
     var icon: String {
         switch self {
         case .projectIndex: "doc.text.magnifyingglass"
+        case .connectionsGraph: "point.3.filled.connected.trianglepath.dotted"
         case .architectureDiagram, .dependencyDiagram: "point.3.connected.trianglepath.dotted"
         case .diffSummary, .commitSummary: "arrow.triangle.branch"
         case .fallbackAudit: "shield.lefthalf.filled"

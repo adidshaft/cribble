@@ -156,6 +156,25 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(OutputValidator.validateMermaid(mermaid).isValid)
     }
 
+    // MARK: - Note connections graph
+
+    func testNoteConnectionsGraphFromWikiLinks() throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-conn-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "See [[Beta]] and [[Gamma|the third]].".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+        try "Back to [[Alpha]].".write(to: root.appendingPathComponent("Beta.md"), atomically: true, encoding: .utf8)
+        try "# Gamma".write(to: root.appendingPathComponent("Gamma.md"), atomically: true, encoding: .utf8)
+
+        let files = ["Alpha.md", "Beta.md", "Gamma.md"].map { (path: $0, url: root.appendingPathComponent($0)) }
+        let graph = NoteConnectionsGraph.build(markdownFiles: files)
+        XCTAssertTrue(graph.edges.contains(.init(from: "Alpha.md", to: "Beta.md", label: "links")))
+        XCTAssertTrue(graph.edges.contains(.init(from: "Alpha.md", to: "Gamma.md", label: "links")))
+        XCTAssertTrue(graph.edges.contains(.init(from: "Beta.md", to: "Alpha.md", label: "links")))
+        // Alias + heading targets parse to the bare note name.
+        XCTAssertEqual(Set(NoteConnectionsGraph.wikiLinkTargets(in: "[[A|x]] [[B#h]]")), ["A", "B"])
+    }
+
     // MARK: - IO behavior executor
 
     func testIOBehaviorAuditIsGeneratedForCodeFiles() async throws {

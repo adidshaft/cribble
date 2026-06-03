@@ -44,6 +44,13 @@ final class ChatHUDViewModel: ObservableObject {
     /// into chat answers as related notes (design plan Phase 1). Set by
     /// `ChatHUDController` when an `IntelligenceEngine` is available.
     var intelligenceContextProvider: (@MainActor () -> [ResolvedFile])?
+
+    /// Whether the user has enabled folding project intelligence into chat. Mirror
+    /// of `IntelligenceSettings.useInChat`; toggling calls `onIntelligenceToggle`.
+    @Published var useProjectIntelligence = false {
+        didSet { if useProjectIntelligence != oldValue { onIntelligenceToggle?(useProjectIntelligence) } }
+    }
+    var onIntelligenceToggle: ((Bool) -> Void)?
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?

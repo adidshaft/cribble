@@ -276,6 +276,7 @@ final class IntelligenceEngine: ObservableObject {
 
         // Deterministic, model-free jobs run first; model aggregations get a
         // higher priority number so file summaries (priority 100) drain first.
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildConnectionsGraph, inputHash: combined, priority: 145))
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildDependencyDiagram, inputHash: combined, priority: 150))
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .detectArchitectureDrift, inputHash: combined, priority: 160))
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .updateProjectIndex, inputHash: combined, priority: 200))
@@ -451,11 +452,43 @@ final class IntelligenceEngine: ObservableObject {
     /// Project-intelligence context to fold into the Chat HUD prompt as "related"
     /// files (design plan Phase 1). Returns the project index plus a few summaries.
     func chatContext() -> [ResolvedFile] {
+        // Off unless the user explicitly turned it on in the Chat HUD — otherwise
+        // chat answers get polluted by project context the user didn't ask for.
+        guard settings.useInChat, isEnabled else { return [] }
         var files: [ResolvedFile] = []
         if let index = artifacts.first(where: { $0.type == .projectIndex }), let content = artifactStore?.content(for: index) {
-            files.append(ResolvedFile(filename: "Project Index", content: content))
+            files.append(ResolvedFile(filename: "\(enabledProjectName ?? "Project") — Intelligence Index", content: content))
         }
         return files
+    }
+
+    // MARK: - Model selection
+
+    /// Switches the on-device model intelligence uses and rebuilds the pipeline.
+    func setModel(_ model: LocalModel) async {
+        settings.localRunnerBaseURL = nil
+        settings.modelID = model.id
+        await rebuildRunner()
+        await runNow()
+    }
+
+    /// Points intelligence at an OpenAI-compatible local runner (Ollama, llama.cpp…).
+    func setLocalRunner(baseURL: String, model: String) async {
+        settings.localRunnerBaseURL = baseURL
+        settings.modelID = model
+        await rebuildRunner()
+        await runNow()
+    }
+
+    private func rebuildRunner() async {
+        guard let db, let scheduler, let artifactStore, let rootURL, let projectID else { return }
+        let provider = makeProvider()
+        self.provider = provider
+        self.runner = JobRunner(
+            db: db, scheduler: scheduler, artifacts: artifactStore,
+            provider: provider, projectID: projectID, rootURL: rootURL,
+            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
+        )
     }
 
     // MARK: - On-device model

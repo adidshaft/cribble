@@ -23,6 +23,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
 
     // Tier 3 — multi-input aggregation, idle only.
     case buildDependencyDiagram = "build_dependency_diagram"
+    case buildConnectionsGraph = "build_connections_graph"
     case buildArchitectureDiagram = "build_architecture_diagram"
     case updateProjectIndex = "update_project_index"
     case detectArchitectureDrift = "detect_architecture_drift"
@@ -35,7 +36,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
             return .tier1
         case .summarizeFile, .summarizeDiff, .summarizeCommit, .extractFallbackLogic:
             return .tier2
-        case .extractIOBehavior, .buildDependencyDiagram, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift:
+        case .extractIOBehavior, .buildDependencyDiagram, .buildConnectionsGraph, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift:
             return .tier3
         }
     }
@@ -50,7 +51,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
              .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex:
             return true
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports,
-             .buildDependencyDiagram, .detectArchitectureDrift:
+             .buildDependencyDiagram, .buildConnectionsGraph, .detectArchitectureDrift:
             return false
         }
     }
@@ -86,6 +87,7 @@ enum IntelligenceArtifactType: String, Codable, Sendable {
     case commitSummary = "commit_summary"
     case projectIndex = "project_index"
     case dependencyDiagram = "dependency_diagram"
+    case connectionsGraph = "connections_graph"
     case architectureDiagram = "architecture_diagram"
     case fallbackAudit = "fallback_audit"
     case ioBehavior = "io_behavior"

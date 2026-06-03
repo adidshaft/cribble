@@ -53,10 +53,11 @@ final class IntelligenceEngine: ObservableObject {
     private var needsScan = false
     /// Reentrancy guard so a manual `runNow()` can't overlap a loop tick.
     private var isTicking = false
-    /// OS memory-pressure flag, set from a DispatchSource and read (off the main
-    /// actor) by the scheduler's condition probe. Thread-safe.
-    private let memoryPressure = AtomicFlag()
-    private var memorySource: DispatchSourceMemoryPressure?
+    /// OS memory-pressure monitor. Owns its own DispatchSource in a NON-isolated
+    /// type so its event handler can't be inferred `@MainActor` — that inference
+    /// made libdispatch trip a Swift executor-isolation assertion and crash the
+    /// app whenever memory pressure changed.
+    private let memoryMonitor = MemoryPressureMonitor()
 
     /// How often the idle loop wakes to drain the queue. Scanning happens only on
     /// change (FSEvents), not on every tick.
@@ -96,14 +97,14 @@ final class IntelligenceEngine: ObservableObject {
         }
         await database.resetRunningJobs()
 
-        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryPressure] in
+        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryFlag = memoryMonitor.flag] in
             BackgroundScheduler.Conditions(
                 userIdleSeconds: Self.systemIdleSeconds(),
                 thermalState: ProcessInfo.processInfo.thermalState,
                 isOnBattery: pauseOnBattery && ProcessInfo.processInfo.isLowPowerModeEnabled,
                 appIsActive: true,
                 appIsForeground: true,
-                memoryPressured: memoryPressure.value
+                memoryPressured: memoryFlag.value
             )
         })
         let artifactStore = ArtifactStore(db: database, projectID: projectID, cacheDirectory: cacheDir.appendingPathComponent("artifacts"))
@@ -122,7 +123,6 @@ final class IntelligenceEngine: ObservableObject {
         self.isEnabled = true
         self.status = .ready
 
-        startMemoryPressureMonitor()
         // Recover from a previously poisoned cache (e.g. a misconfigured provider
         // that stored error text as artifacts) before doing anything else.
         await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
@@ -179,8 +179,6 @@ final class IntelligenceEngine: ObservableObject {
         tickTask?.cancel()
         tickTask = nil
         fileMonitor.stop()
-        memorySource?.cancel()
-        memorySource = nil
         needsScan = false
         isTicking = false
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
@@ -198,20 +196,6 @@ final class IntelligenceEngine: ObservableObject {
         await tick(initialScan: true)
     }
 
-    /// Starts watching system memory pressure; on warning/critical, sets the flag
-    /// the scheduler reads to halt all intelligence work until pressure clears.
-    private func startMemoryPressureMonitor() {
-        memorySource?.cancel()
-        // Include `.normal` so the flag clears when pressure subsides; with only
-        // warning/critical the source never fires on recovery and the flag latches.
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .global(qos: .utility))
-        source.setEventHandler { [memoryPressure] in
-            let event = source.data
-            memoryPressure.value = event.contains(.warning) || event.contains(.critical)
-        }
-        source.resume()
-        memorySource = source
-    }
 
     // MARK: - Idle loop
 
@@ -236,7 +220,7 @@ final class IntelligenceEngine: ObservableObject {
         defer { isTicking = false }
 
         // Honor memory pressure immediately — don't even scan under pressure.
-        if memoryPressure.value {
+        if memoryMonitor.flag.value {
             status = .working("Paused (low memory)")
             return
         }
@@ -561,4 +545,28 @@ final class AtomicFlag: @unchecked Sendable {
         get { lock.lock(); defer { lock.unlock() }; return _value }
         set { lock.lock(); _value = newValue; lock.unlock() }
     }
+}
+
+/// Owns a memory-pressure `DispatchSource` in a NON-`@MainActor` type, so its
+/// event handler is plain `@Sendable` and runs on the background queue without
+/// tripping a Swift executor-isolation assertion (which previously crashed the
+/// app with SIGTRAP whenever memory pressure changed). Exposes the current
+/// pressure state via a thread-safe `flag`.
+final class MemoryPressureMonitor: @unchecked Sendable {
+    let flag = AtomicFlag()
+    private let source: DispatchSourceMemoryPressure
+
+    init() {
+        source = DispatchSource.makeMemoryPressureSource(
+            eventMask: [.warning, .critical, .normal], queue: .global(qos: .utility)
+        )
+        let flag = self.flag
+        source.setEventHandler { [weak source] in
+            guard let data = source?.data else { return }
+            flag.value = data.contains(.warning) || data.contains(.critical)
+        }
+        source.resume()
+    }
+
+    deinit { source.cancel() }
 }

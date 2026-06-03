@@ -368,9 +368,9 @@ actor IntelligenceDatabase {
 
     /// Returns the highest-priority pending job whose tier is `<= maxTier`, and
     /// atomically marks it `running`. Returns nil if none are eligible.
-    func dequeueNextJob(projectID: String, maxTier: IntelligenceJobTier) -> IntelligenceJob? {
+    func dequeueNextJob(projectID: String, maxTier: IntelligenceJobTier, deterministicOnly: Bool = false) -> IntelligenceJob? {
         let allowedTypes = IntelligenceJobType.allCases
-            .filter { $0.tier != .none && $0.tier <= maxTier }
+            .filter { $0.tier != .none && $0.tier <= maxTier && (!deterministicOnly || !$0.requiresProvider) }
             .map { "'\($0.rawValue)'" }
             .joined(separator: ",")
         guard !allowedTypes.isEmpty else { return nil }

@@ -74,8 +74,10 @@ struct IntelligenceHUDView: View {
     }
 
     private var subtitle: String {
-        let name = activeRootURL()?.lastPathComponent ?? "No folder"
-        guard engine.isEnabled else { return name }
+        guard engine.isEnabled else { return activeRootURL()?.lastPathComponent ?? "No folder" }
+        // Name comes from the engine's enabled project, not the sidebar selection,
+        // so switching folders can't mislabel the active project.
+        let name = engine.enabledProjectName ?? "Project"
         return "\(name) · \(engine.filesIndexed) files"
     }
 

@@ -68,14 +68,13 @@ actor JobRunner {
     func runNext() async -> Bool {
         let tier = await scheduler.allowedTier()
         guard tier != .none else { return false }
-        guard let job = await db.dequeueNextJob(projectID: projectID, maxTier: tier) else { return false }
 
-        if job.type.requiresProvider {
-            let availability = await provider?.checkAvailability()
-            guard let availability, availability.isUsable else {
-                await db.requeueJob(id: job.id)
-                return false
-            }
+        // If no model is usable, only pull deterministic jobs — otherwise a
+        // model-needing job at the front of the queue would block the model-free
+        // diagram/drift jobs behind it (they'd never run until a model arrives).
+        let providerUsable = await isProviderUsable()
+        guard let job = await db.dequeueNextJob(projectID: projectID, maxTier: tier, deterministicOnly: !providerUsable) else {
+            return false
         }
 
         do {
@@ -85,6 +84,11 @@ actor JobRunner {
             await db.recordFailure(id: job.id, error: error.localizedDescription)
         }
         return true
+    }
+
+    private func isProviderUsable() async -> Bool {
+        guard let provider else { return false }
+        return await provider.checkAvailability().isUsable
     }
 
     /// Drains up to `limit` jobs, stopping early when nothing is eligible.

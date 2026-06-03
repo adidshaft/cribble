@@ -463,6 +463,8 @@ final class IntelligenceEngine: ObservableObject {
     /// Path of the project intelligence is currently enabled for, if any. Lets the
     /// sidebar decide whether opening a folder should switch the active project.
     var enabledRootPath: String? { rootURL?.path }
+    /// Display name of the project intelligence is enabled for.
+    var enabledProjectName: String? { rootURL?.lastPathComponent }
 
     /// The model intelligence is configured to use, if it's an on-device one.
     var activeModel: LocalModel? { ModelCatalog.model(withID: settings.modelID) }

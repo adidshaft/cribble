@@ -98,10 +98,8 @@ final class IntelligenceHUDController {
             activeRootURL: { [weak library] in library?.activeRootURL },
             onClose: { [weak self] in self?.close() },
             onOpenSource: { [weak library, weak engine] path in
-                // Resolve against the engine's enabled project (not the sidebar
-                // selection, which may be a different folder).
-                guard let rootPath = engine?.enabledRootPath else { return }
-                let url = URL(fileURLWithPath: rootPath).appendingPathComponent(path)
+                // Resolve via the engine (handles absolute paths in all-folders scope).
+                guard let url = engine?.resolveProjectFile(path) else { return }
                 guard FileManager.default.fileExists(atPath: url.path) else { return }
                 if url.pathExtension.lowercased() == "md" {
                     // Markdown opens in Cribble's reader.
@@ -112,7 +110,8 @@ final class IntelligenceHUDController {
                     // Cribble is a Markdown reader; reveal code files in Finder.
                     NSWorkspace.shared.activateFileViewerSelecting([url])
                 }
-            }
+            },
+            allRoots: { [weak library] in library?.rootURLs ?? [] }
         )
 
         let visualEffect = NSVisualEffectView()

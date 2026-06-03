@@ -261,6 +261,24 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertEqual(remaining, 1)
     }
 
+    func testScannerMultiRootUsesAbsolutePaths() async throws {
+        let base = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-multi-\(UUID().uuidString)")
+        let rootA = base.appendingPathComponent("A"); let rootB = base.appendingPathComponent("B")
+        try FileManager.default.createDirectory(at: rootA, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: rootB, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try "# A".write(to: rootA.appendingPathComponent("a.md"), atomically: true, encoding: .utf8)
+        try "# B".write(to: rootB.appendingPathComponent("b.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let result = await WorkspaceScanner(db: db, projectID: "all", roots: [rootA, rootB]).scan()
+        XCTAssertEqual(result.added, 2)
+        let paths = Set(await db.files(projectID: "all").map(\.path))
+        // Multi-root → absolute paths so they stay unique and resolvable.
+        XCTAssertTrue(paths.allSatisfy { $0.hasPrefix("/") })
+        XCTAssertTrue(paths.contains(rootA.appendingPathComponent("a.md").standardizedFileURL.path))
+    }
+
     // MARK: - JobRunner end to end
 
     func testRunnerSummarizesFileAndAnchorsProvenance() async throws {

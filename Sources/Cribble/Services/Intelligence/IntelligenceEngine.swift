@@ -38,6 +38,10 @@ final class IntelligenceEngine: ObservableObject {
 
     private var projectID: String?
     private var rootURL: URL?
+    /// Folders the current scope scans (one for folder scope, several for all).
+    private var scanRoots: [URL] = []
+    /// True when the active scope spans all opened folders.
+    @Published private(set) var isAllFolders = false
     private var db: IntelligenceDatabase?
     private var scheduler: BackgroundScheduler?
     private var runner: JobRunner?
@@ -75,13 +79,7 @@ final class IntelligenceEngine: ObservableObject {
     /// Enables intelligence for `rootURL`: opens the per-project DB, builds the
     /// provider, performs an initial scan, and starts the idle loop.
     func enable(rootURL rawRootURL: URL) async {
-        await teardown()
         let rootURL = rawRootURL.standardizedFileURL
-        let projectID = rootURL.path
-        self.projectID = projectID
-        self.rootURL = rootURL
-        settings.setEnabled(true, projectID: projectID)
-
         let cacheDir = rootURL.appendingPathComponent(".cribble/cache")
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         // Self-contained ignore (design plan §4.1): keep the regenerable cache out
@@ -91,6 +89,35 @@ final class IntelligenceEngine: ObservableObject {
         if !FileManager.default.fileExists(atPath: dotIgnore.path) {
             try? "cache/\n".write(to: dotIgnore, atomically: true, encoding: .utf8)
         }
+        await start(projectID: rootURL.path, cacheDir: cacheDir, nominalRoot: rootURL,
+                    scanRoots: [rootURL], allFolders: false)
+    }
+
+    /// Enables a unified intelligence scope across every opened folder (#1).
+    func enableAllFolders(roots rawRoots: [URL]) async {
+        let roots = rawRoots.map(\.standardizedFileURL)
+        guard !roots.isEmpty else { return }
+        let base = Self.allFoldersBase()
+        let cacheDir = base.appendingPathComponent("cache")
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        await start(projectID: "all-folders", cacheDir: cacheDir, nominalRoot: base,
+                    scanRoots: roots, allFolders: true)
+    }
+
+    private static func allFoldersBase() -> URL {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        return support.appendingPathComponent("Cribble/IntelligenceAllFolders")
+    }
+
+    private func start(projectID: String, cacheDir: URL, nominalRoot: URL, scanRoots: [URL], allFolders: Bool) async {
+        await teardown()
+        self.projectID = projectID
+        self.rootURL = nominalRoot
+        self.scanRoots = scanRoots
+        self.isAllFolders = allFolders
+        settings.setEnabled(true, projectID: projectID)
+
         guard let database = try? IntelligenceDatabase(path: cacheDir.appendingPathComponent("intelligence.db").path) else {
             status = .off
             return
@@ -111,7 +138,7 @@ final class IntelligenceEngine: ObservableObject {
         let provider = makeProvider()
         let runner = JobRunner(
             db: database, scheduler: scheduler, artifacts: artifactStore,
-            provider: provider, projectID: projectID, rootURL: rootURL,
+            provider: provider, projectID: projectID, rootURL: nominalRoot,
             mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
         )
 
@@ -123,14 +150,11 @@ final class IntelligenceEngine: ObservableObject {
         self.isEnabled = true
         self.status = .ready
 
-        // Recover from a previously poisoned cache (e.g. a misconfigured provider
-        // that stored error text as artifacts) before doing anything else.
         await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
-        // Seed the bundled DemoNotes example so the feature demos immediately.
-        await DemoSeeder.seedIfDemoNotes(rootURL: rootURL, store: artifactStore, db: database, projectID: projectID)
-        // Re-scan only when FSEvents reports a change; the loop otherwise just
-        // drains the queue.
-        fileMonitor.start(rootURL: rootURL) { [weak self] in
+        if !allFolders {
+            await DemoSeeder.seedIfDemoNotes(rootURL: nominalRoot, store: artifactStore, db: database, projectID: projectID)
+        }
+        fileMonitor.start(rootURLs: scanRoots) { [weak self] in
             self?.needsScan = true
         }
         needsScan = true
@@ -161,6 +185,7 @@ final class IntelligenceEngine: ObservableObject {
         if let projectID { settings.setEnabled(false, projectID: projectID) }
         await teardown()
         isEnabled = false
+        isAllFolders = false
         status = .off
         artifacts = []
         pendingJobs = 0
@@ -182,7 +207,7 @@ final class IntelligenceEngine: ObservableObject {
         needsScan = false
         isTicking = false
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
-        projectID = nil; rootURL = nil
+        projectID = nil; rootURL = nil; scanRoots = []
     }
 
     /// Wipes this project's artifacts, jobs, and cached content, then rebuilds.
@@ -229,7 +254,7 @@ final class IntelligenceEngine: ObservableObject {
         if initialScan || needsScan {
             needsScan = false
             if initialScan { status = .scanning(done: 0, total: 0) }
-            let scanner = WorkspaceScanner(db: db, projectID: projectID, rootURL: rootURL)
+            let scanner = WorkspaceScanner(db: db, projectID: projectID, roots: scanRoots.isEmpty ? [rootURL] : scanRoots)
             let result = await scanner.scan()
             if result.changed > 0 || result.added > 0 {
                 lastActivity = "Indexed \(result.added + result.changed) file(s)"
@@ -481,7 +506,14 @@ final class IntelligenceEngine: ObservableObject {
     /// sidebar decide whether opening a folder should switch the active project.
     var enabledRootPath: String? { rootURL?.path }
     /// Display name of the project intelligence is enabled for.
-    var enabledProjectName: String? { rootURL?.lastPathComponent }
+    var enabledProjectName: String? { isAllFolders ? "All folders" : rootURL?.lastPathComponent }
+
+    /// Resolves a stored artifact/source path to a file URL — absolute paths
+    /// (all-folders scope) pass through; relative paths join the project root.
+    func resolveProjectFile(_ path: String) -> URL? {
+        if path.hasPrefix("/") { return URL(fileURLWithPath: path) }
+        return rootURL?.appendingPathComponent(path)
+    }
 
     /// The model intelligence is configured to use, if it's an on-device one.
     var activeModel: LocalModel? { ModelCatalog.model(withID: settings.modelID) }

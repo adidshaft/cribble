@@ -43,7 +43,22 @@ enum SourceLanguage: String, Sendable {
 struct WorkspaceScanner: Sendable {
     let db: IntelligenceDatabase
     let projectID: String
-    let rootURL: URL
+    /// One root for folder scope, several for "all folders" scope.
+    let roots: [URL]
+
+    init(db: IntelligenceDatabase, projectID: String, rootURL: URL) {
+        self.init(db: db, projectID: projectID, roots: [rootURL])
+    }
+
+    init(db: IntelligenceDatabase, projectID: String, roots: [URL]) {
+        self.db = db
+        self.projectID = projectID
+        self.roots = roots.map(\.standardizedFileURL)
+    }
+
+    /// When spanning multiple folders, stored paths are absolute (so they stay
+    /// unique and resolvable); for a single folder they're relative to it.
+    private var useAbsolutePaths: Bool { roots.count > 1 }
 
     /// Directories never descended into.
     private static let ignoredDirectories: Set<String> = [
@@ -72,7 +87,7 @@ struct WorkspaceScanner: Sendable {
         let onDisk = enumerateFiles(fileManager: fileManager)
 
         for url in onDisk {
-            let relativePath = relativePath(of: url)
+            let relativePath = pathKey(of: url)
             seenPaths.insert(relativePath)
 
             guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
@@ -145,35 +160,42 @@ struct WorkspaceScanner: Sendable {
     // MARK: - Helpers
 
     private func enumerateFiles(fileManager: FileManager) -> [URL] {
-        guard let enumerator = fileManager.enumerator(
-            at: rootURL,
-            includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles],
-            errorHandler: { _, _ in true }
-        ) else { return [] }
-
         var urls: [URL] = []
-        for case let url as URL in enumerator {
-            let name = url.lastPathComponent
-            if Self.ignoredDirectories.contains(name) {
-                enumerator.skipDescendants()
-                continue
-            }
-            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
-            if values?.isRegularFile == true {
-                urls.append(url)
+        for root in roots {
+            guard let enumerator = fileManager.enumerator(
+                at: root,
+                includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],
+                options: [.skipsHiddenFiles],
+                errorHandler: { _, _ in true }
+            ) else { continue }
+
+            for case let url as URL in enumerator {
+                let name = url.lastPathComponent
+                if Self.ignoredDirectories.contains(name) {
+                    enumerator.skipDescendants()
+                    continue
+                }
+                let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
+                if values?.isRegularFile == true {
+                    urls.append(url)
+                }
             }
         }
         return urls
     }
 
-    private func relativePath(of url: URL) -> String {
-        let rootComponents = rootURL.standardizedFileURL.pathComponents
+    /// The DB key for a file: absolute path in multi-folder mode, else relative to
+    /// its owning root.
+    private func pathKey(of url: URL) -> String {
+        if useAbsolutePaths { return url.standardizedFileURL.path }
         let fileComponents = url.standardizedFileURL.pathComponents
-        guard fileComponents.count > rootComponents.count,
-              Array(fileComponents.prefix(rootComponents.count)) == rootComponents else {
-            return url.lastPathComponent
+        for root in roots {
+            let rootComponents = root.pathComponents
+            if fileComponents.count > rootComponents.count,
+               Array(fileComponents.prefix(rootComponents.count)) == rootComponents {
+                return fileComponents.dropFirst(rootComponents.count).joined(separator: "/")
+            }
         }
-        return fileComponents.dropFirst(rootComponents.count).joined(separator: "/")
+        return url.lastPathComponent
     }
 }

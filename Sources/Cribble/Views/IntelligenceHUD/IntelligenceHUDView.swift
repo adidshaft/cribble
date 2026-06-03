@@ -13,6 +13,8 @@ struct IntelligenceHUDView: View {
     let onClose: () -> Void
     /// Opens a project-relative source file (from a clicked diagram node).
     var onOpenSource: (String) -> Void = { _ in }
+    /// All opened library folders, for the "All folders" scope (#1).
+    var allRoots: () -> [URL] = { [] }
 
     @State private var selectedArtifactID: String?
     @State private var provenance: [ArtifactProvenance] = []
@@ -30,6 +32,7 @@ struct IntelligenceHUDView: View {
                     modelBanner
                 }
                 content
+                statusFooter
                 askBar
             } else {
                 enablePrompt
@@ -62,7 +65,7 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
-            if engine.isEnabled { modelMenu }
+            if engine.isEnabled { scopeMenu; modelMenu }
             statusPill
             if engine.isEnabled {
                 headerIcon("arrow.clockwise", help: "Run now") { Task { await engine.runNow() } }
@@ -99,6 +102,37 @@ struct IntelligenceHUDView: View {
             .background(color.opacity(0.22), in: Capsule())
             .overlay { Capsule().strokeBorder(color.opacity(0.5), lineWidth: 0.5) }
             .foregroundStyle(color)
+    }
+
+    /// Switches between single-folder and all-folders scope (#1).
+    private var scopeMenu: some View {
+        Menu {
+            Button {
+                if let root = activeRootURL() { Task { await engine.enable(rootURL: root) } }
+            } label: {
+                Text("\(engine.isAllFolders ? "  " : "● ")This folder: \(activeRootURL()?.lastPathComponent ?? "—")")
+            }
+            .disabled(activeRootURL() == nil)
+            Button {
+                let roots = allRoots()
+                if !roots.isEmpty { Task { await engine.enableAllFolders(roots: roots) } }
+            } label: {
+                Text("\(engine.isAllFolders ? "● " : "  ")All folders (\(allRoots().count))")
+            }
+            .disabled(allRoots().isEmpty)
+        } label: {
+            HStack(spacing: 3) {
+                Image(systemName: engine.isAllFolders ? "square.grid.2x2" : "folder").font(.system(size: 9))
+                Text(engine.isAllFolders ? "All folders" : "Folder").font(.system(size: 10, weight: .medium))
+            }
+            .foregroundStyle(.white.opacity(0.7))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color.white.opacity(0.08), in: Capsule())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Scan just this folder, or all opened folders")
     }
 
     /// Lets the user pick which on-device model (or cloud CLI) intelligence uses —
@@ -168,18 +202,34 @@ struct IntelligenceHUDView: View {
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
-            Button {
-                guard let root = activeRootURL() else { return }
-                isEnabling = true
-                Task { await engine.enable(rootURL: root); isEnabling = false }
-            } label: {
-                Text(isEnabling ? "Starting…" : "Build Intelligence")
-                    .font(.system(size: 12, weight: .semibold))
-                    .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(Color.accentColor.opacity(0.9), in: Capsule())
+            HStack(spacing: 10) {
+                Button {
+                    guard let root = activeRootURL() else { return }
+                    isEnabling = true
+                    Task { await engine.enable(rootURL: root); isEnabling = false }
+                } label: {
+                    Text(isEnabling ? "Starting…" : "This folder")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(Color.accentColor.opacity(0.9), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(activeRootURL() == nil || isEnabling)
+
+                Button {
+                    let roots = allRoots()
+                    guard !roots.isEmpty else { return }
+                    isEnabling = true
+                    Task { await engine.enableAllFolders(roots: roots); isEnabling = false }
+                } label: {
+                    Text("All folders (\(allRoots().count))")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(Color.white.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(allRoots().isEmpty || isEnabling)
             }
-            .buttonStyle(.plain)
-            .disabled(activeRootURL() == nil || isEnabling)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -191,11 +241,19 @@ struct IntelligenceHUDView: View {
     private var modelBanner: some View {
         HStack(spacing: 10) {
             if let fraction = engine.modelDownloadFraction {
-                ProgressView(value: fraction)
-                    .progressViewStyle(.linear)
-                    .frame(maxWidth: 160)
-                Text("Downloading \(engine.activeModel?.name ?? "model")… \(Int(fraction * 100))%")
-                    .font(.system(size: 11))
+                if fraction <= 0.001 {
+                    // 0% can sit a while during connect/metadata — show a spinner
+                    // (not a frozen "0%") so it doesn't look stuck.
+                    ProgressView().controlSize(.small)
+                    Text("Preparing \(engine.activeModel?.name ?? "model")… this can take a moment")
+                        .font(.system(size: 11))
+                } else {
+                    ProgressView(value: fraction)
+                        .progressViewStyle(.linear)
+                        .frame(maxWidth: 160)
+                    Text("Downloading \(engine.activeModel?.name ?? "model")… \(Int(fraction * 100))%")
+                        .font(.system(size: 11))
+                }
             } else {
                 Image(systemName: "arrow.down.circle")
                     .font(.system(size: 12))
@@ -314,11 +372,25 @@ struct IntelligenceHUDView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                Text("Select an artifact")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 60)
+                VStack(spacing: 8) {
+                    if engine.artifacts.isEmpty {
+                        ProgressView().controlSize(.small)
+                        Text(engine.pendingJobs > 0
+                             ? "Building intelligence… \(engine.pendingJobs) job(s) queued."
+                             : "Scanning \(engine.enabledProjectName ?? "project")…")
+                        Text("Summaries and diagrams will appear here as they're generated.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.35))
+                    } else {
+                        Image(systemName: "sidebar.left").font(.system(size: 20)).foregroundStyle(.white.opacity(0.3))
+                        Text("Select an artifact from the left")
+                    }
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.45))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 60)
             }
         }
         .task(id: selectedArtifactID) {
@@ -352,6 +424,33 @@ struct IntelligenceHUDView: View {
             if let end = p.endLine { label += "–\(end)" }
         }
         return label
+    }
+
+    // MARK: - Status footer
+
+    private var statusFooter: some View {
+        HStack(spacing: 6) {
+            Text("\(engine.filesIndexed) files")
+            Text("·")
+            Text("\(engine.artifacts.count) artifacts")
+            if engine.pendingJobs > 0 {
+                Text("·")
+                ProgressView().controlSize(.mini).scaleEffect(0.7)
+                Text("\(engine.pendingJobs) processing")
+            }
+            if engine.staleCount > 0 {
+                Text("·")
+                Text("\(engine.staleCount) stale").foregroundStyle(.orange.opacity(0.8))
+            }
+            Spacer()
+            if let activity = engine.lastActivity {
+                Text(activity).lineLimit(1).truncationMode(.tail).foregroundStyle(.white.opacity(0.45))
+            }
+        }
+        .font(.system(size: 9))
+        .foregroundStyle(.white.opacity(0.5))
+        .padding(.horizontal, 14).padding(.vertical, 5)
+        .background(Color.black.opacity(0.15))
     }
 
     // MARK: - Ask bar

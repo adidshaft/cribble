@@ -254,7 +254,7 @@ actor JobRunner {
     private func buildConnectionsGraph(_ job: IntelligenceJob) async throws -> String? {
         let mdFiles = await db.files(projectID: projectID)
             .filter { $0.language == SourceLanguage.markdown.rawValue }
-            .map { (path: $0.path, url: rootURL.appendingPathComponent($0.path)) }
+            .map { (path: $0.path, url: resolve($0.path)) }
         let graph = NoteConnectionsGraph.build(markdownFiles: mdFiles)
         let content: String
         if graph.edges.isEmpty {
@@ -301,8 +301,13 @@ actor JobRunner {
 
     // MARK: - Helpers
 
+    /// Resolves a stored path: absolute (multi-folder scope) or relative to root.
+    private func resolve(_ path: String) -> URL {
+        path.hasPrefix("/") ? URL(fileURLWithPath: path) : rootURL.appendingPathComponent(path)
+    }
+
     private func readSource(_ relativePath: String) -> String? {
-        let url = rootURL.appendingPathComponent(relativePath)
+        let url = resolve(relativePath)
         guard let raw = try? String(contentsOf: url, encoding: .utf8), !raw.isEmpty else { return nil }
         return String(raw.prefix(maxInputChars))
     }

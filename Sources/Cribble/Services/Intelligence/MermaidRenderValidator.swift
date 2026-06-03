@@ -17,7 +17,23 @@ final class MermaidRenderValidator {
     private var ready = false
     private var loadDelegate: LoadDelegate?
 
+    /// Validates with a hard timeout: if the headless render doesn't answer within
+    /// a few seconds (e.g. a WKWebView that never finishes loading), we return
+    /// `true` rather than letting it block the job pipeline.
     func validate(_ source: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            var resumed = false
+            let finish: @MainActor (Bool) -> Void = { value in
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume(returning: value)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { finish(true) }
+            Task { @MainActor in finish(await self.runValidation(source)) }
+        }
+    }
+
+    private func runValidation(_ source: String) async -> Bool {
         guard await ensureReady(), let webView else { return true }
         // `mermaid.parse` throws on invalid input; newer versions return a Promise.
         let js = """

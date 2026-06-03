@@ -226,16 +226,23 @@ actor JobRunner {
 
     private func buildDependencyDiagram(_ job: IntelligenceJob) async throws -> String? {
         let graph = DependencyGraph.build(from: await db.allSymbols(projectID: projectID))
-        let mermaid = graph.mermaid(clickable: true)
-        let validation = OutputValidator.validateMermaid(mermaid)
-        guard validation.isValid else { throw JobRunnerError.validationFailed(validation.issues) }
-        // Headless render check (best-effort): only rejects on a definitive parse
-        // failure; infra problems fall through as valid.
-        if let mermaidValidator, await mermaidValidator(mermaid) == false {
-            throw JobRunnerError.validationFailed(["mermaid failed headless render"])
-        }
         try persistBaselineEdges(graph.edges)
-        let content = "# Dependency Map\n\nGenerated from static symbol analysis.\n\n```mermaid\n\(mermaid)\n```\n"
+        let content: String
+        if graph.nodes.isEmpty {
+            // No parsed symbols (e.g. a non-Swift project — Phase 1 only parses
+            // Swift). Skip the empty diagram; record a plain note.
+            content = "# Dependency Map\n\nNo code dependencies detected yet. (Symbol-level analysis currently covers Swift; other languages get file summaries.)"
+        } else {
+            let mermaid = graph.mermaid(clickable: true)
+            let validation = OutputValidator.validateMermaid(mermaid)
+            guard validation.isValid else { throw JobRunnerError.validationFailed(validation.issues) }
+            // Headless render check (best-effort, timeout-bounded): only rejects on
+            // a definitive parse failure; infra problems fall through as valid.
+            if let mermaidValidator, await mermaidValidator(mermaid) == false {
+                throw JobRunnerError.validationFailed(["mermaid failed headless render"])
+            }
+            content = "# Dependency Map\n\nGenerated from static symbol analysis.\n\n```mermaid\n\(mermaid)\n```\n"
+        }
         let artifact = try await artifacts.store(
             type: .dependencyDiagram, relativePath: "architecture/dependency-map.md",
             title: "Dependency Map", content: content, sourceHashes: [job.inputHash]

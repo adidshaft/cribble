@@ -1,6 +1,14 @@
 # Changelog
 
-All notable changes to Cribble are documented here.
+All notable changes to Cribble are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/), and Cribble aims to follow
+[Semantic Versioning](https://semver.org/) (see the versioning guidance in
+[MAINTAINER_HANDBOOK.md](MAINTAINER_HANDBOOK.md#release-model)).
+
+## Unreleased
+
+_Nothing yet. Land user-visible changes here, then move them under a version
+heading when you cut a release._
 
 ## 1.2.1 — Smarter, more connected Cribble AI
 

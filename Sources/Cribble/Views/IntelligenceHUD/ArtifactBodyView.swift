@@ -61,10 +61,10 @@ struct ArtifactBodyView: View {
 }
 
 /// A WKWebView that renders one Mermaid diagram using the bundled renderer, with
-/// `securityLevel: 'loose'` so `click` links work. Node links use a `cribble://`
-/// scheme intercepted here and forwarded to `onOpenSource` — the diagram becomes a
-/// navigable map of the codebase (design plan §13 Phase 2). Degrades gracefully:
-/// if anything fails, the diagram simply isn't interactive.
+/// `securityLevel: 'loose'` so node `click` callbacks work. Clicking a file node
+/// calls an in-page `cribbleOpen(path)` JS function that posts to a script-message
+/// handler — kept in-page so it never reaches the system URL opener. Degrades
+/// gracefully: if anything fails, the diagram simply isn't interactive.
 private struct MermaidDiagramWeb: NSViewRepresentable {
     let source: String
     var onOpenSource: (String) -> Void
@@ -72,7 +72,9 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onOpenSource: onOpenSource) }
 
     func makeNSView(context: Context) -> WKWebView {
-        let webView = WKWebView(frame: .zero)
+        let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "cribbleOpen")
+        let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.setValue(false, forKey: "drawsBackground")
         webView.loadHTMLString(Self.html(for: source), baseURL: nil)
@@ -87,24 +89,25 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "cribbleOpen")
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var onOpenSource: (String) -> Void
         var lastSource: String?
         init(onOpenSource: @escaping (String) -> Void) { self.onOpenSource = onOpenSource }
 
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "cribbleOpen", let path = message.body as? String, !path.isEmpty else { return }
+            onOpenSource(path)
+        }
+
+        // Safety net: never let the diagram navigate the web view anywhere (no
+        // external URLs, no custom schemes hitting the system opener).
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            guard let url = action.request.url else { return decisionHandler(.allow) }
-            if url.scheme == "cribble" {
-                // cribble://open/<percent-encoded relative path>
-                let encoded = url.absoluteString
-                    .replacingOccurrences(of: "cribble://open/", with: "")
-                if let path = encoded.removingPercentEncoding, !path.isEmpty {
-                    onOpenSource(path)
-                }
-                return decisionHandler(.cancel)
-            }
-            // Only allow the initial about:blank / data load; block external nav.
-            decisionHandler(url.scheme == nil || url.absoluteString == "about:blank" ? .allow : .cancel)
+            let url = action.request.url
+            decisionHandler((url == nil || url?.absoluteString == "about:blank") ? .allow : .cancel)
         }
     }
 
@@ -119,10 +122,13 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
           #d{padding:12px;display:flex;justify-content:center;}
           svg{max-width:100%;height:auto!important;}
           .err{font:12px ui-monospace,Menlo,monospace;color:#c79b9b;padding:12px;white-space:pre-wrap;}
-          a{cursor:pointer;}
+          .node{cursor:pointer;}
         </style></head>
         <body><div id="d"></div>
         <script>
+          window.cribbleOpen = function(p) {
+            try { window.webkit.messageHandlers.cribbleOpen.postMessage(String(p)); } catch (e) {}
+          };
           (async () => {
             const src = \(encoded);
             const root = document.getElementById('d');

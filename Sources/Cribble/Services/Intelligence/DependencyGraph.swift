@@ -84,12 +84,14 @@ struct DependencyGraph: Sendable, Equatable {
         for e in edges where kept.contains(e.from) && kept.contains(e.to) {
             lines.append("    \(sanitize(e.from)) -->|\(e.label)| \(sanitize(e.to))")
         }
-        // Make file nodes navigable: a `cribble://open/<path>` link the HUD's
-        // diagram view intercepts to open the source file (design plan §13 Phase 2).
+        // Make file nodes navigable: a JS callback (bound in-page via a script
+        // message handler) opens the source file (design plan §13 Phase 2). We use
+        // `call cribbleOpen("<path>")` rather than an href so the click stays
+        // in-page and never hits the system URL opener.
         if clickable {
             for id in kept.sorted() where !id.hasPrefix("module:") {
-                let encoded = id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? id
-                lines.append("    click \(sanitize(id)) \"cribble://open/\(encoded)\" \"Open \(escape(nodes[id] ?? id))\"")
+                let safePath = id.replacingOccurrences(of: "\"", with: "")
+                lines.append("    click \(sanitize(id)) call cribbleOpen(\"\(safePath)\")")
             }
         }
         return lines.joined(separator: "\n")

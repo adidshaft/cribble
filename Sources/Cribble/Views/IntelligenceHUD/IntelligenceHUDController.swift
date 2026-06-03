@@ -97,9 +97,11 @@ final class IntelligenceHUDController {
             engine: engine,
             activeRootURL: { [weak library] in library?.activeRootURL },
             onClose: { [weak self] in self?.close() },
-            onOpenSource: { [weak library] path in
-                guard let library, let root = library.activeRootURL else { return }
-                let url = root.appendingPathComponent(path)
+            onOpenSource: { [weak library, weak engine] path in
+                // Resolve against the engine's enabled project (not the sidebar
+                // selection, which may be a different folder).
+                guard let library, let rootPath = engine?.enabledRootPath else { return }
+                let url = URL(fileURLWithPath: rootPath).appendingPathComponent(path)
                 guard FileManager.default.fileExists(atPath: url.path) else { return }
                 library.selectedURL = url
                 NSApp.activate(ignoringOtherApps: true)

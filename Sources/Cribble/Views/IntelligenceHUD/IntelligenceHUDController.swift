@@ -100,12 +100,18 @@ final class IntelligenceHUDController {
             onOpenSource: { [weak library, weak engine] path in
                 // Resolve against the engine's enabled project (not the sidebar
                 // selection, which may be a different folder).
-                guard let library, let rootPath = engine?.enabledRootPath else { return }
+                guard let rootPath = engine?.enabledRootPath else { return }
                 let url = URL(fileURLWithPath: rootPath).appendingPathComponent(path)
                 guard FileManager.default.fileExists(atPath: url.path) else { return }
-                library.selectedURL = url
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.windows.first(where: { $0.isVisible && !($0 is IntelligencePanel) })?.makeKeyAndOrderFront(nil)
+                if url.pathExtension.lowercased() == "md" {
+                    // Markdown opens in Cribble's reader.
+                    library?.selectedURL = url
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSApp.windows.first(where: { $0.isVisible && !($0 is IntelligencePanel) })?.makeKeyAndOrderFront(nil)
+                } else {
+                    // Cribble is a Markdown reader; reveal code files in Finder.
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
+                }
             }
         )
 

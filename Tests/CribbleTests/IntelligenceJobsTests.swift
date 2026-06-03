@@ -151,7 +151,7 @@ final class IntelligenceJobsTests: XCTestCase {
         let graph = DependencyGraph.build(from: symbols)
         let mermaid = graph.mermaid(clickable: true)
         XCTAssertTrue(mermaid.contains("click "))
-        XCTAssertTrue(mermaid.contains("cribble://open/"))
+        XCTAssertTrue(mermaid.contains("call cribbleOpen(\"App/Engine.swift\")"))
         // Still structurally valid.
         XCTAssertTrue(OutputValidator.validateMermaid(mermaid).isValid)
     }

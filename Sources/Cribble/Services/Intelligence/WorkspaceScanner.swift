@@ -5,6 +5,15 @@ import Foundation
 enum SourceLanguage: String, Sendable {
     case swift, markdown, javascript, typescript, python, go, rust, json, yaml, shell, other
 
+    /// Whether this is source code worth auditing (fallbacks, I/O behavior) — as
+    /// opposed to prose/config, which only get a summary.
+    var isCode: Bool {
+        switch self {
+        case .swift, .javascript, .typescript, .python, .go, .rust: true
+        default: false
+        }
+    }
+
     static func detect(extension ext: String) -> SourceLanguage? {
         switch ext.lowercased() {
         case "swift": .swift
@@ -108,6 +117,19 @@ struct WorkspaceScanner: Sendable {
                 inputPaths: [relativePath]
             ))
             if enqueued { result.jobsEnqueued += 1 }
+
+            // Code files also get audits, at lower priority so summaries finish
+            // first. Fallback audit is Tier-2; I/O behavior is Tier-3 (idle only).
+            if language.isCode {
+                await db.enqueueJobIfNeeded(IntelligenceJob(
+                    projectID: projectID, type: .extractFallbackLogic,
+                    inputHash: hash, inputPaths: [relativePath], priority: 300
+                ))
+                await db.enqueueJobIfNeeded(IntelligenceJob(
+                    projectID: projectID, type: .extractIOBehavior,
+                    inputHash: hash, inputPaths: [relativePath], priority: 320
+                ))
+            }
         }
 
         // Reconcile deletions: anything tracked but no longer on disk.

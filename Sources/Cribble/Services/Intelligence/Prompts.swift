@@ -72,6 +72,18 @@ enum Prompts {
         ]
     }
 
+    static func ioBehavior(path: String, source: String) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You are mapping a file's external behavior. \(antiHallucination) For the file below, \
+            list its inputs and outputs as Markdown: network/API calls, file or disk reads/writes, \
+            environment/config it reads, user input it consumes, and side effects it produces, each \
+            with the relevant symbol. If there are none, say "No external I/O found." Output only Markdown.
+            """),
+            EngineMessage(role: .user, content: "File: \(path)\n\n```\n\(source)\n```")
+        ]
+    }
+
     static func architectureNarration(graphMermaid: String, summaries: [(path: String, summary: String)]) -> [EngineMessage] {
         let context = summaries.prefix(40)
             .map { "- \($0.path): \($0.summary.prefix(160))" }

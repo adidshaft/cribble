@@ -32,10 +32,22 @@ and unit-tested (`Tests/CribbleTests/IntelligenceEngineTests.swift`,
 - Intelligence HUD (panel, artifact tree, reader, provenance footer, ask bar), sidebar
   status indicator, `⌘⇧I` command.
 
-**Deferred (as the plan itself scopes them to "future"):** `sqlite-vec` migration (§15
-Phase 3), SwiftSyntax/IndexStore parser (§11.2), clickable Mermaid → source navigation
-and React Flow canvas (§13), the visual-sync "edit diagram → propose diff" flow (§12),
-`ExtractIOBehavior` job, and the seeded DemoNotes example (§18).
+**Also completed (second pass):** `ExtractIOBehavior` audit + auto-enqueued fallback/IO
+audits per code file; **vector index in SQLite** with semantic "Ask" retrieval (the
+`sqlite-vec` upgrade, done dependency-free behind a `VectorIndex` protocol); **seeded
+DemoNotes** artifacts (§18); **headless WKWebView Mermaid validation** (§7.4); **clickable
+Mermaid nodes → source navigation** (§13 Phase 2); first-run **on-device model download**
+affordance with progress; and memory-pressure / FSEvents-driven / RAM-aware safety barriers.
+
+**Deliberately deferred, with rationale:**
+- **Visual-sync "edit diagram → mutate code" (§12):** the research doc (§8) argues true
+  round-tripping is a trap; drift-detection + propose-diff is the safe substitute and is done.
+- **React Flow interactive canvas (§13 Phase 3):** large web app, marginal value over the
+  now-clickable Mermaid maps.
+- **SwiftSyntax/IndexStore parser (§11.2):** ~50 MB binary cost for marginal parse precision;
+  the regex extractor + validated static graph already ground the diagrams. Revisit if needed.
+- **`sqlite-vec` native extension:** the dependency-free brute-force `VectorIndex` covers
+  local scale; swap in the extension behind the protocol only if vector counts grow large.
 
 ---
 

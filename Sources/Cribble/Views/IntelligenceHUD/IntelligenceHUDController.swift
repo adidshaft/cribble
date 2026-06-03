@@ -89,7 +89,15 @@ final class IntelligenceHUDController {
         let root = IntelligenceHUDView(
             engine: engine,
             activeRootURL: { [weak library] in library?.activeRootURL },
-            onClose: { [weak self] in self?.close() }
+            onClose: { [weak self] in self?.close() },
+            onOpenSource: { [weak library] path in
+                guard let library, let root = library.activeRootURL else { return }
+                let url = root.appendingPathComponent(path)
+                guard FileManager.default.fileExists(atPath: url.path) else { return }
+                library.selectedURL = url
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.windows.first(where: { $0.isVisible && !($0 is IntelligencePanel) })?.makeKeyAndOrderFront(nil)
+            }
         )
 
         let visualEffect = NSVisualEffectView()

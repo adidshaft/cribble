@@ -96,6 +96,89 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertEqual(BackgroundScheduler.policy(for: c, idleThreshold: 60), .none)
     }
 
+    // MARK: - Vector index (semantic Ask)
+
+    func testVectorIndexSearchRanksBySimilarity() async throws {
+        let db = try IntelligenceDatabase(path: ":memory:")
+        func artifact(_ id: String) -> IntelligenceArtifact {
+            IntelligenceArtifact(id: id, projectID: "p", type: .fileSummary, relativePath: "\(id).md",
+                                 title: id, contentHash: "c", sourceHashes: ["h"], isPublished: false)
+        }
+        await db.insertArtifact(artifact("a"))
+        await db.insertArtifact(artifact("b"))
+        await db.upsertEmbedding(artifactID: "a", projectID: "p", vector: [1, 0, 0])
+        await db.upsertEmbedding(artifactID: "b", projectID: "p", vector: [0, 1, 0])
+
+        let index = SQLiteVectorIndex(db: db, projectID: "p")
+        let count = await index.count()
+        XCTAssertEqual(count, 2)
+        let hits = await index.search([0.9, 0.1, 0], limit: 2)
+        XCTAssertEqual(hits.first?.id, "a", "Closest vector should rank first")
+    }
+
+    // MARK: - DemoNotes seeding
+
+    func testDemoSeederSeedsExampleArtifacts() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-demo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Tour".write(to: root.appendingPathComponent("Feature Tour.md"), atomically: true, encoding: .utf8)
+        try "# Showcase".write(to: root.appendingPathComponent("Markdown Showcase.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let store = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let seeded = await DemoSeeder.seedIfDemoNotes(rootURL: root, store: store, db: db, projectID: "p")
+        XCTAssertTrue(seeded)
+        let types = Set(await db.artifacts(projectID: "p").map(\.type))
+        XCTAssertTrue(types.contains(.projectIndex))
+        XCTAssertTrue(types.contains(.architectureDiagram))
+        // A non-demo folder is left alone.
+        let empty = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-nodemo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: empty, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: empty) }
+        let db2 = try IntelligenceDatabase(path: ":memory:")
+        let store2 = ArtifactStore(db: db2, projectID: "q", cacheDirectory: empty.appendingPathComponent("c"))
+        let seeded2 = await DemoSeeder.seedIfDemoNotes(rootURL: empty, store: store2, db: db2, projectID: "q")
+        XCTAssertFalse(seeded2)
+    }
+
+    // MARK: - Clickable diagram links
+
+    func testDependencyGraphEmitsClickLinks() {
+        let symbols = [
+            SymbolRecord(fileID: 1, filePath: "App/Engine.swift", name: "Engine", kind: "type", startLine: 1, endLine: 5, signature: "struct Engine")
+        ]
+        let graph = DependencyGraph.build(from: symbols)
+        let mermaid = graph.mermaid(clickable: true)
+        XCTAssertTrue(mermaid.contains("click "))
+        XCTAssertTrue(mermaid.contains("cribble://open/"))
+        // Still structurally valid.
+        XCTAssertTrue(OutputValidator.validateMermaid(mermaid).isValid)
+    }
+
+    // MARK: - IO behavior executor
+
+    func testIOBehaviorAuditIsGeneratedForCodeFiles() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-io-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "import Foundation\nstruct Net { func get() {} }".write(to: root.appendingPathComponent("Net.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let provider = StubProvider(text: "# I/O\n\n- Network: `get()` performs a request.")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+        await runner.drain(limit: 20)
+
+        let types = Set(await db.artifacts(projectID: "p").map(\.type))
+        XCTAssertTrue(types.contains(.ioBehavior))
+        XCTAssertTrue(types.contains(.fallbackAudit))
+    }
+
     // MARK: - GitInspector
 
     func testGitInspectorOnNonRepoIsGraceful() async {

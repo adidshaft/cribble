@@ -31,6 +31,8 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var staleCount = 0
     @Published private(set) var lastActivity: String?
     @Published private(set) var isEnabled = false
+    /// Download progress (0...1) while fetching the on-device model, else nil.
+    @Published private(set) var modelDownloadFraction: Double?
 
     let settings: IntelligenceSettings
 
@@ -107,7 +109,8 @@ final class IntelligenceEngine: ObservableObject {
         let provider = makeProvider()
         let runner = JobRunner(
             db: database, scheduler: scheduler, artifacts: artifactStore,
-            provider: provider, projectID: projectID, rootURL: rootURL
+            provider: provider, projectID: projectID, rootURL: rootURL,
+            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
         )
 
         self.db = database
@@ -122,6 +125,8 @@ final class IntelligenceEngine: ObservableObject {
         // Recover from a previously poisoned cache (e.g. a misconfigured provider
         // that stored error text as artifacts) before doing anything else.
         await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
+        // Seed the bundled DemoNotes example so the feature demos immediately.
+        await DemoSeeder.seedIfDemoNotes(rootURL: rootURL, store: artifactStore, db: database, projectID: projectID)
         // Re-scan only when FSEvents reports a change; the loop otherwise just
         // drains the queue.
         fileMonitor.start(rootURL: rootURL) { [weak self] in
@@ -383,7 +388,7 @@ final class IntelligenceEngine: ObservableObject {
     /// and generates with the configured provider. Returns nil if no provider.
     func ask(_ question: String) async -> String? {
         guard let provider else { return nil }
-        let ranked = rankArtifacts(for: question)
+        let ranked = await retrieve(for: question)
         var context: [String] = []
         var budget = 8_000
         for artifact in ranked {
@@ -404,6 +409,22 @@ final class IntelligenceEngine: ObservableObject {
             EngineMessage(role: .user, content: question)
         ]
         return try? await provider.generate(prompt: messages, maxTokens: 700)
+    }
+
+    /// Retrieves the most relevant artifacts for a question — semantic vector
+    /// search when embeddings + an embedding-capable provider are available,
+    /// falling back to keyword ranking otherwise.
+    private func retrieve(for question: String) async -> [IntelligenceArtifact] {
+        guard let db, let projectID, let provider else { return rankArtifacts(for: question) }
+        let index = SQLiteVectorIndex(db: db, projectID: projectID)
+        if await index.count() > 0,
+           let qvec = try? await provider.embed(text: question), !qvec.isEmpty {
+            let hits = await index.search(qvec, limit: 6)
+            let byID = Dictionary(uniqueKeysWithValues: artifacts.map { ($0.id, $0) })
+            let matched = hits.compactMap { byID[$0.id] }
+            if !matched.isEmpty { return matched }
+        }
+        return rankArtifacts(for: question)
     }
 
     private func rankArtifacts(for question: String) -> [IntelligenceArtifact] {
@@ -434,6 +455,38 @@ final class IntelligenceEngine: ObservableObject {
             files.append(ResolvedFile(filename: "Project Index", content: content))
         }
         return files
+    }
+
+    // MARK: - On-device model
+
+    /// The model intelligence is configured to use, if it's an on-device one.
+    var activeModel: LocalModel? { ModelCatalog.model(withID: settings.modelID) }
+
+    /// True when the configured on-device model still needs downloading — so the
+    /// HUD can offer a "Download" affordance instead of silently waiting.
+    var needsModelDownload: Bool {
+        guard let model = activeModel, model.kind == .localMLX else { return false }
+        return !ModelInventory.isDownloaded(model)
+    }
+
+    /// Downloads (and warms) the configured on-device model, reporting progress,
+    /// then kicks a run so summaries start. No-op for cloud/runner providers or an
+    /// already-downloaded model.
+    func downloadModelIfNeeded() async {
+        guard let model = activeModel, model.kind == .localMLX, !ModelInventory.isDownloaded(model) else { return }
+        guard modelDownloadFraction == nil else { return }
+        modelDownloadFraction = 0
+        let engine = LocalLLM.shared.engine(for: model)
+        do {
+            try await engine.prepare(model: model) { [weak self] progress in
+                Task { @MainActor in self?.modelDownloadFraction = min(progress.fraction, 1) }
+            }
+            lastActivity = "Model ready"
+        } catch {
+            lastActivity = "Model download failed: \(error.localizedDescription)"
+        }
+        modelDownloadFraction = nil
+        await runNow()
     }
 
     // MARK: - Provider construction

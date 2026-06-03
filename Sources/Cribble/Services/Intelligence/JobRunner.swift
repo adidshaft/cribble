@@ -37,6 +37,8 @@ actor JobRunner {
     private let rootURL: URL
     private let maxInputChars: Int
     private let graphDirectory: URL
+    /// Optional headless Mermaid validator (best-effort; see MermaidRenderValidator).
+    private let mermaidValidator: (@Sendable (String) async -> Bool)?
 
     init(
         db: IntelligenceDatabase,
@@ -45,8 +47,10 @@ actor JobRunner {
         provider: IntelligenceProvider?,
         projectID: String,
         rootURL: URL,
-        maxInputChars: Int = 12_000
+        maxInputChars: Int = 12_000,
+        mermaidValidator: (@Sendable (String) async -> Bool)? = nil
     ) {
+        self.mermaidValidator = mermaidValidator
         self.db = db
         self.scheduler = scheduler
         self.artifacts = artifacts
@@ -99,6 +103,7 @@ actor JobRunner {
         switch job.type {
         case .summarizeFile:            return try await summarizeFile(job)
         case .extractFallbackLogic:     return try await fallbackAudit(job)
+        case .extractIOBehavior:        return try await ioBehavior(job)
         case .summarizeDiff:            return try await summarizeDiff(job)
         case .summarizeCommit:          return try await summarizeCommit(job)
         case .updateProjectIndex:       return try await updateProjectIndex(job)
@@ -127,6 +132,14 @@ actor JobRunner {
         let output = try await provider.generate(prompt: Prompts.fallbackAudit(path: path, source: source), maxTokens: 512)
         let audit = try await validatedMarkdown(output)
         return try await storeSummary(audit, type: .fallbackAudit, path: path, inputHash: job.inputHash, pathPrefix: "audits")
+    }
+
+    private func ioBehavior(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        guard let path = job.inputPaths.first, let source = readSource(path) else { throw JobRunnerError.missingInput }
+        let output = try await provider.generate(prompt: Prompts.ioBehavior(path: path, source: source), maxTokens: 512)
+        let behavior = try await validatedMarkdown(output)
+        return try await storeSummary(behavior, type: .ioBehavior, path: path, inputHash: job.inputHash, pathPrefix: "behavior")
     }
 
     private func summarizeDiff(_ job: IntelligenceJob) async throws -> String? {
@@ -177,6 +190,7 @@ actor JobRunner {
             type: .projectIndex, relativePath: "project-index.md",
             title: "\(projectName) — Project Index", content: index, sourceHashes: [job.inputHash]
         )
+        await persistEmbedding(artifactID: artifact.id, text: index)
         return artifact.id
     }
 
@@ -208,9 +222,14 @@ actor JobRunner {
 
     private func buildDependencyDiagram(_ job: IntelligenceJob) async throws -> String? {
         let graph = DependencyGraph.build(from: await db.allSymbols(projectID: projectID))
-        let mermaid = graph.mermaid()
+        let mermaid = graph.mermaid(clickable: true)
         let validation = OutputValidator.validateMermaid(mermaid)
         guard validation.isValid else { throw JobRunnerError.validationFailed(validation.issues) }
+        // Headless render check (best-effort): only rejects on a definitive parse
+        // failure; infra problems fall through as valid.
+        if let mermaidValidator, await mermaidValidator(mermaid) == false {
+            throw JobRunnerError.validationFailed(["mermaid failed headless render"])
+        }
         try persistBaselineEdges(graph.edges)
         let content = "# Dependency Map\n\nGenerated from static symbol analysis.\n\n```mermaid\n\(mermaid)\n```\n"
         let artifact = try await artifacts.store(
@@ -282,7 +301,15 @@ actor JobRunner {
             type: type, relativePath: "\(pathPrefix)/\(inputHash).md",
             title: path, content: content, sourceHashes: [inputHash], provenance: [provenance]
         )
+        await persistEmbedding(artifactID: artifact.id, text: "\(path)\n\(content)")
         return artifact.id
+    }
+
+    /// Best-effort embedding for semantic retrieval. Silent no-op if the provider
+    /// has no embedding capability.
+    private func persistEmbedding(artifactID: String, text: String) async {
+        guard let vector = try? await provider?.embed(text: text), !vector.isEmpty else { return }
+        await db.upsertEmbedding(artifactID: artifactID, projectID: projectID, vector: vector)
     }
 
     private func baselineURL() -> URL {

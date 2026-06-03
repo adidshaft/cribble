@@ -19,6 +19,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     case summarizeDiff = "summarize_diff"
     case summarizeCommit = "summarize_commit"
     case extractFallbackLogic = "extract_fallback_logic"
+    case extractIOBehavior = "extract_io_behavior"
 
     // Tier 3 — multi-input aggregation, idle only.
     case buildDependencyDiagram = "build_dependency_diagram"
@@ -34,7 +35,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
             return .tier1
         case .summarizeFile, .summarizeDiff, .summarizeCommit, .extractFallbackLogic:
             return .tier2
-        case .buildDependencyDiagram, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift:
+        case .extractIOBehavior, .buildDependencyDiagram, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift:
             return .tier3
         }
     }
@@ -46,7 +47,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     var requiresProvider: Bool {
         switch self {
         case .summarizeFile, .summarizeDiff, .summarizeCommit,
-             .extractFallbackLogic, .buildArchitectureDiagram, .updateProjectIndex:
+             .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex:
             return true
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports,
              .buildDependencyDiagram, .detectArchitectureDrift:
@@ -87,6 +88,7 @@ enum IntelligenceArtifactType: String, Codable, Sendable {
     case dependencyDiagram = "dependency_diagram"
     case architectureDiagram = "architecture_diagram"
     case fallbackAudit = "fallback_audit"
+    case ioBehavior = "io_behavior"
     case driftReport = "drift_report"
 }
 

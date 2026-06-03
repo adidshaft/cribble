@@ -133,6 +133,18 @@ actor IntelligenceDatabase {
             is_summarized INTEGER NOT NULL DEFAULT 0,
             UNIQUE(project_id, sha)
         );
+        """),
+        (2, """
+        -- Embedding vectors for semantic retrieval ("Ask about this project").
+        -- Stored as a packed Float32 BLOB; brute-force cosine in Swift keeps this
+        -- dependency-free. Swappable for the sqlite-vec extension behind VectorIndex.
+        CREATE TABLE embeddings (
+            artifact_id  TEXT PRIMARY KEY REFERENCES artifacts(id) ON DELETE CASCADE,
+            project_id   TEXT NOT NULL,
+            dim          INTEGER NOT NULL,
+            vector       BLOB NOT NULL
+        );
+        CREATE INDEX idx_embeddings_project ON embeddings(project_id);
         """)
     ]
 
@@ -629,6 +641,49 @@ actor IntelligenceDatabase {
             bindText(stmt, 1, projectID)
             bindText(stmt, 2, sha)
         }
+    }
+
+    // MARK: - Embeddings (vector index)
+
+    func upsertEmbedding(artifactID: String, projectID: String, vector: [Float]) {
+        let data = vector.withUnsafeBufferPointer { Data(buffer: $0) }
+        run("""
+        INSERT INTO embeddings (artifact_id, project_id, dim, vector) VALUES (?, ?, ?, ?)
+        ON CONFLICT(artifact_id) DO UPDATE SET dim = excluded.dim, vector = excluded.vector;
+        """) { stmt in
+            bindText(stmt, 1, artifactID)
+            bindText(stmt, 2, projectID)
+            sqlite3_bind_int(stmt, 3, Int32(vector.count))
+            data.withUnsafeBytes { raw in
+                sqlite3_bind_blob(stmt, 4, raw.baseAddress, Int32(raw.count), SQLITE_TRANSIENT)
+            }
+        }
+    }
+
+    /// All stored embeddings for a project, as (artifactID, vector) pairs.
+    func embeddings(projectID: String) -> [(artifactID: String, vector: [Float])] {
+        var rows: [(String, [Float])] = []
+        query("SELECT artifact_id, dim, vector FROM embeddings WHERE project_id = ?;") { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            let id = Self.columnText(stmt, 0) ?? ""
+            let dim = Int(sqlite3_column_int(stmt, 1))
+            guard let blob = sqlite3_column_blob(stmt, 2) else { return }
+            let bytes = Int(sqlite3_column_bytes(stmt, 2))
+            guard bytes == dim * MemoryLayout<Float>.size else { return }
+            let buffer = UnsafeRawBufferPointer(start: blob, count: bytes)
+            let vector = Array(buffer.bindMemory(to: Float.self))
+            rows.append((id, vector))
+        }
+        return rows
+    }
+
+    func embeddingCount(projectID: String) -> Int {
+        var count = 0
+        query("SELECT COUNT(*) FROM embeddings WHERE project_id = ?;") { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in count = Int(sqlite3_column_int64(stmt, 0)) }
+        return count
     }
 
     // MARK: - Provenance

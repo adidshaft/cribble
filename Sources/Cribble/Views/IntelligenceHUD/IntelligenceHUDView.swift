@@ -11,6 +11,8 @@ struct IntelligenceHUDView: View {
     /// Resolves the project to operate on (the active library folder).
     let activeRootURL: () -> URL?
     let onClose: () -> Void
+    /// Opens a project-relative source file (from a clicked diagram node).
+    var onOpenSource: (String) -> Void = { _ in }
 
     @State private var selectedArtifactID: String?
     @State private var provenance: [ArtifactProvenance] = []
@@ -24,6 +26,9 @@ struct IntelligenceHUDView: View {
             header
             Divider().overlay(Color.white.opacity(0.08))
             if engine.isEnabled {
+                if engine.needsModelDownload || engine.modelDownloadFraction != nil {
+                    modelBanner
+                }
                 content
                 askBar
             } else {
@@ -139,6 +144,36 @@ struct IntelligenceHUDView: View {
         .padding(24)
     }
 
+    // MARK: - Model download banner
+
+    private var modelBanner: some View {
+        HStack(spacing: 10) {
+            if let fraction = engine.modelDownloadFraction {
+                ProgressView(value: fraction)
+                    .progressViewStyle(.linear)
+                    .frame(maxWidth: 160)
+                Text("Downloading \(engine.activeModel?.name ?? "model")… \(Int(fraction * 100))%")
+                    .font(.system(size: 11))
+            } else {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 12))
+                Text("Summaries need an on-device model.")
+                    .font(.system(size: 11))
+                Spacer(minLength: 0)
+                Button("Download \(engine.activeModel?.name ?? "model") (\(engine.activeModel?.approximateSize ?? ""))") {
+                    Task { await engine.downloadModelIfNeeded() }
+                }
+                .font(.system(size: 11, weight: .semibold))
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Color.accentColor.opacity(0.85), in: Capsule())
+            }
+        }
+        .foregroundStyle(.white.opacity(0.85))
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(Color.white.opacity(0.06))
+    }
+
     // MARK: - Content (tree + reader)
 
     private var content: some View {
@@ -220,8 +255,7 @@ struct IntelligenceHUDView: View {
                                 .background(Color.white.opacity(0.1), in: Capsule())
                         }
                     }
-                    StructuredText(markdown: body)
-                        .textSelection(.enabled)
+                    ArtifactBodyView(content: body, onOpenSource: onOpenSource)
                     if !provenance.isEmpty {
                         provenanceFooter
                     }
@@ -325,7 +359,7 @@ struct IntelligenceHUDView: View {
             ("Overview", [.projectIndex]),
             ("Architecture", [.architectureDiagram, .dependencyDiagram]),
             ("Changes", [.diffSummary, .commitSummary]),
-            ("Audits", [.fallbackAudit, .driftReport]),
+            ("Audits", [.fallbackAudit, .ioBehavior, .driftReport]),
             ("Files", [.fileSummary])
         ]
         return order.compactMap { section in
@@ -342,6 +376,7 @@ private extension IntelligenceArtifactType {
         case .architectureDiagram, .dependencyDiagram: "point.3.connected.trianglepath.dotted"
         case .diffSummary, .commitSummary: "arrow.triangle.branch"
         case .fallbackAudit: "shield.lefthalf.filled"
+        case .ioBehavior: "arrow.left.arrow.right"
         case .driftReport: "exclamationmark.triangle"
         case .fileSummary: "doc.text"
         }

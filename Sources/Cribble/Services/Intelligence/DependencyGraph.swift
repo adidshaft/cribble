@@ -71,7 +71,7 @@ struct DependencyGraph: Sendable, Equatable {
     /// Renders a Mermaid `graph LR`. Node ids are sanitized; labels keep the
     /// original name. Capped to keep diagrams legible (research §2: never render
     /// the whole repo at once).
-    func mermaid(maxNodes: Int = 40) -> String {
+    func mermaid(maxNodes: Int = 40, clickable: Bool = false) -> String {
         // Keep the most-connected nodes when over budget.
         var degree: [String: Int] = [:]
         for e in edges { degree[e.from, default: 0] += 1; degree[e.to, default: 0] += 1 }
@@ -83,6 +83,14 @@ struct DependencyGraph: Sendable, Equatable {
         }
         for e in edges where kept.contains(e.from) && kept.contains(e.to) {
             lines.append("    \(sanitize(e.from)) -->|\(e.label)| \(sanitize(e.to))")
+        }
+        // Make file nodes navigable: a `cribble://open/<path>` link the HUD's
+        // diagram view intercepts to open the source file (design plan §13 Phase 2).
+        if clickable {
+            for id in kept.sorted() where !id.hasPrefix("module:") {
+                let encoded = id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? id
+                lines.append("    click \(sanitize(id)) \"cribble://open/\(encoded)\" \"Open \(escape(nodes[id] ?? id))\"")
+            }
         }
         return lines.joined(separator: "\n")
     }

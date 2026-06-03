@@ -25,6 +25,25 @@ actor BackgroundScheduler {
         var isOnBattery: Bool
         var appIsActive: Bool
         var appIsForeground: Bool
+        /// True when the OS reports memory pressure; halts all intelligence work
+        /// so Cribble can't contribute to a low-memory spiral.
+        var memoryPressured: Bool
+
+        init(
+            userIdleSeconds: TimeInterval,
+            thermalState: ProcessInfo.ThermalState,
+            isOnBattery: Bool,
+            appIsActive: Bool,
+            appIsForeground: Bool,
+            memoryPressured: Bool = false
+        ) {
+            self.userIdleSeconds = userIdleSeconds
+            self.thermalState = thermalState
+            self.isOnBattery = isOnBattery
+            self.appIsActive = appIsActive
+            self.appIsForeground = appIsForeground
+            self.memoryPressured = memoryPressured
+        }
     }
 
     private let conditionsProvider: @Sendable () -> Conditions
@@ -45,6 +64,8 @@ actor BackgroundScheduler {
     /// Pure decision function — extracted so it can be tested directly against
     /// synthetic `Conditions`.
     static func policy(for c: Conditions, idleThreshold: TimeInterval) -> IntelligenceJobTier {
+        // Memory pressure halts everything — the highest-priority safety gate.
+        if c.memoryPressured { return .none }
         // Thermal pressure halts everything, regardless of power/idle.
         if c.thermalState == .serious || c.thermalState == .critical { return .none }
         // On battery we only do the cheap, deterministic Tier-1 work.

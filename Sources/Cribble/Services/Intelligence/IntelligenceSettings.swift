@@ -42,7 +42,18 @@ final class IntelligenceSettings: ObservableObject {
     init() {
         let stored = UserDefaults.standard.stringArray(forKey: Keys.enabledProjects) ?? []
         enabledProjectIDs = Set(stored)
-        modelID = UserDefaults.standard.string(forKey: Keys.modelID) ?? ModelCatalog.defaultModel.id
+        // Intelligence runs hundreds of background jobs, so it must NOT default to
+        // a cloud CLI provider (rate limits, cost, and — as seen in testing — the
+        // CLI's auth-error text getting stored as artifacts). Prefer an on-device
+        // model; if none is downloaded yet, deterministic jobs still run and model
+        // jobs simply wait. Migrate the old cloud default to the local default.
+        let onDeviceDefault = ModelCatalog.localModels.first?.id ?? ModelCatalog.defaultModel.id
+        let storedModel = UserDefaults.standard.string(forKey: Keys.modelID)
+        if let storedModel, let model = ModelCatalog.model(withID: storedModel), !model.kind.isCloud {
+            modelID = storedModel
+        } else {
+            modelID = onDeviceDefault
+        }
         localRunnerBaseURL = UserDefaults.standard.string(forKey: Keys.runnerURL)
         pauseOnBattery = UserDefaults.standard.object(forKey: Keys.pauseOnBattery) as? Bool ?? true
         autoPublish = UserDefaults.standard.object(forKey: Keys.autoPublish) as? Bool ?? false

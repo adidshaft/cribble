@@ -42,6 +42,36 @@ enum OutputValidator {
         return Result(isValid: issues.isEmpty, issues: issues)
     }
 
+    /// Detects when a provider returned an *error message* instead of a real
+    /// answer (e.g. an unauthenticated CLI printing "Failed to authenticate. API
+    /// Error: 401"). Without this, such text passes the markdown check and gets
+    /// stored as a bogus artifact. Returns the matched reason, or nil if clean.
+    ///
+    /// Tuned to avoid false positives on legitimate summaries that merely discuss
+    /// auth: "strong" phrases reject anywhere; "weak" tokens only reject when the
+    /// whole output is short (real error responses are short and terse).
+    static func looksLikeError(_ text: String) -> String? {
+        let lower = text.lowercased()
+        let strong = [
+            "invalid authentication", "failed to authenticate", "authentication credentials",
+            "api error", "command not found", "could not find", "please run /login",
+            "not logged in", "econnrefused", "connection refused", "rate limit exceeded",
+            "credit balance is too low", "no such file or directory", "permission denied",
+            "invalid api key", "missing api key", "401 unauthorized", "403 forbidden"
+        ]
+        for phrase in strong where lower.contains(phrase) {
+            return "provider returned an error (\"\(phrase)\")"
+        }
+        // Weak tokens: only suspicious in a short, terse output.
+        if text.count < 320 {
+            let weak = ["401", "403", "429", "unauthorized", "forbidden", "error:", "traceback"]
+            for token in weak where lower.contains(token) {
+                return "provider returned a short error-like response (\"\(token)\")"
+            }
+        }
+        return nil
+    }
+
     /// Structural Mermaid sanity check (not a full parser): must start with a
     /// known diagram keyword and have balanced brackets. A headless WKWebView
     /// render check (plan §7.4) is a later, heavier upgrade.

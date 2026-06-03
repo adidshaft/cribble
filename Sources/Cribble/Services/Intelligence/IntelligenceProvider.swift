@@ -85,6 +85,12 @@ final class LocalEngineIntelligenceProvider: IntelligenceProvider, @unchecked Se
         // is prompted to download. CLI providers are assumed installed if chosen.
         switch model.kind {
         case .localMLX:
+            // Refuse to load a model that needs more RAM than this Mac has — on a
+            // small machine that's a fast path to swap-thrash or an OOM crash.
+            let physicalGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
+            if Double(model.recommendedMemoryGB) > physicalGB {
+                return .unavailable(reason: "Needs ~\(model.recommendedMemoryGB) GB RAM; this Mac has \(Int(physicalGB.rounded())) GB")
+            }
             return ModelInventory.isDownloaded(model) ? .available : .unavailable(reason: "Model not downloaded")
         case .claudeCLI, .codexCLI:
             return .available

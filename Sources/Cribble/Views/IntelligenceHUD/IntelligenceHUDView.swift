@@ -60,6 +60,7 @@ struct IntelligenceHUDView: View {
             statusPill
             if engine.isEnabled {
                 headerIcon("arrow.clockwise", help: "Run now") { Task { await engine.runNow() } }
+                headerIcon("trash", help: "Clear cache & rebuild") { Task { await engine.clearCache() } }
             }
             headerIcon("xmark", help: "Close", action: onClose)
         }

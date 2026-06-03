@@ -549,6 +549,14 @@ actor IntelligenceDatabase {
         run("DELETE FROM artifacts WHERE id = ?;") { stmt in bindText(stmt, 1, id) }
     }
 
+    /// Wipes all artifacts and jobs for a project so intelligence can be rebuilt
+    /// from scratch (used by Clear Cache and poison-recovery).
+    func reset(projectID: String) {
+        run("DELETE FROM artifacts WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM jobs WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM git_commits WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+    }
+
     func markArtifactPublished(id: String) {
         run("UPDATE artifacts SET is_published = 1 WHERE id = ?;") { stmt in bindText(stmt, 1, id) }
     }

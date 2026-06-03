@@ -43,9 +43,25 @@ final class IntelligenceEngine: ObservableObject {
     private var provider: IntelligenceProvider?
     private let embeddingEngine = EmbeddingEngine()
     private var tickTask: Task<Void, Never>?
+    private let fileMonitor = FileChangeMonitor()
 
-    /// How often the idle loop wakes to scan + drain.
-    private let tickInterval: Duration = .seconds(20)
+    /// Set by FSEvents when the project changes; the loop only re-scans (and
+    /// re-hashes files) when this is true, instead of re-hashing the whole tree
+    /// every tick. Big I/O saving on large projects.
+    private var needsScan = false
+    /// Reentrancy guard so a manual `runNow()` can't overlap a loop tick.
+    private var isTicking = false
+    /// OS memory-pressure flag, set from a DispatchSource and read (off the main
+    /// actor) by the scheduler's condition probe. Thread-safe.
+    private let memoryPressure = AtomicFlag()
+    private var memorySource: DispatchSourceMemoryPressure?
+
+    /// How often the idle loop wakes to drain the queue. Scanning happens only on
+    /// change (FSEvents), not on every tick.
+    private let tickInterval: Duration = .seconds(30)
+    /// Upper bound on files Intelligence will manage for one project, so a giant
+    /// repo can't enqueue an unbounded amount of work or balloon memory.
+    private let maxFilesManaged = 8_000
 
     init(settings: IntelligenceSettings) {
         self.settings = settings
@@ -77,13 +93,14 @@ final class IntelligenceEngine: ObservableObject {
         }
         await database.resetRunningJobs()
 
-        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery] in
+        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryPressure] in
             BackgroundScheduler.Conditions(
                 userIdleSeconds: Self.systemIdleSeconds(),
                 thermalState: ProcessInfo.processInfo.thermalState,
                 isOnBattery: pauseOnBattery && ProcessInfo.processInfo.isLowPowerModeEnabled,
                 appIsActive: true,
-                appIsForeground: true
+                appIsForeground: true,
+                memoryPressured: memoryPressure.value
             )
         })
         let artifactStore = ArtifactStore(db: database, projectID: projectID, cacheDirectory: cacheDir.appendingPathComponent("artifacts"))
@@ -101,8 +118,36 @@ final class IntelligenceEngine: ObservableObject {
         self.isEnabled = true
         self.status = .ready
 
+        startMemoryPressureMonitor()
+        // Recover from a previously poisoned cache (e.g. a misconfigured provider
+        // that stored error text as artifacts) before doing anything else.
+        await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
+        // Re-scan only when FSEvents reports a change; the loop otherwise just
+        // drains the queue.
+        fileMonitor.start(rootURL: rootURL) { [weak self] in
+            self?.needsScan = true
+        }
+        needsScan = true
         await tick(initialScan: true)
         startLoop()
+    }
+
+    /// Detects a poisoned cache — artifacts whose stored content is actually a
+    /// provider error — and wipes the project's artifacts/jobs so they regenerate
+    /// cleanly. Samples up to 60 artifacts to stay cheap.
+    private func recoverIfPoisoned(database: IntelligenceDatabase, store: ArtifactStore, projectID: String) async {
+        let sample = await database.artifacts(projectID: projectID).prefix(60)
+        guard !sample.isEmpty else { return }
+        var bad = 0
+        for artifact in sample {
+            if let content = store.content(for: artifact), OutputValidator.looksLikeError(content) != nil { bad += 1 }
+        }
+        // If a meaningful fraction look like errors, the whole batch is suspect.
+        if Double(bad) / Double(sample.count) >= 0.3 {
+            await database.reset(projectID: projectID)
+            try? FileManager.default.removeItem(at: store.cacheDirectory)
+            lastActivity = "Cleared a misconfigured cache; rebuilding"
+        }
     }
 
     /// Disables intelligence for the current project and stops all work.
@@ -127,8 +172,39 @@ final class IntelligenceEngine: ObservableObject {
     private func teardown() async {
         tickTask?.cancel()
         tickTask = nil
+        fileMonitor.stop()
+        memorySource?.cancel()
+        memorySource = nil
+        needsScan = false
+        isTicking = false
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
         projectID = nil; rootURL = nil
+    }
+
+    /// Wipes this project's artifacts, jobs, and cached content, then rebuilds.
+    func clearCache() async {
+        guard let db, let projectID, let artifactStore else { return }
+        await db.reset(projectID: projectID)
+        try? FileManager.default.removeItem(at: artifactStore.cacheDirectory)
+        try? FileManager.default.removeItem(at: artifactStore.cacheDirectory.deletingLastPathComponent().appendingPathComponent("graph"))
+        artifacts = []
+        needsScan = true
+        await tick(initialScan: true)
+    }
+
+    /// Starts watching system memory pressure; on warning/critical, sets the flag
+    /// the scheduler reads to halt all intelligence work until pressure clears.
+    private func startMemoryPressureMonitor() {
+        memorySource?.cancel()
+        // Include `.normal` so the flag clears when pressure subsides; with only
+        // warning/critical the source never fires on recovery and the flag latches.
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .global(qos: .utility))
+        source.setEventHandler { [memoryPressure] in
+            let event = source.data
+            memoryPressure.value = event.contains(.warning) || event.contains(.critical)
+        }
+        source.resume()
+        memorySource = source
     }
 
     // MARK: - Idle loop
@@ -149,15 +225,31 @@ final class IntelligenceEngine: ObservableObject {
     /// the queue within the allowed tier, enforce the disk budget, refresh state.
     func tick(initialScan: Bool) async {
         guard let db, let rootURL, let projectID, let runner else { return }
+        guard !isTicking else { return }   // no overlapping ticks
+        isTicking = true
+        defer { isTicking = false }
 
-        if initialScan { status = .scanning(done: 0, total: 0) }
-        let scanner = WorkspaceScanner(db: db, projectID: projectID, rootURL: rootURL)
-        let result = await scanner.scan()
-        if result.changed > 0 || result.added > 0 {
-            lastActivity = "Indexed \(result.added + result.changed) file(s)"
+        // Honor memory pressure immediately — don't even scan under pressure.
+        if memoryPressure.value {
+            status = .working("Paused (low memory)")
+            return
         }
 
-        await enqueueAggregateJobs()
+        // Re-scan (and re-hash files) only when something actually changed.
+        if initialScan || needsScan {
+            needsScan = false
+            if initialScan { status = .scanning(done: 0, total: 0) }
+            let scanner = WorkspaceScanner(db: db, projectID: projectID, rootURL: rootURL)
+            let result = await scanner.scan()
+            if result.changed > 0 || result.added > 0 {
+                lastActivity = "Indexed \(result.added + result.changed) file(s)"
+            }
+            if await db.files(projectID: projectID).count > maxFilesManaged {
+                lastActivity = "Large project — summarizing within limits"
+            }
+            await enqueueAggregateJobs()
+        }
+
         status = .working("Processing")
         await runner.drain(limit: 6)   // bounded per tick so the loop stays responsive
         await enforceDiskBudget()
@@ -315,12 +407,17 @@ final class IntelligenceEngine: ObservableObject {
     }
 
     private func rankArtifacts(for question: String) -> [IntelligenceArtifact] {
+        // Rank on metadata only (title + path) — never read every artifact's
+        // content into memory, which on a large project means thousands of file
+        // reads per question. `ask` reads content for just the top handful.
         let terms = Set(question.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
         return artifacts
             .map { artifact -> (IntelligenceArtifact, Int) in
-                let hay = ((artifact.title ?? "") + " " + (artifactStore?.content(for: artifact) ?? "")).lowercased()
+                let hay = ((artifact.title ?? "") + " " + artifact.relativePath + " " + artifact.type.rawValue).lowercased()
                 let score = terms.reduce(0) { $0 + (hay.contains($1) ? 1 : 0) }
-                return (artifact, score)
+                // Always give the project index a small baseline so broad questions
+                // still get top-level context.
+                return (artifact, score + (artifact.type == .projectIndex ? 1 : 0))
             }
             .sorted { $0.1 > $1.1 }
             .prefix(6)
@@ -359,5 +456,16 @@ final class IntelligenceEngine: ObservableObject {
         #else
         return 0
         #endif
+    }
+}
+
+/// A tiny lock-guarded boolean, safe to write from a dispatch queue and read from
+/// the scheduler's nonisolated condition probe.
+final class AtomicFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value = false
+    var value: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); _value = newValue; lock.unlock() }
     }
 }

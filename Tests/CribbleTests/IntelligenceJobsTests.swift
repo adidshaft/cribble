@@ -52,6 +52,50 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertFalse(OutputValidator.validateMermaid("graph LR\n  a[unbalanced-->b").isValid)
     }
 
+    // MARK: - Error-output rejection (the 401 bug)
+
+    func testLooksLikeErrorRejectsAuthFailures() {
+        XCTAssertNotNil(OutputValidator.looksLikeError("Failed to authenticate. API Error: 401 Invalid authentication credentials"))
+        XCTAssertNotNil(OutputValidator.looksLikeError("Error: 403"))
+        XCTAssertNotNil(OutputValidator.looksLikeError("zsh: command not found: claude"))
+        // A real, longer summary that merely discusses auth must NOT be rejected.
+        let realSummary = String(repeating: "This module validates bearer tokens and returns a status when the session is missing. ", count: 6)
+        XCTAssertNil(OutputValidator.looksLikeError(realSummary))
+    }
+
+    func testRunnerDoesNotStoreErrorOutput() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-err-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "struct A {}".write(to: root.appendingPathComponent("A.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let provider = StubProvider(text: "Failed to authenticate. API Error: 401 Invalid authentication credentials")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+
+        await runner.drain(limit: 10)
+        let produced = await db.artifacts(projectID: "p")
+        XCTAssertTrue(produced.isEmpty, "Auth-error output must not be stored as an artifact")
+        // The job should have failed rather than completed.
+        let completed = await db.jobs(projectID: "p", status: .completed).count
+        XCTAssertEqual(completed, 0)
+    }
+
+    // MARK: - Memory-pressure gating
+
+    func testSchedulerHaltsUnderMemoryPressure() {
+        let c = BackgroundScheduler.Conditions(
+            userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false,
+            appIsActive: false, appIsForeground: false, memoryPressured: true
+        )
+        XCTAssertEqual(BackgroundScheduler.policy(for: c, idleThreshold: 60), .none)
+    }
+
     // MARK: - GitInspector
 
     func testGitInspectorOnNonRepoIsGraceful() async {

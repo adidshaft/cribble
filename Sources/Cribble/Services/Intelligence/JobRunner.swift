@@ -258,6 +258,11 @@ actor JobRunner {
     private func validatedMarkdown(_ output: String) async throws -> String {
         let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw JobRunnerError.emptyOutput }
+        // Never store an error message as an artifact (e.g. an unauthenticated
+        // CLI's "API Error: 401"). Fail the job instead so it retries / surfaces.
+        if let reason = OutputValidator.looksLikeError(trimmed) {
+            throw JobRunnerError.validationFailed([reason])
+        }
         let known = Set(await db.files(projectID: projectID).map(\.path))
         let result = OutputValidator.validateMarkdown(trimmed, knownPaths: known)
         guard result.isValid else { throw JobRunnerError.validationFailed(result.issues) }

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product ideas and roadmap discussion
+    url: https://github.com/adidshaft/cribble/discussions
+    about: Start here for feature ideas, product direction, and larger proposals.
+  - name: Security reports
+    url: https://github.com/adidshaft/cribble/security/policy
+    about: Please report suspected vulnerabilities privately.

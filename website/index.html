@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Cribble is a calm, local-first Markdown reader for macOS with rich Markdown, Mermaid, syntax highlighting, reading bookmarks, and highlight notes." />
+<meta name="description" content="Cribble is a calm, local-first Markdown reader for macOS that turns plain .md folders into a rich, connected reading workspace." />
 <title>Cribble — Markdown Knowledge Base Manager for macOS</title>
 <link rel="icon" href="assets/icon.png" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Cribble" />
 <meta property="og:title" content="Cribble — Markdown Knowledge Base Manager for macOS" />
-<meta property="og:description" content="A calm local-first Markdown reader for macOS with rich Markdown, Mermaid diagrams, syntax-highlighted code, reading bookmarks, and highlight notes." />
+<meta property="og:description" content="A calm local-first Markdown reader for macOS that turns plain .md folders into a rich, connected reading workspace." />
 <meta property="og:url" content="https://cribble.kyokasuigetsu.xyz/" />
 <meta property="og:image" content="https://cribble.kyokasuigetsu.xyz/assets/cribble-link-preview.jpg?v=2" />
 <meta property="og:image:secure_url" content="https://cribble.kyokasuigetsu.xyz/assets/cribble-link-preview.jpg?v=2" />
@@ -19,7 +19,7 @@
 <meta property="og:image:alt" content="Cribble, a calm Markdown reader for macOS." />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Cribble — Markdown Knowledge Base Manager for macOS" />
-<meta name="twitter:description" content="A calm local-first Markdown reader for macOS with rich Markdown, Mermaid diagrams, syntax-highlighted code, reading bookmarks, and highlight notes." />
+<meta name="twitter:description" content="A calm local-first Markdown reader for macOS that turns plain .md folders into a rich, connected reading workspace." />
 <meta name="twitter:image" content="https://cribble.kyokasuigetsu.xyz/assets/cribble-link-preview.jpg?v=2" />
 <style>
   :root {
@@ -389,6 +389,134 @@
     line-height: 1.55;
   }
 
+  /* ─── Open Source ─────────────────────────────────────────── */
+  .oss-panel {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  .oss-main {
+    background:
+      radial-gradient(75% 60% at 100% 0%, rgba(34,197,94,0.1), transparent 70%),
+      var(--bg-card);
+  }
+  .oss-main h3 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.018em;
+  }
+  .oss-main p {
+    margin: 0;
+    max-width: 620px;
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1.58;
+  }
+  .oss-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 28px 0;
+  }
+  .oss-stat {
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(43,107,224,0.04);
+    border: 1px solid var(--line-soft);
+  }
+  .oss-stat .number {
+    display: block;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .oss-stat .label {
+    display: block;
+    margin-top: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .oss-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .oss-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .oss-link {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.72);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .oss-link:hover { border-color: var(--blue); transform: translateY(-1px); text-decoration: none; }
+  .oss-link .icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(43,107,224,0.1);
+    color: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .oss-link .text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .oss-link .text .label {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+  }
+  .oss-link .text .value {
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .oss-link .arrow {
+    color: var(--blue);
+    font-weight: 600;
+  }
+  .oss-lanes {
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .oss-lanes li {
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: rgba(10,26,62,0.035);
+    color: var(--ink-soft);
+    font-size: 13.5px;
+  }
+  .oss-lanes b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
   /* ─── Privacy ─────────────────────────────────────────────── */
   .privacy-block {
     display: grid;
@@ -559,7 +687,10 @@
 
   /* ─── Responsive ──────────────────────────────────────────── */
   @media (max-width: 820px) {
-    .download-grid, .release-notes-grid, .privacy-block, .support-grid { grid-template-columns: 1fr; gap: 32px; }
+    .download-grid, .release-notes-grid, .oss-panel, .privacy-block, .support-grid { grid-template-columns: 1fr; gap: 32px; }
+    .oss-stats, .oss-lanes { grid-template-columns: 1fr; }
+    .oss-link { grid-template-columns: 38px 1fr; }
+    .oss-link .arrow { display: none; }
     .section-head { flex-direction: column; gap: 8px; align-items: flex-start; }
     .section-head h2 { font-size: 32px; }
     .nav-links { gap: 14px; }
@@ -580,6 +711,7 @@
     </a>
     <div class="nav-links">
       <a href="#download">Download</a>
+      <a href="#open-source">Open Source</a>
       <a href="#privacy">Privacy</a>
       <a href="#support">Support</a>
       <a href="https://github.com/adidshaft/cribble/releases/download/v1.2.1/Cribble-1.2.1.dmg" class="nav-cta" data-dmg-link>Get Cribble</a>
@@ -594,7 +726,7 @@
     <span data-version-eyebrow>Version 1.2.1 — build 10202</span>
   </span>
   <h1>A calm Markdown<br/>reader for <span class="accent">macOS.</span></h1>
-  <p>Cribble turns ordinary Markdown folders into a quiet reading surface with rich Markdown, Mermaid diagrams, reading marks, and a private AI assistant that understands your notes. No database. No lock-in.</p>
+  <p>Cribble turns plain .md folders into a rich, connected reading workspace for macOS — local-first, private, and built for notes you already own.</p>
 
   <div class="hero-ctas">
     <a href="https://github.com/adidshaft/cribble/releases/download/v1.2.1/Cribble-1.2.1.dmg" class="btn btn-primary" data-dmg-link>
@@ -604,6 +736,10 @@
     <a href="https://github.com/adidshaft/cribble/releases/tag/v1.2.1" class="btn btn-secondary" data-release-notes-link>
       Release notes
       <span class="tag">Stable</span>
+    </a>
+    <a href="https://github.com/adidshaft/cribble" class="btn btn-secondary">
+      Contribute on GitHub
+      <span class="tag">0 stars</span>
     </a>
   </div>
 
@@ -681,6 +817,99 @@
     <div class="release-note">
       <h4>Cribble AI</h4>
       <p>1.2 adds a private chat HUD, vault-aware answers, quick actions, file attachments, safe previews, and clearer on-device model download progress.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Open Source ─────────────────────────────────────────── -->
+<section class="page" id="open-source">
+  <div class="section-head">
+    <h2>Open Source</h2>
+    <span class="kicker">Apache-2.0 · DCO · maintainer-led</span>
+  </div>
+
+  <div class="oss-panel">
+    <div class="card card-lg oss-main">
+      <h3>Help shape the reader without taking over the roadmap.</h3>
+      <p>Cribble welcomes outside contributions for bugs, docs, tests, rendering fixes, accessibility, diagnostics, and provider integrations. Product direction, official releases, app distribution, and the Cribble name stay maintainer-owned so the project keeps a clear center of gravity.</p>
+
+      <div class="oss-stats" aria-label="GitHub repository stats">
+        <div class="oss-stat">
+          <span class="number">0</span>
+          <span class="label">GitHub stars</span>
+        </div>
+        <div class="oss-stat">
+          <span class="number">0</span>
+          <span class="label">Forks</span>
+        </div>
+        <div class="oss-stat">
+          <span class="number">0</span>
+          <span class="label">Open issues</span>
+        </div>
+      </div>
+
+      <div class="oss-actions">
+        <a href="https://github.com/adidshaft/cribble" class="btn btn-primary">
+          Star and contribute
+          <span class="tag">GitHub</span>
+        </a>
+        <a href="https://github.com/adidshaft/cribble/discussions" class="btn btn-secondary">
+          Discuss ideas first
+        </a>
+        <a href="https://github.com/adidshaft/cribble/issues" class="btn btn-secondary">
+          Report a bug
+        </a>
+      </div>
+
+      <ul class="oss-lanes">
+        <li><b>Direct PRs:</b> bug fixes, docs, tests, small polish.</li>
+        <li><b>Discuss first:</b> features, UX direction, AI behavior, storage policy.</li>
+        <li><b>Good lanes:</b> rendering, accessibility, provider support, reproducible diagnostics.</li>
+        <li><b>Source license:</b> Apache-2.0 with DCO signoff for contributor provenance.</li>
+      </ul>
+    </div>
+
+    <div class="oss-side">
+      <a href="https://github.com/adidshaft/cribble/blob/main/README.md" class="oss-link">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v16a1 1 0 0 0-1-1H6a2 2 0 0 0-2 2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+        </span>
+        <span class="text">
+          <span class="label">Read the README</span>
+          <span class="value">Project overview, install links, feature map, and contribution entry points.</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="https://github.com/adidshaft/cribble/blob/main/CONTRIBUTING.md" class="oss-link">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </span>
+        <span class="text">
+          <span class="label">Read contributing</span>
+          <span class="value">Build commands, PR expectations, DCO signoff, and discuss-first policy.</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="https://github.com/adidshaft/cribble/blob/main/ROADMAP.md" class="oss-link">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+        </span>
+        <span class="text">
+          <span class="label">Read the roadmap</span>
+          <span class="value">Owner-led priorities and the contribution lanes that fit Cribble now.</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="https://github.com/adidshaft/cribble/blob/main/MAINTAINER_HANDBOOK.md" class="oss-link">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><path d="M18 15l3 3-3 3"/></svg>
+        </span>
+        <span class="text">
+          <span class="label">Read the maintainer handbook</span>
+          <span class="value">Release operations, project management, review posture, and website upkeep.</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
     </div>
   </div>
 </section>
@@ -809,7 +1038,7 @@
       </details>
       <details>
         <summary>How do I request a feature?</summary>
-        <p>Email <a href="mailto:adidshaft@kyokasuigetsu.xyz">adidshaft@kyokasuigetsu.xyz</a> or open a GitHub issue. Roadmap items are decided in the open and tagged in the changelog when shipped.</p>
+        <p>Start with <a href="https://github.com/adidshaft/cribble/discussions">GitHub Discussions</a> for product ideas. Bugs and small fixes can go straight to <a href="https://github.com/adidshaft/cribble/issues">GitHub Issues</a>, while larger feature work should be discussed before coding.</p>
       </details>
     </div>
   </div>
@@ -824,6 +1053,7 @@
     </a>
     <div class="foot-links">
       <a href="#download">Download</a>
+      <a href="#open-source">Open Source</a>
       <a href="#privacy">Privacy</a>
       <a href="#support">Support</a>
       <a href="https://github.com/adidshaft/cribble">GitHub</a>

@@ -1,0 +1,36 @@
+- name: bug
+  color: d73a4a
+  description: Something is broken.
+- name: docs
+  color: 0075ca
+  description: Documentation, website, or support copy.
+- name: enhancement
+  color: a2eeef
+  description: Proposed improvement or feature.
+- name: needs-triage
+  color: fbca04
+  description: Needs maintainer review.
+- name: good first issue
+  color: 7057ff
+  description: Good for a first contribution.
+- name: help wanted
+  color: 008672
+  description: External contributions are welcome.
+- name: provider
+  color: c5def5
+  description: AI provider, CLI, editor, or integration work.
+- name: reader
+  color: 5319e7
+  description: Reading experience, navigation, or UI behavior.
+- name: markdown
+  color: 1d76db
+  description: Markdown parsing, rendering, links, or fixtures.
+- name: ai
+  color: bfd4f2
+  description: AI workflows, model providers, prompts, or previews.
+- name: security
+  color: ee0701
+  description: Security-sensitive issue or fix.
+- name: product-discussion
+  color: fef2c0
+  description: Product direction or roadmap discussion.

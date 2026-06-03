@@ -5,7 +5,27 @@
 <h1 align="center">Cribble</h1>
 
 <p align="center">
-  A native macOS Markdown reader for local folders, rich reading, and safe AI-assisted note linking.
+  A calm, local-first macOS Markdown reader for rich reading, connected notes, and private AI-assisted workflows.
+</p>
+
+<p align="center">
+  <a href="https://github.com/adidshaft/cribble/actions/workflows/ci.yml"><img src="https://github.com/adidshaft/cribble/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://cribble.kyokasuigetsu.xyz"><img src="https://img.shields.io/badge/website-cribble.kyokasuigetsu.xyz-2B6BE0" alt="Website"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0A1A3E" alt="Apache 2.0 license"></a>
+  <img src="https://img.shields.io/badge/macOS-15%2B-0A1A3E" alt="macOS 15+">
+  <a href="https://github.com/adidshaft/cribble/releases/tag/stable"><img src="https://img.shields.io/badge/release-stable-2B6BE0" alt="Stable release"></a>
+</p>
+
+<p align="center">
+  <a href="https://cribble.kyokasuigetsu.xyz">Website</a>
+  ·
+  <a href="https://github.com/adidshaft/cribble/releases/tag/stable">Download</a>
+  ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+  ·
+  <a href="ROADMAP.md">Roadmap</a>
+  ·
+  <a href="MAINTAINER_HANDBOOK.md">Maintainer Handbook</a>
 </p>
 
 Cribble is a native macOS 15+ Markdown reader for folder-based note libraries.
@@ -16,6 +36,31 @@ a full writing app.
 The product idea is simple: keep editing outside Cribble, and make Cribble the
 best Mac-native surface for reading, browsing, connecting, and understanding a
 local folder of notes.
+
+**Website:** [cribble.kyokasuigetsu.xyz](https://cribble.kyokasuigetsu.xyz) is
+the public home for downloads, privacy/support copy, and release links.
+
+## Open Source and Direction
+
+Cribble's source code is available under the Apache License 2.0. The project is
+open to outside contributions, especially focused bug fixes, docs, tests,
+accessibility improvements, Markdown rendering fixes, diagnostics, and
+agreed-upon provider or integration work.
+
+Product direction is owner-led. New features, major UX changes, AI behavior,
+storage/write policy, monetization, distribution, and roadmap changes should
+start in GitHub Discussions or an issue before implementation. Official
+releases, App Store and DMG distribution, paid features, and Cribble branding
+remain maintainer-controlled.
+
+Useful project docs:
+
+- `CONTRIBUTING.md` for build, test, pull request, and DCO signoff guidance.
+- `GOVERNANCE.md` for the owner-led decision model.
+- `ROADMAP.md` for current contribution lanes and future directions.
+- `SECURITY.md` for private vulnerability reporting.
+- `TRADEMARK.md` for Cribble name and logo usage.
+- `MAINTAINER_HANDBOOK.md` for release, website, and project-management habits.
 
 ## Product Vision
 
@@ -218,16 +263,19 @@ Stable release:
 
 https://github.com/adidshaft/cribble/releases/tag/stable
 
+## Contributing
+
+Please read `CONTRIBUTING.md` before opening a pull request. Cribble uses DCO
+signoff (`git commit -s`) and asks contributors to discuss feature or product
+direction work before coding. Bug reports, docs fixes, tests, accessibility
+improvements, rendering fixes, and reproducible diagnostics are the best first
+contribution lanes.
+
 ## Product Roadmap
 
-- Back and forward navigation history for reading paths.
-- In-document search and heading outline navigation.
-- Better unresolved-link views with suggested targets.
-- Optional graph view for local file relationships.
-- Per-folder reading preferences.
-- Quick Look extension for Markdown previews.
-- Exportable connected reading bundles.
-- URL-scheme or AppleScript hooks for opening notes from other tools.
+Cribble's roadmap is maintainer-led. See `ROADMAP.md` for current contribution
+areas and `docs/cribble-open-source-plan.md` for the longer open-source
+preparation runbook.
 
 ## Principles
 
@@ -238,3 +286,11 @@ https://github.com/adidshaft/cribble/releases/tag/stable
   Markdown.
 - **Preview before mutation:** AI suggestions are patches the user reviews.
 - **System native:** the app should feel like it belongs on macOS.
+
+## License
+
+Cribble source code is licensed under the Apache License 2.0. See `LICENSE`.
+
+The Cribble name, app icon, logo, screenshots, release artwork, and other brand
+assets are not granted by the source license. See `TRADEMARK.md` for brand-use
+guidelines.

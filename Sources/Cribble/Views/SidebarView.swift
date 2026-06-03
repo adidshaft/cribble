@@ -91,10 +91,12 @@ struct SidebarView: View {
 
                     Button("Open Project Intelligence", systemImage: "brain") {
                         Task {
-                            if !intelligence.isEnabled {
+                            // Switch the engine to this project if it isn't the
+                            // currently-enabled one, then show the HUD.
+                            if intelligence.enabledRootPath != node.url.standardizedFileURL.path {
                                 await intelligence.enable(rootURL: node.url)
                             }
-                            IntelligenceHUDController.shared.toggle()
+                            IntelligenceHUDController.shared.show()
                         }
                     }
 

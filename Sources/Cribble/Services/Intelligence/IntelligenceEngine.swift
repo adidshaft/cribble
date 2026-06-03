@@ -73,8 +73,9 @@ final class IntelligenceEngine: ObservableObject {
 
     /// Enables intelligence for `rootURL`: opens the per-project DB, builds the
     /// provider, performs an initial scan, and starts the idle loop.
-    func enable(rootURL: URL) async {
+    func enable(rootURL rawRootURL: URL) async {
         await teardown()
+        let rootURL = rawRootURL.standardizedFileURL
         let projectID = rootURL.path
         self.projectID = projectID
         self.rootURL = rootURL
@@ -458,6 +459,10 @@ final class IntelligenceEngine: ObservableObject {
     }
 
     // MARK: - On-device model
+
+    /// Path of the project intelligence is currently enabled for, if any. Lets the
+    /// sidebar decide whether opening a folder should switch the active project.
+    var enabledRootPath: String? { rootURL?.path }
 
     /// The model intelligence is configured to use, if it's an on-device one.
     var activeModel: LocalModel? { ModelCatalog.model(withID: settings.modelID) }

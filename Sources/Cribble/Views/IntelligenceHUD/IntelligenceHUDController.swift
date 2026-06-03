@@ -64,6 +64,13 @@ final class IntelligenceHUDController {
         }
     }
 
+    /// Presents the HUD without toggling (used when switching projects so it
+    /// stays open rather than closing).
+    func show() {
+        guard gatePassed() else { return }
+        present()
+    }
+
     func close() { panel?.orderOut(nil) }
 
     private func gatePassed() -> Bool {

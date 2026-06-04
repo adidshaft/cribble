@@ -72,6 +72,17 @@ enum ModelCatalog {
             recommendedMemoryGB: 12
         ),
         LocalModel(
+            // 4-bit MLX quant of google/gemma-4-12B-it — the on-device-runnable
+            // form of Google's 12B Gemma. Heavy: gated behind the RAM check so it
+            // won't load on Macs without enough unified memory.
+            id: "mlx-community/gemma-4-12b-it-4bit",
+            name: "Gemma 4 12B",
+            speedLabel: "Deep",
+            approximateSize: "~7.0 GB",
+            blurb: "Google Gemma 4 12B — the most capable on-device option for deep analysis. Needs a high-memory Mac.",
+            recommendedMemoryGB: 24
+        ),
+        LocalModel(
             id: "cloud:claude",
             name: "Claude",
             speedLabel: "Cloud",

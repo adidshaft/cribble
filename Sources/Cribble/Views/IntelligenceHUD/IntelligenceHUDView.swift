@@ -22,6 +22,7 @@ struct IntelligenceHUDView: View {
     @State private var askAnswer: String?
     @State private var isAsking = false
     @State private var isEnabling = false
+    @State private var showModelPicker = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,6 +48,9 @@ struct IntelligenceHUDView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
+        .overlay(alignment: .topTrailing) {
+            if showModelPicker { modelPickerOverlay }
+        }
         .foregroundStyle(.white)
     }
 
@@ -65,7 +69,7 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
-            if engine.isEnabled { scopeMenu; modelMenu }
+            if engine.isEnabled { scopeControl; modelButton }
             statusPill
             if engine.isEnabled {
                 headerIcon("arrow.clockwise", help: "Run now") { Task { await engine.runNow() } }
@@ -104,74 +108,91 @@ struct IntelligenceHUDView: View {
             .foregroundStyle(color)
     }
 
-    /// Switches between single-folder and all-folders scope (#1).
-    private var scopeMenu: some View {
-        Menu {
-            Button {
+    /// Inline scope toggle (#1). Plain buttons (not a Menu) so they work even when
+    /// the floating panel isn't the key window — a system Menu popup needs key.
+    private var scopeControl: some View {
+        HStack(spacing: 0) {
+            scopeSegment(title: "Folder", icon: "folder", active: !engine.isAllFolders) {
                 if let root = activeRootURL() { Task { await engine.enable(rootURL: root) } }
-            } label: {
-                Text("\(engine.isAllFolders ? "  " : "● ")This folder: \(activeRootURL()?.lastPathComponent ?? "—")")
             }
-            .disabled(activeRootURL() == nil)
-            Button {
+            scopeSegment(title: "All (\(allRoots().count))", icon: "square.grid.2x2", active: engine.isAllFolders) {
                 let roots = allRoots()
                 if !roots.isEmpty { Task { await engine.enableAllFolders(roots: roots) } }
-            } label: {
-                Text("\(engine.isAllFolders ? "● " : "  ")All folders (\(allRoots().count))")
             }
-            .disabled(allRoots().isEmpty)
-        } label: {
-            HStack(spacing: 3) {
-                Image(systemName: engine.isAllFolders ? "square.grid.2x2" : "folder").font(.system(size: 9))
-                Text(engine.isAllFolders ? "All folders" : "Folder").font(.system(size: 10, weight: .medium))
-            }
-            .foregroundStyle(.white.opacity(0.7))
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color.white.opacity(0.08), in: Capsule())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .background(Color.white.opacity(0.06), in: Capsule())
+        .overlay { Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
         .help("Scan just this folder, or all opened folders")
     }
 
-    /// Lets the user pick which on-device model (or cloud CLI) intelligence uses —
-    /// freedom to use any local model they've downloaded.
-    private var modelMenu: some View {
-        Menu {
-            Section("On-device") {
-                ForEach(ModelCatalog.localModels) { model in
-                    Button {
-                        Task { await engine.setModel(model) }
-                    } label: {
-                        let tag = ModelInventory.isDownloaded(model) ? "✓ " : "⤓ "
-                        let mark = engine.settings.modelID == model.id ? "● " : "  "
-                        Text("\(mark)\(tag)\(model.name) (\(model.approximateSize))")
-                    }
-                }
+    private func scopeSegment(title: String, icon: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                Image(systemName: icon).font(.system(size: 9))
+                Text(title).font(.system(size: 10, weight: .medium))
             }
-            Section("Cloud CLI") {
-                ForEach(ModelCatalog.cloudModels) { model in
-                    Button {
-                        Task { await engine.setModel(model) }
-                    } label: {
-                        Text("\(engine.settings.modelID == model.id ? "● " : "  ")\(model.name)")
-                    }
-                }
-            }
-        } label: {
+            .foregroundStyle(.white.opacity(active ? 1 : 0.55))
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(active ? Color.accentColor.opacity(0.5) : .clear, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Inline model button: toggles an in-panel overlay list (not a system Menu),
+    /// so it works regardless of key-window state. Freedom to use any local model.
+    private var modelButton: some View {
+        Button { showModelPicker.toggle() } label: {
             HStack(spacing: 3) {
                 Image(systemName: "cpu").font(.system(size: 9))
                 Text(engine.activeModel?.shortName ?? "Model").font(.system(size: 10, weight: .medium))
+                Image(systemName: "chevron.down").font(.system(size: 7))
             }
             .foregroundStyle(.white.opacity(0.7))
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Color.white.opacity(0.08), in: Capsule())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .buttonStyle(.plain)
         .help("Choose the model intelligence uses")
+    }
+
+    /// In-panel model picker (custom overlay, not NSMenu).
+    private var modelPickerOverlay: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("ON-DEVICE").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8).padding(.top, 6)
+            ForEach(ModelCatalog.localModels) { model in
+                modelRow(model, detail: "\(ModelInventory.isDownloaded(model) ? "✓" : "⤓") \(model.approximateSize)")
+            }
+            Text("CLOUD CLI").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8).padding(.top, 4)
+            ForEach(ModelCatalog.cloudModels) { model in
+                modelRow(model, detail: "CLI")
+            }
+        }
+        .padding(.bottom, 6)
+        .frame(width: 240)
+        .background(Color(white: 0.16), in: RoundedRectangle(cornerRadius: 10))
+        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5) }
+        .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
+        .padding(.top, 44).padding(.trailing, 70)
+    }
+
+    private func modelRow(_ model: LocalModel, detail: String) -> some View {
+        Button {
+            showModelPicker = false
+            Task { await engine.setModel(model) }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: engine.settings.modelID == model.id ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 9)).foregroundStyle(engine.settings.modelID == model.id ? Color.accentColor : .white.opacity(0.4))
+                Text(model.name).font(.system(size: 11))
+                Spacer(minLength: 6)
+                Text(detail).font(.system(size: 9)).foregroundStyle(.white.opacity(0.45))
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.85))
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {

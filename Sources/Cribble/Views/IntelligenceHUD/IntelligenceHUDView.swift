@@ -23,6 +23,7 @@ struct IntelligenceHUDView: View {
     @State private var isAsking = false
     @State private var isEnabling = false
     @State private var showModelPicker = false
+    @State private var zoomRequest: ZoomOverlayRequest?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,6 +51,11 @@ struct IntelligenceHUDView: View {
         .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
         .overlay(alignment: .topTrailing) {
             if showModelPicker { modelPickerOverlay }
+        }
+        .overlay {
+            if let request = zoomRequest {
+                DiagramZoomOverlay(request: request, onClose: { zoomRequest = nil })
+            }
         }
         .foregroundStyle(.white)
     }
@@ -385,7 +391,9 @@ struct IntelligenceHUDView: View {
                                 .foregroundStyle(.green.opacity(0.8))
                         }
                     }
-                    ArtifactBodyView(content: body, onOpenSource: onOpenSource)
+                    ArtifactBodyView(content: body, onOpenSource: onOpenSource, onExpand: { source in
+                        zoomRequest = ZoomOverlayRequest(title: artifact.title ?? "Diagram", content: .mermaid(source: source))
+                    })
                     if !provenance.isEmpty {
                         provenanceFooter
                     }

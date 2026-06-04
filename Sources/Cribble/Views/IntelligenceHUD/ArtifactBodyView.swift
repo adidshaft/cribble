@@ -10,6 +10,8 @@ struct ArtifactBodyView: View {
     let content: String
     /// Called with a project-relative path when a diagram node is clicked.
     var onOpenSource: (String) -> Void = { _ in }
+    /// Called with a Mermaid source to open the full-screen zoom inspector.
+    var onExpand: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -18,9 +20,7 @@ struct ArtifactBodyView: View {
                 case .text(let markdown):
                     StructuredText(markdown: markdown).textSelection(.enabled)
                 case .mermaid(let source):
-                    MermaidDiagramWeb(source: source, onOpenSource: onOpenSource)
-                        .frame(minHeight: 240)
-                        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                    MermaidBlock(source: source, onOpenSource: onOpenSource, onExpand: { onExpand(source) })
                 }
             }
         }
@@ -60,20 +60,55 @@ struct ArtifactBodyView: View {
     }
 }
 
+/// One Mermaid diagram block: renders at its full natural height (no clipping)
+/// and offers an expand button to open the zoom inspector — matching how the
+/// reader treats diagrams.
+private struct MermaidBlock: View {
+    let source: String
+    var onOpenSource: (String) -> Void
+    var onExpand: () -> Void
+
+    @State private var contentHeight: CGFloat = 200
+    @State private var hovering = false
+
+    var body: some View {
+        MermaidDiagramWeb(source: source, contentHeight: $contentHeight, onOpenSource: onOpenSource)
+            .frame(height: contentHeight)
+            .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .topTrailing) {
+                Button(action: onExpand) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(6)
+                        .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 7))
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+                .opacity(hovering ? 1 : 0.4)
+                .help("Expand diagram")
+            }
+            .onHover { hovering = $0 }
+    }
+}
+
 /// A WKWebView that renders one Mermaid diagram using the bundled renderer, with
 /// `securityLevel: 'loose'` so node `click` callbacks work. Clicking a file node
 /// calls an in-page `cribbleOpen(path)` JS function that posts to a script-message
-/// handler — kept in-page so it never reaches the system URL opener. Degrades
-/// gracefully: if anything fails, the diagram simply isn't interactive.
+/// handler — kept in-page so it never reaches the system URL opener. Reports its
+/// rendered height so the SwiftUI frame fits the whole diagram (no clipping).
 private struct MermaidDiagramWeb: NSViewRepresentable {
     let source: String
+    @Binding var contentHeight: CGFloat
     var onOpenSource: (String) -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(onOpenSource: onOpenSource) }
+    func makeCoordinator() -> Coordinator { Coordinator(contentHeight: $contentHeight, onOpenSource: onOpenSource) }
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.userContentController.add(context.coordinator, name: "cribbleOpen")
+        config.userContentController.add(context.coordinator, name: "height")
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.setValue(false, forKey: "drawsBackground")
@@ -83,6 +118,7 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         context.coordinator.onOpenSource = onOpenSource
+        context.coordinator.contentHeight = $contentHeight
         if context.coordinator.lastSource != source {
             context.coordinator.lastSource = source
             webView.loadHTMLString(Self.html(for: source), baseURL: nil)
@@ -91,16 +127,30 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
 
     static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "cribbleOpen")
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "height")
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var contentHeight: Binding<CGFloat>
         var onOpenSource: (String) -> Void
         var lastSource: String?
-        init(onOpenSource: @escaping (String) -> Void) { self.onOpenSource = onOpenSource }
+        init(contentHeight: Binding<CGFloat>, onOpenSource: @escaping (String) -> Void) {
+            self.contentHeight = contentHeight
+            self.onOpenSource = onOpenSource
+        }
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.name == "cribbleOpen", let path = message.body as? String, !path.isEmpty else { return }
-            onOpenSource(path)
+            switch message.name {
+            case "cribbleOpen":
+                guard let path = message.body as? String, !path.isEmpty else { return }
+                onOpenSource(path)
+            case "height":
+                guard let h = message.body as? NSNumber else { return }
+                // Clamp: never collapse, never let a huge graph dominate inline
+                // (the outer reader scrolls; expand shows it full-screen).
+                contentHeight.wrappedValue = min(900, max(120, CGFloat(h.doubleValue)))
+            default: break
+            }
         }
 
         // Safety net: never let the diagram navigate the web view anywhere (no
@@ -129,6 +179,12 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
           window.cribbleOpen = function(p) {
             try { window.webkit.messageHandlers.cribbleOpen.postMessage(String(p)); } catch (e) {}
           };
+          const reportHeight = () => {
+            try {
+              const h = Math.ceil(document.getElementById('d').getBoundingClientRect().height) + 24;
+              window.webkit.messageHandlers.height.postMessage(h);
+            } catch (e) {}
+          };
           (async () => {
             const src = \(encoded);
             const root = document.getElementById('d');
@@ -141,6 +197,7 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
             } catch (e) {
               root.innerHTML = '<pre class="err">' + String(e && e.message || e) + '</pre>';
             }
+            requestAnimationFrame(() => { reportHeight(); setTimeout(reportHeight, 250); });
           })();
         </script></body></html>
         """

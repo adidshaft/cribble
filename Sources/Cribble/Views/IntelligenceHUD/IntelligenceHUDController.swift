@@ -29,6 +29,18 @@ final class IntelligencePanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
+/// Hosting view that accepts the first mouse click even when its window isn't
+/// key. Without this, a `.nonactivatingPanel`'s first click only keys the window
+/// (it's swallowed), so buttons/menus in the floating HUD appear unresponsive
+/// whenever another app has stolen focus. Returning true delivers that first
+/// click straight to the SwiftUI controls.
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    required init(rootView: Content) { super.init(rootView: rootView) }
+    @available(*, unavailable) required init?(coder: NSCoder) { fatalError("init(coder:) unavailable") }
+}
+
 /// Owns the single Intelligence HUD panel and the purchase gate, mirroring
 /// `ChatHUDController`. The view binds directly to the shared `IntelligenceEngine`.
 @MainActor
@@ -122,7 +134,7 @@ final class IntelligenceHUDController {
         visualEffect.layer?.cornerRadius = 16
         visualEffect.layer?.masksToBounds = true
 
-        let hosting = NSHostingView(rootView: root)
+        let hosting = FirstMouseHostingView(rootView: root)
         hosting.translatesAutoresizingMaskIntoConstraints = false
         visualEffect.addSubview(hosting)
         NSLayoutConstraint.activate([

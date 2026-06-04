@@ -187,7 +187,9 @@ final class ChatHUDController {
         visualEffect.layer?.cornerRadius = 16
         visualEffect.layer?.masksToBounds = true
 
-        let hosting = NSHostingView(rootView: root)
+        // First-click works even when the panel isn't key (focus stolen by
+        // another app) — see FirstMouseHostingView.
+        let hosting = FirstMouseHostingView(rootView: root)
         hosting.translatesAutoresizingMaskIntoConstraints = false
         visualEffect.addSubview(hosting)
         NSLayoutConstraint.activate([

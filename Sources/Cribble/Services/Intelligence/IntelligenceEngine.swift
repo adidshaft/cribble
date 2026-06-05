@@ -419,7 +419,16 @@ final class IntelligenceEngine: ObservableObject {
             """),
             EngineMessage(role: .user, content: question)
         ]
-        return try? await provider.generate(prompt: messages, maxTokens: 700)
+        do {
+            let answer = try await provider.generate(prompt: messages, maxTokens: 700)
+            let trimmed = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                return "The configured model returned an empty answer. Try a different local model or ask again after the current intelligence queue finishes."
+            }
+            return answer
+        } catch {
+            return "Couldn't generate an answer with the configured model: \(error.localizedDescription)"
+        }
     }
 
     /// Retrieves the most relevant artifacts for a question — semantic vector
@@ -521,6 +530,7 @@ final class IntelligenceEngine: ObservableObject {
     /// True when the configured on-device model still needs downloading — so the
     /// HUD can offer a "Download" affordance instead of silently waiting.
     var needsModelDownload: Bool {
+        guard settings.localRunnerBaseURL == nil else { return false }
         guard let model = activeModel, model.kind == .localMLX else { return false }
         return !ModelInventory.isDownloaded(model)
     }
@@ -529,6 +539,7 @@ final class IntelligenceEngine: ObservableObject {
     /// then kicks a run so summaries start. No-op for cloud/runner providers or an
     /// already-downloaded model.
     func downloadModelIfNeeded() async {
+        guard settings.localRunnerBaseURL == nil else { return }
         guard let model = activeModel, model.kind == .localMLX, !ModelInventory.isDownloaded(model) else { return }
         guard modelDownloadFraction == nil else { return }
         modelDownloadFraction = 0

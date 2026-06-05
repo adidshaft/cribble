@@ -24,6 +24,13 @@ struct IntelligenceHUDView: View {
     @State private var isEnabling = false
     @State private var showModelPicker = false
     @State private var zoomRequest: ZoomOverlayRequest?
+    @State private var showLocalRunnerConfig = false
+    @State private var localRunnerName = OpenAICompatibleProvider.knownLocalEndpoints.first?.name ?? "Local Runner"
+    @State private var localRunnerBaseURL = OpenAICompatibleProvider.knownLocalEndpoints.first?.url.absoluteString ?? ""
+    @State private var localRunnerModelID = ""
+    @State private var localRunnerModelIDs: [String] = []
+    @State private var localRunnerStatus: LocalRunnerProbeStatus?
+    @State private var isProbingLocalRunner = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -151,7 +158,7 @@ struct IntelligenceHUDView: View {
         Button { showModelPicker.toggle() } label: {
             HStack(spacing: 3) {
                 Image(systemName: "cpu").font(.system(size: 9))
-                Text(engine.activeModel?.shortName ?? "Model").font(.system(size: 10, weight: .medium))
+                Text(activeModelLabel).font(.system(size: 10, weight: .medium))
                 Image(systemName: "chevron.down").font(.system(size: 7))
             }
             .foregroundStyle(.white.opacity(0.7))
@@ -169,13 +176,36 @@ struct IntelligenceHUDView: View {
             ForEach(ModelCatalog.localModels) { model in
                 modelRow(model, detail: "\(ModelInventory.isDownloaded(model) ? "✓" : "⤓") \(model.approximateSize)")
             }
+            Text("LOCAL RUNNER").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8).padding(.top, 4)
+            ForEach(OpenAICompatibleProvider.knownLocalEndpoints, id: \.name) { endpoint in
+                localRunnerRow(name: endpoint.name, url: endpoint.url)
+            }
+            Button {
+                configureLocalRunner(name: "Custom", baseURL: localRunnerBaseURL.isEmpty ? "http://localhost:11434/v1" : localRunnerBaseURL)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isCustomLocalRunnerSelected ? "largecircle.fill.circle" : "circle")
+                        .font(.system(size: 9))
+                        .foregroundStyle(isCustomLocalRunnerSelected ? Color.accentColor : .white.opacity(0.4))
+                    Text("Custom...").font(.system(size: 11))
+                    Spacer(minLength: 6)
+                    Text("OpenAI-compatible").font(.system(size: 9)).foregroundStyle(.white.opacity(0.45))
+                }
+                .padding(.horizontal, 8).padding(.vertical, 5)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.white.opacity(0.85))
+            if showLocalRunnerConfig {
+                localRunnerConfig
+            }
             Text("CLOUD CLI").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8).padding(.top, 4)
             ForEach(ModelCatalog.cloudModels) { model in
                 modelRow(model, detail: "CLI")
             }
         }
         .padding(.bottom, 6)
-        .frame(width: 240)
+        .frame(width: 320)
         .background(Color(white: 0.16), in: RoundedRectangle(cornerRadius: 10))
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5) }
         .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
@@ -199,6 +229,148 @@ struct IntelligenceHUDView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white.opacity(0.85))
+    }
+
+    private func localRunnerRow(name: String, url: URL) -> some View {
+        Button {
+            configureLocalRunner(name: name, baseURL: url.absoluteString)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isSelectedRunner(url.absoluteString) ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 9))
+                    .foregroundStyle(isSelectedRunner(url.absoluteString) ? Color.accentColor : .white.opacity(0.4))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(name).font(.system(size: 11))
+                    Text(url.absoluteString).font(.system(size: 9)).foregroundStyle(.white.opacity(0.45)).lineLimit(1)
+                }
+                Spacer(minLength: 6)
+                Image(systemName: "network")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.85))
+    }
+
+    private var localRunnerConfig: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(localRunnerName)
+                    .font(.system(size: 10, weight: .semibold))
+                Spacer()
+                if isProbingLocalRunner {
+                    ProgressView().controlSize(.mini).scaleEffect(0.7)
+                }
+            }
+            TextField("Base URL", text: $localRunnerBaseURL)
+                .font(.system(size: 10))
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 8).padding(.vertical, 5)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            if localRunnerModelIDs.isEmpty {
+                TextField("Model ID", text: $localRunnerModelID)
+                    .font(.system(size: 10))
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            } else {
+                Menu {
+                    ForEach(localRunnerModelIDs, id: \.self) { modelID in
+                        Button(modelID) { localRunnerModelID = modelID }
+                    }
+                } label: {
+                    HStack {
+                        Text(localRunnerModelID.isEmpty ? "Choose model" : localRunnerModelID)
+                            .lineLimit(1)
+                        Spacer()
+                        Image(systemName: "chevron.down").font(.system(size: 8))
+                    }
+                    .font(.system(size: 10))
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                }
+                .menuStyle(.borderlessButton)
+                .buttonStyle(.plain)
+            }
+            if let localRunnerStatus {
+                Text(localRunnerStatus.message)
+                    .font(.system(size: 9))
+                    .foregroundStyle(localRunnerStatus.isError ? Color.red.opacity(0.85) : Color.green.opacity(0.85))
+                    .lineLimit(2)
+            }
+            HStack(spacing: 8) {
+                Button("Test") {
+                    Task { _ = await probeLocalRunner() }
+                }
+                .disabled(isProbingLocalRunner)
+                Button("Use") {
+                    Task { await useLocalRunner() }
+                }
+                .disabled(!canUseLocalRunner || isProbingLocalRunner)
+                Spacer()
+            }
+            .font(.system(size: 10, weight: .semibold))
+            .buttonStyle(.plain)
+        }
+        .padding(8)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+    }
+
+    private func configureLocalRunner(name: String, baseURL: String) {
+        localRunnerName = name
+        localRunnerBaseURL = baseURL
+        localRunnerStatus = nil
+        localRunnerModelIDs = []
+        showLocalRunnerConfig = true
+        Task { _ = await probeLocalRunner() }
+    }
+
+    @MainActor
+    @discardableResult
+    private func probeLocalRunner() async -> Bool {
+        let trimmedURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmedURL), url.scheme != nil, url.host != nil else {
+            localRunnerStatus = .failed("Enter a valid base URL.")
+            return false
+        }
+
+        isProbingLocalRunner = true
+        defer { isProbingLocalRunner = false }
+        do {
+            let models = try await OpenAICompatibleProvider.availableModelIDs(baseURL: url)
+            localRunnerModelIDs = models
+            if localRunnerModelID.isEmpty || !models.contains(localRunnerModelID) {
+                localRunnerModelID = models.first ?? ""
+            }
+            if models.isEmpty {
+                localRunnerStatus = .ready("Runner is reachable. Enter a model ID.")
+            } else {
+                localRunnerStatus = .ready("Found \(models.count) model(s).")
+            }
+            return true
+        } catch {
+            localRunnerStatus = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
+    @MainActor
+    private func useLocalRunner() async {
+        guard await probeLocalRunner() else { return }
+        let modelID = localRunnerModelID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !modelID.isEmpty else {
+            localRunnerStatus = .failed("Enter a model ID.")
+            return
+        }
+        let baseURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        showModelPicker = false
+        await engine.setLocalRunner(baseURL: baseURL, model: modelID)
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {
@@ -532,6 +704,34 @@ struct IntelligenceHUDView: View {
         engine.artifacts.first { $0.id == selectedArtifactID }
     }
 
+    private var activeModelLabel: String {
+        if let runnerURL = engine.settings.localRunnerBaseURL {
+            if let known = runnerName(for: runnerURL) {
+                return known
+            }
+            return "Runner"
+        }
+        return engine.activeModel?.shortName ?? "Model"
+    }
+
+    private var canUseLocalRunner: Bool {
+        URL(string: localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
+            && !localRunnerModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var isCustomLocalRunnerSelected: Bool {
+        guard let baseURL = engine.settings.localRunnerBaseURL else { return false }
+        return runnerName(for: baseURL) == nil
+    }
+
+    private func isSelectedRunner(_ baseURL: String) -> Bool {
+        engine.settings.localRunnerBaseURL == baseURL
+    }
+
+    private func runnerName(for baseURL: String) -> String? {
+        OpenAICompatibleProvider.knownLocalEndpoints.first { $0.url.absoluteString == baseURL }?.name
+    }
+
     /// Artifacts grouped into display sections, in a stable section order.
     private var groupedArtifacts: [(String, [IntelligenceArtifact])] {
         let order: [(String, [IntelligenceArtifactType])] = [
@@ -546,6 +746,19 @@ struct IntelligenceHUDView: View {
             let items = engine.artifacts.filter { section.1.contains($0.type) }
             return items.isEmpty ? nil : (section.0, items)
         }
+    }
+}
+
+private struct LocalRunnerProbeStatus: Equatable {
+    let message: String
+    let isError: Bool
+
+    static func ready(_ message: String) -> LocalRunnerProbeStatus {
+        LocalRunnerProbeStatus(message: message, isError: false)
+    }
+
+    static func failed(_ message: String) -> LocalRunnerProbeStatus {
+        LocalRunnerProbeStatus(message: message, isError: true)
     }
 }
 

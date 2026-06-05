@@ -1,6 +1,6 @@
 import Foundation
 
-struct LinkIndex {
+struct LinkIndex: Sendable {
     private var targets: [String: URL] = [:]
 
     init(documents: [MarkdownDocument], rootURL: URL) {

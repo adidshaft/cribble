@@ -485,34 +485,32 @@ final class MarkdownLibraryStore: ObservableObject {
         let index = linkIndex
         let documentsSnapshot = documents
         let documentURL = document.url
-        renderTask = Task.detached(priority: .userInitiated) { [weak self] in
-            let preprocessed = MarkdownDisplayPreprocessor.prepare(
-                document.rawMarkdown,
-                documentTitle: document.title
-            )
-            if Task.isCancelled { return }
-            let rendered = WikiLinkParser.renderForMarkdown(preprocessed, index: index)
-            if Task.isCancelled { return }
-            let linkedFiles = MarkdownLibraryStore.linkedFiles(
-                for: document,
-                index: index,
-                allDocuments: documentsSnapshot
-            )
-            if Task.isCancelled { return }
-            await MainActor.run {
-                guard let self else { return }
-                guard self.selectedDocument?.url == documentURL else { return }
-                self.selectedRenderedMarkdown = rendered
-                self.selectedLinkedFiles = linkedFiles
-                self.storeRenderCacheEntry(
-                    url: documentURL,
-                    entry: RenderCacheEntry(
-                        sourceHash: sourceHash,
-                        rendered: rendered,
-                        linkedFiles: linkedFiles
-                    )
+        renderTask = Task { [document, index, documentsSnapshot, documentURL, sourceHash] in
+            let result = await Task.detached(priority: .userInitiated) { () -> (rendered: String, linkedFiles: [LinkedFileSummary]) in
+                let preprocessed = MarkdownDisplayPreprocessor.prepare(
+                    document.rawMarkdown,
+                    documentTitle: document.title
                 )
-            }
+                let rendered = WikiLinkParser.renderForMarkdown(preprocessed, index: index)
+                let linkedFiles = MarkdownLibraryStore.linkedFiles(
+                    for: document,
+                    index: index,
+                    allDocuments: documentsSnapshot
+                )
+                return (rendered, linkedFiles)
+            }.value
+            guard !Task.isCancelled else { return }
+            guard selectedDocument?.url == documentURL else { return }
+            selectedRenderedMarkdown = result.rendered
+            selectedLinkedFiles = result.linkedFiles
+            storeRenderCacheEntry(
+                url: documentURL,
+                entry: RenderCacheEntry(
+                    sourceHash: sourceHash,
+                    rendered: result.rendered,
+                    linkedFiles: result.linkedFiles
+                )
+            )
         }
     }
 

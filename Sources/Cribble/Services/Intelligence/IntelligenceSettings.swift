@@ -54,18 +54,21 @@ final class IntelligenceSettings: ObservableObject {
         // CLI's auth-error text getting stored as artifacts). Prefer an on-device
         // model; if none is downloaded yet, deterministic jobs still run and model
         // jobs simply wait. Migrate the old cloud default to the local default.
-        // Prefer, in order: a stored on-device choice → any already-downloaded
-        // local model (so we don't nag to download when one is present) → the
-        // local default.
+        // Prefer, in order: a stored local-runner model → a stored on-device
+        // choice → any already-downloaded local model (so we don't nag to
+        // download when one is present) → the local default.
         let firstDownloaded = ModelCatalog.localModels.first(where: ModelInventory.isDownloaded)?.id
         let onDeviceDefault = firstDownloaded ?? ModelCatalog.localModels.first?.id ?? ModelCatalog.defaultModel.id
         let storedModel = UserDefaults.standard.string(forKey: Keys.modelID)
-        if let storedModel, let model = ModelCatalog.model(withID: storedModel), !model.kind.isCloud {
+        let storedRunnerURL = UserDefaults.standard.string(forKey: Keys.runnerURL)
+        if storedRunnerURL != nil, let storedModel, !storedModel.isEmpty {
+            modelID = storedModel
+        } else if let storedModel, let model = ModelCatalog.model(withID: storedModel), !model.kind.isCloud {
             modelID = storedModel
         } else {
             modelID = onDeviceDefault
         }
-        localRunnerBaseURL = UserDefaults.standard.string(forKey: Keys.runnerURL)
+        localRunnerBaseURL = storedRunnerURL
         pauseOnBattery = UserDefaults.standard.object(forKey: Keys.pauseOnBattery) as? Bool ?? true
         autoPublish = UserDefaults.standard.object(forKey: Keys.autoPublish) as? Bool ?? false
         diskBudgetMB = UserDefaults.standard.object(forKey: Keys.diskBudgetMB) as? Int ?? 500

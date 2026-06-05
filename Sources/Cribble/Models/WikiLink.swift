@@ -1,6 +1,6 @@
 import Foundation
 
-struct WikiLink: Equatable, Hashable {
+struct WikiLink: Equatable, Hashable, Sendable {
     let original: String
     let target: String
     let label: String
@@ -11,7 +11,7 @@ struct WikiLink: Equatable, Hashable {
     }
 }
 
-struct ResolvedLink: Equatable, Hashable {
+struct ResolvedLink: Equatable, Hashable, Sendable {
     let link: WikiLink
     let targetURL: URL?
     let anchor: String?

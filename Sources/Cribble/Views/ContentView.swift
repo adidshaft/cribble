@@ -265,7 +265,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateBack)
             .cribbleToolbarIcon()
-            .help("Navigate back (Cmd + [)")
+            .help("Navigate back (Left Arrow)")
 
             Button {
                 library.navigateForward()
@@ -274,7 +274,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateForward)
             .cribbleToolbarIcon()
-            .help("Navigate forward (Cmd + ])")
+            .help("Navigate forward (Right Arrow)")
         }
     }
 
@@ -291,7 +291,7 @@ struct ContentView: View {
                 Label("Focus Mode", systemImage: settings.isFocusMode ? "eye.slash.fill" : "eye.slash")
             }
             .cribbleToolbarIcon()
-            .help("Toggle Focus Mode (Cmd + Option + F)")
+            .help("Toggle Focus Mode (Space)")
 
             Button {
                 settings.showOutline.toggle()
@@ -300,7 +300,7 @@ struct ContentView: View {
             }
             .disabled(library.selectedDocument == nil || settings.isFocusMode)
             .cribbleToolbarIcon()
-            .help("Toggle Headings Outline (Cmd + Option + O)")
+            .help("Toggle Headings Outline (O)")
 
             Button {
                 showingAIProviderSheet = true
@@ -309,7 +309,7 @@ struct ContentView: View {
             }
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleToolbarIcon()
-            .help("Ask a local AI tool to suggest wiki links with a patch preview")
+            .help("Ask a local AI tool to suggest wiki links with a patch preview (L)")
 
             Button {
                 openChatHUD()

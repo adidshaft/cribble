@@ -31,7 +31,7 @@ the backlink is precise — your Markdown stays clean in the reader.
 
 ## Insights across a whole folder
 
-Open **Project Intelligence** (the brain icon, or `⌘⇧I`). As the on-device
+Open **Project Intelligence** (the brain icon, or `I`). As the on-device
 engine reads your notes it builds glanceable, source-grounded insights — useful
 for research notes, contracts, case files, or a manuscript, not just code:
 

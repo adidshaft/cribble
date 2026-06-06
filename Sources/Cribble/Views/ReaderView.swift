@@ -6,6 +6,7 @@ import WebKit
 struct ReaderView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @State private var showingShortcuts = false
 
     var body: some View {
         Group {
@@ -31,8 +32,8 @@ struct ReaderView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let message = library.statusMessage {
-                HStack {
+            HStack(spacing: 12) {
+                if let message = library.statusMessage {
                     if library.isRunningAI {
                         ProgressView()
                             .controlSize(.small)
@@ -40,17 +41,89 @@ struct ReaderView: View {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 10)
-                .padding(.bottom, 8)
+
+                Spacer(minLength: 12)
+
+                Text("Shortcuts")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .contentShape(Capsule())
+                    .onHover { hovering in
+                        showingShortcuts = hovering
+                    }
+                    .popover(isPresented: $showingShortcuts, arrowEdge: .bottom) {
+                        ShortcutReferencePopover()
+                    }
+                    .help("Show keyboard shortcuts")
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 10)
+            .padding(.bottom, 8)
         }
         .environment(\.readerPrimaryFontName, settings.readerFontName)
         .environment(\.readerMonospaceFontName, settings.monospaceFontName)
+    }
+}
+
+private struct ShortcutReferencePopover: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            shortcutSection("App", rows: [
+                ("Left / Right Arrow", "Back / Forward"),
+                ("F", "Open folder"),
+                ("R", "Refresh folder"),
+                ("E", "Open current file in your editor"),
+                ("O", "Toggle outline"),
+                ("Space", "Toggle Focus Mode"),
+                ("L", "AI Link Notes"),
+                ("I", "Project Intelligence"),
+                ("C", "Open Cribble AI chat")
+            ])
+
+            Divider()
+
+            shortcutSection("Reading", rows: [
+                ("H", "Highlight selected text"),
+                ("B", "Drop a reading bookmark"),
+                ("P", "Toggle Reading Trail"),
+                ("Esc", "Exit highlight mode / close zoom overlay")
+            ])
+
+            Divider()
+
+            shortcutSection("System", rows: [
+                ("Command ,", "Settings")
+            ])
+        }
+        .padding(14)
+        .frame(width: 330)
+    }
+
+    private func shortcutSection(_ title: String, rows: [(String, String)]) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 12) {
+                    Text(row.0)
+                        .font(.caption.monospaced().weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 116, alignment: .leading)
+
+                    Text(row.1)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
     }
 }
 

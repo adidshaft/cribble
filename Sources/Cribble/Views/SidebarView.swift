@@ -213,7 +213,7 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             groupedControls
 
             intelligenceButton
@@ -268,7 +268,7 @@ private struct SidebarControls: View {
         Button {
             toggleIntelligence()
         } label: {
-            Label("Project Intelligence", systemImage: intelligenceSymbol)
+            Label("Project Intelligence", systemImage: "brain.head.profile")
         }
         .disabled(activeIntelligenceRoot == nil)
         .sidebarIntelligenceIcon(disabled: activeIntelligenceRoot == nil, isOn: isIntelligenceOn)
@@ -331,10 +331,6 @@ private struct SidebarControls: View {
         }
     }
 
-    private var intelligenceSymbol: String {
-        "brain.head.profile"
-    }
-
     private var intelligenceHelp: String {
         guard let activeIntelligenceRoot else {
             return "Open a folder to turn Project Intelligence on"
@@ -376,13 +372,18 @@ private extension View {
     func sidebarIntelligenceIcon(disabled: Bool = false, isOn: Bool = false) -> some View {
         self
             .labelStyle(.iconOnly)
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 20, weight: .semibold))
+            .symbolRenderingMode(.monochrome)
             .foregroundStyle(isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-            .frame(width: 36, height: 36)
+            .frame(width: 38, height: 38)
             .contentShape(Circle())
-            .buttonBorderShape(.circle)
-            .controlSize(.regular)
-            .cribbleGlassButton(prominent: isOn)
+            .background {
+                Circle()
+                    .fill(isOn ? Color.green : Color.clear)
+                    .opacity(isOn ? 0.92 : 0)
+            }
+            .clipShape(Circle())
+            .cribbleInteractiveGlass(in: Circle())
             .opacity(disabled ? 0.38 : 1)
     }
 }

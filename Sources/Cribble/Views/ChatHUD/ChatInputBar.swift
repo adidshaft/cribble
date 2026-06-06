@@ -200,12 +200,8 @@ struct ChatInputBar: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.white.opacity(isPlusHovered ? 1.0 : 0.7))
+                .foregroundStyle(.white.opacity(isPlusHovered ? 1.0 : 0.7))
                 .frame(width: 26, height: 26)
-                .background(Color.white.opacity(isPlusHovered ? 0.12 : 0.06), in: Circle())
-                .overlay {
-                    Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75)
-                }
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -219,50 +215,14 @@ struct ChatInputBar: View {
 
     private var sendButton: some View {
         Button(action: submit) {
-            ZStack {
-                Circle()
-                    .fill(sendBackgroundStyle)
-                    .frame(width: 26, height: 26)
-                    .shadow(color: sendShadowColor, radius: 4)
-
-                if viewModel.isGenerating {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.white)
-                        .frame(width: 8, height: 8)
-                } else {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                }
-            }
+            Image(systemName: viewModel.isGenerating ? "stop.fill" : "arrow.up")
+                .font(.system(size: 11, weight: .bold))
         }
-        .buttonStyle(.plain)
+        .cribbleGlassIconButton(prominent: viewModel.isGenerating || viewModel.canSend, size: 26)
         .disabled(!viewModel.isGenerating && !viewModel.canSend)
         .keyboardShortcut(.return, modifiers: [])
         .help(viewModel.isGenerating ? "Stop" : "Send")
         .pointingHandOnHover()
-    }
-
-    private var sendBackgroundStyle: AnyShapeStyle {
-        if viewModel.isGenerating {
-            return AnyShapeStyle(Color.red)
-        }
-        if viewModel.canSend {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        }
-        return AnyShapeStyle(Color.white.opacity(0.06))
-    }
-
-    private var sendShadowColor: Color {
-        if viewModel.isGenerating { return .red.opacity(0.3) }
-        if viewModel.canSend { return Color.accentColor.opacity(0.3) }
-        return .clear
     }
 
     private var draftBinding: Binding<String> {

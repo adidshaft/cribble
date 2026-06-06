@@ -17,19 +17,9 @@ struct ChatHUDView: View {
             ChatInputBar(viewModel: viewModel)
         }
         .frame(minWidth: 320, minHeight: 460)
-        .background(
-            LinearGradient(
-                colors: [Color.black.opacity(0.25), Color.black.opacity(0.45)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-        }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 16))
         .foregroundStyle(.white)
+        .environment(\.colorScheme, .dark)
     }
 
     // No bar — just three floating controls, top-right, over the content.
@@ -107,20 +97,16 @@ private struct HeaderIcon: View {
     let help: String
     var disabled: Bool = false
     let action: () -> Void
-    @State private var hovered = false
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white.opacity(hovered ? 1.0 : 0.68))
-                .scaleEffect(hovered ? 1.08 : 1.0)
         }
         .disabled(disabled)
         .cribbleGlassIconButton(size: 30)
         .opacity(disabled ? 0.42 : 1)
         .help(help)
-        .onHover { hovered = $0 }
         .pointingHandOnHover()
     }
 }
@@ -176,11 +162,8 @@ struct ChatEmptyState: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .frame(width: 200)
-                    .background(Color.white.opacity(0.06), in: Capsule())
-                    .overlay { Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75) }
-                    .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton()
                 .pointingHandOnHover()
             }
         }
@@ -212,8 +195,7 @@ struct ChatEmptyState: View {
         .foregroundStyle(.white.opacity(0.55))
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .background(Color.white.opacity(0.05), in: Capsule())
-        .overlay { Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
+        .cribbleMaterialSurface(in: Capsule())
         .padding(.horizontal, 24)
         .padding(.top, 4)
     }

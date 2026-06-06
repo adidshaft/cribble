@@ -53,14 +53,7 @@ struct IntelligenceHUDView: View {
             }
         }
         .frame(minWidth: 380, minHeight: 520)
-        .background(
-            LinearGradient(
-                colors: [Color.black.opacity(0.28), Color.black.opacity(0.5)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1) }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 16))
         .overlay(alignment: .topTrailing) {
             if showModelPicker { modelPickerOverlay }
         }
@@ -70,6 +63,7 @@ struct IntelligenceHUDView: View {
             }
         }
         .foregroundStyle(.white)
+        .environment(\.colorScheme, .dark)
     }
 
     // MARK: - Header
@@ -392,8 +386,6 @@ struct IntelligenceHUDView: View {
         Button(action: action) {
             Image(systemName: name)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
-                .frame(width: 16, height: 16)
         }
         .cribbleGlassIconButton(size: 30)
         .help(help)

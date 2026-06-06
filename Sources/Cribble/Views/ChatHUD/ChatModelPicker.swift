@@ -13,7 +13,7 @@ struct ModelPickerButton: View {
         } label: {
             chip
         }
-        .buttonStyle(.plain)
+        .cribbleGlassCapsuleButton()
         .help("Choose model")
         .pointingHandOnHover()
         .popover(isPresented: $showPopover, arrowEdge: .top) {
@@ -44,8 +44,6 @@ struct ModelPickerButton: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 4)
-        .background(Color.white.opacity(0.08), in: Capsule())
-        .overlay { Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75) }
         .fixedSize()
     }
 }

@@ -13,7 +13,7 @@ This is an **experimental preview**. It works, the guardrails are solid, and 18+
 
 ---
 
-## ✨ What's new / Highlights
+## What's new / Highlights
 
 ### Project Intelligence engine
 

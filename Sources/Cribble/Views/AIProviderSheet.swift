@@ -37,7 +37,7 @@ struct AIProviderSheet: View {
                     Button {
                         onSelect(provider, mode)
                     } label: {
-                        Label(provider.rawValue, systemImage: provider == .codex ? "terminal" : "sparkles")
+                        Label(provider.rawValue, systemImage: provider == .codex ? "terminal" : "brain.head.profile")
                             .frame(maxWidth: .infinity)
                     }
                     .controlSize(.large)

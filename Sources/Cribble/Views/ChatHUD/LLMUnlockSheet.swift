@@ -10,7 +10,7 @@ struct LLMUnlockSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .center, spacing: 12) {
-                Image(systemName: "sparkles")
+                Image(systemName: "lock.shield")
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 56, height: 56)

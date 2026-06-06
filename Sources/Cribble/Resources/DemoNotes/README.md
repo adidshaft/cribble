@@ -19,7 +19,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Feature Tour]] | Zoom overlays, reading trails, semantic search, pathfinder | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
 
-## ✨ New in 1.2.0 — Cribble AI
+## New in 1.2.0 — Cribble AI
 
 A private AI assistant that runs **fully on your Mac**. Press **C** (or click the menu-bar icon) to open the chat, then ask a question about the note you're reading. No cloud, no account. → [[Cribble AI]]
 

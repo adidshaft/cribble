@@ -20,7 +20,7 @@ enum QuickActions {
         QuickAction(
             id: "related",
             title: "Find related",
-            icon: "sparkle.magnifyingglass",
+            icon: "doc.text.magnifyingglass",
             prompt: "Which other notes in my workspace relate to this one, and how? List them with a one-line reason each."
         ),
         QuickAction(

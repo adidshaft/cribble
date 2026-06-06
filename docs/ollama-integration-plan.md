@@ -52,7 +52,7 @@
 ### `Sources/Cribble/Views/ContentView.swift`
 - `@State private var showingSummarySheet = false`
 - Wire `showingSummarySheet` to a `.sheet` presenting `DocumentSummarySheet`
-- Add "Summarize" toolbar button (brain/sparkles icon) in `primaryToolbar`; disabled when `library.selectedDocument == nil`
+- Add "Summarize" toolbar button (brain/link icon) in `primaryToolbar`; disabled when `library.selectedDocument == nil`
 - Add `focusedSceneValue(\.summarizeDocumentAction, { showingSummarySheet = true })`
 
 ### `Sources/Cribble/App/CribbleCommands.swift`

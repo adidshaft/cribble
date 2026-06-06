@@ -521,7 +521,7 @@ struct IntelligenceHUDView: View {
                 HStack(spacing: 10) {
                     metricTile(title: "Files", value: "\(engine.filesIndexed)", icon: "doc.text.magnifyingglass")
                     metricTile(title: "Artifacts", value: "\(engine.artifacts.count)", icon: "square.stack.3d.up")
-                    metricTile(title: "Insights", value: "\(activeResearchInsights.count)", icon: "sparkle.magnifyingglass")
+                    metricTile(title: "Insights", value: "\(activeResearchInsights.count)", icon: "doc.text.magnifyingglass")
                 }
 
                 if let decision = engine.resourceDecision {
@@ -550,7 +550,7 @@ struct IntelligenceHUDView: View {
                 sectionHeader("RECENT")
                 if engine.artifacts.isEmpty {
                     emptyState(
-                        icon: engine.pendingJobs > 0 ? "hourglass" : "sparkles",
+                        icon: engine.pendingJobs > 0 ? "hourglass" : "tray",
                         title: engine.pendingJobs > 0 ? "Building intelligence..." : "Waiting for artifacts",
                         detail: "Generated summaries, diagrams, and audits will land here as the local engine works."
                     )
@@ -1336,7 +1336,7 @@ private enum IntelligenceGraphLens: String, CaseIterable, Identifiable {
         switch self {
         case .visual: "circle.hexagongrid"
         case .trust: "checkmark.seal"
-        case .research: "sparkle.magnifyingglass"
+        case .research: "doc.text.magnifyingglass"
         }
     }
 
@@ -1476,7 +1476,7 @@ private extension IntelligenceArtifactType {
         case .ioBehavior: "arrow.left.arrow.right"
         case .driftReport: "exclamationmark.triangle"
         case .fileSummary: "doc.text"
-        case .researchInsight: "sparkle.magnifyingglass"
+        case .researchInsight: "doc.text.magnifyingglass"
         }
     }
 }

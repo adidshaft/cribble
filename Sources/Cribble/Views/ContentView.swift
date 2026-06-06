@@ -221,7 +221,8 @@ struct ContentView: View {
                 SidebarView()
                     .frame(width: 260)
                     .frame(maxHeight: .infinity)
-                    .background(.regularMaterial)
+                    .cribbleInteractiveGlass(in: Rectangle())
+                    .cribbleGlassContainer()
                     .overlay(alignment: .trailing) {
                         Rectangle().fill(.separator).frame(width: 1)
                     }
@@ -301,7 +302,7 @@ struct ContentView: View {
             Button {
                 showingAIProviderSheet = true
             } label: {
-                Label("AI Link Notes", systemImage: "sparkles")
+                Label("AI Link Notes", systemImage: "link")
             }
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleToolbarIcon()

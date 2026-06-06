@@ -81,7 +81,7 @@ struct FolderIconPicker: View {
         "folder.fill", "folder.badge.gearshape", "tray.full", "archivebox", "shippingbox",
         "doc.text", "doc.richtext", "note.text", "text.book.closed", "book", "books.vertical",
         "newspaper", "bookmark", "tag", "list.bullet.rectangle", "checklist",
-        "star", "heart", "flag", "bolt", "sparkles", "lightbulb", "flame", "leaf",
+        "star", "heart", "flag", "bolt", "brain.head.profile", "lightbulb", "flame", "leaf",
         "briefcase", "graduationcap", "backpack", "paintpalette", "pencil.and.ruler",
         "hammer", "wrench.and.screwdriver", "gearshape", "terminal", "curlybraces",
         "chevron.left.forwardslash.chevron.right", "cpu", "server.rack", "externaldrive",

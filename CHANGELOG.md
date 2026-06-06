@@ -15,7 +15,7 @@ heading when you cut a release._
 Builds on 1.2.0 with deeper note awareness, faster actions, and important
 reliability fixes.
 
-### ✨ New
+### New
 - **Vault-aware answers** — the chat automatically pulls in the most relevant
   notes from your workspace (via the on-device semantic index), so it can answer
   about your whole library, not just the open or tagged note.
@@ -51,7 +51,7 @@ on your Mac. Ask questions about the note you're reading, tag notes with `@`,
 auto-link them, synthesize new notes, and explain how two notes connect — all
 with safe, reviewable previews and nothing ever leaving your machine.
 
-### ✨ New
+### New
 
 - **Local Chat HUD (Cribble AI).** A floating, resizable chat backed by an
   on-device Apple MLX model. Open it with **C**, the menu-bar icon, or the

@@ -162,7 +162,7 @@ private struct SemanticResultsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 5) {
-                Image(systemName: "sparkles")
+                Image(systemName: "point.3.connected.trianglepath.dotted")
                     .font(.system(size: 10, weight: .semibold))
                 Text("Related")
                     .font(.system(size: 11, weight: .semibold))
@@ -213,7 +213,7 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        ControlGroup {
+        HStack(spacing: 8) {
             sidebarIconButton(
                 title: "Open Folder",
                 systemImage: "folder.badge.plus",
@@ -240,17 +240,7 @@ private struct SidebarControls: View {
                 library.removeSelectedFolder()
             }
 
-            Menu {
-                Picker("Sort Files", selection: $settings.fileSortMode) {
-                    ForEach(FileSortMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
-            } label: {
-                Label("Sort", systemImage: "arrow.up.arrow.down")
-            }
-            .disabled(!library.hasFolders)
-            .help("Sort files inside folders by name, created date, or updated date")
+            sortMenu
 
             sidebarIconButton(
                 title: "Project Intelligence",
@@ -262,11 +252,23 @@ private struct SidebarControls: View {
                 IntelligenceHUDController.shared.toggle()
             }
         }
-        .labelStyle(.iconOnly)
-        .controlSize(.small)
-        .buttonBorderShape(.circle)
-        .cribbleGlassButton()
+        .cribbleGlassContainer()
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("Sort Files", selection: $settings.fileSortMode) {
+                ForEach(FileSortMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+        } label: {
+            Label("Sort", systemImage: "arrow.up.arrow.down")
+        }
+        .disabled(!library.hasFolders)
+        .cribbleGlassIconButton(size: 28)
+        .help("Sort files inside folders by name, created date, or updated date")
     }
 
     private func sidebarIconButton(
@@ -282,6 +284,7 @@ private struct SidebarControls: View {
                 .foregroundStyle(foregroundStyle)
         }
         .disabled(disabled)
+        .cribbleGlassIconButton(size: 28)
         .help(help)
     }
 

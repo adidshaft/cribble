@@ -1944,7 +1944,7 @@ private struct EmptyReadmePanel: View {
                     Button {
                         onFillReadme(provider)
                     } label: {
-                        Label("Fill + Link with \(provider.rawValue)", systemImage: provider == .codex ? "terminal" : "sparkles")
+                        Label("Fill + Link with \(provider.rawValue)", systemImage: provider == .codex ? "terminal" : "brain.head.profile")
                     }
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)

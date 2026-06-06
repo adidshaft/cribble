@@ -109,7 +109,7 @@ struct PathfinderSheet: View {
 
     @ViewBuilder
     private var bridgeSection: some View {
-        sectionHeader("Conceptual bridge", system: "sparkles")
+        sectionHeader("Conceptual bridge", system: "point.3.connected.trianglepath.dotted")
         if bridge.isEmpty {
             Text(semanticIndex.isReady
                  ? "No stepping stones needed — these notes relate directly in meaning."
@@ -130,7 +130,7 @@ struct PathfinderSheet: View {
 
     @ViewBuilder
     private var explanationSection: some View {
-        sectionHeader("Explain the connection", system: "wand.and.stars")
+        sectionHeader("Explain the connection", system: "text.magnifyingglass")
 
         if let cliExplanation {
             Text(cliExplanation)
@@ -172,7 +172,7 @@ struct PathfinderSheet: View {
                         }
                     }
                 } label: {
-                    Label(cliExplanation == nil ? "Explain the connection" : "Re-run explanation", systemImage: "sparkle")
+                    Label(cliExplanation == nil ? "Explain the connection" : "Re-run explanation", systemImage: "text.magnifyingglass")
                         .font(.system(size: 12))
                 }
                 .menuStyle(.borderlessButton)

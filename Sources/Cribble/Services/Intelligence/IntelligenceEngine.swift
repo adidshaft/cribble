@@ -872,7 +872,7 @@ final class AtomicFlag: @unchecked Sendable {
 /// event handler is plain `@Sendable` and runs on the background queue without
 /// tripping a Swift executor-isolation assertion (which previously crashed the
 /// app with SIGTRAP whenever memory pressure changed). Exposes the current
-/// pressure state via a thread-safe `flag`.
+/// critical-pressure state via a thread-safe `flag`.
 final class MemoryPressureMonitor: @unchecked Sendable {
     let flag = AtomicFlag()
     private let source: DispatchSourceMemoryPressure
@@ -884,7 +884,11 @@ final class MemoryPressureMonitor: @unchecked Sendable {
         let flag = self.flag
         source.setEventHandler { [weak source] in
             guard let data = source?.data else { return }
-            flag.value = data.contains(.warning) || data.contains(.critical)
+            // Loading a local runner can legitimately put the system into a
+            // warning state; treating warnings as a hard stop prevents the
+            // user-requested model job from ever finishing. Critical pressure
+            // still halts all background work immediately.
+            flag.value = data.contains(.critical)
         }
         source.resume()
     }

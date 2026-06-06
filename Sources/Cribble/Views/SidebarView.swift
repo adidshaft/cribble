@@ -213,7 +213,7 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 14) {
             groupedControls
 
             intelligenceButton
@@ -272,6 +272,7 @@ private struct SidebarControls: View {
         }
         .disabled(activeIntelligenceRoot == nil)
         .sidebarIntelligenceIcon(disabled: activeIntelligenceRoot == nil, isOn: isIntelligenceOn)
+        .tint(isIntelligenceOn ? .green : .accentColor)
         .help(intelligenceHelp)
         .accessibilityValue(isIntelligenceOn ? "On" : "Off")
     }
@@ -376,11 +377,12 @@ private extension View {
         self
             .labelStyle(.iconOnly)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(isOn ? AnyShapeStyle(Color.green) : AnyShapeStyle(.primary))
-            .frame(width: 34, height: 34)
+            .foregroundStyle(isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .frame(width: 36, height: 36)
             .contentShape(Circle())
-            .buttonStyle(.plain)
-            .cribbleInteractiveGlass(in: Circle())
+            .buttonBorderShape(.circle)
+            .controlSize(.regular)
+            .cribbleGlassButton(prominent: isOn)
             .opacity(disabled ? 0.38 : 1)
     }
 }

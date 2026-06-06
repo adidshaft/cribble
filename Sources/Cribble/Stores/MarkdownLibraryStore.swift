@@ -416,6 +416,10 @@ final class MarkdownLibraryStore: ObservableObject {
         _ = await loadTask?.result
     }
 
+    func waitForRenderToComplete() async {
+        _ = await renderTask?.result
+    }
+
     func select(url: URL?) {
         guard let url else {
             selectedURL = nil
@@ -528,6 +532,11 @@ final class MarkdownLibraryStore: ObservableObject {
                 )
             )
         }
+    }
+
+    func rerenderSelectedDocument() {
+        guard let selectedDocument else { return }
+        scheduleRender(for: selectedDocument)
     }
 
     private func storeRenderCacheEntry(url: URL, entry: RenderCacheEntry) {

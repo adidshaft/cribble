@@ -310,6 +310,75 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, guideURL.standardizedFileURL)
     }
+
+    func testRemoteImagePreferenceRerendersSelectedDocument() async throws {
+        let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        let oldLoadRemoteImages = defaults.object(forKey: "loadRemoteImages")
+        defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "folderDisplayNames")
+        defaults.removeObject(forKey: "folderPaths")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defaults.set(false, forKey: "loadRemoteImages")
+        defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldDisplayNames {
+                defaults.set(oldDisplayNames, forKey: "folderDisplayNames")
+            } else {
+                defaults.removeObject(forKey: "folderDisplayNames")
+            }
+
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+
+            if let oldLoadRemoteImages {
+                defaults.set(oldLoadRemoteImages, forKey: "loadRemoteImages")
+            } else {
+                defaults.removeObject(forKey: "loadRemoteImages")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RemoteImage-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = rootURL.appendingPathComponent("Note.md")
+        try "# Note\n\n![banner](https://example.com/banner.png)\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+        store.select(url: noteURL)
+        await store.waitForRenderToComplete()
+
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("[🖼 banner](https://example.com/banner.png)"))
+        XCTAssertFalse(store.selectedRenderedMarkdown.contains("![banner](https://example.com/banner.png)"))
+
+        defaults.set(true, forKey: "loadRemoteImages")
+        store.rerenderSelectedDocument()
+        await store.waitForRenderToComplete()
+
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("![banner](https://example.com/banner.png)"))
+        XCTAssertFalse(store.selectedRenderedMarkdown.contains("[🖼 banner](https://example.com/banner.png)"))
+    }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {
         // Strip duplicate document title

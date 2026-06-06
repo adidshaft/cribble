@@ -145,6 +145,9 @@ struct ContentView: View {
             .onChange(of: settings.fileSortMode) { _, newMode in
                 library.refresh(sortMode: newMode)
             }
+            .onChange(of: settings.loadRemoteImages) {
+                library.rerenderSelectedDocument()
+            }
             .onAppear {
                 showingPreviousSessionIssue = diagnostics.previousSessionDidNotCloseCleanly
             }

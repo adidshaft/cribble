@@ -213,6 +213,15 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
+        HStack(spacing: 8) {
+            groupedControls
+
+            intelligenceButton
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var groupedControls: some View {
         HStack(spacing: 3) {
             sidebarIconButton(
                 title: "Open Folder",
@@ -250,21 +259,21 @@ private struct SidebarControls: View {
             ) {
                 library.openTasksFile()
             }
-
-            sidebarIconButton(
-                title: "Project Intelligence",
-                systemImage: intelligenceSymbol,
-                disabled: activeIntelligenceRoot == nil,
-                prominent: isIntelligenceOn,
-                help: intelligenceHelp
-            ) {
-                toggleIntelligence()
-            }
-            .accessibilityValue(isIntelligenceOn ? "On" : "Off")
         }
         .padding(4)
         .cribbleInteractiveGlass(in: Capsule())
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var intelligenceButton: some View {
+        Button {
+            toggleIntelligence()
+        } label: {
+            Label("Project Intelligence", systemImage: intelligenceSymbol)
+        }
+        .disabled(activeIntelligenceRoot == nil)
+        .sidebarIntelligenceIcon(disabled: activeIntelligenceRoot == nil, isOn: isIntelligenceOn)
+        .help(intelligenceHelp)
+        .accessibilityValue(isIntelligenceOn ? "On" : "Off")
     }
 
     private var sortMenu: some View {
@@ -321,19 +330,8 @@ private struct SidebarControls: View {
         }
     }
 
-    /// The sidebar toggle reflects intelligence status with distinct SF Symbols
-    /// so state is not carried by color alone.
     private var intelligenceSymbol: String {
-        if !isIntelligenceOn {
-            return "brain"
-        }
-        return switch intelligence.status {
-        case .off: "brain"
-        case .ready: "brain"
-        case .scanning, .working: "brain.head.profile.fill"
-        case .idle: "checkmark.circle.fill"
-        case .driftDetected: "exclamationmark.triangle.fill"
-        }
+        "brain.head.profile"
     }
 
     private var intelligenceHelp: String {
@@ -371,6 +369,18 @@ private extension View {
                 }
             }
             .buttonStyle(.plain)
+            .opacity(disabled ? 0.38 : 1)
+    }
+
+    func sidebarIntelligenceIcon(disabled: Bool = false, isOn: Bool = false) -> some View {
+        self
+            .labelStyle(.iconOnly)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(isOn ? AnyShapeStyle(Color.green) : AnyShapeStyle(.primary))
+            .frame(width: 34, height: 34)
+            .contentShape(Circle())
+            .buttonStyle(.plain)
+            .cribbleInteractiveGlass(in: Circle())
             .opacity(disabled ? 0.38 : 1)
     }
 }

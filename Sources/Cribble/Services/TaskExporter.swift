@@ -64,9 +64,9 @@ enum TaskExporter {
             event.title = title
             event.notes = notes
             event.isAllDay = true
-            let startOfDay = Calendar.current.startOfDay(for: Date())
-            event.startDate = startOfDay
-            event.endDate = startOfDay
+            let range = allDayRange(for: Date(), calendar: .current)
+            event.startDate = range.start
+            event.endDate = range.end
             event.calendar = store.defaultCalendarForNewEvents
             do {
                 try store.save(event, span: .thisEvent, commit: true)
@@ -74,5 +74,11 @@ enum TaskExporter {
                 throw TaskExporterError.saveFailed(error.localizedDescription)
             }
         }
+    }
+
+    nonisolated static func allDayRange(for date: Date, calendar: Calendar) -> (start: Date, end: Date) {
+        let start = calendar.startOfDay(for: date)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+        return (start, end)
     }
 }

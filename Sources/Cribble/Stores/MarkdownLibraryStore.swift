@@ -1237,8 +1237,7 @@ final class MarkdownLibraryStore: ObservableObject {
             .appendingPathComponent("DemoNotes", isDirectory: true)
             .standardizedFileURL
         let shouldInstallDemo = rootURLs.isEmpty || rootURLs.contains(installedDemoURL)
-        guard !alreadySeeded,
-              shouldInstallDemo,
+        guard shouldInstallDemo,
               let bundledDemoURL = Self.bundledResourceURL(forResource: "DemoNotes", withExtension: nil)
         else { return }
 
@@ -1249,15 +1248,37 @@ final class MarkdownLibraryStore: ObservableObject {
                 withIntermediateDirectories: true
             )
             if fileManager.fileExists(atPath: installedDemoURL.path) {
-                try fileManager.removeItem(at: installedDemoURL)
+                if alreadySeeded {
+                    try Self.copyMissingDemoItems(from: bundledDemoURL, to: installedDemoURL)
+                } else {
+                    try fileManager.removeItem(at: installedDemoURL)
+                    try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
+                }
+            } else {
+                try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
             }
-            try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
             if !rootURLs.contains(installedDemoURL) {
                 rootURLs.append(installedDemoURL)
             }
             defaults.set(Self.bundledDemoNotesVersion, forKey: Keys.bundledDemoNotesVersion)
         } catch {
             DiagnosticsCenter.shared.record(level: .error, message: "Failed to install DemoNotes: \(error.localizedDescription)")
+        }
+    }
+
+    nonisolated private static func copyMissingDemoItems(from sourceURL: URL, to destinationURL: URL) throws {
+        let fileManager = FileManager.default
+        let sourceItems = try fileManager.contentsOfDirectory(
+            at: sourceURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true)
+
+        for sourceItem in sourceItems {
+            let destinationItem = destinationURL.appendingPathComponent(sourceItem.lastPathComponent)
+            guard !fileManager.fileExists(atPath: destinationItem.path) else { continue }
+            try fileManager.copyItem(at: sourceItem, to: destinationItem)
         }
     }
 

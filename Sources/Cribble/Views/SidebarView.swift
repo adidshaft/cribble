@@ -213,7 +213,7 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 3) {
+        ControlGroup {
             sidebarIconButton(
                 title: "Open Folder",
                 systemImage: "folder.badge.plus",
@@ -247,12 +247,9 @@ private struct SidebarControls: View {
                     }
                 }
             } label: {
-                sidebarIconLabel(title: "Sort", systemImage: "arrow.up.arrow.down")
+                Label("Sort", systemImage: "arrow.up.arrow.down")
             }
-            .menuIndicator(.hidden)
             .disabled(!library.hasFolders)
-            .buttonStyle(.plain)
-            .opacity(library.hasFolders ? 1 : 0.45)
             .help("Sort files inside folders by name, created date, or updated date")
 
             sidebarIconButton(
@@ -265,9 +262,10 @@ private struct SidebarControls: View {
                 IntelligenceHUDController.shared.toggle()
             }
         }
-        .padding(4)
-        .cribbleInteractiveGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .cribbleGlassContainer()
+        .labelStyle(.iconOnly)
+        .controlSize(.small)
+        .buttonBorderShape(.circle)
+        .cribbleGlassButton()
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -280,25 +278,11 @@ private struct SidebarControls: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            sidebarIconLabel(title: title, systemImage: systemImage, foregroundStyle: foregroundStyle)
+            Label(title, systemImage: systemImage)
+                .foregroundStyle(foregroundStyle)
         }
         .disabled(disabled)
-        .buttonStyle(.plain)
-        .opacity(disabled ? 0.45 : 1)
         .help(help)
-    }
-
-    private func sidebarIconLabel(
-        title: String,
-        systemImage: String,
-        foregroundStyle: AnyShapeStyle = AnyShapeStyle(.primary)
-    ) -> some View {
-        Label(title, systemImage: systemImage)
-            .labelStyle(.iconOnly)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(foregroundStyle)
-            .frame(width: 26, height: 26)
-            .contentShape(Rectangle())
     }
 
     /// The sidebar indicator reflects intelligence status (plan §9): distinct

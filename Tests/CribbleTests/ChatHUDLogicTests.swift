@@ -300,6 +300,7 @@ final class ChatHUDLogicTests: XCTestCase {
             XCTAssertFalse(first.needsEngineChoice)
             XCTAssertEqual(UserDefaults.standard.string(forKey: "chatHUD.selectedModelID"), chosen.id)
             XCTAssertTrue(UserDefaults.standard.bool(forKey: "chatHUD.hasChosenEngine"))
+            XCTAssertEqual(UserDefaults.standard.integer(forKey: "chatHUD.engineChoiceVersion"), 1)
 
             let recreated = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
             XCTAssertFalse(recreated.needsEngineChoice)
@@ -324,8 +325,10 @@ final class ChatHUDLogicTests: XCTestCase {
         let defaults = UserDefaults.standard
         let selectedModelID = defaults.object(forKey: "chatHUD.selectedModelID")
         let hasChosenEngine = defaults.object(forKey: "chatHUD.hasChosenEngine")
+        let engineChoiceVersion = defaults.object(forKey: "chatHUD.engineChoiceVersion")
         defaults.removeObject(forKey: "chatHUD.selectedModelID")
         defaults.removeObject(forKey: "chatHUD.hasChosenEngine")
+        defaults.removeObject(forKey: "chatHUD.engineChoiceVersion")
         defer {
             if let selectedModelID {
                 defaults.set(selectedModelID, forKey: "chatHUD.selectedModelID")
@@ -337,6 +340,12 @@ final class ChatHUDLogicTests: XCTestCase {
                 defaults.set(hasChosenEngine, forKey: "chatHUD.hasChosenEngine")
             } else {
                 defaults.removeObject(forKey: "chatHUD.hasChosenEngine")
+            }
+
+            if let engineChoiceVersion {
+                defaults.set(engineChoiceVersion, forKey: "chatHUD.engineChoiceVersion")
+            } else {
+                defaults.removeObject(forKey: "chatHUD.engineChoiceVersion")
             }
         }
         body()

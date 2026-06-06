@@ -52,6 +52,7 @@ final class ChatHUDViewModel: ObservableObject {
     private enum ModelDefaultsKey {
         static let selectedModelID = "chatHUD.selectedModelID"
         static let hasChosenEngine = "chatHUD.hasChosenEngine"
+        static let engineChoiceVersion = "chatHUD.engineChoiceVersion"
     }
 
     /// Status line shown under the model chip / in the input area.
@@ -92,9 +93,21 @@ final class ChatHUDViewModel: ObservableObject {
         let defaults = UserDefaults.standard
         let savedID = defaults.string(forKey: ModelDefaultsKey.selectedModelID)
         self.selectedModel = savedID.flatMap(ModelCatalog.model(withID:)) ?? ModelCatalog.defaultModel
-        self.needsEngineChoice = !defaults.bool(forKey: ModelDefaultsKey.hasChosenEngine)
+        self.needsEngineChoice = !Self.hasCompletedEngineChoice(defaults: defaults)
         let fullName = NSFullUserName()
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
+    }
+
+    private static func hasCompletedEngineChoice(defaults: UserDefaults) -> Bool {
+        if defaults.integer(forKey: ModelDefaultsKey.engineChoiceVersion) >= 1 {
+            return true
+        }
+
+        if Bundle.main.bundleIdentifier == "com.cribble.reader" {
+            return defaults
+                .persistentDomain(forName: "com.cribble.reader")?[ModelDefaultsKey.hasChosenEngine] as? Bool == true
+        }
+        return (defaults.object(forKey: ModelDefaultsKey.hasChosenEngine) as? Bool) == true
     }
 
     /// The engine for the currently selected model, shared process-wide so the
@@ -305,6 +318,7 @@ final class ChatHUDViewModel: ObservableObject {
             UserDefaults.standard.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
         }
         UserDefaults.standard.set(true, forKey: ModelDefaultsKey.hasChosenEngine)
+        UserDefaults.standard.set(1, forKey: ModelDefaultsKey.engineChoiceVersion)
         needsEngineChoice = false
     }
 

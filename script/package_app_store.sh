@@ -120,6 +120,11 @@ cat >"$INFO_PLIST" <<PLIST
   <string>public.app-category.productivity</string>
   <key>ITSAppUsesNonExemptEncryption</key>
   <false/>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+  </dict>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>

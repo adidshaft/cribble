@@ -139,7 +139,8 @@ struct DiagramZoomOverlay: View {
                 contentArea
             }
             .frame(maxWidth: 1000, maxHeight: 760)
-            .cribbleGlass(in: RoundedRectangle(cornerRadius: 20))
+            .cribbleInteractiveGlass(in: RoundedRectangle(cornerRadius: 20))
+            .cribbleGlassContainer()
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.30), radius: 40, y: 18)
             .padding(48)

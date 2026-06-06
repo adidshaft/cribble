@@ -218,11 +218,7 @@ struct ChatBubbleView: View, Equatable {
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.white.opacity(0.06))
-                .overlay {
-                    Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
-                }
-                .clipShape(Capsule())
+                .cribbleMaterialSurface(in: Capsule())
                 .pointingHandOnHover()
             }
         }

@@ -87,7 +87,33 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
-            if engine.isEnabled { scopeControl; modelButton }
+            headerControlCluster
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var headerControlCluster: some View {
+        #if compiler(>=6.1)
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 8) {
+                headerControlContent
+            }
+        } else {
+            headerControlContent
+        }
+        #else
+        headerControlContent
+        #endif
+    }
+
+    private var headerControlContent: some View {
+        HStack(spacing: 8) {
+            if engine.isEnabled {
+                scopeControl
+                modelButton
+            }
             statusPill
             if engine.isEnabled {
                 headerIcon("arrow.clockwise", help: "Run now") { Task { await engine.runNow() } }
@@ -95,8 +121,6 @@ struct IntelligenceHUDView: View {
             }
             headerIcon("xmark", help: "Close", action: onClose)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 
     private var subtitle: String {
@@ -121,8 +145,8 @@ struct IntelligenceHUDView: View {
         return Text(text)
             .font(.system(size: 10, weight: .semibold))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(color.opacity(0.22), in: Capsule())
-            .overlay { Capsule().strokeBorder(color.opacity(0.5), lineWidth: 0.5) }
+            .background(color.opacity(0.16), in: Capsule())
+            .cribbleGlass(in: Capsule())
             .foregroundStyle(color)
     }
 
@@ -138,8 +162,8 @@ struct IntelligenceHUDView: View {
                 if !roots.isEmpty { Task { await engine.enableAllFolders(roots: roots) } }
             }
         }
-        .background(Color.white.opacity(0.06), in: Capsule())
-        .overlay { Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
+        .padding(2)
+        .cribbleGlass(in: Capsule())
         .help("Scan just this folder, or all opened folders")
     }
 
@@ -151,7 +175,7 @@ struct IntelligenceHUDView: View {
             }
             .foregroundStyle(.white.opacity(active ? 1 : 0.55))
             .padding(.horizontal, 9).padding(.vertical, 3)
-            .background(active ? Color.accentColor.opacity(0.5) : .clear, in: Capsule())
+            .background(active ? Color.accentColor.opacity(0.42) : .clear, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -168,9 +192,8 @@ struct IntelligenceHUDView: View {
             }
             .foregroundStyle(.white.opacity(0.7))
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color.white.opacity(0.08), in: Capsule())
         }
-        .buttonStyle(.plain)
+        .cribbleGlassCapsuleButton()
         .help("Choose the model intelligence uses")
     }
 
@@ -211,9 +234,8 @@ struct IntelligenceHUDView: View {
         }
         .padding(.bottom, 6)
         .frame(width: 320)
-        .background(Color(white: 0.16), in: RoundedRectangle(cornerRadius: 10))
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5) }
-        .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
+        .background(Color.black.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 14))
         .padding(.top, 44).padding(.trailing, 70)
     }
 
@@ -274,13 +296,13 @@ struct IntelligenceHUDView: View {
                 .font(.system(size: 10))
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 8).padding(.vertical, 5)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             if localRunnerModelIDs.isEmpty {
                 TextField("Model ID", text: $localRunnerModelID)
                     .font(.system(size: 10))
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             } else {
                 Menu {
                     ForEach(localRunnerModelIDs, id: \.self) { modelID in
@@ -295,10 +317,10 @@ struct IntelligenceHUDView: View {
                     }
                     .font(.system(size: 10))
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                 }
                 .menuStyle(.borderlessButton)
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton()
             }
             if let localRunnerStatus {
                 Text(localRunnerStatus.message)
@@ -311,18 +333,19 @@ struct IntelligenceHUDView: View {
                     Task { _ = await probeLocalRunner() }
                 }
                 .disabled(isProbingLocalRunner)
+                .cribbleGlassCapsuleButton()
                 Button("Use") {
                     Task { await useLocalRunner() }
                 }
                 .disabled(!canUseLocalRunner || isProbingLocalRunner)
+                .cribbleGlassCapsuleButton(prominent: true)
                 Spacer()
             }
             .font(.system(size: 10, weight: .semibold))
-            .buttonStyle(.plain)
         }
         .padding(8)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-        .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5) }
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
@@ -382,11 +405,10 @@ struct IntelligenceHUDView: View {
         Button(action: action) {
             Image(systemName: name)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
-                .frame(width: 20, height: 20)
-                .contentShape(Rectangle())
+                .foregroundStyle(.white.opacity(0.72))
+                .frame(width: 16, height: 16)
         }
-        .buttonStyle(.plain)
+        .cribbleGlassIconButton(size: 30)
         .help(help)
     }
 
@@ -414,10 +436,8 @@ struct IntelligenceHUDView: View {
                 } label: {
                     Text(isEnabling ? "Starting…" : "This folder")
                         .font(.system(size: 12, weight: .semibold))
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(Color.accentColor.opacity(0.9), in: Capsule())
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton(prominent: true)
                 .disabled(activeRootURL() == nil || isEnabling)
 
                 Button {
@@ -428,10 +448,8 @@ struct IntelligenceHUDView: View {
                 } label: {
                     Text("All folders (\(allRoots().count))")
                         .font(.system(size: 12, weight: .semibold))
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(Color.white.opacity(0.12), in: Capsule())
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton()
                 .disabled(allRoots().isEmpty || isEnabling)
             }
             Spacer()
@@ -479,14 +497,12 @@ struct IntelligenceHUDView: View {
                     Task { await engine.downloadModelIfNeeded() }
                 }
                 .font(.system(size: 11, weight: .semibold))
-                .buttonStyle(.plain)
-                .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Color.accentColor.opacity(0.85), in: Capsule())
+                .cribbleGlassCapsuleButton(prominent: true)
             }
         }
         .foregroundStyle(.white.opacity(0.85))
         .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(Color.white.opacity(0.06))
+        .background(Color.white.opacity(0.04))
     }
 
     // MARK: - Tabs
@@ -501,7 +517,6 @@ struct IntelligenceHUDView: View {
         .labelsHidden()
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.black.opacity(0.12))
     }
 
     @ViewBuilder
@@ -587,7 +602,8 @@ struct IntelligenceHUDView: View {
                             }
                             .padding(10)
                             .frame(maxWidth: .infinity)
-                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                            .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
                         }
                         .buttonStyle(.plain)
                     }
@@ -611,7 +627,8 @@ struct IntelligenceHUDView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func resourceDecisionRow(_ decision: BackgroundScheduler.Decision) -> some View {
@@ -660,9 +677,8 @@ struct IntelligenceHUDView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .frame(width: 22, height: 22)
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassIconButton(size: 26)
                 .foregroundStyle(.white.opacity(0.46))
                 .help("Dismiss insight")
             }
@@ -679,13 +695,14 @@ struct IntelligenceHUDView: View {
                     Label("Open artifact", systemImage: "doc.text.magnifyingglass")
                         .font(.system(size: 10, weight: .semibold))
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton()
                 .foregroundStyle(.white.opacity(0.74))
             }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func suggestedEdgeRow(_ edge: KnowledgeEdge) -> some View {
@@ -711,9 +728,8 @@ struct IntelligenceHUDView: View {
                 } label: {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .frame(width: 22, height: 22)
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassIconButton(size: 26)
                 .foregroundStyle(.green.opacity(0.78))
                 .help("Accept suggested relationship")
                 Button {
@@ -721,9 +737,8 @@ struct IntelligenceHUDView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .frame(width: 22, height: 22)
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassIconButton(size: 26)
                 .foregroundStyle(.white.opacity(0.46))
                 .help("Dismiss suggested relationship")
             }
@@ -735,14 +750,15 @@ struct IntelligenceHUDView: View {
                         .font(.system(size: 10, design: .monospaced))
                         .lineLimit(1)
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassCapsuleButton()
                 .foregroundStyle(.white.opacity(0.55))
                 .help("Open source")
             }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Graph
@@ -848,7 +864,7 @@ struct IntelligenceHUDView: View {
             }
             .foregroundStyle(.white.opacity(selected ? 1 : 0.75))
             .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(selected ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 6))
+            .background(selected ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -869,9 +885,7 @@ struct IntelligenceHUDView: View {
                                 Label("Save to folder", systemImage: "square.and.arrow.down")
                                     .font(.system(size: 10, weight: .semibold))
                             }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Color.white.opacity(0.1), in: Capsule())
+                            .cribbleGlassCapsuleButton()
                             .help("Write this into .cribble/intelligence/ in your project folder so it lives alongside your code (otherwise it stays in Cribble's private cache).")
                         } else {
                             Label("Saved", systemImage: "checkmark.circle.fill")
@@ -986,7 +1000,8 @@ struct IntelligenceHUDView: View {
                         .padding(10)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
             } else {
                 emptyState(
                     icon: "questionmark.bubble",
@@ -1000,13 +1015,14 @@ struct IntelligenceHUDView: View {
                     .font(.system(size: 12))
                     .padding(.horizontal, 12).padding(.vertical, 9)
                     .background(Color.white.opacity(0.08), in: Capsule())
+                    .cribbleGlass(in: Capsule())
                     .onSubmit(ask)
                 Button(action: ask) {
                     Image(systemName: isAsking ? "ellipsis" : "arrow.up.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white.opacity(askText.isEmpty ? 0.3 : 0.9))
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassIconButton(prominent: !askText.isEmpty, size: 34)
                 .disabled(askText.isEmpty || isAsking)
             }
         }

@@ -50,6 +50,20 @@ let package = Package(
                 .product(name: "Tokenizers", package: "swift-transformers"),
                 "CribbleBundleRedirect"
             ],
+            exclude: [
+                "README.md",
+                "App/README.md",
+                "Models/README.md",
+                "Resources/README.md",
+                "Services/README.md",
+                "Services/Intelligence/README.md",
+                "Services/LocalLLM/README.md",
+                "Stores/README.md",
+                "Support/README.md",
+                "Views/README.md",
+                "Views/ChatHUD/README.md",
+                "Views/IntelligenceHUD/README.md"
+            ],
             resources: [
                 .process("Resources/AppIconLight.png"),
                 .process("Resources/AppIconDark.png"),
@@ -60,7 +74,8 @@ let package = Package(
         ),
         .testTarget(
             name: "CribbleTests",
-            dependencies: ["Cribble"]
+            dependencies: ["Cribble"],
+            exclude: ["README.md"]
         )
     ]
 )

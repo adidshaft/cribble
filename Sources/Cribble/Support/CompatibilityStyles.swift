@@ -53,6 +53,12 @@ extension View {
             .cribbleGlassButton(prominent: prominent)
     }
 
+    func cribbleGlassCapsuleButton(prominent: Bool = false) -> some View {
+        self.buttonBorderShape(.capsule)
+            .controlSize(.regular)
+            .cribbleGlassButton(prominent: prominent)
+    }
+
     @ViewBuilder
     private func fallbackGlassButton(prominent: Bool) -> some View {
         if prominent {

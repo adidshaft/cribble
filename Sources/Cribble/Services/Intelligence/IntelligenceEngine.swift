@@ -31,6 +31,7 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var researchInsights: [ResearchInsight] = []
     @Published private(set) var pendingJobs = 0
     @Published private(set) var filesIndexed = 0
+    @Published private(set) var hasCodeFiles = false
     @Published private(set) var staleCount = 0
     @Published private(set) var lastActivity: String?
     @Published private(set) var isEnabled = false
@@ -136,6 +137,7 @@ final class IntelligenceEngine: ObservableObject {
         resetDirtyGates()
         pendingJobs = 0
         filesIndexed = 0
+        hasCodeFiles = false
         staleCount = 0
         lastActivity = "Preparing \(allFolders ? "all folders" : nominalRoot.lastPathComponent)"
 
@@ -217,6 +219,7 @@ final class IntelligenceEngine: ObservableObject {
         researchInsights = []
         pendingJobs = 0
         filesIndexed = 0
+        hasCodeFiles = false
         staleCount = 0
         resourceDecision = nil
     }
@@ -271,14 +274,17 @@ final class IntelligenceEngine: ObservableObject {
 
     /// One iteration: scan for changes, enqueue follow-up + aggregate jobs, drain
     /// the queue within the allowed tier, enforce the disk budget, refresh state.
-    func tick(initialScan: Bool) async {
+    func tick(initialScan: Bool, forceFullRun: Bool = false) async {
         guard let db, let rootURL, let projectID, let runner else { return }
         guard !isTicking else { return }   // no overlapping ticks
         isTicking = true
         defer { isTicking = false }
 
         guard let scheduler else { return }
-        let decision = await scheduler.decision()
+        var decision = await scheduler.decision()
+        if forceFullRun, decision.allowedTier != .none {
+            decision.allowedTier = .tier3
+        }
         resourceDecision = decision
 
         // Honor hard resource stops immediately; don't even scan under pressure.
@@ -329,7 +335,7 @@ final class IntelligenceEngine: ObservableObject {
     }
 
     func runNow() async {
-        await tick(initialScan: false)
+        await tick(initialScan: false, forceFullRun: true)
     }
 
     // MARK: - Aggregate scheduling
@@ -549,10 +555,12 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeEdges = await db.knowledgeEdges(projectID: projectID)
         researchInsights = await db.researchInsights(projectID: projectID)
         pendingJobs = await db.pendingJobCount(projectID: projectID)
-        filesIndexed = await db.files(projectID: projectID).count
+        let files = await db.files(projectID: projectID)
+        filesIndexed = files.count
+        hasCodeFiles = Self.containsCodeFiles(files)
         staleCount = await db.staleArtifactCount(projectID: projectID)
 
-        let driftReports = artifacts.filter { $0.type == .driftReport }
+        let driftReports = hasCodeFiles ? artifacts.filter { $0.type == .driftReport } : []
         if let drift = driftReports.first, let content = artifactStore?.content(for: drift),
            content.range(of: "No drift detected") == nil {
             // Count drift bullet lines as a rough signal.
@@ -569,6 +577,13 @@ final class IntelligenceEngine: ObservableObject {
 
     func content(for artifact: IntelligenceArtifact) -> String? {
         artifactStore?.content(for: artifact)
+    }
+
+    nonisolated private static func containsCodeFiles(_ files: [IntelligenceFile]) -> Bool {
+        files.contains { file in
+            guard let raw = file.language else { return false }
+            return SourceLanguage(rawValue: raw)?.isCode ?? false
+        }
     }
 
     func acceptSuggestedEdge(_ edge: KnowledgeEdge) async {

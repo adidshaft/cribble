@@ -90,6 +90,7 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
 
         var request = URLRequest(url: baseURL.appendingPathComponent("chat/completions"))
         request.httpMethod = "POST"
+        request.timeoutInterval = 300
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         authorize(&request)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

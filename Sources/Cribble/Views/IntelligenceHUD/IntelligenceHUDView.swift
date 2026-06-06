@@ -605,7 +605,7 @@ struct IntelligenceHUDView: View {
 
                 HStack(spacing: 10) {
                     metricTile(title: "Files", value: "\(engine.filesIndexed)", icon: "doc.text.magnifyingglass")
-                    metricTile(title: "Artifacts", value: "\(engine.artifacts.count)", icon: "square.stack.3d.up")
+                    metricTile(title: "Artifacts", value: "\(visibleArtifacts.count)", icon: "square.stack.3d.up")
                     metricTile(title: "Insights", value: "\(activeResearchInsights.count)", icon: "doc.text.magnifyingglass")
                 }
 
@@ -633,14 +633,14 @@ struct IntelligenceHUDView: View {
                 }
 
                 sectionHeader("RECENT")
-                if engine.artifacts.isEmpty {
+                if visibleArtifacts.isEmpty {
                     emptyState(
                         icon: engine.pendingJobs > 0 ? "hourglass" : "tray",
                         title: engine.pendingJobs > 0 ? "Building intelligence..." : "Waiting for artifacts",
                         detail: "Generated summaries, diagrams, and audits will land here as the local engine works."
                     )
                 } else {
-                    ForEach(Array(engine.artifacts.prefix(6))) { artifact in
+                    ForEach(Array(visibleArtifacts.prefix(6))) { artifact in
                         Button {
                             selectedArtifactID = artifact.id
                             selectedTab = .artifacts
@@ -748,7 +748,7 @@ struct IntelligenceHUDView: View {
                 .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(3)
             if let artifactID = insight.artifactID,
-               engine.artifacts.contains(where: { $0.id == artifactID }) {
+               visibleArtifacts.contains(where: { $0.id == artifactID }) {
                 Button {
                     selectedArtifactID = artifactID
                     selectedTab = .artifacts
@@ -962,7 +962,7 @@ struct IntelligenceHUDView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(spacing: 8) {
-                    if engine.artifacts.isEmpty {
+                    if visibleArtifacts.isEmpty {
                         ProgressView().controlSize(.small)
                         Text(engine.pendingJobs > 0
                              ? "Building intelligence… \(engine.pendingJobs) job(s) queued."
@@ -1021,7 +1021,7 @@ struct IntelligenceHUDView: View {
         HStack(spacing: 6) {
             Text("\(engine.filesIndexed) files")
             Text("·")
-            Text("\(engine.artifacts.count) artifacts")
+            Text("\(visibleArtifacts.count) artifacts")
             if engine.pendingJobs > 0 {
                 Text("·")
                 ProgressView().controlSize(.mini).scaleEffect(0.7)
@@ -1254,8 +1254,21 @@ struct IntelligenceHUDView: View {
 
     // MARK: - Derived
 
+    private var visibleArtifacts: [IntelligenceArtifact] {
+        guard !engine.hasCodeFiles else { return engine.artifacts }
+        return engine.artifacts.filter { !Self.codeOnlyArtifactTypes.contains($0.type) }
+    }
+
+    private static let codeOnlyArtifactTypes: Set<IntelligenceArtifactType> = [
+        .architectureDiagram,
+        .dependencyDiagram,
+        .fallbackAudit,
+        .ioBehavior,
+        .driftReport
+    ]
+
     private var selectedArtifact: IntelligenceArtifact? {
-        engine.artifacts.first { $0.id == selectedArtifactID }
+        visibleArtifacts.first { $0.id == selectedArtifactID }
     }
 
     private var isViewingDifferentFolder: Bool {
@@ -1297,7 +1310,7 @@ struct IntelligenceHUDView: View {
             filesIndexed: engine.filesIndexed,
             knowledgeNodes: filteredNodes,
             knowledgeEdges: filteredEdges,
-            artifacts: engine.artifacts,
+            artifacts: visibleArtifacts,
             content: { engine.content(for: $0) }
         )
         return payload.pruned(maxNodes: selectedGraphLens.maxNodes, maxEdges: selectedGraphLens.maxEdges)
@@ -1316,7 +1329,7 @@ struct IntelligenceHUDView: View {
             filesIndexed: engine.filesIndexed,
             knowledgeNodes: engine.knowledgeNodes,
             knowledgeEdges: engine.knowledgeEdges,
-            artifacts: engine.artifacts,
+            artifacts: visibleArtifacts,
             content: { engine.content(for: $0) }
         )
     }
@@ -1405,7 +1418,10 @@ struct IntelligenceHUDView: View {
             ("Files", [.fileSummary])
         ]
         return order.compactMap { section in
-            let items = engine.artifacts.filter { section.1.contains($0.type) }
+            if !engine.hasCodeFiles, section.0 == "Architecture" || section.0 == "Audits" {
+                return nil
+            }
+            let items = visibleArtifacts.filter { section.1.contains($0.type) }
             return items.isEmpty ? nil : (section.0, items)
         }
     }

@@ -54,7 +54,7 @@ struct OutlineView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thinMaterial)
+        .cribbleMaterialSurface(in: Rectangle())
     }
 }
 

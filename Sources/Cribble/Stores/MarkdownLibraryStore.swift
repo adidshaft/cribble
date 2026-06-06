@@ -296,8 +296,8 @@ final class MarkdownLibraryStore: ObservableObject {
                         // folder — skip it and report it instead.
                         do {
                             let values = try rootURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
-                            let children = try FolderScanner(fileSortMode: sort).scan(rootURL: rootURL)
-                            let readmeURL = rootURL.appendingPathComponent("README.md")
+                            let children = try FolderScanner(fileSortMode: sort, autoCreateReadmes: false).scan(rootURL: rootURL)
+                            let readmeURL = Self.existingReadmeURL(in: rootURL)
                             let displayName = displayNames[rootURL.standardizedFileURL.path] ?? rootURL.lastPathComponent
                             nodesList.append(MarkdownNode(
                                 id: rootURL.standardizedFileURL,
@@ -1000,8 +1000,8 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private func rootNode(for rootURL: URL, sortMode: FileSortMode) throws -> MarkdownNode {
         let values = try rootURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
-        let children = try FolderScanner(fileSortMode: sortMode).scan(rootURL: rootURL)
-        let readmeURL = rootURL.appendingPathComponent("README.md")
+        let children = try FolderScanner(fileSortMode: sortMode, autoCreateReadmes: false).scan(rootURL: rootURL)
+        let readmeURL = Self.existingReadmeURL(in: rootURL)
         return MarkdownNode(
             id: rootURL.standardizedFileURL,
             name: displayName(forRoot: rootURL),
@@ -1266,11 +1266,15 @@ final class MarkdownLibraryStore: ObservableObject {
     private func documentURL(for url: URL) -> URL? {
         var isDirectory: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
-            let readmeURL = url.appendingPathComponent("README.md")
-            return FileManager.default.fileExists(atPath: readmeURL.path) ? readmeURL : nil
+            return Self.existingReadmeURL(in: url)
         }
 
         return url.pathExtension.lowercased() == "md" ? url : nil
+    }
+
+    nonisolated private static func existingReadmeURL(in folderURL: URL) -> URL? {
+        let readmeURL = folderURL.appendingPathComponent("README.md")
+        return FileManager.default.fileExists(atPath: readmeURL.path) ? readmeURL : nil
     }
 
     private func collectMarkdownURLs(_ nodes: [MarkdownNode]) -> [URL] {

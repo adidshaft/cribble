@@ -34,6 +34,26 @@ struct ChatHUDView: View {
 
     // No bar — just three floating controls, top-right, over the content.
     private var header: some View {
+        Group {
+            #if compiler(>=6.1)
+            if #available(macOS 26.0, *) {
+                GlassEffectContainer(spacing: 8) {
+                    headerControls
+                }
+            } else {
+                headerControls
+            }
+            #else
+            headerControls
+            #endif
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .contentShape(Rectangle())
+    }
+
+    private var headerControls: some View {
         HStack(spacing: 14) {
             Spacer()
 
@@ -60,10 +80,6 @@ struct ChatHUDView: View {
 
             HeaderIcon(systemName: "xmark", help: "Close") { onClose() }
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-        .contentShape(Rectangle())
     }
 
     private var transcript: some View {
@@ -109,13 +125,13 @@ private struct HeaderIcon: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white.opacity(hovered ? 1.0 : 0.5))
+                .foregroundColor(.white.opacity(hovered ? 1.0 : 0.68))
                 .scaleEffect(hovered ? 1.08 : 1.0)
-                .frame(width: 18, height: 18)
-                .contentShape(Rectangle())
+                .frame(width: 16, height: 16)
         }
-        .buttonStyle(.plain)
         .disabled(disabled)
+        .cribbleGlassIconButton(size: 30)
+        .opacity(disabled ? 0.42 : 1)
         .help(help)
         .onHover { hovered = $0 }
         .pointingHandOnHover()

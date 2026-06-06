@@ -106,4 +106,19 @@ final class FolderScannerTests: XCTestCase {
         XCTAssertEqual(nodes.first?.children.map(\.name), ["README"])
         XCTAssertFalse(FileManager.default.fileExists(atPath: second.appendingPathComponent("README.md").path))
     }
+
+    func testScannerCanScanWithoutCreatingReadmes() throws {
+        let root = try Fixture.makeFolder()
+        let folder = root.appendingPathComponent("Notes")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "# Existing".write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+        try "# Note".write(to: folder.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
+
+        let nodes = try FolderScanner(autoCreateReadmes: false).scan(rootURL: root)
+
+        XCTAssertEqual(nodes.map(\.name), ["Notes", "README"])
+        XCTAssertNil(nodes.first?.readmeURL)
+        XCTAssertEqual(nodes.first?.children.map(\.name), ["note"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.appendingPathComponent("README.md").path))
+    }
 }

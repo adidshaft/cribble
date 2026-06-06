@@ -39,6 +39,20 @@ extension View {
         #endif
     }
 
+    func cribbleToolbarIcon() -> some View {
+        self.labelStyle(.iconOnly)
+            .controlSize(.regular)
+    }
+
+    func cribbleGlassIconButton(prominent: Bool = false, size: CGFloat = 32) -> some View {
+        self.labelStyle(.iconOnly)
+            .frame(width: size, height: size)
+            .contentShape(Circle())
+            .buttonBorderShape(.circle)
+            .controlSize(.regular)
+            .cribbleGlassButton(prominent: prominent)
+    }
+
     @ViewBuilder
     private func fallbackGlassButton(prominent: Bool) -> some View {
         if prominent {

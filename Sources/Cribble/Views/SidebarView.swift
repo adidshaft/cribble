@@ -228,18 +228,16 @@ private struct SidebarControls: View {
                 library.chooseFolder(sortMode: settings.fileSortMode)
             } label: {
                 Label("Open Folder", systemImage: "folder.badge.plus")
-                    .labelStyle(.iconOnly)
             }
-            .cribbleGlassButton(prominent: true)
+            .cribbleGlassIconButton(prominent: true)
             .help("Open a Markdown folder and keep it in the sidebar")
 
             Button {
                 library.refresh(sortMode: settings.fileSortMode)
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
-                    .labelStyle(.iconOnly)
             }
-            .cribbleGlassButton()
+            .cribbleGlassIconButton()
             .disabled(!library.hasFolders)
             .help("Reload the opened Markdown folders")
 
@@ -247,9 +245,8 @@ private struct SidebarControls: View {
                 library.removeSelectedFolder()
             } label: {
                 Label("Remove Folder", systemImage: "folder.badge.minus")
-                    .labelStyle(.iconOnly)
             }
-            .cribbleGlassButton()
+            .cribbleGlassIconButton()
             .disabled(library.selectedRootURL == nil)
             .help("Remove the selected folder from Cribble without deleting files")
 
@@ -261,9 +258,8 @@ private struct SidebarControls: View {
                 }
             } label: {
                 Label("Sort", systemImage: "arrow.up.arrow.down")
-                    .labelStyle(.iconOnly)
             }
-            .cribbleGlassButton()
+            .cribbleGlassIconButton()
             .disabled(!library.hasFolders)
             .help("Sort files inside folders by name, created date, or updated date")
 
@@ -271,10 +267,9 @@ private struct SidebarControls: View {
                 IntelligenceHUDController.shared.toggle()
             } label: {
                 Label("Project Intelligence", systemImage: intelligenceSymbol)
-                    .labelStyle(.iconOnly)
                     .foregroundStyle(intelligenceTint)
             }
-            .cribbleGlassButton()
+            .cribbleGlassIconButton()
             .disabled(!library.hasFolders)
             .help(intelligenceHelp)
 

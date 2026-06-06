@@ -2,7 +2,9 @@ import Foundation
 
 struct FolderScanner {
     func scan(rootURL: URL) throws -> [MarkdownNode] {
-        try createReadmeIfNeeded(in: rootURL)
+        if autoCreateReadmes {
+            try createReadmeIfNeeded(in: rootURL)
+        }
         var state = ScanState()
         return try scanChildren(in: rootURL, depth: 0, state: &state)
     }
@@ -53,7 +55,9 @@ struct FolderScanner {
                 guard depth < maxDepth, state.visitedFolderCount < maxFolders else {
                     continue
                 }
-                try createReadmeIfNeeded(in: url)
+                if autoCreateReadmes {
+                    try createReadmeIfNeeded(in: url)
+                }
                 let children = try scanChildren(in: url, depth: depth + 1, state: &state)
                 folders.append(
                     MarkdownNode(
@@ -63,7 +67,7 @@ struct FolderScanner {
                         kind: .folder,
                         createdAt: values.creationDate,
                         modifiedAt: values.contentModificationDate,
-                        readmeURL: readmeURL(in: url),
+                        readmeURL: autoCreateReadmes ? readmeURL(in: url) : existingReadmeURL(in: url),
                         children: children
                     )
                 )
@@ -91,11 +95,13 @@ struct FolderScanner {
     private let fileSortMode: FileSortMode
     private let maxFolders: Int
     private let maxDepth: Int
+    private let autoCreateReadmes: Bool
 
-    init(fileSortMode: FileSortMode = .name, maxFolders: Int = 4_000, maxDepth: Int = 32) {
+    init(fileSortMode: FileSortMode = .name, maxFolders: Int = 4_000, maxDepth: Int = 32, autoCreateReadmes: Bool = true) {
         self.fileSortMode = fileSortMode
         self.maxFolders = maxFolders
         self.maxDepth = maxDepth
+        self.autoCreateReadmes = autoCreateReadmes
     }
 
     private func fileComparator(_ lhs: MarkdownNode, _ rhs: MarkdownNode) -> Bool {
@@ -132,6 +138,11 @@ struct FolderScanner {
 
     private func readmeURL(in folderURL: URL) -> URL {
         folderURL.appendingPathComponent("README.md")
+    }
+
+    private func existingReadmeURL(in folderURL: URL) -> URL? {
+        let url = readmeURL(in: folderURL)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     private func shouldScanDirectory(name: String, values: URLResourceValues) -> Bool {

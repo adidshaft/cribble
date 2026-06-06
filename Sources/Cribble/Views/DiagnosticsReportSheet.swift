@@ -33,7 +33,7 @@ struct DiagnosticsReportSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             }
-            .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
+            .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
 
             HStack {
                 if didCopy {
@@ -99,7 +99,7 @@ struct DiagnosticsReportSheet: View {
         }
         .padding(22)
         .frame(width: 760, height: 560)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var crashReportStatus: String {

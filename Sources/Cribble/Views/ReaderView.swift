@@ -44,7 +44,7 @@ struct ReaderView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
+                .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
             }
@@ -858,7 +858,7 @@ private struct ReadingBookmarkStrip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var fileWasEditedSinceBookmark: Bool {
@@ -1095,12 +1095,7 @@ private struct RichCodeBlockView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(.primary.opacity(0.08), lineWidth: 1)
-        }
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var iconName: String {
@@ -1960,7 +1955,7 @@ private struct EmptyReadmePanel: View {
         }
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 12))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -1995,7 +1990,10 @@ private struct LinkedFilesCardPanel: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .cribbleGlass(in: Capsule())
+                        .background(.primary.opacity(0.06), in: Capsule())
+                        .overlay {
+                            Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.75)
+                        }
 
                     Spacer(minLength: 0)
                 }
@@ -2023,7 +2021,7 @@ private struct LinkedFilesCardPanel: View {
             }
         }
         .padding(12)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -2079,7 +2077,7 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(14)
         }
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 8))
         .textual.blockSpacing(.init(top: 8, bottom: 18))
     }
 }

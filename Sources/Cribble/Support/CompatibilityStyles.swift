@@ -22,6 +22,16 @@ extension View {
             }
     }
 
+    func cribbleMaterialSurface<S: InsettableShape>(
+        in shape: S,
+        strokeOpacity: Double = 0.08
+    ) -> some View {
+        self.background(.regularMaterial, in: shape)
+            .overlay {
+                shape.strokeBorder(.primary.opacity(strokeOpacity), lineWidth: 0.75)
+            }
+    }
+
     @ViewBuilder
     func cribbleGlassButton(prominent: Bool = false) -> some View {
         #if compiler(>=6.1)

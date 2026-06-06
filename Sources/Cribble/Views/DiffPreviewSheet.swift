@@ -36,7 +36,7 @@ struct DiffPreviewSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+                    .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 8))
             }
 
             HStack {
@@ -53,7 +53,7 @@ struct DiffPreviewSheet: View {
         }
         .padding(22)
         .frame(width: 760, height: 560)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 18))
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
@@ -82,7 +82,7 @@ private struct DiffFileView: View {
                 }
             }
             .padding(10)
-            .cribbleGlass(in: RoundedRectangle(cornerRadius: 8))
+            .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 8))
         }
     }
 

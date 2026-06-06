@@ -107,10 +107,7 @@ struct ChatInputBar: View {
                     .pointingHandOnHover()
                 }
             }
-            .background(Color.black.opacity(0.35))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.12), lineWidth: 1) }
-            .cribbleGlass(in: RoundedRectangle(cornerRadius: 12))
+            .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12), strokeOpacity: 0.10)
             .shadow(color: Color.black.opacity(0.25), radius: 10, y: 5)
             .padding(.horizontal, 2)
         }
@@ -135,13 +132,7 @@ struct ChatInputBar: View {
                     }
                 }
             }
-            .background(Color.black.opacity(0.35))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-            }
-            .cribbleGlass(in: RoundedRectangle(cornerRadius: 12))
+            .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12), strokeOpacity: 0.10)
             .shadow(color: Color.black.opacity(0.25), radius: 10, y: 5)
             .padding(.horizontal, 2)
         }
@@ -183,16 +174,8 @@ struct ChatInputBar: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 22)
-                .fill(Color.black.opacity(0.3))
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-        )
         .cribbleGlass(in: RoundedRectangle(cornerRadius: 22))
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
         .onAppear { inputFocused = true }
     }
 

@@ -190,7 +190,6 @@ struct ChatBubbleView: View, Equatable {
                 .overlay {
                     shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
                 }
-                .cribbleGlass(in: shape)
         }
     }
 

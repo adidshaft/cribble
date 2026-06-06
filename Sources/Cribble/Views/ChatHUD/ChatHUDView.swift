@@ -130,7 +130,6 @@ private struct HeaderIcon: View {
 /// know whether a download is coming.
 struct ChatEmptyState: View {
     @ObservedObject var viewModel: ChatHUDViewModel
-    @State private var glowing = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -139,7 +138,6 @@ struct ChatEmptyState: View {
                     .fill(Color.white.opacity(0.08))
                     .frame(width: 72, height: 72)
                     .blur(radius: 14)
-                    .scaleEffect(glowing ? 1.1 : 0.92)
 
                 // The actual Cribble app icon — always available, no bundle lookup.
                 Image(nsImage: NSApp.applicationIconImage)
@@ -147,11 +145,6 @@ struct ChatEmptyState: View {
                     .interpolation(.high)
                     .frame(width: 56, height: 56)
                     .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
-            }
-            .onAppear {
-                withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
-                    glowing = true
-                }
             }
 
             Text("What can Cribble do for you?")

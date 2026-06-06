@@ -42,7 +42,6 @@ actor JobRunner {
     private let projectName: String
     private let rootURL: URL
     private let maxInputChars: Int
-    private let maxAggregateSummaries = 80
     private let maxAggregateSummaryChars = 24_000
     private let graphDirectory: URL
     /// Optional headless Mermaid validator (best-effort; see MermaidRenderValidator).
@@ -397,7 +396,7 @@ actor JobRunner {
         var summaries: [(path: String, summary: String)] = []
         var remainingChars = maxAggregateSummaryChars
 
-        for artifact in summaryArtifacts.prefix(maxAggregateSummaries) where remainingChars > 0 {
+        for artifact in summaryArtifacts.prefix(IntelligenceAggregateSignatures.maxSummaryInputs) where remainingChars > 0 {
             guard let content = artifacts.content(for: artifact), !content.isEmpty else { continue }
             let clipped = String(content.prefix(remainingChars))
             summaries.append((artifact.title ?? artifact.relativePath, clipped))

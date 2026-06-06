@@ -21,7 +21,45 @@ SPARKLE_PUBLIC_ED_KEY="YfAh7JbGoiQoB9KqD7U9S+Olejk9jDNSUc7Z0I+o820="
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://github.com/adidshaft/cribble/releases/download/stable/appcast.xml}"
 
 cd "$ROOT_DIR"
-pkill -x "$APP_NAME" >/dev/null 2>&1 || true
+
+close_existing_app() {
+  local pids
+
+  # Ask the app to quit cleanly first so development relaunches do not trigger
+  # the "previous session did not close cleanly" diagnostic alert.
+  pids="$(pgrep -x "$APP_NAME" || true)"
+  [[ -z "$pids" ]] && return
+  /usr/bin/osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 &
+  local quit_request_pid=$!
+  for _ in {1..20}; do
+    if ! kill -0 "$quit_request_pid" >/dev/null 2>&1; then
+      wait "$quit_request_pid" >/dev/null 2>&1 || true
+      break
+    fi
+    sleep 0.25
+  done
+  if kill -0 "$quit_request_pid" >/dev/null 2>&1; then
+    kill "$quit_request_pid" >/dev/null 2>&1 || true
+    wait "$quit_request_pid" >/dev/null 2>&1 || true
+  fi
+
+  for _ in {1..40}; do
+    pids="$(pgrep -x "$APP_NAME" || true)"
+    [[ -z "$pids" ]] && return
+    sleep 0.25
+  done
+
+  kill -TERM $pids >/dev/null 2>&1 || true
+  for _ in {1..20}; do
+    pids="$(pgrep -x "$APP_NAME" || true)"
+    [[ -z "$pids" ]] && return
+    sleep 0.25
+  done
+
+  kill -KILL $pids >/dev/null 2>&1 || true
+}
+
+close_existing_app
 VERSION_STR="$(cat "$ROOT_DIR/VERSION" | tr -d '\n')"
 BUILD_NUMBER="${BUILD_NUMBER:-$(/usr/bin/awk -F. '{ printf "%d%02d%02d", $1, $2, $3 }' <<<"$VERSION_STR")}"
 

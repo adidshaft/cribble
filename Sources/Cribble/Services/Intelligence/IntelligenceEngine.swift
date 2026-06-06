@@ -61,6 +61,13 @@ final class IntelligenceEngine: ObservableObject {
     private var needsScan = false
     /// Reentrancy guard so a manual `runNow()` can't overlap a loop tick.
     private var isTicking = false
+    /// In-memory dirty gates for aggregate jobs. These avoid repeated DB enqueue
+    /// checks and git probes when the aggregate's actual inputs have not changed
+    /// since the last scheduling pass in this app session.
+    private var lastAggregateJobSignatures: [IntelligenceJobType: String] = [:]
+    private var lastGitProbeSignature: String?
+    private var cachedGitRepository: Bool?
+    private var cachedGitMarkerSignature: String?
     /// OS memory-pressure monitor. Owns its own DispatchSource in a NON-isolated
     /// type so its event handler can't be inferred `@MainActor` — that inference
     /// made libdispatch trip a Swift executor-isolation assertion and crash the
@@ -126,6 +133,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = []
         knowledgeEdges = []
         researchInsights = []
+        resetDirtyGates()
         pendingJobs = 0
         filesIndexed = 0
         staleCount = 0
@@ -226,6 +234,7 @@ final class IntelligenceEngine: ObservableObject {
         fileMonitor.stop()
         needsScan = false
         isTicking = false
+        resetDirtyGates()
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
         projectID = nil; rootURL = nil; scanRoots = []
     }
@@ -240,6 +249,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = []
         knowledgeEdges = []
         researchInsights = []
+        resetDirtyGates()
         needsScan = true
         await tick(initialScan: true)
     }
@@ -324,26 +334,86 @@ final class IntelligenceEngine: ObservableObject {
 
     // MARK: - Aggregate scheduling
 
+    private func resetDirtyGates() {
+        lastAggregateJobSignatures = [:]
+        lastGitProbeSignature = nil
+        cachedGitRepository = nil
+        cachedGitMarkerSignature = nil
+    }
+
     private func enqueueAggregateJobs() async {
         guard let db, let projectID, let rootURL else { return }
         let files = await db.files(projectID: projectID)
         guard !files.isEmpty else { return }
-        let combined = ContentHasher.combine(files.map(\.hash).sorted())
+        let artifacts = await db.artifacts(projectID: projectID)
+        let symbols = await db.allSymbols(projectID: projectID)
+        let filesSignature = IntelligenceAggregateSignatures.allFiles(files)
+        let markdownSignature = IntelligenceAggregateSignatures.markdownFiles(files)
+        let symbolSignature = IntelligenceAggregateSignatures.symbols(symbols)
+        let summarySignature = IntelligenceAggregateSignatures.summaries(artifacts)
 
         // Deterministic, model-free jobs run first; model aggregations get a
         // higher priority number so file summaries (priority 100) drain first.
-        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildConnectionsGraph, inputHash: combined, priority: 145))
-        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildDependencyDiagram, inputHash: combined, priority: 150))
-        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .detectArchitectureDrift, inputHash: combined, priority: 160))
-        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .updateProjectIndex, inputHash: combined, priority: 200))
-        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildArchitectureDiagram, inputHash: combined, priority: 210))
-        if await summaryCoverage(files: files) >= 0.35 {
-            await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .discoverConnections, inputHash: combined, priority: 220))
+        await enqueueAggregateJobIfDirty(
+            type: .buildConnectionsGraph,
+            inputHash: IntelligenceAggregateSignatures.connectionsGraph(markdownSignature: markdownSignature),
+            priority: 145
+        )
+        await enqueueAggregateJobIfDirty(
+            type: .buildDependencyDiagram,
+            inputHash: IntelligenceAggregateSignatures.dependencyDiagram(symbolSignature: symbolSignature),
+            priority: 150
+        )
+        await enqueueAggregateJobIfDirty(
+            type: .detectArchitectureDrift,
+            inputHash: IntelligenceAggregateSignatures.architectureDrift(symbolSignature: symbolSignature),
+            priority: 160
+        )
+
+        if let summarySignature {
+            await enqueueAggregateJobIfDirty(
+                type: .updateProjectIndex,
+                inputHash: IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignature),
+                priority: 200
+            )
+            await enqueueAggregateJobIfDirty(
+                type: .buildArchitectureDiagram,
+                inputHash: IntelligenceAggregateSignatures.architectureDiagram(
+                    symbolSignature: symbolSignature,
+                    summarySignature: summarySignature
+                ),
+                priority: 210
+            )
+            if await summaryCoverage(files: files) >= 0.35 {
+                await enqueueAggregateJobIfDirty(
+                    type: .discoverConnections,
+                    inputHash: IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature),
+                    priority: 220
+                )
+            }
         }
 
         // Git intelligence (graceful no-op if not a repo / git unavailable).
+        let gitMarkerSignature = Self.gitMarkerSignature(rootURL: rootURL)
+        let gitProbeSignature = IntelligenceAggregateSignatures.gitProbe(
+            filesSignature: filesSignature,
+            gitMarkerSignature: gitMarkerSignature
+        )
+        guard lastGitProbeSignature != gitProbeSignature else { return }
+        lastGitProbeSignature = gitProbeSignature
+        if cachedGitMarkerSignature != gitMarkerSignature {
+            cachedGitMarkerSignature = gitMarkerSignature
+            cachedGitRepository = nil
+        }
         let git = GitInspector(rootURL: rootURL)
-        if await git.isRepository() {
+        let isRepository: Bool
+        if let cachedGitRepository {
+            isRepository = cachedGitRepository
+        } else {
+            isRepository = await git.isRepository()
+            cachedGitRepository = isRepository
+        }
+        if isRepository {
             if let diff = await git.workingTreeDiff(), !diff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .summarizeDiff, inputHash: ContentHasher.hash(diff), priority: 120))
             }
@@ -354,6 +424,73 @@ final class IntelligenceEngine: ObservableObject {
                 }
             }
         }
+    }
+
+    private func enqueueAggregateJobIfDirty(type: IntelligenceJobType, inputHash: String, priority: Int) async {
+        guard lastAggregateJobSignatures[type] != inputHash else { return }
+        lastAggregateJobSignatures[type] = inputHash
+        guard let db, let projectID else { return }
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: type, inputHash: inputHash, priority: priority))
+    }
+
+    private static func gitMarkerSignature(rootURL: URL) -> String {
+        guard let gitDirectory = gitDirectoryURL(containing: rootURL) else {
+            return ContentHasher.hash("git:none")
+        }
+
+        var entries: [String] = ["git-dir:\(gitDirectory.path)"]
+        let headURL = gitDirectory.appendingPathComponent("HEAD")
+        if let head = try? String(contentsOf: headURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) {
+            entries.append("HEAD:\(head)")
+            if head.hasPrefix("ref: ") {
+                let refPath = String(head.dropFirst(5))
+                let refURL = gitDirectory.appendingPathComponent(refPath)
+                entries.append("ref:\(fileContentOrStamp(refURL))")
+            }
+        }
+        entries.append("packed:\(fileStamp(gitDirectory.appendingPathComponent("packed-refs")))")
+        entries.append("index:\(fileStamp(gitDirectory.appendingPathComponent("index")))")
+        return ContentHasher.combine(entries.map(ContentHasher.hash))
+    }
+
+    private static func gitDirectoryURL(containing rootURL: URL) -> URL? {
+        let manager = FileManager.default
+        var current = rootURL.standardizedFileURL
+        while true {
+            let marker = current.appendingPathComponent(".git")
+            var isDirectory: ObjCBool = false
+            if manager.fileExists(atPath: marker.path, isDirectory: &isDirectory) {
+                if isDirectory.boolValue { return marker }
+                if let content = try? String(contentsOf: marker, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+                   content.hasPrefix("gitdir: ") {
+                    let rawPath = String(content.dropFirst(8))
+                    if rawPath.hasPrefix("/") {
+                        return URL(fileURLWithPath: rawPath)
+                    }
+                    return current.appendingPathComponent(rawPath).standardizedFileURL
+                }
+            }
+
+            let parent = current.deletingLastPathComponent()
+            if parent.path == current.path { return nil }
+            current = parent
+        }
+    }
+
+    private static func fileContentOrStamp(_ url: URL) -> String {
+        if let content = try? String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) {
+            return content
+        }
+        return fileStamp(url)
+    }
+
+    private static func fileStamp(_ url: URL) -> String {
+        guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else {
+            return "missing"
+        }
+        let modified = values.contentModificationDate?.timeIntervalSince1970 ?? 0
+        let size = values.fileSize ?? 0
+        return "\(modified):\(size)"
     }
 
     private func summaryCoverage(files: [IntelligenceFile]) async -> Double {

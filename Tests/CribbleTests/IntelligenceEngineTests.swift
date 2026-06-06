@@ -278,6 +278,92 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 5, thermal: .nominal, battery: false, active: true), idleThreshold: threshold), .tier1)
     }
 
+    // MARK: - Aggregate dirty signatures
+
+    func testAggregateSignaturesTrackActualModelInputs() {
+        let files = [
+            IntelligenceFile(id: 1, projectID: "p", path: "A.swift", hash: "file-a", sizeBytes: 10, language: "swift"),
+            IntelligenceFile(id: 2, projectID: "p", path: "Notes.md", hash: "note-a", sizeBytes: 20, language: SourceLanguage.markdown.rawValue)
+        ]
+        let swiftChanged = [
+            IntelligenceFile(id: 1, projectID: "p", path: "A.swift", hash: "file-b", sizeBytes: 11, language: "swift"),
+            files[1]
+        ]
+        let summaries = [
+            IntelligenceArtifact(
+                id: "summary-a", projectID: "p", type: .fileSummary,
+                relativePath: "summaries/a.md", title: "A.swift",
+                contentHash: "summary-a", sourceHashes: ["file-a"], isPublished: false
+            )
+        ]
+        let symbols = [
+            SymbolRecord(fileID: 1, filePath: "A.swift", name: "A", kind: "type", startLine: 1, endLine: 1, signature: "struct A")
+        ]
+
+        let summarySignature = try! XCTUnwrap(IntelligenceAggregateSignatures.summaries(summaries))
+        let symbolSignature = IntelligenceAggregateSignatures.symbols(symbols)
+        let changedFileSignature = IntelligenceAggregateSignatures.allFiles(swiftChanged)
+
+        XCTAssertNotEqual(IntelligenceAggregateSignatures.allFiles(files), changedFileSignature)
+        XCTAssertEqual(
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignature),
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignature)
+        )
+        XCTAssertEqual(
+            IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature),
+            IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature)
+        )
+        XCTAssertEqual(
+            IntelligenceAggregateSignatures.architectureDiagram(symbolSignature: symbolSignature, summarySignature: summarySignature),
+            IntelligenceAggregateSignatures.architectureDiagram(symbolSignature: symbolSignature, summarySignature: summarySignature)
+        )
+        XCTAssertEqual(
+            IntelligenceAggregateSignatures.connectionsGraph(markdownSignature: IntelligenceAggregateSignatures.markdownFiles(files)),
+            IntelligenceAggregateSignatures.connectionsGraph(markdownSignature: IntelligenceAggregateSignatures.markdownFiles(swiftChanged))
+        )
+    }
+
+    func testAggregateSignaturesMoveWhenSummariesOrSymbolsMove() {
+        let summaryA = IntelligenceArtifact(
+            id: "summary-a", projectID: "p", type: .fileSummary,
+            relativePath: "summaries/a.md", title: "A.swift",
+            contentHash: "summary-a", sourceHashes: ["file-a"], isPublished: false
+        )
+        let summaryB = IntelligenceArtifact(
+            id: "summary-a", projectID: "p", type: .fileSummary,
+            relativePath: "summaries/a.md", title: "A.swift",
+            contentHash: "summary-b", sourceHashes: ["file-b"], isPublished: false
+        )
+        let symbolsA = [
+            SymbolRecord(fileID: 1, filePath: "A.swift", name: "A", kind: "type", startLine: 1, endLine: 1, signature: "struct A")
+        ]
+        let symbolsB = [
+            SymbolRecord(fileID: 1, filePath: "A.swift", name: "A", kind: "type", startLine: 1, endLine: 1, signature: "struct A { let b: B }")
+        ]
+
+        let summarySignatureA = try! XCTUnwrap(IntelligenceAggregateSignatures.summaries([summaryA]))
+        let summarySignatureB = try! XCTUnwrap(IntelligenceAggregateSignatures.summaries([summaryB]))
+        let symbolSignatureA = IntelligenceAggregateSignatures.symbols(symbolsA)
+        let symbolSignatureB = IntelligenceAggregateSignatures.symbols(symbolsB)
+
+        XCTAssertNotEqual(
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignatureA),
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignatureB)
+        )
+        XCTAssertNotEqual(
+            IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignatureA),
+            IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignatureB)
+        )
+        XCTAssertNotEqual(
+            IntelligenceAggregateSignatures.architectureDiagram(symbolSignature: symbolSignatureA, summarySignature: summarySignatureA),
+            IntelligenceAggregateSignatures.architectureDiagram(symbolSignature: symbolSignatureB, summarySignature: summarySignatureA)
+        )
+        XCTAssertEqual(
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignatureA),
+            IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignatureA)
+        )
+    }
+
     // MARK: - WorkspaceScanner
 
     func testScannerDetectsAddChangeRemove() async throws {

@@ -145,6 +145,50 @@ actor IntelligenceDatabase {
             vector       BLOB NOT NULL
         );
         CREATE INDEX idx_embeddings_project ON embeddings(project_id);
+        """),
+        (3, """
+        CREATE TABLE knowledge_nodes (
+            id          TEXT PRIMARY KEY,
+            project_id  TEXT NOT NULL,
+            kind        TEXT NOT NULL,
+            title       TEXT NOT NULL,
+            path        TEXT,
+            artifact_id TEXT REFERENCES artifacts(id) ON DELETE SET NULL,
+            updated_at  REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_nodes_project ON knowledge_nodes(project_id);
+        CREATE INDEX idx_knowledge_nodes_path ON knowledge_nodes(project_id, path);
+
+        CREATE TABLE knowledge_edges (
+            id                   TEXT PRIMARY KEY,
+            project_id           TEXT NOT NULL,
+            from_node_id         TEXT NOT NULL,
+            to_node_id           TEXT NOT NULL,
+            kind                 TEXT NOT NULL,
+            origin               TEXT NOT NULL,
+            status               TEXT NOT NULL,
+            confidence           REAL,
+            evidence_artifact_id TEXT REFERENCES artifacts(id) ON DELETE SET NULL,
+            source_hashes        TEXT NOT NULL,
+            updated_at           REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_edges_project ON knowledge_edges(project_id);
+        CREATE INDEX idx_knowledge_edges_status ON knowledge_edges(project_id, status);
+        CREATE INDEX idx_knowledge_edges_nodes ON knowledge_edges(project_id, from_node_id, to_node_id);
+
+        CREATE TABLE research_insights (
+            id            TEXT PRIMARY KEY,
+            project_id    TEXT NOT NULL,
+            title         TEXT NOT NULL,
+            body          TEXT NOT NULL,
+            kind          TEXT NOT NULL,
+            status        TEXT NOT NULL,
+            artifact_id   TEXT REFERENCES artifacts(id) ON DELETE SET NULL,
+            source_hashes TEXT NOT NULL,
+            created_at    REAL NOT NULL,
+            updated_at    REAL NOT NULL
+        );
+        CREATE INDEX idx_research_insights_project ON research_insights(project_id, status, kind);
         """)
     ]
 
@@ -567,6 +611,9 @@ actor IntelligenceDatabase {
         run("DELETE FROM artifacts WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM jobs WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM git_commits WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM knowledge_edges WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM knowledge_nodes WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM research_insights WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
     }
 
     func markArtifactPublished(id: String) {
@@ -684,6 +731,175 @@ actor IntelligenceDatabase {
             bindText(stmt, 1, projectID)
         } each: { stmt in count = Int(sqlite3_column_int64(stmt, 0)) }
         return count
+    }
+
+    // MARK: - Knowledge graph
+
+    func upsertKnowledgeNode(_ node: KnowledgeNode) {
+        run("""
+        INSERT INTO knowledge_nodes (id, project_id, kind, title, path, artifact_id, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            kind = excluded.kind,
+            title = excluded.title,
+            path = excluded.path,
+            artifact_id = excluded.artifact_id,
+            updated_at = excluded.updated_at;
+        """) { stmt in
+            bindText(stmt, 1, node.id)
+            bindText(stmt, 2, node.projectID)
+            bindText(stmt, 3, node.kind.rawValue)
+            bindText(stmt, 4, node.title)
+            bindTextOrNull(stmt, 5, node.path)
+            bindTextOrNull(stmt, 6, node.artifactID)
+            sqlite3_bind_double(stmt, 7, Date().timeIntervalSince1970)
+        }
+    }
+
+    func upsertKnowledgeEdge(_ edge: KnowledgeEdge) {
+        let hashesJSON = (try? String(data: JSONEncoder().encode(edge.sourceHashes), encoding: .utf8)) ?? "[]"
+        run("""
+        INSERT INTO knowledge_edges (id, project_id, from_node_id, to_node_id, kind, origin, status, confidence, evidence_artifact_id, source_hashes, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            kind = excluded.kind,
+            origin = excluded.origin,
+            status = excluded.status,
+            confidence = excluded.confidence,
+            evidence_artifact_id = excluded.evidence_artifact_id,
+            source_hashes = excluded.source_hashes,
+            updated_at = excluded.updated_at;
+        """) { stmt in
+            bindText(stmt, 1, edge.id)
+            bindText(stmt, 2, edge.projectID)
+            bindText(stmt, 3, edge.fromNodeID)
+            bindText(stmt, 4, edge.toNodeID)
+            bindText(stmt, 5, edge.kind.rawValue)
+            bindText(stmt, 6, edge.origin.rawValue)
+            bindText(stmt, 7, edge.status.rawValue)
+            if let confidence = edge.confidence { sqlite3_bind_double(stmt, 8, confidence) } else { sqlite3_bind_null(stmt, 8) }
+            bindTextOrNull(stmt, 9, edge.evidenceArtifactID)
+            bindText(stmt, 10, hashesJSON)
+            sqlite3_bind_double(stmt, 11, Date().timeIntervalSince1970)
+        }
+    }
+
+    func knowledgeNodes(projectID: String) -> [KnowledgeNode] {
+        var rows: [KnowledgeNode] = []
+        query("""
+        SELECT id, project_id, kind, title, path, artifact_id
+        FROM knowledge_nodes WHERE project_id = ? ORDER BY kind, title;
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            rows.append(KnowledgeNode(
+                id: Self.columnText(stmt, 0) ?? "",
+                projectID: Self.columnText(stmt, 1) ?? "",
+                kind: KnowledgeNode.Kind(rawValue: Self.columnText(stmt, 2) ?? "") ?? .file,
+                title: Self.columnText(stmt, 3) ?? "",
+                path: Self.columnText(stmt, 4),
+                artifactID: Self.columnText(stmt, 5)
+            ))
+        }
+        return rows
+    }
+
+    func knowledgeEdges(projectID: String, includingDismissed: Bool = false) -> [KnowledgeEdge] {
+        var rows: [KnowledgeEdge] = []
+        let sql = """
+        SELECT id, project_id, from_node_id, to_node_id, kind, origin, status, confidence, evidence_artifact_id, source_hashes
+        FROM knowledge_edges WHERE project_id = ? \(includingDismissed ? "" : "AND status != 'dismissed'") ORDER BY kind, from_node_id, to_node_id;
+        """
+        query(sql) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            let hashesJSON = Self.columnText(stmt, 9) ?? "[]"
+            let hashes = (try? JSONDecoder().decode([String].self, from: Data(hashesJSON.utf8))) ?? []
+            rows.append(KnowledgeEdge(
+                id: Self.columnText(stmt, 0) ?? "",
+                projectID: Self.columnText(stmt, 1) ?? "",
+                fromNodeID: Self.columnText(stmt, 2) ?? "",
+                toNodeID: Self.columnText(stmt, 3) ?? "",
+                kind: KnowledgeEdge.Kind(rawValue: Self.columnText(stmt, 4) ?? "") ?? .semanticSimilarity,
+                origin: KnowledgeEdge.Origin(rawValue: Self.columnText(stmt, 5) ?? "") ?? .deterministic,
+                status: KnowledgeEdge.Status(rawValue: Self.columnText(stmt, 6) ?? "") ?? .accepted,
+                confidence: sqlite3_column_type(stmt, 7) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 7),
+                evidenceArtifactID: Self.columnText(stmt, 8),
+                sourceHashes: hashes
+            ))
+        }
+        return rows
+    }
+
+    func setKnowledgeEdgeStatus(id: String, status: KnowledgeEdge.Status) {
+        run("UPDATE knowledge_edges SET status = ?, updated_at = ? WHERE id = ?;") { stmt in
+            bindText(stmt, 1, status.rawValue)
+            sqlite3_bind_double(stmt, 2, Date().timeIntervalSince1970)
+            bindText(stmt, 3, id)
+        }
+    }
+
+    // MARK: - Research insights
+
+    func upsertResearchInsight(_ insight: ResearchInsight) {
+        let hashesJSON = (try? String(data: JSONEncoder().encode(insight.sourceHashes), encoding: .utf8)) ?? "[]"
+        run("""
+        INSERT INTO research_insights (id, project_id, title, body, kind, status, artifact_id, source_hashes, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            title = excluded.title,
+            body = excluded.body,
+            kind = excluded.kind,
+            status = excluded.status,
+            artifact_id = excluded.artifact_id,
+            source_hashes = excluded.source_hashes,
+            updated_at = excluded.updated_at;
+        """) { stmt in
+            bindText(stmt, 1, insight.id)
+            bindText(stmt, 2, insight.projectID)
+            bindText(stmt, 3, insight.title)
+            bindText(stmt, 4, insight.body)
+            bindText(stmt, 5, insight.kind.rawValue)
+            bindText(stmt, 6, insight.status.rawValue)
+            bindTextOrNull(stmt, 7, insight.artifactID)
+            bindText(stmt, 8, hashesJSON)
+            sqlite3_bind_double(stmt, 9, insight.createdAt.timeIntervalSince1970)
+            sqlite3_bind_double(stmt, 10, Date().timeIntervalSince1970)
+        }
+    }
+
+    func researchInsights(projectID: String, includingDismissed: Bool = false) -> [ResearchInsight] {
+        var rows: [ResearchInsight] = []
+        let sql = """
+        SELECT id, project_id, title, body, kind, status, artifact_id, source_hashes, created_at
+        FROM research_insights WHERE project_id = ? \(includingDismissed ? "" : "AND status != 'dismissed'") ORDER BY created_at DESC;
+        """
+        query(sql) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            let hashesJSON = Self.columnText(stmt, 7) ?? "[]"
+            let hashes = (try? JSONDecoder().decode([String].self, from: Data(hashesJSON.utf8))) ?? []
+            rows.append(ResearchInsight(
+                id: Self.columnText(stmt, 0) ?? "",
+                projectID: Self.columnText(stmt, 1) ?? "",
+                title: Self.columnText(stmt, 2) ?? "",
+                body: Self.columnText(stmt, 3) ?? "",
+                kind: ResearchInsight.Kind(rawValue: Self.columnText(stmt, 4) ?? "") ?? .digest,
+                status: ResearchInsight.Status(rawValue: Self.columnText(stmt, 5) ?? "") ?? .new,
+                artifactID: Self.columnText(stmt, 6),
+                sourceHashes: hashes,
+                createdAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 8))
+            ))
+        }
+        return rows
+    }
+
+    func setResearchInsightStatus(id: String, status: ResearchInsight.Status) {
+        run("UPDATE research_insights SET status = ?, updated_at = ? WHERE id = ?;") { stmt in
+            bindText(stmt, 1, status.rawValue)
+            sqlite3_bind_double(stmt, 2, Date().timeIntervalSince1970)
+            bindText(stmt, 3, id)
+        }
     }
 
     // MARK: - Provenance

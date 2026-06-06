@@ -105,6 +105,7 @@ actor JobRunner {
 
     private func execute(_ job: IntelligenceJob) async throws -> String? {
         switch job.type {
+        case .analyzeFile:             return try await analyzeFile(job)
         case .summarizeFile:            return try await summarizeFile(job)
         case .extractFallbackLogic:     return try await fallbackAudit(job)
         case .extractIOBehavior:        return try await ioBehavior(job)
@@ -115,6 +116,7 @@ actor JobRunner {
         case .buildConnectionsGraph:    return try await buildConnectionsGraph(job)
         case .buildArchitectureDiagram: return try await buildArchitectureDiagram(job)
         case .detectArchitectureDrift:  return try await detectArchitectureDrift(job)
+        case .discoverConnections:      return try await discoverConnections(job)
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports:
             // These are driven directly by WorkspaceScanner, not the queue.
             throw JobRunnerError.unsupportedJobType(job.type)
@@ -123,12 +125,34 @@ actor JobRunner {
 
     // MARK: - Model executors
 
+    private func analyzeFile(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        guard let path = job.inputPaths.first, let source = readSource(path) else { throw JobRunnerError.missingInput }
+        let language = await db.file(projectID: projectID, path: path)?.language
+        let output = try await provider.generate(
+            prompt: Prompts.fileAnalysisBundle(path: path, language: language, source: source),
+            maxTokens: 1200
+        )
+        let bundle = parseFileAnalysisBundle(output)
+        let summary = try await validatedMarkdown(bundle.summary)
+        let fallback = try await validatedMarkdown(bundle.fallbacks)
+        let io = try await validatedMarkdown(bundle.ioBehavior)
+
+        let summaryID = try await storeSummary(summary, type: .fileSummary, path: path, inputHash: job.inputHash)
+        _ = try await storeSummary(fallback, type: .fallbackAudit, path: path, inputHash: job.inputHash, pathPrefix: "audits")
+        _ = try await storeSummary(io, type: .ioBehavior, path: path, inputHash: job.inputHash, pathPrefix: "behavior")
+        await upsertFileNode(path: path, inputHash: job.inputHash)
+        return summaryID
+    }
+
     private func summarizeFile(_ job: IntelligenceJob) async throws -> String? {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         guard let path = job.inputPaths.first, let source = readSource(path) else { throw JobRunnerError.missingInput }
         let output = try await provider.generate(prompt: Prompts.fileSummary(path: path, source: source), maxTokens: 512)
         let summary = try await validatedMarkdown(output)
-        return try await storeSummary(summary, type: .fileSummary, path: path, inputHash: job.inputHash)
+        let artifactID = try await storeSummary(summary, type: .fileSummary, path: path, inputHash: job.inputHash)
+        await upsertFileNode(path: path, inputHash: job.inputHash)
+        return artifactID
     }
 
     private func fallbackAudit(_ job: IntelligenceJob) async throws -> String? {
@@ -223,11 +247,49 @@ actor JobRunner {
         return artifact.id
     }
 
+    private func discoverConnections(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
+        let summaries: [(path: String, summary: String)] = summaryArtifacts.compactMap { artifact in
+            guard let content = artifacts.content(for: artifact) else { return nil }
+            return (artifact.title ?? artifact.relativePath, content)
+        }
+        guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
+
+        let output = try await provider.generate(
+            prompt: Prompts.connectionResearch(summaries: summaries),
+            maxTokens: 1200
+        )
+        let body = try await validatedMarkdown(output)
+        let artifact = try await artifacts.store(
+            type: .researchInsight,
+            relativePath: "research/suggested-connections.md",
+            title: "Suggested Connections",
+            content: body,
+            sourceHashes: [job.inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        await db.upsertResearchInsight(ResearchInsight(
+            id: ContentHasher.hash("\(projectID)\u{1}suggested-connections\u{1}\(job.inputHash)"),
+            projectID: projectID,
+            title: "Suggested Connections",
+            body: body,
+            kind: .suggestedConnection,
+            status: .new,
+            artifactID: artifact.id,
+            sourceHashes: [job.inputHash],
+            createdAt: Date()
+        ))
+        await persistSuggestedConnectionEdges(markdown: body, evidenceArtifactID: artifact.id, sourceHashes: [job.inputHash])
+        return artifact.id
+    }
+
     // MARK: - Deterministic executors (no model)
 
     private func buildDependencyDiagram(_ job: IntelligenceJob) async throws -> String? {
         let graph = DependencyGraph.build(from: await db.allSymbols(projectID: projectID))
         try persistBaselineEdges(graph.edges)
+        await persistKnowledgeGraph(graph: graph, kind: .dependency, origin: .deterministic, status: .accepted, sourceHashes: [job.inputHash])
         let content: String
         if graph.nodes.isEmpty {
             // No parsed symbols (e.g. a non-Swift project — Phase 1 only parses
@@ -256,6 +318,7 @@ actor JobRunner {
             .filter { $0.language == SourceLanguage.markdown.rawValue }
             .map { (path: $0.path, url: resolve($0.path)) }
         let graph = NoteConnectionsGraph.build(markdownFiles: mdFiles)
+        await persistKnowledgeGraph(graph: graph, kind: .wikiLink, origin: .deterministic, status: .accepted, sourceHashes: [job.inputHash])
         let content: String
         if graph.edges.isEmpty {
             content = "# Connections\n\nNo `[[wiki links]]` between notes found yet. Add links like `[[Another Note]]` to see them connected here."
@@ -342,6 +405,122 @@ actor JobRunner {
         )
         await persistEmbedding(artifactID: artifact.id, text: "\(path)\n\(content)")
         return artifact.id
+    }
+
+    private struct FileAnalysisBundle {
+        var summary: String
+        var fallbacks: String
+        var ioBehavior: String
+    }
+
+    /// Small local parser for the structured Markdown bundle. It accepts ideal
+    /// sectioned output, but degrades old/plain provider responses into a summary
+    /// so retries are not wasted on formatting alone.
+    private func parseFileAnalysisBundle(_ output: String) -> FileAnalysisBundle {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sections = markdownSections(trimmed)
+        let summary = sections["summary"] ?? trimmed
+        let fallbacks = sections["fallbacks"] ?? sections["fallback"] ?? "No explicit fallbacks found."
+        let io = sections["i/o behavior"] ?? sections["io behavior"] ?? sections["i/o"] ?? sections["io"] ?? "No external I/O found."
+        return FileAnalysisBundle(
+            summary: summary.trimmingCharacters(in: .whitespacesAndNewlines),
+            fallbacks: fallbacks.trimmingCharacters(in: .whitespacesAndNewlines),
+            ioBehavior: io.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+
+    private func markdownSections(_ markdown: String) -> [String: String] {
+        var result: [String: [String]] = [:]
+        var current: String?
+        for line in markdown.components(separatedBy: .newlines) {
+            if line.hasPrefix("## ") {
+                let heading = String(line.dropFirst(3))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+                current = heading
+                result[heading, default: []] = []
+            } else if let current {
+                result[current, default: []].append(line)
+            }
+        }
+        return result.mapValues { $0.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines) }
+    }
+
+    private func upsertFileNode(path: String, inputHash: String) async {
+        await db.upsertKnowledgeNode(KnowledgeNode(
+            id: nodeID(path),
+            projectID: projectID,
+            kind: .file,
+            title: (path as NSString).lastPathComponent,
+            path: path,
+            artifactID: nil
+        ))
+    }
+
+    private func persistKnowledgeGraph(
+        graph: DependencyGraph,
+        kind: KnowledgeEdge.Kind,
+        origin: KnowledgeEdge.Origin,
+        status: KnowledgeEdge.Status,
+        sourceHashes: [String]
+    ) async {
+        for (id, label) in graph.nodes {
+            await db.upsertKnowledgeNode(KnowledgeNode(
+                id: nodeID(id),
+                projectID: projectID,
+                kind: id.hasPrefix("module:") ? .module : .file,
+                title: label,
+                path: id.hasPrefix("module:") ? nil : id,
+                artifactID: nil
+            ))
+        }
+        for edge in graph.edges {
+            let from = nodeID(edge.from)
+            let to = nodeID(edge.to)
+            let edgeID = ContentHasher.hash("\(projectID)\u{1}\(kind.rawValue)\u{1}\(from)\u{1}\(to)\u{1}\(edge.label)")
+            await db.upsertKnowledgeEdge(KnowledgeEdge(
+                id: edgeID,
+                projectID: projectID,
+                fromNodeID: from,
+                toNodeID: to,
+                kind: kind,
+                origin: origin,
+                status: status,
+                confidence: origin == .deterministic ? 1 : nil,
+                evidenceArtifactID: nil,
+                sourceHashes: sourceHashes
+            ))
+        }
+    }
+
+    private func nodeID(_ raw: String) -> String {
+        ContentHasher.hash("\(projectID)\u{1}\(raw)")
+    }
+
+    private func persistSuggestedConnectionEdges(markdown: String, evidenceArtifactID: String, sourceHashes: [String]) async {
+        let knownPaths = Set(await db.files(projectID: projectID).map(\.path))
+        guard let regex = try? NSRegularExpression(pattern: #"`([^`]+)`\s*=>\s*`([^`]+)`"#) else { return }
+        let ns = markdown as NSString
+        for match in regex.matches(in: markdown, range: NSRange(location: 0, length: ns.length)) {
+            let from = ns.substring(with: match.range(at: 1))
+            let to = ns.substring(with: match.range(at: 2))
+            guard knownPaths.contains(from), knownPaths.contains(to), from != to else { continue }
+            await upsertFileNode(path: from, inputHash: sourceHashes.first ?? "")
+            await upsertFileNode(path: to, inputHash: sourceHashes.first ?? "")
+            let edgeID = ContentHasher.hash("\(projectID)\u{1}suggested\u{1}\(from)\u{1}\(to)")
+            await db.upsertKnowledgeEdge(KnowledgeEdge(
+                id: edgeID,
+                projectID: projectID,
+                fromNodeID: nodeID(from),
+                toNodeID: nodeID(to),
+                kind: .semanticSimilarity,
+                origin: .llmSuggested,
+                status: .suggested,
+                confidence: 0.7,
+                evidenceArtifactID: evidenceArtifactID,
+                sourceHashes: sourceHashes
+            ))
+        }
     }
 
     /// Best-effort embedding for semantic retrieval. Silent no-op if the provider

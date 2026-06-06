@@ -53,6 +53,7 @@ let package = Package(
             resources: [
                 .process("Resources/AppIconLight.png"),
                 .process("Resources/AppIconDark.png"),
+                .copy("Resources/Graph"),
                 .copy("Resources/Mermaid"),
                 .copy("Resources/DemoNotes")
             ]

@@ -22,6 +22,30 @@ enum Prompts {
         ]
     }
 
+    static func fileAnalysisBundle(path: String, language: String?, source: String) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You are analyzing one project file for Cribble Intelligence. \(antiHallucination) \
+            Produce exactly three Markdown sections, in this order:
+
+            ## Summary
+            Purpose, key types/functions, and notable behavior in a concise paragraph or bullets.
+
+            ## Fallbacks
+            Each fallback, default value, catch/recover, retry, or silent-failure path with the \
+            relevant symbol. If none are visible, write "No explicit fallbacks found."
+
+            ## I/O Behavior
+            External inputs/outputs: network/API calls, file/disk reads or writes, environment or \
+            config reads, user input, and side effects, each with the relevant symbol. If none are \
+            visible, write "No external I/O found."
+
+            Output only Markdown. Do not wrap the answer in a code fence.
+            """),
+            EngineMessage(role: .user, content: "File: \(path)\nLanguage: \(language ?? "unknown")\n\n```\n\(source)\n```")
+        ]
+    }
+
     static func projectIndex(projectName: String, summaries: [(path: String, summary: String)]) -> [EngineMessage] {
         let body = summaries
             .map { "### \($0.path)\n\($0.summary)" }
@@ -97,6 +121,26 @@ enum Prompts {
             provided graph and summaries only. Output only Markdown (do not repeat the diagram).
             """),
             EngineMessage(role: .user, content: "Dependency graph:\n```mermaid\n\(graphMermaid)\n```\n\nFile summaries:\n\(context)")
+        ]
+    }
+
+    static func connectionResearch(summaries: [(path: String, summary: String)]) -> [EngineMessage] {
+        let context = summaries.prefix(80)
+            .map { "### \($0.path)\n\($0.summary.prefix(700))" }
+            .joined(separator: "\n\n")
+        return [
+            EngineMessage(role: .system, content: """
+            You are Cribble's local autoresearch assistant. \(antiHallucination) Find useful \
+            conceptual connections between the listed files. Prefer connections that would help \
+            a reader understand the project or decide where a `[[wiki link]]` might belong.
+
+            Output Markdown only:
+            # Suggested Connections
+            - `from/path.ext` => `to/path.ext`: one sentence reason grounded in the summaries.
+
+            Include at most 12 suggestions. Use only file paths present below.
+            """),
+            EngineMessage(role: .user, content: context)
         ]
     }
 

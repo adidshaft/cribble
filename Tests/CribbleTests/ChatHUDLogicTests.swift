@@ -85,14 +85,17 @@ final class ChatHUDLogicTests: XCTestCase {
     // MARK: - Context assembly
 
     func testSystemPromptInlinesAttachedFiles() {
-        let prompt = ContextAssembler.systemPrompt(
+        let packet = ContextAssembler.contextPacket(
             modelName: "Gemma 4",
             currentNote: nil,
             files: [ResolvedFile(filename: "A.md", content: "alpha")]
         )
+        let prompt = packet.systemPrompt
         XCTAssertTrue(prompt.contains("--- BEGIN FILE: A.md ---"))
         XCTAssertTrue(prompt.contains("alpha"))
         XCTAssertTrue(prompt.contains("--- END FILE: A.md ---"))
+        XCTAssertTrue(prompt.contains("CONTEXT RECEIPT"))
+        XCTAssertEqual(packet.receipt.items.first?.status, .included)
         XCTAssertTrue(prompt.contains("Unified Diff"))
         XCTAssertTrue(prompt.contains("CREATE:"))
     }
@@ -167,26 +170,31 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(messages.last?.role, .user)
     }
 
-    func testTotalContextBudgetOmitsExcessFiles() {
+    func testTotalContextBudgetBlocksExcessExplicitFiles() {
         // 12 files × ~10k each = ~120k, well past the 60k aggregate budget.
         let chunk = String(repeating: "x", count: 10_000)
         let files = (0..<12).map { ResolvedFile(filename: "F\($0).md", content: chunk) }
-        let prompt = ContextAssembler.systemPrompt(modelName: "M", currentNote: nil, files: files)
+        let packet = ContextAssembler.contextPacket(modelName: "M", currentNote: nil, files: files)
+        let prompt = packet.systemPrompt
 
-        XCTAssertTrue(prompt.contains("were omitted to keep within the context limit"))
+        XCTAssertTrue(prompt.contains("blocked_needs_summary"))
+        XCTAssertTrue(packet.receipt.hasBlockedExplicitAttachments)
         // The inlined content must respect the aggregate budget (plus a little
-        // scaffolding for the intro, headers, and rules).
+        // scaffolding for the intro, headers, receipts, warnings, and rules).
         XCTAssertLessThan(prompt.count, ContextAssembler.totalContextCharacterBudget + 6_000)
         // The first files survive; later ones are dropped.
         XCTAssertTrue(prompt.contains("BEGIN FILE: F0.md"))
         XCTAssertFalse(prompt.contains("BEGIN FILE: F11.md"))
+        XCTAssertTrue(prompt.contains("F11.md: blocked_needs_summary"))
     }
 
     func testTotalContextBudgetKeepsSmallContexts() {
         // A handful of small files all fit — no omission notice.
         let files = (0..<3).map { ResolvedFile(filename: "F\($0).md", content: "small") }
-        let prompt = ContextAssembler.systemPrompt(modelName: "M", currentNote: nil, files: files)
-        XCTAssertFalse(prompt.contains("were omitted"))
+        let packet = ContextAssembler.contextPacket(modelName: "M", currentNote: nil, files: files)
+        let prompt = packet.systemPrompt
+        XCTAssertFalse(prompt.contains("blocked_needs_summary"))
+        XCTAssertFalse(packet.receipt.hasBlockedExplicitAttachments)
         XCTAssertTrue(prompt.contains("BEGIN FILE: F2.md"))
     }
 
@@ -202,17 +210,60 @@ final class ChatHUDLogicTests: XCTestCase {
         )
         XCTAssertTrue(prompt.contains("BEGIN CURRENT NOTE: Open.md"))
         XCTAssertFalse(prompt.contains("BEGIN RELATED: Loose.md"))
-        XCTAssertTrue(prompt.contains("were omitted"))
+        XCTAssertTrue(prompt.contains("blocked_needs_summary"))
+        XCTAssertTrue(prompt.contains("context_budget_exceeded"))
     }
 
-    func testPerFileTruncation() {
+    func testOversizedExplicitAttachmentIsBlockedNeedsSummary() {
         let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
-        let prompt = ContextAssembler.systemPrompt(
+        let packet = ContextAssembler.contextPacket(
             modelName: "M",
             currentNote: nil,
             files: [ResolvedFile(filename: "Big.md", content: big)]
         )
-        XCTAssertTrue(prompt.contains("[truncated]"))
+        XCTAssertFalse(packet.systemPrompt.contains("BEGIN FILE: Big.md"))
+        XCTAssertTrue(packet.systemPrompt.contains("Big.md: blocked_needs_summary"))
+        XCTAssertEqual(packet.receipt.items.first?.status, .blockedNeedsSummary)
+        XCTAssertEqual(packet.receipt.items.first?.originalCharacters, big.count)
+        XCTAssertEqual(packet.receipt.items.first?.includedCharacters, 0)
+    }
+
+    func testOversizedExplicitAttachmentUsesDigestWhenAvailable() {
+        let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
+        let digest = "Whole-file digest with beginning, middle, and end."
+        let packet = ContextAssembler.contextPacket(
+            modelName: "M",
+            currentNote: nil,
+            attachments: [ContextAttachment(filename: "Big.md", content: big, digest: digest)]
+        )
+
+        XCTAssertTrue(packet.systemPrompt.contains("BEGIN FILE SUMMARY: Big.md"))
+        XCTAssertTrue(packet.systemPrompt.contains(digest))
+        XCTAssertFalse(packet.systemPrompt.contains("Big.md: blocked_needs_summary"))
+        XCTAssertEqual(packet.receipt.items.first?.status, .summarized)
+        XCTAssertEqual(packet.receipt.items.first?.includedCharacters, digest.count)
+    }
+
+    func testCurrentNoteCanStillTruncateWithReceipt() {
+        let big = String(repeating: "x", count: ContextAssembler.perFileCharacterBudget + 500)
+        let packet = ContextAssembler.contextPacket(
+            modelName: "M",
+            currentNote: ResolvedFile(filename: "Big.md", content: big),
+            files: []
+        )
+        XCTAssertTrue(packet.systemPrompt.contains("[truncated]"))
+        XCTAssertEqual(packet.receipt.items.first?.status, .truncated)
+    }
+
+    func testUnavailableExplicitAttachmentHasReceipt() {
+        let packet = ContextAssembler.contextPacket(
+            modelName: "M",
+            currentNote: nil,
+            attachments: [ContextAttachment(unavailable: "Missing.md", reason: "could not read UTF-8 contents")]
+        )
+        XCTAssertTrue(packet.systemPrompt.contains("attachment_unavailable"))
+        XCTAssertTrue(packet.systemPrompt.contains("Missing.md: unavailable"))
+        XCTAssertEqual(packet.receipt.items.first?.status, .unavailable)
     }
 
     // MARK: - Catalog

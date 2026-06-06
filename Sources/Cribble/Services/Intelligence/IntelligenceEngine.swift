@@ -26,6 +26,9 @@ final class IntelligenceEngine: ObservableObject {
 
     @Published private(set) var status: Status = .off
     @Published private(set) var artifacts: [IntelligenceArtifact] = []
+    @Published private(set) var knowledgeNodes: [KnowledgeNode] = []
+    @Published private(set) var knowledgeEdges: [KnowledgeEdge] = []
+    @Published private(set) var researchInsights: [ResearchInsight] = []
     @Published private(set) var pendingJobs = 0
     @Published private(set) var filesIndexed = 0
     @Published private(set) var staleCount = 0
@@ -188,6 +191,9 @@ final class IntelligenceEngine: ObservableObject {
         isAllFolders = false
         status = .off
         artifacts = []
+        knowledgeNodes = []
+        knowledgeEdges = []
+        researchInsights = []
         pendingJobs = 0
         filesIndexed = 0
         staleCount = 0
@@ -217,6 +223,9 @@ final class IntelligenceEngine: ObservableObject {
         try? FileManager.default.removeItem(at: artifactStore.cacheDirectory)
         try? FileManager.default.removeItem(at: artifactStore.cacheDirectory.deletingLastPathComponent().appendingPathComponent("graph"))
         artifacts = []
+        knowledgeNodes = []
+        knowledgeEdges = []
+        researchInsights = []
         needsScan = true
         await tick(initialScan: true)
     }
@@ -267,6 +276,7 @@ final class IntelligenceEngine: ObservableObject {
 
         status = .working("Processing")
         await runner.drain(limit: 6)   // bounded per tick so the loop stays responsive
+        await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
         await enforceDiskBudget()
         await refreshState()
     }
@@ -290,6 +300,9 @@ final class IntelligenceEngine: ObservableObject {
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .detectArchitectureDrift, inputHash: combined, priority: 160))
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .updateProjectIndex, inputHash: combined, priority: 200))
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .buildArchitectureDiagram, inputHash: combined, priority: 210))
+        if await summaryCoverage(files: files) >= 0.35 {
+            await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: .discoverConnections, inputHash: combined, priority: 220))
+        }
 
         // Git intelligence (graceful no-op if not a repo / git unavailable).
         let git = GitInspector(rootURL: rootURL)
@@ -306,11 +319,23 @@ final class IntelligenceEngine: ObservableObject {
         }
     }
 
+    private func summaryCoverage(files: [IntelligenceFile]) async -> Double {
+        guard let db, let projectID, !files.isEmpty else { return 0 }
+        let sourceHashes = Set(files.map(\.hash))
+        let summarized = await db.artifacts(projectID: projectID, type: .fileSummary)
+            .flatMap(\.sourceHashes)
+            .filter { sourceHashes.contains($0) }
+        return Double(Set(summarized).count) / Double(files.count)
+    }
+
     // MARK: - State
 
     private func refreshState() async {
         guard let db, let projectID else { return }
         artifacts = await db.artifacts(projectID: projectID)
+        knowledgeNodes = await db.knowledgeNodes(projectID: projectID)
+        knowledgeEdges = await db.knowledgeEdges(projectID: projectID)
+        researchInsights = await db.researchInsights(projectID: projectID)
         pendingJobs = await db.pendingJobCount(projectID: projectID)
         filesIndexed = await db.files(projectID: projectID).count
         staleCount = await db.staleArtifactCount(projectID: projectID)
@@ -328,6 +353,21 @@ final class IntelligenceEngine: ObservableObject {
 
     func content(for artifact: IntelligenceArtifact) -> String? {
         artifactStore?.content(for: artifact)
+    }
+
+    func acceptSuggestedEdge(_ edge: KnowledgeEdge) async {
+        await db?.setKnowledgeEdgeStatus(id: edge.id, status: .accepted)
+        await refreshState()
+    }
+
+    func dismissSuggestedEdge(_ edge: KnowledgeEdge) async {
+        await db?.setKnowledgeEdgeStatus(id: edge.id, status: .dismissed)
+        await refreshState()
+    }
+
+    func dismissInsight(_ insight: ResearchInsight) async {
+        await db?.setResearchInsightStatus(id: insight.id, status: .dismissed)
+        await refreshState()
     }
 
     func provenance(for artifact: IntelligenceArtifact) async -> [ArtifactProvenance] {

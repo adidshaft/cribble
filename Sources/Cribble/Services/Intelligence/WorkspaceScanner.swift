@@ -124,27 +124,17 @@ struct WorkspaceScanner: Sendable {
                 await db.replaceSymbols(fileID: fileID, symbols: symbols)
             }
 
-            // Tier-2: enqueue a summary job for the changed/added file.
+            // Tier-2: code files get one bundled analysis job (summary +
+            // fallbacks + I/O) instead of three serialized model calls. Prose
+            // and config files still receive a simple summary.
+            let jobType: IntelligenceJobType = language.isCode ? .analyzeFile : .summarizeFile
             let enqueued = await db.enqueueJobIfNeeded(IntelligenceJob(
                 projectID: projectID,
-                type: .summarizeFile,
+                type: jobType,
                 inputHash: hash,
                 inputPaths: [relativePath]
             ))
             if enqueued { result.jobsEnqueued += 1 }
-
-            // Code files also get audits, at lower priority so summaries finish
-            // first. Fallback audit is Tier-2; I/O behavior is Tier-3 (idle only).
-            if language.isCode {
-                await db.enqueueJobIfNeeded(IntelligenceJob(
-                    projectID: projectID, type: .extractFallbackLogic,
-                    inputHash: hash, inputPaths: [relativePath], priority: 300
-                ))
-                await db.enqueueJobIfNeeded(IntelligenceJob(
-                    projectID: projectID, type: .extractIOBehavior,
-                    inputHash: hash, inputPaths: [relativePath], priority: 320
-                ))
-            }
         }
 
         // Reconcile deletions: anything tracked but no longer on disk.

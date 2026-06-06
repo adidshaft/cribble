@@ -1,6 +1,17 @@
 import AppKit
 import Foundation
 
+private struct ContextDigestCacheKey: Hashable {
+    let path: String
+    let contentHash: String
+}
+
+private enum ContextDigestLimits {
+    static let chunkSize = 10_000
+    static let maxChunks = 8
+    static let budget = 3_500
+}
+
 /// Drives the Local Chat HUD: conversation state, `@file` autocomplete, model
 /// loading, streaming generation, and routing of actionable model output into
 /// the existing safe diff/create pipeline.
@@ -23,6 +34,7 @@ final class ChatHUDViewModel: ObservableObject {
     @Published var draft: String = ""
     @Published private(set) var attachments: [TaggedFileToken] = []
     @Published private(set) var isGenerating = false
+    @Published private(set) var lastContextReceipt: ContextReceipt?
 
     // MARK: Autocomplete
     @Published private(set) var autocomplete: FileAutocompleteState?
@@ -55,6 +67,7 @@ final class ChatHUDViewModel: ObservableObject {
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
+    private var contextDigestCache: [ContextDigestCacheKey: String] = [:]
 
     /// If no token (and no completion) arrives within this window after the model
     /// is ready, the generation is treated as wedged and force-stopped, so the
@@ -63,7 +76,6 @@ final class ChatHUDViewModel: ObservableObject {
     /// but-progressing answer is never cut off.
     private let generationStallLimit: TimeInterval = 240
     private var lastGenerationActivity = Date()
-
     init(library: MarkdownLibraryStore, semanticIndex: SemanticSearchIndex? = nil, engine: LocalChatEngine? = nil) {
         self.library = library
         self.semanticIndex = semanticIndex
@@ -193,6 +205,7 @@ final class ChatHUDViewModel: ObservableObject {
         guard !isGenerating else { return }
         messages = []
         statusMessage = nil
+        lastContextReceipt = nil
     }
 
     // MARK: - Message actions
@@ -278,16 +291,18 @@ final class ChatHUDViewModel: ObservableObject {
             return
         }
 
-        let context = await resolveContext()
-        let prompt = ContextAssembler.engineMessages(
+        let engine = currentEngine()
+        let context = await resolveContext(engine: engine)
+        let packet = ContextAssembler.contextPacket(
             modelName: selectedModel.name,
-            history: messages,
             currentNote: context.current,
-            files: context.files,
+            attachments: context.attachments,
             related: context.related
         )
+        lastContextReceipt = packet.receipt
 
-        let engine = currentEngine()
+        let prompt = ContextAssembler.engineMessages(packet: packet, history: messages)
+
         let (stream, continuation) = AsyncStream<String>.makeStream()
         let producer = Task<Result<String, Error>, Never> {
             do {
@@ -437,16 +452,36 @@ final class ChatHUDViewModel: ObservableObject {
     /// Builds the model context: the note currently open in the reader (so "this
     /// note" / "here" works without tagging) plus every file tagged across the
     /// conversation, deduped by URL.
-    private func resolveContext() async -> (current: ResolvedFile?, files: [ResolvedFile], related: [ResolvedFile]) {
+    private func resolveContext(engine: LocalChatEngine) async -> (current: ResolvedFile?, attachments: [ContextAttachment], related: [ResolvedFile]) {
         var seen = Set<URL>()
 
         // Explicit `@`/`+` attachments are the authoritative context for the
         // conversation — resolve them first.
-        var files: [ResolvedFile] = []
+        var attachments: [ContextAttachment] = []
+        var remainingAttachmentBudget = ContextAssembler.totalContextCharacterBudget
         for message in messages where message.role == .user {
             for token in message.attachments where seen.insert(token.fileURL).inserted {
                 if let content = readContents(of: token.fileURL) {
-                    files.append(ResolvedFile(filename: token.pathLabel, content: content))
+                    if content.count <= ContextAssembler.perFileCharacterBudget,
+                       content.count <= remainingAttachmentBudget {
+                        remainingAttachmentBudget -= content.count
+                        attachments.append(ContextAttachment(filename: token.pathLabel, content: content))
+                    } else {
+                        let digest = await digestForAttachment(
+                            token: token,
+                            content: content,
+                            engine: engine
+                        )
+                        if let digest {
+                            remainingAttachmentBudget = max(0, remainingAttachmentBudget - digest.count)
+                        }
+                        attachments.append(ContextAttachment(filename: token.pathLabel, content: content, digest: digest))
+                    }
+                } else {
+                    attachments.append(ContextAttachment(
+                        unavailable: token.pathLabel,
+                        reason: "could not read UTF-8 contents"
+                    ))
                 }
             }
         }
@@ -480,7 +515,137 @@ final class ChatHUDViewModel: ObservableObject {
             related.append(contentsOf: intelligenceContextProvider())
         }
 
-        return (current, files, related)
+        return (current, attachments, related)
+    }
+
+    private func digestForAttachment(token: TaggedFileToken, content: String, engine: LocalChatEngine) async -> String? {
+        let key = ContextDigestCacheKey(path: token.fileURL.standardizedFileURL.path, contentHash: ContentHasher.hash(content))
+        if let cached = contextDigestCache[key] { return cached }
+
+        statusMessage = "Summarizing \(token.filename) for context..."
+        do {
+            let digest = try await generateAttachmentDigest(
+                filename: token.pathLabel,
+                content: content,
+                engine: engine
+            )
+            contextDigestCache[key] = digest
+            return digest
+        } catch is CancellationError {
+            return nil
+        } catch {
+            let digest = Self.extractiveDigest(filename: token.pathLabel, content: content)
+            contextDigestCache[key] = digest
+            statusMessage = "Using extractive context digest for \(token.filename)"
+            return digest
+        }
+    }
+
+    private func generateAttachmentDigest(filename: String, content: String, engine: LocalChatEngine) async throws -> String {
+        let chunks = Self.sampledChunks(
+            content,
+            chunkSize: ContextDigestLimits.chunkSize,
+            maxChunks: ContextDigestLimits.maxChunks
+        )
+        guard !chunks.isEmpty else { return "" }
+
+        var partials: [String] = []
+        for chunk in chunks {
+            try Task.checkCancellation()
+            let messages = Self.digestMessages(
+                filename: filename,
+                content: chunk.text,
+                label: "chunk \(chunk.index + 1) of \(chunk.total)"
+            )
+            let partial = try await engine.generate(messages: messages, maxTokens: 360) { _ in }
+            partials.append(Self.boundedDigest(partial, maxCharacters: 900))
+        }
+
+        if partials.count == 1 {
+            return Self.boundedDigest(partials[0], maxCharacters: ContextDigestLimits.budget)
+        }
+
+        let sampledNotice = chunks.count < (chunks.first?.total ?? 0)
+            ? "Sampled \(chunks.count) chunks across the file, including the beginning and end."
+            : "Covered all \(chunks.count) chunks."
+        let combined = ([sampledNotice] + partials.enumerated().map { index, partial in
+            "## Chunk \(index + 1)\n\(partial)"
+        }).joined(separator: "\n\n")
+        let messages = Self.digestMessages(
+            filename: filename,
+            content: combined,
+            label: "combined chunk summaries"
+        )
+        let final = try await engine.generate(messages: messages, maxTokens: 520) { _ in }
+        return Self.boundedDigest(final, maxCharacters: ContextDigestLimits.budget)
+    }
+
+    nonisolated private static func digestMessages(filename: String, content: String, label: String) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You create compact context digests for Cribble Chat. Summarize only what is present.
+            Preserve concrete names, decisions, constraints, TODOs, unresolved questions, and source facts.
+            Do not add advice unless the file says it. Keep the digest dense and under 180 words.
+            """),
+            EngineMessage(role: .user, content: """
+            File: \(filename)
+            Segment: \(label)
+
+            --- BEGIN ATTACHED FILE SEGMENT ---
+            \(content)
+            --- END ATTACHED FILE SEGMENT ---
+            """)
+        ]
+    }
+
+    nonisolated private static func sampledChunks(_ content: String, chunkSize: Int, maxChunks: Int) -> [(index: Int, total: Int, text: String)] {
+        guard !content.isEmpty, chunkSize > 0, maxChunks > 0 else { return [] }
+        var chunks: [String] = []
+        var start = content.startIndex
+        while start < content.endIndex {
+            let end = content.index(start, offsetBy: chunkSize, limitedBy: content.endIndex) ?? content.endIndex
+            chunks.append(String(content[start..<end]))
+            start = end
+        }
+        guard chunks.count > maxChunks else {
+            return chunks.enumerated().map { ($0.offset, chunks.count, $0.element) }
+        }
+
+        let span = Double(chunks.count - 1)
+        let steps = Double(maxChunks - 1)
+        var indices = Set<Int>()
+        for slot in 0..<maxChunks {
+            indices.insert(Int((Double(slot) * span / steps).rounded()))
+        }
+        return indices.sorted().map { ($0, chunks.count, chunks[$0]) }
+    }
+
+    nonisolated private static func boundedDigest(_ text: String, maxCharacters: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > maxCharacters else { return trimmed }
+        let cutoff = trimmed.index(trimmed.startIndex, offsetBy: maxCharacters)
+        return String(trimmed[..<cutoff]).trimmingCharacters(in: .whitespacesAndNewlines) + "\n...[digest truncated]..."
+    }
+
+    nonisolated private static func extractiveDigest(filename: String, content: String) -> String {
+        let target = max(1, ContextDigestLimits.budget / 3)
+        let head = String(content.prefix(target))
+        let tail = String(content.suffix(target))
+        let middleStart = content.index(content.startIndex, offsetBy: max(0, (content.count - target) / 2), limitedBy: content.endIndex) ?? content.startIndex
+        let middleEnd = content.index(middleStart, offsetBy: target, limitedBy: content.endIndex) ?? content.endIndex
+        let middle = String(content[middleStart..<middleEnd])
+        return boundedDigest("""
+        Extractive context digest for \(filename). A model summary was unavailable, so Cribble included bounded excerpts from the beginning, middle, and end of the attached file.
+
+        ## Beginning
+        \(head)
+
+        ## Middle
+        \(middle)
+
+        ## End
+        \(tail)
+        """, maxCharacters: ContextDigestLimits.budget)
     }
 
     /// Up to 3 related notes found by the on-device semantic index for the most

@@ -15,7 +15,11 @@ struct IntelligenceHUDView: View {
     var onOpenSource: (String) -> Void = { _ in }
     /// All opened library folders, for the "All folders" scope (#1).
     var allRoots: () -> [URL] = { [] }
+    /// Optional bridge from the Chat HUD so this panel can audit exactly what was
+    /// sent as context during the latest chat turn.
+    var latestContextReceipt: () -> ContextReceipt? = { nil }
 
+    @State private var selectedTab: IntelligenceHUDTab = .feed
     @State private var selectedArtifactID: String?
     @State private var provenance: [ArtifactProvenance] = []
     @State private var askText = ""
@@ -33,9 +37,9 @@ struct IntelligenceHUDView: View {
                 if engine.needsModelDownload || engine.modelDownloadFraction != nil {
                     modelBanner
                 }
-                content
+                tabControl
+                tabContent
                 statusFooter
-                askBar
             } else {
                 enablePrompt
             }
@@ -301,9 +305,272 @@ struct IntelligenceHUDView: View {
         .background(Color.white.opacity(0.06))
     }
 
-    // MARK: - Content (tree + reader)
+    // MARK: - Tabs
 
-    private var content: some View {
+    private var tabControl: some View {
+        Picker("Intelligence section", selection: $selectedTab) {
+            ForEach(IntelligenceHUDTab.allCases) { tab in
+                Label(tab.rawValue, systemImage: tab.icon).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.12))
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .feed:
+            feedTab
+        case .graph:
+            graphTab
+        case .artifacts:
+            artifactsTab
+        case .ask:
+            askTab
+        case .context:
+            contextTab
+        }
+    }
+
+    // MARK: - Feed
+
+    private var feedTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    metricTile(title: "Files", value: "\(engine.filesIndexed)", icon: "doc.text.magnifyingglass")
+                    metricTile(title: "Artifacts", value: "\(engine.artifacts.count)", icon: "square.stack.3d.up")
+                    metricTile(title: "Insights", value: "\(activeResearchInsights.count)", icon: "sparkle.magnifyingglass")
+                }
+
+                if engine.staleCount > 0 {
+                    Label("\(engine.staleCount) artifacts may be stale", systemImage: "exclamationmark.triangle")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.orange.opacity(0.9))
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                }
+
+                if !activeResearchInsights.isEmpty || !suggestedEdges.isEmpty {
+                    sectionHeader("RESEARCH")
+                    ForEach(Array(activeResearchInsights.prefix(3))) { insight in
+                        researchInsightRow(insight)
+                    }
+                    ForEach(Array(suggestedEdges.prefix(3))) { edge in
+                        suggestedEdgeRow(edge)
+                    }
+                }
+
+                sectionHeader("RECENT")
+                if engine.artifacts.isEmpty {
+                    emptyState(
+                        icon: engine.pendingJobs > 0 ? "hourglass" : "sparkles",
+                        title: engine.pendingJobs > 0 ? "Building intelligence..." : "Waiting for artifacts",
+                        detail: "Generated summaries, diagrams, and audits will land here as the local engine works."
+                    )
+                } else {
+                    ForEach(Array(engine.artifacts.prefix(6))) { artifact in
+                        Button {
+                            selectedArtifactID = artifact.id
+                            selectedTab = .artifacts
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: artifact.type.icon)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .frame(width: 18)
+                                    .foregroundStyle(.white.opacity(0.66))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(artifact.title ?? artifact.relativePath)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .lineLimit(1)
+                                    Text(artifact.type.rawValue.replacingOccurrences(of: "_", with: " "))
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.white.opacity(0.44))
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.35))
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func metricTile(title: String, value: String, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+            Text(value)
+                .font(.system(size: 20, weight: .semibold))
+            Text(title)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.46))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func researchInsightRow(_ insight: ResearchInsight) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: insight.kind.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 18)
+                    .foregroundStyle(.white.opacity(0.66))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(insight.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Text(insight.kind.label)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.44))
+                }
+                Spacer()
+                Button {
+                    Task { await engine.dismissInsight(insight) }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.46))
+                .help("Dismiss insight")
+            }
+            Text(insight.body)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.62))
+                .lineLimit(3)
+            if let artifactID = insight.artifactID,
+               engine.artifacts.contains(where: { $0.id == artifactID }) {
+                Button {
+                    selectedArtifactID = artifactID
+                    selectedTab = .artifacts
+                } label: {
+                    Label("Open artifact", systemImage: "doc.text.magnifyingglass")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.74))
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func suggestedEdgeRow(_ edge: KnowledgeEdge) -> some View {
+        let from = nodeTitle(edge.fromNodeID)
+        let to = nodeTitle(edge.toNodeID)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "link.badge.plus")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 18)
+                    .foregroundStyle(.white.opacity(0.66))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(from) -> \(to)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Text(edge.kind.label + confidenceLabel(edge.confidence))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.44))
+                }
+                Spacer()
+                Button {
+                    Task { await engine.acceptSuggestedEdge(edge) }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.green.opacity(0.78))
+                .help("Accept suggested relationship")
+                Button {
+                    Task { await engine.dismissSuggestedEdge(edge) }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.46))
+                .help("Dismiss suggested relationship")
+            }
+            if let path = pathForNode(edge.fromNodeID) ?? pathForNode(edge.toNodeID) {
+                Button {
+                    onOpenSource(path)
+                } label: {
+                    Label(path, systemImage: "arrow.up.right.square")
+                        .font(.system(size: 10, design: .monospaced))
+                        .lineLimit(1)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.55))
+                .help("Open source")
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - Graph
+
+    private var graphTab: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.62))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(graphPayload.title)
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(graphPayload.isPlaceholder ? "Placeholder graph until relationship APIs are populated" : "Loaded from generated intelligence graph artifacts")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.46))
+                }
+                Spacer()
+                Text("\(graphPayload.nodes.count) nodes")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.54))
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+
+            GraphViewport(payload: graphPayload, onOpenSource: onOpenSource)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Artifacts (tree + reader)
+
+    private var artifactsTab: some View {
         HStack(spacing: 0) {
             artifactTree
                 .frame(width: 190)
@@ -482,19 +749,24 @@ struct IntelligenceHUDView: View {
         .background(Color.black.opacity(0.15))
     }
 
-    // MARK: - Ask bar
+    // MARK: - Ask
 
-    private var askBar: some View {
-        VStack(spacing: 6) {
+    private var askTab: some View {
+        VStack(spacing: 10) {
             if let answer = askAnswer {
                 ScrollView {
                     StructuredText(markdown: answer)
                         .textSelection(.enabled)
                         .padding(10)
                 }
-                .frame(maxHeight: 160)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-                .padding(.horizontal, 12)
+            } else {
+                emptyState(
+                    icon: "questionmark.bubble",
+                    title: "Ask about this project",
+                    detail: "Answers use the generated intelligence artifacts as context and cite the artifacts they used."
+                )
             }
             HStack(spacing: 8) {
                 TextField("Ask about this project…", text: $askText)
@@ -511,8 +783,9 @@ struct IntelligenceHUDView: View {
                 .buttonStyle(.plain)
                 .disabled(askText.isEmpty || isAsking)
             }
-            .padding(.horizontal, 12).padding(.vertical, 10)
         }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func ask() {
@@ -526,10 +799,159 @@ struct IntelligenceHUDView: View {
         }
     }
 
+    // MARK: - Context
+
+    private var contextTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionHeader("SCOPE")
+                contextRow("Project", value: engine.enabledProjectName ?? activeRootURL()?.lastPathComponent ?? "No folder")
+                contextRow("Mode", value: engine.isAllFolders ? "All folders" : "Active folder")
+                contextRow("Indexed files", value: "\(engine.filesIndexed)")
+                contextRow("Open folders", value: "\(allRoots().count)")
+                contextRow("Knowledge nodes", value: "\(engine.knowledgeNodes.count)")
+                contextRow("Knowledge edges", value: "\(engine.knowledgeEdges.count)")
+                contextRow("Suggested edges", value: "\(suggestedEdges.count)")
+
+                if !allRoots().isEmpty {
+                    sectionHeader("FOLDERS")
+                    ForEach(allRoots(), id: \.path) { root in
+                        Label(root.lastPathComponent, systemImage: "folder")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white.opacity(0.72))
+                            .lineLimit(1)
+                            .help(root.path)
+                    }
+                }
+
+                sectionHeader("ARTIFACT GROUPS")
+                ForEach(groupedArtifacts, id: \.0) { group in
+                    contextRow(group.0, value: "\(group.1.count)")
+                }
+
+                if !provenance.isEmpty {
+                    sectionHeader("SELECTED SOURCES")
+                    ForEach(Array(provenance.enumerated()), id: \.offset) { _, p in
+                        Text(provenanceLabel(p))
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.62))
+                    }
+                }
+
+                if let receipt = latestContextReceipt(), !receipt.items.isEmpty {
+                    sectionHeader("LAST CHAT CONTEXT")
+                    ForEach(Array(receipt.items.enumerated()), id: \.offset) { _, item in
+                        contextReceiptRow(item)
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func contextRow(_ title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(.white.opacity(0.48))
+            Spacer()
+            Text(value)
+                .foregroundStyle(.white.opacity(0.82))
+                .lineLimit(1)
+        }
+        .font(.system(size: 11))
+        .padding(.vertical, 2)
+    }
+
+    private func contextReceiptRow(_ item: ContextReceipt.Item) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(item.filename)
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+                Spacer()
+                Text(item.status.rawValue)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(item.status.tint)
+            }
+            Text("\(item.source.rawValue) · \(item.includedCharacters)/\(item.originalCharacters) chars")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.48))
+                .lineLimit(1)
+            if let reason = item.reason {
+                Text(reason)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.42))
+                    .lineLimit(2)
+            }
+        }
+        .padding(8)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.white.opacity(0.38))
+    }
+
+    private func emptyState(icon: String, title: String, detail: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.32))
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.62))
+            Text(detail)
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.38))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - Derived
 
     private var selectedArtifact: IntelligenceArtifact? {
         engine.artifacts.first { $0.id == selectedArtifactID }
+    }
+
+    private var activeResearchInsights: [ResearchInsight] {
+        engine.researchInsights
+            .filter { $0.status != .dismissed }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private var suggestedEdges: [KnowledgeEdge] {
+        engine.knowledgeEdges.filter { $0.status == .suggested }
+    }
+
+    private func nodeTitle(_ id: String) -> String {
+        engine.knowledgeNodes.first { $0.id == id }?.title ?? id
+    }
+
+    private func pathForNode(_ id: String) -> String? {
+        engine.knowledgeNodes.first { $0.id == id }?.path
+    }
+
+    private func confidenceLabel(_ confidence: Double?) -> String {
+        guard let confidence else { return "" }
+        return " · \(Int((confidence * 100).rounded()))%"
+    }
+
+    private var graphPayload: GraphPayload {
+        GraphPayload.intelligence(
+            projectName: engine.enabledProjectName,
+            filesIndexed: engine.filesIndexed,
+            knowledgeNodes: engine.knowledgeNodes,
+            knowledgeEdges: engine.knowledgeEdges,
+            artifacts: engine.artifacts,
+            content: { engine.content(for: $0) }
+        )
     }
 
     /// Artifacts grouped into display sections, in a stable section order.
@@ -540,11 +962,78 @@ struct IntelligenceHUDView: View {
             ("Architecture", [.architectureDiagram, .dependencyDiagram]),
             ("Changes", [.diffSummary, .commitSummary]),
             ("Audits", [.fallbackAudit, .ioBehavior, .driftReport]),
+            ("Research", [.researchInsight]),
             ("Files", [.fileSummary])
         ]
         return order.compactMap { section in
             let items = engine.artifacts.filter { section.1.contains($0.type) }
             return items.isEmpty ? nil : (section.0, items)
+        }
+    }
+}
+
+private extension ResearchInsight.Kind {
+    var label: String {
+        switch self {
+        case .digest: "Digest"
+        case .suggestedConnection: "Suggested connection"
+        case .openQuestion: "Open question"
+        case .topicBrief: "Topic brief"
+        case .drift: "Drift"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .digest: "newspaper"
+        case .suggestedConnection: "link.badge.plus"
+        case .openQuestion: "questionmark.bubble"
+        case .topicBrief: "rectangle.stack"
+        case .drift: "exclamationmark.triangle"
+        }
+    }
+}
+
+private extension KnowledgeEdge.Kind {
+    var label: String {
+        switch self {
+        case .wikiLink: "Wiki link"
+        case .dependency: "Dependency"
+        case .semanticSimilarity: "Semantic similarity"
+        case .researchSupports: "Research support"
+        case .researchQuestion: "Research question"
+        }
+    }
+}
+
+private extension ContextReceiptStatus {
+    var tint: Color {
+        switch self {
+        case .included: .green.opacity(0.78)
+        case .truncated: .yellow.opacity(0.8)
+        case .summarized: .blue.opacity(0.82)
+        case .omitted: .orange.opacity(0.8)
+        case .blockedNeedsSummary, .unavailable: .red.opacity(0.78)
+        }
+    }
+}
+
+private enum IntelligenceHUDTab: String, CaseIterable, Identifiable {
+    case feed = "Feed"
+    case graph = "Graph"
+    case artifacts = "Artifacts"
+    case ask = "Ask"
+    case context = "Context"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .feed: "list.bullet.rectangle"
+        case .graph: "point.3.connected.trianglepath.dotted"
+        case .artifacts: "square.stack.3d.up"
+        case .ask: "questionmark.bubble"
+        case .context: "scope"
         }
     }
 }
@@ -560,6 +1049,7 @@ private extension IntelligenceArtifactType {
         case .ioBehavior: "arrow.left.arrow.right"
         case .driftReport: "exclamationmark.triangle"
         case .fileSummary: "doc.text"
+        case .researchInsight: "sparkle.magnifyingglass"
         }
     }
 }

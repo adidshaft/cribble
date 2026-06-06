@@ -15,6 +15,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     case extractImports = "extract_imports"
 
     // Tier 2 — small, single-input model calls.
+    case analyzeFile = "analyze_file"
     case summarizeFile = "summarize_file"
     case summarizeDiff = "summarize_diff"
     case summarizeCommit = "summarize_commit"
@@ -27,6 +28,7 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     case buildArchitectureDiagram = "build_architecture_diagram"
     case updateProjectIndex = "update_project_index"
     case detectArchitectureDrift = "detect_architecture_drift"
+    case discoverConnections = "discover_connections"
 
     /// The scheduling tier this job belongs to. Drives idle-awareness gating in
     /// `BackgroundScheduler`.
@@ -34,9 +36,9 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
         switch self {
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports:
             return .tier1
-        case .summarizeFile, .summarizeDiff, .summarizeCommit, .extractFallbackLogic:
+        case .analyzeFile, .summarizeFile, .summarizeDiff, .summarizeCommit, .extractFallbackLogic:
             return .tier2
-        case .extractIOBehavior, .buildDependencyDiagram, .buildConnectionsGraph, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift:
+        case .extractIOBehavior, .buildDependencyDiagram, .buildConnectionsGraph, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift, .discoverConnections:
             return .tier3
         }
     }
@@ -47,8 +49,8 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     /// per-type, not derived from tier.
     var requiresProvider: Bool {
         switch self {
-        case .summarizeFile, .summarizeDiff, .summarizeCommit,
-             .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex:
+        case .analyzeFile, .summarizeFile, .summarizeDiff, .summarizeCommit,
+             .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex, .discoverConnections:
             return true
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports,
              .buildDependencyDiagram, .buildConnectionsGraph, .detectArchitectureDrift:
@@ -92,6 +94,7 @@ enum IntelligenceArtifactType: String, Codable, Sendable {
     case fallbackAudit = "fallback_audit"
     case ioBehavior = "io_behavior"
     case driftReport = "drift_report"
+    case researchInsight = "research_insight"
 }
 
 /// A unit of work as stored in / loaded from the queue.
@@ -204,4 +207,84 @@ struct ArtifactProvenance: Sendable, Equatable {
     let symbolID: Int64?
     /// Model- or validator-derived confidence in `0...1`, when known.
     let confidence: Double?
+}
+
+/// The unified relationship map backing the Intelligence graph lenses. Unlike
+/// Mermaid artifacts, these records are queryable and can mix deterministic,
+/// user-accepted, and LLM-suggested relationships while preserving provenance.
+struct KnowledgeNode: Identifiable, Sendable, Equatable, Codable {
+    let id: String
+    let projectID: String
+    let kind: Kind
+    let title: String
+    let path: String?
+    let artifactID: String?
+
+    enum Kind: String, Sendable, Codable {
+        case file
+        case artifact
+        case insight
+        case module
+        case topic
+    }
+}
+
+struct KnowledgeEdge: Identifiable, Sendable, Equatable, Codable {
+    let id: String
+    let projectID: String
+    let fromNodeID: String
+    let toNodeID: String
+    let kind: Kind
+    let origin: Origin
+    let status: Status
+    let confidence: Double?
+    let evidenceArtifactID: String?
+    let sourceHashes: [String]
+
+    enum Kind: String, Sendable, Codable {
+        case wikiLink
+        case dependency
+        case semanticSimilarity
+        case researchSupports
+        case researchQuestion
+    }
+
+    enum Origin: String, Sendable, Codable {
+        case deterministic
+        case llmSuggested
+        case userAccepted
+        case web
+    }
+
+    enum Status: String, Sendable, Codable {
+        case accepted
+        case suggested
+        case dismissed
+    }
+}
+
+struct ResearchInsight: Identifiable, Sendable, Equatable, Codable {
+    let id: String
+    let projectID: String
+    let title: String
+    let body: String
+    let kind: Kind
+    let status: Status
+    let artifactID: String?
+    let sourceHashes: [String]
+    let createdAt: Date
+
+    enum Kind: String, Sendable, Codable {
+        case digest
+        case suggestedConnection
+        case openQuestion
+        case topicBrief
+        case drift
+    }
+
+    enum Status: String, Sendable, Codable {
+        case new
+        case reviewed
+        case dismissed
+    }
 }

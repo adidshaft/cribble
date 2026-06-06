@@ -198,6 +198,91 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(types.contains(.fallbackAudit))
     }
 
+    func testScannerEnqueuesOneAnalysisJobForCodeFiles() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-analysis-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "struct Net { func get() {} }".write(to: root.appendingPathComponent("Net.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let jobs = await db.jobs(projectID: "p", status: .pending)
+        XCTAssertEqual(jobs.count, 1)
+        XCTAssertEqual(jobs.first?.type, .analyzeFile)
+    }
+
+    func testAnalyzeFileSplitsStructuredOutputIntoArtifacts() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-bundle-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "struct Net { func get() {} }".write(to: root.appendingPathComponent("Net.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let provider = StubProvider(text: """
+        ## Summary
+        Net owns a request helper.
+
+        ## Fallbacks
+        No explicit fallbacks found.
+
+        ## I/O Behavior
+        - `get()` performs network I/O.
+        """)
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+        await runner.drain(limit: 10)
+
+        let produced = await db.artifacts(projectID: "p")
+        let types = Set(produced.map(\.type))
+        XCTAssertTrue(types.contains(.fileSummary))
+        XCTAssertTrue(types.contains(.fallbackAudit))
+        XCTAssertTrue(types.contains(.ioBehavior))
+        let nodes = await db.knowledgeNodes(projectID: "p")
+        XCTAssertTrue(nodes.contains { $0.path == "Net.swift" })
+    }
+
+    func testDiscoverConnectionsCreatesVirtualResearchAndSuggestedEdges() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-research-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "struct A {}".write(to: root.appendingPathComponent("A.swift"), atomically: true, encoding: .utf8)
+        try "struct B { let a: A }".write(to: root.appendingPathComponent("B.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let fileAHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("A.swift")))
+        let fileBHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("B.swift")))
+        _ = await db.upsertFile(projectID: "p", path: "A.swift", hash: fileAHash, sizeBytes: 11, language: "swift")
+        _ = await db.upsertFile(projectID: "p", path: "B.swift", hash: fileBHash, sizeBytes: 22, language: "swift")
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        _ = try await artifacts.store(type: .fileSummary, relativePath: "summaries/a.md", title: "A.swift", content: "Defines A.", sourceHashes: [fileAHash])
+        _ = try await artifacts.store(type: .fileSummary, relativePath: "summaries/b.md", title: "B.swift", content: "Uses A.", sourceHashes: [fileBHash])
+
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let provider = StubProvider(text: """
+        # Suggested Connections
+        - `A.swift` => `B.swift`: B stores a value of A.
+        """)
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+        let combined = ContentHasher.combine([fileAHash, fileBHash].sorted())
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .discoverConnections, inputHash: combined))
+        await runner.drain(limit: 10)
+
+        let produced = await db.artifacts(projectID: "p")
+        XCTAssertTrue(produced.contains { $0.type == .researchInsight })
+        let insights = await db.researchInsights(projectID: "p")
+        XCTAssertEqual(insights.first?.kind, .suggestedConnection)
+        let edges = await db.knowledgeEdges(projectID: "p")
+        let edge = try XCTUnwrap(edges.first)
+        XCTAssertEqual(edge.status, .suggested)
+        XCTAssertEqual(edge.origin, .llmSuggested)
+    }
+
     // MARK: - GitInspector
 
     func testGitInspectorOnNonRepoIsGraceful() async {

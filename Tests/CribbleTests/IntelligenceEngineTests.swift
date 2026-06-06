@@ -200,6 +200,53 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertEqual(rows.first?.confidence, 0.9)
     }
 
+    func testKnowledgeGraphAndResearchInsightRoundTrip() async throws {
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let nodeA = KnowledgeNode(id: "a", projectID: "p", kind: .file, title: "A.md", path: "A.md", artifactID: nil)
+        let nodeB = KnowledgeNode(id: "b", projectID: "p", kind: .file, title: "B.md", path: "B.md", artifactID: nil)
+        await db.upsertKnowledgeNode(nodeA)
+        await db.upsertKnowledgeNode(nodeB)
+        await db.upsertKnowledgeEdge(KnowledgeEdge(
+            id: "edge",
+            projectID: "p",
+            fromNodeID: "a",
+            toNodeID: "b",
+            kind: .semanticSimilarity,
+            origin: .llmSuggested,
+            status: .suggested,
+            confidence: 0.7,
+            evidenceArtifactID: nil,
+            sourceHashes: ["h1"]
+        ))
+        await db.upsertResearchInsight(ResearchInsight(
+            id: "insight",
+            projectID: "p",
+            title: "Suggested Connections",
+            body: "A and B relate.",
+            kind: .suggestedConnection,
+            status: .new,
+            artifactID: nil,
+            sourceHashes: ["h1"],
+            createdAt: Date(timeIntervalSince1970: 10)
+        ))
+
+        let nodes = await db.knowledgeNodes(projectID: "p")
+        XCTAssertEqual(nodes.count, 2)
+        let edges = await db.knowledgeEdges(projectID: "p")
+        let edge = try XCTUnwrap(edges.first)
+        XCTAssertEqual(edge.status, .suggested)
+        XCTAssertEqual(edge.sourceHashes, ["h1"])
+        let insights = await db.researchInsights(projectID: "p")
+        let insight = try XCTUnwrap(insights.first)
+        XCTAssertEqual(insight.kind, .suggestedConnection)
+
+        await db.setKnowledgeEdgeStatus(id: "edge", status: .dismissed)
+        let visibleEdges = await db.knowledgeEdges(projectID: "p")
+        XCTAssertTrue(visibleEdges.isEmpty)
+        let allEdges = await db.knowledgeEdges(projectID: "p", includingDismissed: true)
+        XCTAssertEqual(allEdges.first?.status, .dismissed)
+    }
+
     // MARK: - BackgroundScheduler policy
 
     func testSchedulerPolicy() {
@@ -306,14 +353,14 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertTrue(ran)
 
         let produced = await db.artifacts(projectID: "p")
-        XCTAssertEqual(produced.count, 1)
-        XCTAssertEqual(produced.first?.type, .fileSummary)
-        XCTAssertEqual(produced.first?.title, "Engine.swift")
+        XCTAssertEqual(produced.count, 3)
+        let summaryArtifact = try XCTUnwrap(produced.first(where: { $0.type == .fileSummary }))
+        XCTAssertEqual(summaryArtifact.title, "Engine.swift")
         // Content persisted to cache and readable back.
-        let content = artifacts.content(for: produced.first!)
+        let content = artifacts.content(for: summaryArtifact)
         XCTAssertEqual(content, "# Engine\nDefines the Engine type with one method.")
         // Provenance anchors the summary to the source file.
-        let prov = await db.provenance(artifactID: produced.first!.id)
+        let prov = await db.provenance(artifactID: summaryArtifact.id)
         XCTAssertEqual(prov.first?.claimAnchor, "summary")
         XCTAssertNotNil(prov.first?.fileID)
         // Job marked completed.

@@ -155,8 +155,8 @@ private struct MermaidDiagramWeb: NSViewRepresentable {
 
         // Safety net: never let the diagram navigate the web view anywhere (no
         // external URLs, no custom schemes hitting the system opener).
-        func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            let url = action.request.url
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
+            let url = navigationAction.request.url
             decisionHandler((url == nil || url?.absoluteString == "about:blank") ? .allow : .cancel)
         }
     }

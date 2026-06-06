@@ -128,7 +128,7 @@ private struct TaskRow: View {
             .fixedSize(horizontal: false, vertical: true)
 
             addTaskMenu
-                .opacity(isHovering ? 1 : 0)
+                .opacity(isHovering ? 1 : 0.35)
         }
         .padding(.leading, CGFloat(indentLevel) * 20)
         .onHover { isHovering = $0 }

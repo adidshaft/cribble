@@ -213,7 +213,7 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 3) {
             sidebarIconButton(
                 title: "Open Folder",
                 systemImage: "folder.badge.plus",
@@ -262,7 +262,8 @@ private struct SidebarControls: View {
             }
             .accessibilityValue(isIntelligenceOn ? "On" : "Off")
         }
-        .cribbleGlassContainer()
+        .padding(4)
+        .cribbleInteractiveGlass(in: Capsule())
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -278,7 +279,7 @@ private struct SidebarControls: View {
         }
         .disabled(!library.hasFolders)
         .menuIndicator(.hidden)
-        .cribbleGlassIconButton(size: 28)
+        .sidebarControlIcon(disabled: !library.hasFolders)
         .help("Sort files inside folders by name, created date, or updated date")
     }
 
@@ -294,7 +295,7 @@ private struct SidebarControls: View {
             Label(title, systemImage: systemImage)
         }
         .disabled(disabled)
-        .cribbleGlassIconButton(prominent: prominent, size: 28)
+        .sidebarControlIcon(disabled: disabled, selected: prominent)
         .help(help)
     }
 
@@ -351,6 +352,26 @@ private struct SidebarControls: View {
         case .idle: "Project Intelligence is on and up to date"
         case .driftDetected(let n): "\(n) architecture drift change(s) detected"
         }
+    }
+}
+
+private extension View {
+    func sidebarControlIcon(disabled: Bool = false, selected: Bool = false) -> some View {
+        self
+            .labelStyle(.iconOnly)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .frame(width: 30, height: 30)
+            .contentShape(Circle())
+            .background {
+                if selected {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .shadow(color: Color.accentColor.opacity(0.28), radius: 7, y: 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .opacity(disabled ? 0.38 : 1)
     }
 }
 

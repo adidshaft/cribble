@@ -1,6 +1,4 @@
-import AppKit
 import SwiftUI
-import WebKit
 
 struct GraphPayload: Codable, Equatable {
     var title: String
@@ -32,261 +30,237 @@ struct GraphEdge: Codable, Identifiable, Equatable {
 }
 
 @MainActor
-struct GraphViewport: NSViewRepresentable {
+struct GraphViewport: View {
     let payload: GraphPayload
     var onOpenSource: (String) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onOpenSource: onOpenSource)
-    }
+    var body: some View {
+        GeometryReader { proxy in
+            let layout = GraphLayout(payload: payload, size: proxy.size)
 
-    func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.userContentController.add(context.coordinator, name: "openSource")
+            ZStack {
+                if payload.nodes.isEmpty {
+                    Text("Graph data will appear here after intelligence builds relationships.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.48))
+                        .multilineTextAlignment(.center)
+                        .padding(24)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Canvas { context, size in
+                        drawEdges(layout.edges, nodes: layout.nodeByID, in: &context)
+                        drawNodes(layout.nodes, in: &context)
+                    }
 
-        let webView = WKWebView(frame: .zero, configuration: config)
-        webView.navigationDelegate = context.coordinator
-        webView.setValue(false, forKey: "drawsBackground")
-        webView.loadHTMLString(Self.html(for: payload), baseURL: nil)
-        context.coordinator.lastPayload = payload
-        return webView
-    }
-
-    func updateNSView(_ webView: WKWebView, context: Context) {
-        context.coordinator.onOpenSource = onOpenSource
-        guard context.coordinator.lastPayload != payload else { return }
-        context.coordinator.lastPayload = payload
-        webView.loadHTMLString(Self.html(for: payload), baseURL: nil)
-    }
-
-    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
-        webView.configuration.userContentController.removeScriptMessageHandler(forName: "openSource")
-    }
-
-    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
-        var onOpenSource: (String) -> Void
-        var lastPayload: GraphPayload?
-
-        init(onOpenSource: @escaping (String) -> Void) {
-            self.onOpenSource = onOpenSource
-        }
-
-        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.name == "openSource",
-                  let path = message.body as? String,
-                  !path.isEmpty
-            else { return }
-            onOpenSource(path)
-        }
-
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
-            let url = navigationAction.request.url
-            decisionHandler((url == nil || url?.absoluteString == "about:blank") ? .allow : .cancel)
+                    ForEach(layout.nodes.filter { $0.path != nil }) { node in
+                        Button {
+                            if let path = node.path { onOpenSource(path) }
+                        } label: {
+                            Circle()
+                                .fill(.clear)
+                                .frame(width: node.hitSize, height: node.hitSize)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .position(node.point)
+                        .help(node.label)
+                    }
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
         }
     }
 
-    private static func html(for payload: GraphPayload) -> String {
-        let encodedPayload = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8)) ?? "{}"
-        return """
-        <!doctype html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <script>\(GraphResource.script())</script>
-          <style>
-            html, body, #graph {
-              width: 100%;
-              height: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background: transparent;
-              color: #f2f2f2;
-              font: 12px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-            }
-            #empty, #error {
-              box-sizing: border-box;
-              height: 100%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 24px;
-              color: rgba(242, 242, 242, 0.58);
-              text-align: center;
-              line-height: 1.45;
-            }
-            #error {
-              color: #e5b4b4;
-              font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-              white-space: pre-wrap;
-            }
-          </style>
-        </head>
-        <body>
-          <div id="graph"></div>
-          <script>
-            const payload = \(encodedPayload);
-            const root = document.getElementById('graph');
-            let cy = null;
+    private func drawEdges(_ edges: [GraphLayout.PlacedEdge], nodes: [String: GraphLayout.PlacedNode], in context: inout GraphicsContext) {
+        for edge in edges {
+            guard let source = nodes[edge.source], let target = nodes[edge.target] else { continue }
 
-            const postOpen = path => {
-              try { window.webkit.messageHandlers.openSource.postMessage(String(path)); } catch (e) {}
-            };
+            let vector = CGVector(dx: target.point.x - source.point.x, dy: target.point.y - source.point.y)
+            let length = max(1, hypot(vector.dx, vector.dy))
+            let startInset = source.radius + 3
+            let endInset = target.radius + 5
+            let start = CGPoint(
+                x: source.point.x + vector.dx / length * startInset,
+                y: source.point.y + vector.dy / length * startInset
+            )
+            let end = CGPoint(
+                x: target.point.x - vector.dx / length * endInset,
+                y: target.point.y - vector.dy / length * endInset
+            )
 
-            const colorFor = kind => ({
-              project: '#8ab4f8',
-              folder: '#f6c453',
-              artifact: '#d7aefb',
-              file: '#81c995',
-              note: '#7dd3fc',
-              module: '#f28b82',
-              topic: '#c8c8c8'
-            })[kind] || '#c8c8c8';
+            var path = Path()
+            path.move(to: start)
+            path.addLine(to: end)
 
-            const escapeHTML = value => String(value).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+            let color = edge.status == "suggested"
+                ? Color(red: 0.49, green: 0.83, blue: 0.99).opacity(0.55)
+                : Color.white.opacity(0.28)
+            let style = StrokeStyle(lineWidth: edge.status == "suggested" ? 1.4 : 1.0, lineCap: .round, dash: edge.status == "suggested" ? [5, 4] : [])
+            context.stroke(path, with: .color(color), style: style)
 
-            function renderGraph(nextPayload) {
-              if (!globalThis.cytoscape) {
-                root.innerHTML = '<div id="error">Bundled Cytoscape renderer did not load.</div>';
-                return;
-              }
-              if (!nextPayload || !Array.isArray(nextPayload.nodes) || nextPayload.nodes.length === 0) {
-                root.innerHTML = '<div id="empty">Graph data will appear here after intelligence builds relationships.</div>';
-                return;
-              }
-              root.innerHTML = '';
-              if (cy) cy.destroy();
+            let arrowSize: CGFloat = 6
+            let angle = atan2(vector.dy, vector.dx)
+            var arrow = Path()
+            arrow.move(to: end)
+            arrow.addLine(to: CGPoint(x: end.x - cos(angle - .pi / 7) * arrowSize, y: end.y - sin(angle - .pi / 7) * arrowSize))
+            arrow.addLine(to: CGPoint(x: end.x - cos(angle + .pi / 7) * arrowSize, y: end.y - sin(angle + .pi / 7) * arrowSize))
+            arrow.closeSubpath()
+            context.fill(arrow, with: .color(color))
+        }
+    }
 
-              const nodes = nextPayload.nodes.map(node => ({
-                data: {
-                  id: String(node.id),
-                  label: String(node.label || node.id),
-                  kind: String(node.kind || 'topic'),
-                  path: node.path || '',
-                  color: colorFor(String(node.kind || 'topic')),
-                  weight: Math.max(1, Number(node.weight || 1))
-                }
-              }));
-              const edges = (nextPayload.edges || []).map((edge, index) => ({
-                data: {
-                  id: edge.id || `e${index}`,
-                  source: String(edge.source),
-                  target: String(edge.target),
-                  label: edge.label || '',
-                  kind: edge.kind || 'relationship',
-                  status: edge.status || 'accepted',
-                  origin: edge.origin || 'deterministic'
-                }
-              }));
+    private func drawNodes(_ nodes: [GraphLayout.PlacedNode], in context: inout GraphicsContext) {
+        for node in nodes {
+            let halo = CGRect(
+                x: node.point.x - node.radius - 6,
+                y: node.point.y - node.radius - 6,
+                width: (node.radius + 6) * 2,
+                height: (node.radius + 6) * 2
+            )
+            context.fill(Path(ellipseIn: halo), with: .color(node.color.opacity(0.14)))
 
-              cy = cytoscape({
-                container: root,
-                elements: nodes.concat(edges),
-                minZoom: 0.3,
-                maxZoom: 2.4,
-                wheelSensitivity: 0.22,
-                style: [
-                  {
-                    selector: 'node',
-                    style: {
-                      'background-color': 'data(color)',
-                      'border-color': 'rgba(255,255,255,0.72)',
-                      'border-width': 1,
-                      'color': '#f3f3f3',
-                      'font-family': '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-                      'font-size': 10,
-                      'height': 'mapData(weight, 1, 8, 22, 42)',
-                      'label': 'data(label)',
-                      'overlay-opacity': 0,
-                      'text-background-color': 'rgba(0,0,0,0.42)',
-                      'text-background-opacity': 1,
-                      'text-background-padding': 3,
-                      'text-margin-y': -8,
-                      'text-max-width': 92,
-                      'text-outline-color': 'rgba(0,0,0,0.32)',
-                      'text-outline-width': 1,
-                      'text-wrap': 'wrap',
-                      'width': 'mapData(weight, 1, 8, 22, 42)'
-                    }
-                  },
-                  {
-                    selector: 'edge',
-                    style: {
-                      'curve-style': 'bezier',
-                      'line-color': 'rgba(220,220,220,0.42)',
-                      'target-arrow-color': 'rgba(220,220,220,0.48)',
-                      'target-arrow-shape': 'triangle',
-                      'width': 1.2,
-                      'label': 'data(label)',
-                      'font-size': 8,
-                      'color': 'rgba(242,242,242,0.52)',
-                      'text-background-color': 'rgba(0,0,0,0.34)',
-                      'text-background-opacity': 1,
-                      'text-background-padding': 2
-                    }
-                  },
-                  {
-                    selector: 'edge[status = "suggested"]',
-                    style: {
-                      'line-style': 'dashed',
-                      'line-color': 'rgba(125, 211, 252, 0.52)',
-                      'target-arrow-color': 'rgba(125, 211, 252, 0.62)'
-                    }
-                  },
-                  {
-                    selector: 'node:selected',
-                    style: {
-                      'border-color': '#ffffff',
-                      'border-width': 2
-                    }
-                  }
-                ],
-                layout: {
-                  name: nodes.length > 5 ? 'cose' : 'circle',
-                  animate: false,
-                  fit: true,
-                  padding: 36,
-                  nodeRepulsion: 7000,
-                  idealEdgeLength: 96,
-                  edgeElasticity: 0.18
-                }
-              });
+            let rect = CGRect(
+                x: node.point.x - node.radius,
+                y: node.point.y - node.radius,
+                width: node.radius * 2,
+                height: node.radius * 2
+            )
+            context.fill(Path(ellipseIn: rect), with: .color(node.color.opacity(0.92)))
+            context.stroke(Path(ellipseIn: rect), with: .color(.white.opacity(node.path == nil ? 0.42 : 0.78)), lineWidth: node.path == nil ? 1 : 1.4)
 
-              cy.on('tap', 'node', event => {
-                const path = event.target.data('path');
-                if (path) postOpen(path);
-              });
-              cy.on('mouseover', 'node', event => {
-                root.style.cursor = event.target.data('path') ? 'pointer' : 'default';
-              });
-              cy.on('mouseout', 'node', () => { root.style.cursor = 'default'; });
-              setTimeout(() => cy && cy.fit(undefined, 36), 150);
-            }
-
-            window.addEventListener('resize', () => { if (cy) cy.fit(undefined, 36); });
-
-            try {
-              renderGraph(payload);
-            } catch (error) {
-              root.innerHTML = '<div id="error">' + escapeHTML(error && error.message || error) + '</div>';
-            }
-          </script>
-        </body>
-        </html>
-        """
+            let label = node.displayLabel
+            let labelWidth = min(CGFloat(max(44, label.count * 6 + 14)), 124)
+            let labelRect = CGRect(
+                x: node.point.x - labelWidth / 2,
+                y: node.point.y + node.radius + 6,
+                width: labelWidth,
+                height: 18
+            )
+            context.fill(Path(roundedRect: labelRect, cornerRadius: 5), with: .color(.black.opacity(0.42)))
+            context.draw(
+                Text(label)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9)),
+                at: CGPoint(x: labelRect.midX, y: labelRect.midY),
+                anchor: .center
+            )
+        }
     }
 }
 
-@MainActor
-private enum GraphResource {
-    static func script() -> String {
-        guard let url = MarkdownLibraryStore.bundledResourceURL(forResource: "cytoscape.min", withExtension: "js", subdirectory: "Graph")
-                ?? MarkdownLibraryStore.bundledResourceURL(forResource: "cytoscape.min", withExtension: "js"),
-              let script = try? String(contentsOf: url, encoding: .utf8)
-        else {
-            return "window.__cribbleCytoscapeMissing = true;"
+private struct GraphLayout {
+    struct PlacedNode: Identifiable {
+        var id: String
+        var label: String
+        var kind: String
+        var path: String?
+        var point: CGPoint
+        var radius: CGFloat
+        var color: Color
+
+        var hitSize: CGFloat { max(44, radius * 2 + 18) }
+
+        var displayLabel: String {
+            guard label.count > 24 else { return label }
+            return String(label.prefix(21)) + "..."
         }
-        return script.replacingOccurrences(of: "</script", with: "<\\/script")
+    }
+
+    struct PlacedEdge: Identifiable {
+        var id: String
+        var source: String
+        var target: String
+        var label: String?
+        var status: String
+    }
+
+    var nodes: [PlacedNode]
+    var edges: [PlacedEdge]
+    var nodeByID: [String: PlacedNode]
+
+    init(payload: GraphPayload, size: CGSize) {
+        let canvas = CGSize(width: max(size.width, 320), height: max(size.height, 260))
+        let degrees = payload.edges.reduce(into: [String: Int]()) { result, edge in
+            result[edge.source, default: 0] += 1
+            result[edge.target, default: 0] += 1
+        }
+        let sorted = payload.nodes.sorted { lhs, rhs in
+            let lhsRank = lhs.weight + degrees[lhs.id, default: 0]
+            let rhsRank = rhs.weight + degrees[rhs.id, default: 0]
+            if lhs.kind == "project" && rhs.kind != "project" { return true }
+            if rhs.kind == "project" && lhs.kind != "project" { return false }
+            return lhsRank == rhsRank
+                ? lhs.label.localizedStandardCompare(rhs.label) == .orderedAscending
+                : lhsRank > rhsRank
+        }
+
+        let center = CGPoint(x: canvas.width / 2, y: canvas.height / 2 - 8)
+        let positions = Self.positions(count: sorted.count, center: center, size: canvas, hasCenterNode: sorted.first?.kind == "project")
+
+        nodes = zip(sorted.indices, sorted).map { index, node in
+            let degree = degrees[node.id, default: 0]
+            let radius = CGFloat(min(24, max(12, 12 + node.weight * 2 + degree)))
+            return PlacedNode(
+                id: node.id,
+                label: node.label,
+                kind: node.kind,
+                path: node.path,
+                point: positions[index],
+                radius: radius,
+                color: Self.color(for: node.kind)
+            )
+        }
+        let visibleIDs = Set(nodes.map(\.id))
+        edges = payload.edges
+            .filter { visibleIDs.contains($0.source) && visibleIDs.contains($0.target) }
+            .map { PlacedEdge(id: $0.id, source: $0.source, target: $0.target, label: $0.label, status: $0.status) }
+        nodeByID = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+    }
+
+    private static func positions(count: Int, center: CGPoint, size: CGSize, hasCenterNode: Bool) -> [CGPoint] {
+        guard count > 0 else { return [] }
+        guard count > 1 else { return [center] }
+
+        let horizontalRadius = max(96, size.width * 0.36)
+        let verticalRadius = max(76, size.height * 0.32)
+
+        if hasCenterNode {
+            var result = [center]
+            result.append(contentsOf: ringPositions(count: count - 1, center: center, horizontalRadius: horizontalRadius, verticalRadius: verticalRadius, phase: -.pi / 2))
+            return result
+        }
+
+        if count <= 14 {
+            return ringPositions(count: count, center: center, horizontalRadius: horizontalRadius, verticalRadius: verticalRadius, phase: -.pi / 2)
+        }
+
+        let innerCount = min(10, max(5, count / 3))
+        let inner = ringPositions(count: innerCount, center: center, horizontalRadius: horizontalRadius * 0.52, verticalRadius: verticalRadius * 0.52, phase: -.pi / 2)
+        let outer = ringPositions(count: count - innerCount, center: center, horizontalRadius: horizontalRadius, verticalRadius: verticalRadius, phase: -.pi / 2 + 0.18)
+        return inner + outer
+    }
+
+    private static func ringPositions(count: Int, center: CGPoint, horizontalRadius: CGFloat, verticalRadius: CGFloat, phase: CGFloat) -> [CGPoint] {
+        guard count > 0 else { return [] }
+        return (0..<count).map { index in
+            let angle = phase + (CGFloat(index) / CGFloat(count)) * .pi * 2
+            return CGPoint(
+                x: center.x + cos(angle) * horizontalRadius,
+                y: center.y + sin(angle) * verticalRadius
+            )
+        }
+    }
+
+    private static func color(for kind: String) -> Color {
+        switch kind {
+        case "project": return Color(red: 0.54, green: 0.71, blue: 0.97)
+        case "folder": return Color(red: 0.96, green: 0.77, blue: 0.32)
+        case "artifact": return Color(red: 0.84, green: 0.68, blue: 0.98)
+        case "file": return Color(red: 0.51, green: 0.79, blue: 0.59)
+        case "note": return Color(red: 0.49, green: 0.83, blue: 0.99)
+        case "module": return Color(red: 0.95, green: 0.55, blue: 0.51)
+        default: return Color(red: 0.78, green: 0.78, blue: 0.78)
+        }
     }
 }

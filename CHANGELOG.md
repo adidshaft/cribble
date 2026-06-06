@@ -7,6 +7,14 @@ All notable changes to Cribble are documented here. The format follows
 
 ## Unreleased
 
+_Nothing yet. Land user-visible changes here, then move them under a version
+heading when you cut a release._
+
+## 1.3.1 — Generic intelligence & tasks (experimental)
+
+> ⚠️ **Experimental build.** New on-device intelligence lenses, task export, and
+> image handling. Feedback welcome before this is promoted to a stable release.
+
 ### New
 - **More images render** — Obsidian-style `![[embeds]]`, raw HTML `<img>` tags,
   and images kept in `attachments/`, `assets/`, or `images/` folders now display
@@ -21,6 +29,8 @@ All notable changes to Cribble are documented here. The format follows
 - **Send tasks anywhere** — hover a checkbox to add it to Reminders, Calendar, or
   Cribble's own **Tasks.md**, which collects everything you flag with a backlink
   to the exact source line. A sidebar Tasks button opens that living index.
+- **Block-reference links** — `[[Note#^anchor]]` links (including the backlinks in
+  Tasks.md) now scroll to the linked line's section, not just the top of the note.
 - **Project Pulse** — a glanceable health + progress card in the Intelligence HUD.
 
 ### Privacy

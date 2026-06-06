@@ -602,12 +602,18 @@ final class MarkdownLibraryStore: ObservableObject {
         }
 
         if url.host == "open", let path = components.queryItems?.first(where: { $0.name == "path" })?.value {
-            if let anchor = components.queryItems?.first(where: { $0.name == "anchor" })?.value {
-                activeScrollAnchor = anchor
-            } else {
-                activeScrollAnchor = nil
-            }
+            let anchor = components.queryItems?.first(where: { $0.name == "anchor" })?.value
             select(url: URL(fileURLWithPath: path))
+            if let anchor, anchor.hasPrefix("^") {
+                // Block reference (`#^id`): map it to the enclosing heading
+                // section of the just-loaded document so the reader can scroll
+                // close to the exact line.
+                let blockID = String(anchor.dropFirst())
+                activeScrollAnchor = selectedDocument
+                    .map { Self.sectionAnchor(forBlockID: blockID, in: $0.rawMarkdown) } ?? nil
+            } else {
+                activeScrollAnchor = anchor
+            }
             return .handled
         }
 
@@ -624,6 +630,29 @@ final class MarkdownLibraryStore: ObservableObject {
 
         errorMessage = "No matching Markdown file found for that link."
         return .handled
+    }
+
+    /// Finds the line carrying the Obsidian-style block anchor `^blockID` and
+    /// returns the slug of its nearest preceding heading — the scroll target the
+    /// reader understands. Returns "top" when the block sits above any heading,
+    /// and nil when the anchor isn't found.
+    nonisolated static func sectionAnchor(forBlockID blockID: String, in markdown: String) -> String? {
+        let lines = markdown.components(separatedBy: "\n")
+        var currentHeadingSlug = "top"
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("#") {
+                let markerCount = trimmed.prefix { $0 == "#" }.count
+                if (1...6).contains(markerCount) {
+                    let title = trimmed.dropFirst(markerCount).trimmingCharacters(in: .whitespaces)
+                    if !title.isEmpty { currentHeadingSlug = title.textualSlug() }
+                }
+            }
+            if TaskCheckbox.blockAnchor(in: line) == blockID {
+                return currentHeadingSlug
+            }
+        }
+        return nil
     }
 
     var canNavigateBack: Bool {

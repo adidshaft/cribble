@@ -35,12 +35,20 @@ enum WikiLinkParser {
         let resolved = index?.resolve(link)
         let destination: String
         if let targetURL = resolved?.targetURL {
+            // Block anchors (`#^id`) are passed through raw so the reader can map
+            // them to the line's enclosing section; heading anchors stay slugged.
+            let anchorValue: String?
+            if let raw = link.anchor, raw.hasPrefix("^") {
+                anchorValue = raw
+            } else {
+                anchorValue = resolved?.anchor
+            }
             var components = URLComponents()
             components.scheme = "cribble"
             components.host = "open"
             components.queryItems = [
                 URLQueryItem(name: "path", value: targetURL.path),
-                URLQueryItem(name: "anchor", value: resolved?.anchor)
+                URLQueryItem(name: "anchor", value: anchorValue)
             ].compactMap { $0.value == nil ? nil : $0 }
             destination = components.url?.absoluteString ?? "cribble://unresolved"
         } else {

@@ -254,12 +254,13 @@ private struct SidebarControls: View {
             sidebarIconButton(
                 title: "Project Intelligence",
                 systemImage: intelligenceSymbol,
-                disabled: !library.hasFolders,
-                foregroundStyle: intelligenceForegroundStyle,
+                disabled: activeIntelligenceRoot == nil,
+                prominent: isIntelligenceOn,
                 help: intelligenceHelp
             ) {
-                IntelligenceHUDController.shared.toggle()
+                toggleIntelligence()
             }
+            .accessibilityValue(isIntelligenceOn ? "On" : "Off")
         }
         .cribbleGlassContainer()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -276,6 +277,7 @@ private struct SidebarControls: View {
             Label("Sort", systemImage: "arrow.up.arrow.down")
         }
         .disabled(!library.hasFolders)
+        .menuIndicator(.hidden)
         .cribbleGlassIconButton(size: 28)
         .help("Sort files inside folders by name, created date, or updated date")
     }
@@ -284,50 +286,70 @@ private struct SidebarControls: View {
         title: String,
         systemImage: String,
         disabled: Bool = false,
-        foregroundStyle: AnyShapeStyle = AnyShapeStyle(.primary),
+        prominent: Bool = false,
         help: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .foregroundStyle(foregroundStyle)
         }
         .disabled(disabled)
-        .cribbleGlassIconButton(size: 28)
+        .cribbleGlassIconButton(prominent: prominent, size: 28)
         .help(help)
     }
 
-    /// The sidebar indicator reflects intelligence status (plan §9): distinct
-    /// shapes, not color alone, for accessibility.
+    private var activeIntelligenceRoot: URL? {
+        library.activeRootURL?.standardizedFileURL
+    }
+
+    private var isIntelligenceOn: Bool {
+        guard let activeIntelligenceRoot else { return false }
+        return intelligence.isEnabled
+            && !intelligence.isAllFolders
+            && intelligence.enabledRootPath == activeIntelligenceRoot.path
+    }
+
+    private func toggleIntelligence() {
+        guard let activeIntelligenceRoot else { return }
+        Task {
+            if isIntelligenceOn {
+                await intelligence.disable()
+            } else {
+                await intelligence.enable(rootURL: activeIntelligenceRoot)
+            }
+        }
+    }
+
+    /// The sidebar toggle reflects intelligence status with distinct SF Symbols
+    /// so state is not carried by color alone.
     private var intelligenceSymbol: String {
-        switch intelligence.status {
+        if !isIntelligenceOn {
+            return "brain"
+        }
+        return switch intelligence.status {
         case .off: "brain"
-        case .ready: "brain.head.profile"
+        case .ready: "brain"
         case .scanning, .working: "brain.head.profile.fill"
-        case .idle: "brain.head.profile.fill"
+        case .idle: "checkmark.circle.fill"
         case .driftDetected: "exclamationmark.triangle.fill"
         }
     }
 
     private var intelligenceHelp: String {
-        switch intelligence.status {
-        case .off: "Build local project intelligence for this folder"
-        case .ready: "Intelligence ready"
-        case .scanning: "Scanning project…"
-        case .working: "Processing project intelligence…"
-        case .idle: "Project intelligence up to date"
-        case .driftDetected(let n): "\(n) architecture drift change(s) detected"
+        guard let activeIntelligenceRoot else {
+            return "Open a folder to turn Project Intelligence on"
         }
-    }
-
-    private var intelligenceForegroundStyle: AnyShapeStyle {
-        switch intelligence.status {
-        case .off:
-            AnyShapeStyle(.primary)
-        case .ready, .scanning, .working, .idle:
-            AnyShapeStyle(.green)
-        case .driftDetected:
-            AnyShapeStyle(.orange)
+        let folderName = activeIntelligenceRoot.lastPathComponent
+        if !isIntelligenceOn {
+            return "Turn on Project Intelligence for \(folderName)"
+        }
+        return switch intelligence.status {
+        case .off: "Turn on Project Intelligence for \(folderName)"
+        case .ready: "Project Intelligence is on for \(folderName)"
+        case .scanning: "Scanning \(folderName)"
+        case .working: "Processing Project Intelligence for \(folderName)"
+        case .idle: "Project Intelligence is on and up to date"
+        case .driftDetected(let n): "\(n) architecture drift change(s) detected"
         }
     }
 }

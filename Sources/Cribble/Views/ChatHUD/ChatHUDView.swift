@@ -58,6 +58,7 @@ struct ChatHUDView: View {
 
             HeaderIcon(systemName: "xmark", help: "Close") { onClose() }
         }
+        .cribbleGlassContainer()
     }
 
     private var transcript: some View {
@@ -121,9 +122,8 @@ struct ChatEmptyState: View {
         VStack(spacing: 18) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(width: 72, height: 72)
-                    .blur(radius: 14)
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 64, height: 64)
 
                 // The actual Cribble app icon — always available, no bundle lookup.
                 Image(nsImage: NSApp.applicationIconImage)

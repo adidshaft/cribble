@@ -266,7 +266,8 @@ private struct SidebarControls: View {
             }
         }
         .padding(4)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .cribbleInteractiveGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .cribbleGlassContainer()
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

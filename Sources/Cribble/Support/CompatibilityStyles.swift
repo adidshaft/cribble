@@ -15,6 +15,19 @@ extension View {
         #endif
     }
 
+    @ViewBuilder
+    func cribbleInteractiveGlass<S: InsettableShape>(in shape: S) -> some View {
+        #if compiler(>=6.1)
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular.interactive(), in: shape)
+        } else {
+            fallbackGlass(in: shape)
+        }
+        #else
+        fallbackGlass(in: shape)
+        #endif
+    }
+
     private func fallbackGlass<S: InsettableShape>(in shape: S) -> some View {
         self.background(.regularMaterial, in: shape)
             .overlay {
@@ -30,6 +43,21 @@ extension View {
             .overlay {
                 shape.strokeBorder(.primary.opacity(strokeOpacity), lineWidth: 0.75)
             }
+    }
+
+    @ViewBuilder
+    func cribbleGlassContainer() -> some View {
+        #if compiler(>=6.1)
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer {
+                self
+            }
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
     }
 
     @ViewBuilder

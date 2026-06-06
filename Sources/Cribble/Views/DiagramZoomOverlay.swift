@@ -217,6 +217,7 @@ struct DiagramZoomOverlay: View {
         }
         .labelStyle(.iconOnly)
         .controlSize(.small)
+        .cribbleGlassContainer()
     }
 
     @ViewBuilder

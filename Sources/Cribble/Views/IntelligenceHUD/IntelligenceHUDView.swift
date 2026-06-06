@@ -105,6 +105,7 @@ struct IntelligenceHUDView: View {
             }
             headerIcon("xmark", help: "Close", action: onClose)
         }
+        .cribbleGlassContainer()
     }
 
     private var subtitle: String {
@@ -213,11 +214,7 @@ struct IntelligenceHUDView: View {
         }
         .padding(.bottom, 6)
         .frame(width: 320)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(.white.opacity(0.10), lineWidth: 0.75)
-        }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 14), strokeOpacity: 0.10)
         .padding(.top, 44).padding(.trailing, 70)
     }
 

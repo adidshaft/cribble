@@ -62,4 +62,35 @@ final class RichMarkdownBlockTests: XCTestCase {
 
         XCTAssertEqual(blocks, [.fencedCode(id: "fence-0", language: "vega-lite", code: "{\"mark\":\"bar\"}")])
     }
+
+    func testSplitsStandaloneImagesAwayFromSurroundingProse() {
+        let blocks = RichMarkdownBlock.blocks(
+            from: """
+            Adjacent markdown image:
+
+            ![alt](file:///tmp/pic.png)
+
+            Obsidian embed:
+
+            ![pic.png](file:///tmp/pic.png)
+
+            Remote image should be blocked until enabled:
+
+            [🖼 remote](https://example.com/y.png)
+            """
+        )
+
+        XCTAssertEqual(blocks.count, 5)
+        XCTAssertEqual(blocks[0], .markdown(id: "markdown-0", text: "Adjacent markdown image:"))
+        XCTAssertEqual(blocks[1], .markdown(id: "markdown-1", text: "![alt](file:///tmp/pic.png)"))
+        XCTAssertEqual(blocks[2], .markdown(id: "markdown-2", text: "Obsidian embed:"))
+        XCTAssertEqual(blocks[3], .markdown(id: "markdown-3", text: "![pic.png](file:///tmp/pic.png)"))
+        XCTAssertEqual(
+            blocks[4],
+            .markdown(
+                id: "markdown-4",
+                text: "Remote image should be blocked until enabled:\n\n[🖼 remote](https://example.com/y.png)"
+            )
+        )
+    }
 }

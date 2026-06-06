@@ -28,10 +28,25 @@ enum RichMarkdownBlock: Identifiable, Equatable {
             markdownLines.removeAll(keepingCapacity: true)
 
             func flushProse(_ proseLines: [String]) {
-                let text = proseLines.joined(separator: "\n").trimmingCharacters(in: .newlines)
-                guard !text.isEmpty else { return }
-                blocks.append(.markdown(id: "markdown-\(blockIndex)", text: text))
-                blockIndex += 1
+                var current: [String] = []
+
+                func emit(_ lines: [String]) {
+                    let text = lines.joined(separator: "\n").trimmingCharacters(in: .newlines)
+                    guard !text.isEmpty else { return }
+                    blocks.append(.markdown(id: "markdown-\(blockIndex)", text: text))
+                    blockIndex += 1
+                }
+
+                for line in proseLines {
+                    if line.isStandaloneMarkdownImageLine {
+                        emit(current)
+                        current.removeAll(keepingCapacity: true)
+                        emit([line])
+                    } else {
+                        current.append(line)
+                    }
+                }
+                emit(current)
             }
 
             var prose: [String] = []
@@ -100,6 +115,19 @@ enum RichMarkdownBlock: Identifiable, Equatable {
 
         appendMarkdown()
         return blocks
+    }
+}
+
+private extension String {
+    var isStandaloneMarkdownImageLine: Bool {
+        let trimmed = trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("![") else { return false }
+        guard let closeAlt = trimmed.firstIndex(of: "]"),
+              closeAlt < trimmed.index(before: trimmed.endIndex)
+        else { return false }
+        let openParen = trimmed.index(after: closeAlt)
+        guard trimmed[openParen] == "(" else { return false }
+        return trimmed.hasSuffix(")")
     }
 }
 

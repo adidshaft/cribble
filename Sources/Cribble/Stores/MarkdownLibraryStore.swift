@@ -1132,10 +1132,10 @@ final class MarkdownLibraryStore: ObservableObject {
 
         let stem = url.deletingPathExtension().lastPathComponent
         let backlink = "[[\(stem)#^\(located.anchor)]]"
-        appendToTasksFile(root: rootURL(for: url), label: located.label, backlink: backlink)
+        let addedToTasks = appendToTasksFile(root: rootURL(for: url), label: located.label, backlink: backlink)
 
         guard let target else {
-            statusMessage = "Added to Tasks"
+            statusMessage = addedToTasks ? "Added to Tasks" : "Already in Tasks"
             return
         }
         do {
@@ -1150,16 +1150,16 @@ final class MarkdownLibraryStore: ObservableObject {
     /// Appends a task to the vault-root `Tasks.md`, creating it if missing and
     /// de-duplicating by backlink. This is the single living index of everything
     /// the user has flagged across the whole vault.
-    private func appendToTasksFile(root: URL?, label: String, backlink: String) {
-        guard let root else { return }
+    @discardableResult
+    private func appendToTasksFile(root: URL?, label: String, backlink: String) -> Bool {
+        guard let root else { return false }
         let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
         var existing = (try? String(contentsOf: tasksURL, encoding: .utf8)) ?? ""
         if existing.isEmpty {
             existing = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n\n"
         }
         guard !existing.contains(backlink) else {
-            statusMessage = "Already in Tasks"
-            return
+            return false
         }
         if !existing.hasSuffix("\n") { existing += "\n" }
         existing += "- [ ] \(label) — \(backlink)\n"
@@ -1171,8 +1171,10 @@ final class MarkdownLibraryStore: ObservableObject {
             } else {
                 refresh(keepStatusQuiet: true)
             }
+            return true
         } catch {
             errorMessage = "Couldn't update Tasks.md: \(error.localizedDescription)"
+            return false
         }
     }
 

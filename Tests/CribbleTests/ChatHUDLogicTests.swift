@@ -281,6 +281,32 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(ModelCatalog.defaultModel.kind.isCloud)
     }
 
+    @MainActor
+    func testEngineChooserShowsForFreshDefaults() {
+        withCleanEngineChoiceDefaults {
+            let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            XCTAssertTrue(viewModel.needsEngineChoice)
+            XCTAssertEqual(viewModel.selectedModel.id, ModelCatalog.defaultModel.id)
+        }
+    }
+
+    @MainActor
+    func testEngineChoicePersistsAcrossViewModelRecreation() {
+        withCleanEngineChoiceDefaults {
+            let chosen = ModelCatalog.cloudModels.last ?? ModelCatalog.defaultModel
+            let first = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            first.chooseEngine(chosen)
+
+            XCTAssertFalse(first.needsEngineChoice)
+            XCTAssertEqual(UserDefaults.standard.string(forKey: "chatHUD.selectedModelID"), chosen.id)
+            XCTAssertTrue(UserDefaults.standard.bool(forKey: "chatHUD.hasChosenEngine"))
+
+            let recreated = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            XCTAssertFalse(recreated.needsEngineChoice)
+            XCTAssertEqual(recreated.selectedModel.id, chosen.id)
+        }
+    }
+
     func testCLIFlattenIncludesSystemAndTurns() {
         let prompt = CLIChatEngine.flatten([
             EngineMessage(role: .system, content: "RULES"),
@@ -292,5 +318,27 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(prompt.contains("User: hello"))
         XCTAssertTrue(prompt.contains("Assistant: hi"))
         XCTAssertTrue(prompt.hasSuffix("Assistant:"))
+    }
+
+    private func withCleanEngineChoiceDefaults(_ body: () -> Void) {
+        let defaults = UserDefaults.standard
+        let selectedModelID = defaults.object(forKey: "chatHUD.selectedModelID")
+        let hasChosenEngine = defaults.object(forKey: "chatHUD.hasChosenEngine")
+        defaults.removeObject(forKey: "chatHUD.selectedModelID")
+        defaults.removeObject(forKey: "chatHUD.hasChosenEngine")
+        defer {
+            if let selectedModelID {
+                defaults.set(selectedModelID, forKey: "chatHUD.selectedModelID")
+            } else {
+                defaults.removeObject(forKey: "chatHUD.selectedModelID")
+            }
+
+            if let hasChosenEngine {
+                defaults.set(hasChosenEngine, forKey: "chatHUD.hasChosenEngine")
+            } else {
+                defaults.removeObject(forKey: "chatHUD.hasChosenEngine")
+            }
+        }
+        body()
     }
 }

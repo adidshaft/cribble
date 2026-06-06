@@ -379,6 +379,74 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.selectedRenderedMarkdown.contains("![banner](https://example.com/banner.png)"))
         XCTAssertFalse(store.selectedRenderedMarkdown.contains("[🖼 banner](https://example.com/banner.png)"))
     }
+
+    func testAddToTasksAnchorsSourceAndDeduplicatesBacklink() async throws {
+        let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldDisplayNames = defaults.dictionary(forKey: "folderDisplayNames")
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "folderDisplayNames")
+        defaults.removeObject(forKey: "folderPaths")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldDisplayNames {
+                defaults.set(oldDisplayNames, forKey: "folderDisplayNames")
+            } else {
+                defaults.removeObject(forKey: "folderDisplayNames")
+            }
+
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TasksExport-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let sourceURL = rootURL.appendingPathComponent("Source.md")
+        try "# Source\n\n## Launch\n\n- [ ] Send release notes\n".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+        store.select(url: sourceURL)
+        await store.waitForRenderToComplete()
+
+        await store.addTaskToTracker(in: sourceURL, ordinal: 0, exportTo: nil)
+        await store.waitForRenderToComplete()
+        await store.addTaskToTracker(in: sourceURL, ordinal: 0, exportTo: nil)
+        await store.waitForRenderToComplete()
+
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let anchor = try XCTUnwrap(TaskCheckbox.blockAnchor(in: source.components(separatedBy: "\n")[4]))
+        XCTAssertTrue(anchor.hasPrefix("cribble-"))
+        XCTAssertFalse(store.selectedRenderedMarkdown.contains("^cribble-"), store.selectedRenderedMarkdown)
+
+        let tasksURL = rootURL.appendingPathComponent("Tasks.md")
+        let tasks = try String(contentsOf: tasksURL, encoding: .utf8)
+        let backlink = "[[Source#^\(anchor)]]"
+        XCTAssertTrue(tasks.contains("- [ ] Send release notes — \(backlink)"), tasks)
+        XCTAssertEqual(tasks.components(separatedBy: backlink).count - 1, 1, tasks)
+        XCTAssertEqual(store.statusMessage, "Already in Tasks")
+    }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {
         // Strip duplicate document title

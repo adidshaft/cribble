@@ -63,6 +63,22 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertNil(OutputValidator.looksLikeError(realSummary))
     }
 
+    func testStripReasoningPreambleKeepsRequestedMarkdown() {
+        let raw = """
+        <think>I should reason about the user's request first.</think>
+        The user wants me to find conceptual connections and output Markdown only.
+
+        # Suggested Connections
+        - `A.swift` => `B.swift`: B uses A.
+        """
+        let cleaned = OutputValidator.stripReasoningPreamble(raw)
+        XCTAssertTrue(cleaned.hasPrefix("# Suggested Connections"))
+        XCTAssertFalse(cleaned.contains("The user wants me"))
+        XCTAssertFalse(cleaned.contains("<think>"))
+        XCTAssertTrue(OutputValidator.looksLikeReasoningLeak("The user wants me to output Markdown only."))
+        XCTAssertFalse(OutputValidator.looksLikeReasoningLeak(cleaned))
+    }
+
     func testRunnerDoesNotStoreErrorOutput() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-err-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -265,6 +281,8 @@ final class IntelligenceJobsTests: XCTestCase {
             .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
         })
         let provider = StubProvider(text: """
+        The user wants me to find conceptual connections between files.
+
         # Suggested Connections
         - `A.swift` => `B.swift`: B stores a value of A.
         """)
@@ -275,6 +293,10 @@ final class IntelligenceJobsTests: XCTestCase {
 
         let produced = await db.artifacts(projectID: "p")
         XCTAssertTrue(produced.contains { $0.type == .researchInsight })
+        let researchArtifact = try XCTUnwrap(produced.first { $0.type == .researchInsight })
+        let body = try XCTUnwrap(artifacts.content(for: researchArtifact))
+        XCTAssertTrue(body.hasPrefix("# Suggested Connections"))
+        XCTAssertFalse(body.contains("The user wants me"))
         let insights = await db.researchInsights(projectID: "p")
         XCTAssertEqual(insights.first?.kind, .suggestedConnection)
         let edges = await db.knowledgeEdges(projectID: "p")

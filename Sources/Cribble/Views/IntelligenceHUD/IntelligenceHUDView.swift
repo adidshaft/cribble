@@ -191,7 +191,7 @@ struct IntelligenceHUDView: View {
                 localRunnerRow(name: endpoint.name, url: endpoint.url)
             }
             Button {
-                configureLocalRunner(name: "Custom", baseURL: localRunnerBaseURL.isEmpty ? "http://localhost:11434/v1" : localRunnerBaseURL)
+                configureLocalRunner(name: "Custom", baseURL: localRunnerBaseURL.isEmpty ? "http://127.0.0.1:11434/v1" : localRunnerBaseURL)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: isCustomLocalRunnerSelected ? "largecircle.fill.circle" : "circle")

@@ -469,6 +469,20 @@ actor IntelligenceDatabase {
         exec("UPDATE jobs SET status = 'pending', started_at = NULL WHERE status = 'running';")
     }
 
+    func removeCompletedJobsWithMissingArtifacts(projectID: String) {
+        run("""
+        DELETE FROM jobs
+        WHERE project_id = ?
+          AND status = 'completed'
+          AND output_artifact_id IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM artifacts WHERE artifacts.id = jobs.output_artifact_id
+          );
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+        }
+    }
+
     /// Returns a single job to `pending` without counting an attempt. Used when a
     /// job was dequeued but can't run yet (e.g. its required provider isn't ready),
     /// so we don't burn its retry budget.

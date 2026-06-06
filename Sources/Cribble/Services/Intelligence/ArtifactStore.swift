@@ -61,4 +61,30 @@ struct ArtifactStore: Sendable {
         let fileURL = cacheDirectory.appendingPathComponent("\(artifact.id).md")
         return try? String(contentsOf: fileURL, encoding: .utf8)
     }
+
+    @discardableResult
+    func rewriteContent(for artifact: IntelligenceArtifact, content: String) async throws -> IntelligenceArtifact {
+        let contentHash = ContentHasher.hash(content)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let fileURL = cacheDirectory.appendingPathComponent("\(artifact.id).md")
+        try content.data(using: .utf8)?.write(to: fileURL, options: .atomic)
+
+        let updated = IntelligenceArtifact(
+            id: artifact.id,
+            projectID: artifact.projectID,
+            type: artifact.type,
+            relativePath: artifact.relativePath,
+            title: artifact.title,
+            contentHash: contentHash,
+            sourceHashes: artifact.sourceHashes,
+            isPublished: artifact.isPublished
+        )
+        await db.insertArtifact(updated)
+        return updated
+    }
+
+    func delete(_ artifact: IntelligenceArtifact) async {
+        try? FileManager.default.removeItem(at: cacheDirectory.appendingPathComponent("\(artifact.id).md"))
+        await db.deleteArtifact(id: artifact.id)
+    }
 }

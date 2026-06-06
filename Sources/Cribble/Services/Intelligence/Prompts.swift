@@ -134,11 +134,14 @@ enum Prompts {
             conceptual connections between the listed files. Prefer connections that would help \
             a reader understand the project or decide where a `[[wiki link]]` might belong.
 
-            Output Markdown only:
+            Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
+            plans, or phrases like "The user wants me":
+            /no_think
             # Suggested Connections
             - `from/path.ext` => `to/path.ext`: one sentence reason grounded in the summaries.
 
-            Include at most 12 suggestions. Use only file paths present below.
+            Your first visible characters must be "# Suggested Connections". Include at most \
+            12 suggestions. Use only file paths present below.
             """),
             EngineMessage(role: .user, content: context)
         ]
@@ -163,14 +166,17 @@ enum Prompts {
             across them. This applies to any domain — research findings, guidelines, \
             contracts, manuscripts, or notes.
 
-            Output Markdown only:
+            Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
+            plans, or phrases like "The user wants me":
+            /no_think
             # Contradiction Report
             - **Conflict:** one sentence describing the disagreement.
               - `document A`: the claim it makes.
               - `document B`: the conflicting claim.
 
             Cite only the document titles/paths listed below. If you find no \
-            contradictions, write "No contradictions found across the current documents."
+            contradictions, write "No contradictions found across the current documents." \
+            Your first visible characters must be "# Contradiction Report".
             """),
             EngineMessage(role: .user, content: documentContext(documents))
         ]
@@ -184,12 +190,15 @@ enum Prompts {
             terms, drugs, parties, technical concepts, whatever is salient. \
             \(antiHallucination)
 
-            Output Markdown only:
+            Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
+            plans, or phrases like "The user wants me":
+            /no_think
             # Glossary
             - **Term** — a concise definition grounded in the documents, noting which \
               document(s) it appears in by title/path.
 
-            Sort alphabetically. Include only terms actually present below. Cap at 40 entries.
+            Your first visible characters must be "# Glossary". Sort alphabetically. Include \
+            only terms actually present below. Cap at 40 entries.
             """),
             EngineMessage(role: .user, content: documentContext(documents))
         ]
@@ -201,13 +210,16 @@ enum Prompts {
             You reconstruct a chronological timeline of events, milestones, or dated \
             facts mentioned across a document collection. \(antiHallucination)
 
-            Output Markdown only:
+            Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
+            plans, or phrases like "The user wants me":
+            /no_think
             # Timeline
             - **<date or ordering cue>** — what happened, citing the source document by \
               title/path.
 
             Order earliest to latest. Use only dates/events present below. If the \
-            documents contain no datable events, write "No dated events found."
+            documents contain no datable events, write "No dated events found." Your first \
+            visible characters must be "# Timeline".
             """),
             EngineMessage(role: .user, content: documentContext(documents))
         ]

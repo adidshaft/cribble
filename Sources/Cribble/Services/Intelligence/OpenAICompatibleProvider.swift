@@ -28,11 +28,11 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         displayName: String? = nil,
         session: URLSession = .shared
     ) {
-        self.baseURL = baseURL
+        self.baseURL = Self.normalizedLoopbackURL(baseURL)
         self.model = model
         self.embedModel = embedModel
         self.apiKey = apiKey
-        self.displayName = displayName ?? "\(model) (\(baseURL.host ?? "local"))"
+        self.displayName = displayName ?? "\(model) (\(self.baseURL.host ?? "local"))"
         self.session = session
     }
 
@@ -136,6 +136,14 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         if let apiKey { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
     }
 
+    private static func normalizedLoopbackURL(_ url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              components.host?.lowercased() == "localhost"
+        else { return url }
+        components.host = "127.0.0.1"
+        return components.url ?? url
+    }
+
     private static func extractText(from choice: [String: Any]) -> String? {
         if let message = choice["message"] as? [String: Any] {
             if let text = message["content"] as? String, !text.isEmpty {
@@ -161,9 +169,9 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
 
     /// Common local runner endpoints, probed in order during first-run setup.
     static let knownLocalEndpoints: [(name: String, url: URL)] = [
-        ("Ollama", URL(string: "http://localhost:11434/v1")!),
-        ("llama.cpp", URL(string: "http://localhost:8080/v1")!),
-        ("LM Studio", URL(string: "http://localhost:1234/v1")!)
+        ("Ollama", URL(string: "http://127.0.0.1:11434/v1")!),
+        ("llama.cpp", URL(string: "http://127.0.0.1:8080/v1")!),
+        ("LM Studio", URL(string: "http://127.0.0.1:1234/v1")!)
     ]
 }
 

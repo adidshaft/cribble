@@ -177,6 +177,7 @@ final class IntelligenceEngine: ObservableObject {
         self.status = .ready
 
         await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
+        await database.removeCompletedJobsWithMissingArtifacts(projectID: projectID)
         if !allFolders {
             await DemoSeeder.seedIfDemoNotes(rootURL: nominalRoot, store: artifactStore, db: database, projectID: projectID)
         }
@@ -195,8 +196,57 @@ final class IntelligenceEngine: ObservableObject {
         let sample = await database.artifacts(projectID: projectID).prefix(60)
         guard !sample.isEmpty else { return }
         var bad = 0
+        var repaired = 0
+        let knownPaths = Set(await database.files(projectID: projectID).map(\.path))
         for artifact in sample {
-            if let content = store.content(for: artifact), OutputValidator.looksLikeError(content) != nil { bad += 1 }
+            guard let content = store.content(for: artifact) else { continue }
+            if OutputValidator.looksLikeError(content) != nil { bad += 1 }
+            let cleaned = OutputValidator.stripReasoningPreamble(content)
+            guard cleaned != content.trimmingCharacters(in: .whitespacesAndNewlines),
+                  OutputValidator.looksLikeError(cleaned) == nil,
+                  !OutputValidator.looksLikeReasoningLeak(cleaned),
+                  OutputValidator.validateMarkdown(cleaned, knownPaths: knownPaths).isValid
+            else {
+                if OutputValidator.looksLikeReasoningLeak(content) {
+                    await store.delete(artifact)
+                    repaired += 1
+                }
+                continue
+            }
+            if (try? await store.rewriteContent(for: artifact, content: cleaned)) != nil {
+                repaired += 1
+            }
+        }
+
+        for insight in await database.researchInsights(projectID: projectID, includingDismissed: true).prefix(60) {
+            let cleaned = OutputValidator.stripReasoningPreamble(insight.body)
+            guard cleaned != insight.body.trimmingCharacters(in: .whitespacesAndNewlines),
+                  OutputValidator.looksLikeError(cleaned) == nil,
+                  !OutputValidator.looksLikeReasoningLeak(cleaned),
+                  OutputValidator.validateMarkdown(cleaned, knownPaths: knownPaths).isValid
+            else {
+                if OutputValidator.looksLikeReasoningLeak(insight.body) {
+                    await database.setResearchInsightStatus(id: insight.id, status: .dismissed)
+                    repaired += 1
+                }
+                continue
+            }
+            await database.upsertResearchInsight(ResearchInsight(
+                id: insight.id,
+                projectID: insight.projectID,
+                title: insight.title,
+                body: cleaned,
+                kind: insight.kind,
+                status: insight.status,
+                artifactID: insight.artifactID,
+                sourceHashes: insight.sourceHashes,
+                createdAt: insight.createdAt
+            ))
+            repaired += 1
+        }
+
+        if repaired > 0 {
+            lastActivity = "Repaired cached model reasoning"
         }
         // If a meaningful fraction look like errors, the whole batch is suspect.
         if Double(bad) / Double(sample.count) >= 0.3 {

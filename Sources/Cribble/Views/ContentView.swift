@@ -187,7 +187,9 @@ struct ContentView: View {
                 }
             }
             .onChange(of: proxy.size.width, initial: true) { _, width in
-                updateCompactState(for: width)
+                DispatchQueue.main.async {
+                    updateCompactState(for: width)
+                }
             }
         }
         // Selecting a note in the overlay sidebar dismisses it.

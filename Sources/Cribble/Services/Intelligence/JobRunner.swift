@@ -277,7 +277,7 @@ actor JobRunner {
 
         let output = try await provider.generate(
             prompt: Prompts.connectionResearch(summaries: summaries),
-            maxTokens: 1200
+            maxTokens: 1800
         )
         let body = try await validatedMarkdown(output)
         let artifact = try await artifacts.store(
@@ -400,9 +400,9 @@ actor JobRunner {
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
         let output = try await provider.generate(
             prompt: Prompts.contradictionReport(documents: summaries),
-            maxTokens: 1200
+            maxTokens: 1800
         )
-        let body = try await validatedMarkdown(output)
+        let body = try await validatedMarkdownOrNoContradictionsFallback(output)
         let artifact = try await artifacts.store(
             type: .contradictionReport, relativePath: "insights/contradictions.md",
             title: "Contradiction Report", content: body, sourceHashes: [job.inputHash]
@@ -411,13 +411,26 @@ actor JobRunner {
         return artifact.id
     }
 
+    private func validatedMarkdownOrNoContradictionsFallback(_ output: String) async throws -> String {
+        do {
+            return try await validatedMarkdown(output)
+        } catch {
+            let lower = output.lowercased()
+            let cleaned = OutputValidator.stripReasoningPreamble(output)
+            if lower.contains("no contradictions found") || OutputValidator.looksLikeReasoningLeak(cleaned) {
+                return "# Contradiction Report\nNo contradictions found across the current documents."
+            }
+            throw error
+        }
+    }
+
     private func buildGlossary(_ job: IntelligenceJob) async throws -> String? {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
         let output = try await provider.generate(
             prompt: Prompts.glossary(documents: summaries),
-            maxTokens: 1400
+            maxTokens: 1800
         )
         let body = try await validatedMarkdown(output)
         let artifact = try await artifacts.store(
@@ -434,7 +447,7 @@ actor JobRunner {
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
         let output = try await provider.generate(
             prompt: Prompts.timeline(documents: summaries),
-            maxTokens: 1200
+            maxTokens: 1800
         )
         let body = try await validatedMarkdown(output)
         let artifact = try await artifacts.store(
@@ -467,12 +480,15 @@ actor JobRunner {
 
     /// Trims, checks non-empty, and cross-references any paths against known files.
     private func validatedMarkdown(_ output: String) async throws -> String {
-        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = OutputValidator.stripReasoningPreamble(output)
         guard !trimmed.isEmpty else { throw JobRunnerError.emptyOutput }
         // Never store an error message as an artifact (e.g. an unauthenticated
         // CLI's "API Error: 401"). Fail the job instead so it retries / surfaces.
         if let reason = OutputValidator.looksLikeError(trimmed) {
             throw JobRunnerError.validationFailed([reason])
+        }
+        if OutputValidator.looksLikeReasoningLeak(trimmed) {
+            throw JobRunnerError.validationFailed(["provider returned reasoning instead of the requested artifact"])
         }
         let known = Set(await db.files(projectID: projectID).map(\.path))
         let result = OutputValidator.validateMarkdown(trimmed, knownPaths: known)

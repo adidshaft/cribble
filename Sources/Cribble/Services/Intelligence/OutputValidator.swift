@@ -42,6 +42,43 @@ enum OutputValidator {
         return Result(isValid: issues.isEmpty, issues: issues)
     }
 
+    /// Removes common local-runner reasoning wrappers before validation/storage.
+    /// Some reasoning-tuned models put their scratchpad into normal `content`
+    /// before the requested Markdown. If the requested document has a top-level
+    /// heading, keep the document from that heading onward.
+    static func stripReasoningPreamble(_ text: String) -> String {
+        var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        cleaned = cleaned.replacingOccurrences(
+            of: #"(?is)<think>.*?</think>"#,
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let lines = cleaned.components(separatedBy: .newlines)
+        guard let headingIndex = lines.firstIndex(where: { line in
+            line.hasPrefix("# ") && line.dropFirst(2).contains { !$0.isWhitespace }
+        }), headingIndex > 0 else {
+            return cleaned
+        }
+        return lines[headingIndex...]
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func looksLikeReasoningLeak(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = trimmed.lowercased()
+        guard !trimmed.isEmpty else { return false }
+        if lower.hasPrefix("the user wants me")
+            || lower.hasPrefix("i need to ")
+            || lower.hasPrefix("let me analyze")
+            || lower.hasPrefix("let's analyze") {
+            return true
+        }
+        return lower.contains("output markdown only")
+            && (lower.contains("the user wants me") || lower.contains("i need to"))
+    }
+
     /// Detects when a provider returned an *error message* instead of a real
     /// answer (e.g. an unauthenticated CLI printing "Failed to authenticate. API
     /// Error: 401"). Without this, such text passes the markdown check and gets

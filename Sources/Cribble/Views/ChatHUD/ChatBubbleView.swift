@@ -7,7 +7,6 @@ import Textual
 struct ChatBubbleView: View, Equatable {
     let message: ChatMessage
     var viewModel: ChatHUDViewModel?
-    @State private var caretVisible = true
 
     /// Diff on the message alone. `viewModel` is identity-stable for the panel's
     /// lifetime, so excluding it lets `.equatable()` skip re-rendering every
@@ -85,7 +84,7 @@ struct ChatBubbleView: View, Equatable {
                     if message.isStreaming {
                         textContent + Text(" ▍")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(Color.accentColor.opacity(caretVisible ? 1.0 : 0.15))
+                            .foregroundColor(Color.accentColor)
                     } else {
                         textContent
                     }
@@ -99,13 +98,6 @@ struct ChatBubbleView: View, Equatable {
         .padding(.vertical, 10)
         .background(bubbleBackground)
         .foregroundStyle(message.role == .user ? .white : .white.opacity(0.95))
-        .onAppear {
-            if message.role == .assistant && message.isStreaming {
-                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
-                    caretVisible = false
-                }
-            }
-        }
     }
 
     /// Text selection rebuilds an expensive layout collection for the whole

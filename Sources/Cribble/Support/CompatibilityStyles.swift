@@ -56,6 +56,8 @@ extension View {
 
     func cribbleGlassIconButton(prominent: Bool = false, size: CGFloat = 32) -> some View {
         self.labelStyle(.iconOnly)
+            .frame(width: size, height: size)
+            .contentShape(Circle())
             .buttonBorderShape(.circle)
             .controlSize(size <= 28 ? .small : .regular)
             .cribbleGlassButton(prominent: prominent)

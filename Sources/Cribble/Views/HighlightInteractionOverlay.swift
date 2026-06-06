@@ -504,11 +504,7 @@ private struct HighlightNoteHoverCard: View {
         }
         .padding(14)
         .frame(width: 320, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(.white.opacity(0.18))
-        }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18, style: .continuous), strokeOpacity: 0.12)
         .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
     }
 }
@@ -559,11 +555,7 @@ private struct HighlightInlineNoteEditor: View {
         }
         .padding(12)
         .frame(width: 320)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.18))
-        }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous), strokeOpacity: 0.12)
         .shadow(color: .black.opacity(0.25), radius: 22, y: 12)
         .onAppear {
             DispatchQueue.main.async {

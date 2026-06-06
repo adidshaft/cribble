@@ -213,57 +213,91 @@ private struct SidebarControls: View {
     }
 
     private var controls: some View {
-        HStack {
-            ControlGroup {
-                Button {
-                    library.chooseFolder(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Open Folder", systemImage: "folder.badge.plus")
-                }
-                .help("Open a Markdown folder and keep it in the sidebar")
-
-                Button {
-                    library.refresh(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-                .disabled(!library.hasFolders)
-                .help("Reload the opened Markdown folders")
-
-                Button {
-                    library.removeSelectedFolder()
-                } label: {
-                    Label("Remove Folder", systemImage: "folder.badge.minus")
-                }
-                .disabled(library.selectedRootURL == nil)
-                .help("Remove the selected folder from Cribble without deleting files")
-
-                Menu {
-                    Picker("Sort Files", selection: $settings.fileSortMode) {
-                        ForEach(FileSortMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
-                }
-                .menuIndicator(.hidden)
-                .disabled(!library.hasFolders)
-                .help("Sort files inside folders by name, created date, or updated date")
-
-                Button {
-                    IntelligenceHUDController.shared.toggle()
-                } label: {
-                    Label("Project Intelligence", systemImage: intelligenceSymbol)
-                }
-                .disabled(!library.hasFolders)
-                .help(intelligenceHelp)
+        HStack(spacing: 3) {
+            sidebarIconButton(
+                title: "Open Folder",
+                systemImage: "folder.badge.plus",
+                help: "Open a Markdown folder and keep it in the sidebar"
+            ) {
+                library.chooseFolder(sortMode: settings.fileSortMode)
             }
-            .labelStyle(.iconOnly)
-            .controlSize(.regular)
 
-            Spacer(minLength: 0)
+            sidebarIconButton(
+                title: "Refresh",
+                systemImage: "arrow.clockwise",
+                disabled: !library.hasFolders,
+                help: "Reload the opened Markdown folders"
+            ) {
+                library.refresh(sortMode: settings.fileSortMode)
+            }
+
+            sidebarIconButton(
+                title: "Remove Folder",
+                systemImage: "folder.badge.minus",
+                disabled: library.selectedRootURL == nil,
+                help: "Remove the selected folder from Cribble without deleting files"
+            ) {
+                library.removeSelectedFolder()
+            }
+
+            Menu {
+                Picker("Sort Files", selection: $settings.fileSortMode) {
+                    ForEach(FileSortMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+            } label: {
+                sidebarIconLabel(title: "Sort", systemImage: "arrow.up.arrow.down")
+            }
+            .menuIndicator(.hidden)
+            .disabled(!library.hasFolders)
+            .buttonStyle(.plain)
+            .opacity(library.hasFolders ? 1 : 0.45)
+            .help("Sort files inside folders by name, created date, or updated date")
+
+            sidebarIconButton(
+                title: "Project Intelligence",
+                systemImage: intelligenceSymbol,
+                disabled: !library.hasFolders,
+                foregroundStyle: intelligenceForegroundStyle,
+                help: intelligenceHelp
+            ) {
+                IntelligenceHUDController.shared.toggle()
+            }
         }
+        .padding(4)
+        .cribbleGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func sidebarIconButton(
+        title: String,
+        systemImage: String,
+        disabled: Bool = false,
+        foregroundStyle: AnyShapeStyle = AnyShapeStyle(.primary),
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            sidebarIconLabel(title: title, systemImage: systemImage, foregroundStyle: foregroundStyle)
+        }
+        .disabled(disabled)
+        .buttonStyle(.plain)
+        .opacity(disabled ? 0.45 : 1)
+        .help(help)
+    }
+
+    private func sidebarIconLabel(
+        title: String,
+        systemImage: String,
+        foregroundStyle: AnyShapeStyle = AnyShapeStyle(.primary)
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .labelStyle(.iconOnly)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(foregroundStyle)
+            .frame(width: 26, height: 26)
+            .contentShape(Rectangle())
     }
 
     /// The sidebar indicator reflects intelligence status (plan §9): distinct
@@ -286,6 +320,17 @@ private struct SidebarControls: View {
         case .working: "Processing project intelligence…"
         case .idle: "Project intelligence up to date"
         case .driftDetected(let n): "\(n) architecture drift change(s) detected"
+        }
+    }
+
+    private var intelligenceForegroundStyle: AnyShapeStyle {
+        switch intelligence.status {
+        case .off:
+            AnyShapeStyle(.primary)
+        case .ready, .scanning, .working, .idle:
+            AnyShapeStyle(.green)
+        case .driftDetected:
+            AnyShapeStyle(.orange)
         }
     }
 }

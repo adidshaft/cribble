@@ -58,15 +58,8 @@ private struct ZoomAffordanceModifier: ViewModifier {
                 } label: {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(6)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 7))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 7)
-                                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.75)
-                        }
                 }
-                .buttonStyle(.plain)
+                .cribbleGlassIconButton(size: 28)
                 .pointingHandOnHover()
                 .help("Zoom to inspect")
                 .padding(10)
@@ -190,11 +183,8 @@ struct DiagramZoomOverlay: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .padding(7)
-                    .background(.primary.opacity(0.06), in: Circle())
             }
-            .buttonStyle(.plain)
+            .cribbleGlassIconButton(size: 28)
             .pointingHandOnHover()
             .keyboardShortcut(.cancelAction)
             .help("Close (Esc)")
@@ -205,7 +195,7 @@ struct DiagramZoomOverlay: View {
 
     @ViewBuilder
     private var zoomControls: some View {
-        HStack(spacing: 4) {
+        ControlGroup {
             Button {
                 adjustZoom(by: 1 / 1.25)
             } label: {
@@ -225,9 +215,8 @@ struct DiagramZoomOverlay: View {
             }
             .help("Zoom in")
         }
-        .font(.system(size: 13, weight: .medium))
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        .labelStyle(.iconOnly)
+        .controlSize(.small)
     }
 
     @ViewBuilder

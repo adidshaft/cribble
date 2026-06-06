@@ -107,15 +107,30 @@ enum ModelCatalog {
     /// Cloud CLI providers (work in any build with the CLI installed).
     static var cloudModels: [LocalModel] { all.filter { $0.kind.isCloud } }
 
-    /// Whether on-device (MLX) execution is even compiled into this build. False
-    /// for plain `swift build` CLI/dev builds; true for the shipped App Store /
-    /// DMG app. Drives whether the first-run chooser can default to local.
+    /// Whether on-device (MLX) execution can actually run here: MLX must be
+    /// compiled in *and* its Metal library must be bundled. The latter is only
+    /// present in app bundles built via the packaging scripts / Xcode — never in
+    /// a bare `swift build`/`swift test` run — so this stays false there and the
+    /// default correctly falls back to cloud. Drives the first-run chooser.
     static var isOnDeviceAvailable: Bool {
         #if canImport(MLXLLM)
-        return true
+        return metalLibraryPresent
         #else
         return false
         #endif
+    }
+
+    private static var metalLibraryPresent: Bool {
+        if Bundle.main.url(forResource: "default", withExtension: "metallib") != nil {
+            return true
+        }
+        guard let resourceURL = Bundle.main.resourceURL,
+              let enumerator = FileManager.default.enumerator(at: resourceURL, includingPropertiesForKeys: nil)
+        else { return false }
+        for case let url as URL in enumerator where url.pathExtension == "metallib" {
+            return true
+        }
+        return false
     }
 
     /// The local model we recommend for first-time on-device users — the

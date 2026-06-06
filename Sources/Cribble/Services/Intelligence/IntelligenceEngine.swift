@@ -352,6 +352,15 @@ final class IntelligenceEngine: ObservableObject {
         let symbolSignature = IntelligenceAggregateSignatures.symbols(symbols)
         let summarySignature = IntelligenceAggregateSignatures.summaries(artifacts)
 
+        // Workspace lens: code-only aggregations (dependency/architecture/drift)
+        // would be empty noise in a prose vault (notes, research, contracts), so
+        // they're skipped when there are no code files. Connections + the generic
+        // insights run for every workspace.
+        let hasCodeFiles = files.contains { file in
+            guard let raw = file.language else { return false }
+            return SourceLanguage(rawValue: raw)?.isCode ?? false
+        }
+
         // Deterministic, model-free jobs run first; model aggregations get a
         // higher priority number so file summaries (priority 100) drain first.
         await enqueueAggregateJobIfDirty(
@@ -359,16 +368,18 @@ final class IntelligenceEngine: ObservableObject {
             inputHash: IntelligenceAggregateSignatures.connectionsGraph(markdownSignature: markdownSignature),
             priority: 145
         )
-        await enqueueAggregateJobIfDirty(
-            type: .buildDependencyDiagram,
-            inputHash: IntelligenceAggregateSignatures.dependencyDiagram(symbolSignature: symbolSignature),
-            priority: 150
-        )
-        await enqueueAggregateJobIfDirty(
-            type: .detectArchitectureDrift,
-            inputHash: IntelligenceAggregateSignatures.architectureDrift(symbolSignature: symbolSignature),
-            priority: 160
-        )
+        if hasCodeFiles {
+            await enqueueAggregateJobIfDirty(
+                type: .buildDependencyDiagram,
+                inputHash: IntelligenceAggregateSignatures.dependencyDiagram(symbolSignature: symbolSignature),
+                priority: 150
+            )
+            await enqueueAggregateJobIfDirty(
+                type: .detectArchitectureDrift,
+                inputHash: IntelligenceAggregateSignatures.architectureDrift(symbolSignature: symbolSignature),
+                priority: 160
+            )
+        }
 
         if let summarySignature {
             await enqueueAggregateJobIfDirty(
@@ -376,14 +387,16 @@ final class IntelligenceEngine: ObservableObject {
                 inputHash: IntelligenceAggregateSignatures.projectIndex(summarySignature: summarySignature),
                 priority: 200
             )
-            await enqueueAggregateJobIfDirty(
-                type: .buildArchitectureDiagram,
-                inputHash: IntelligenceAggregateSignatures.architectureDiagram(
-                    symbolSignature: symbolSignature,
-                    summarySignature: summarySignature
-                ),
-                priority: 210
-            )
+            if hasCodeFiles {
+                await enqueueAggregateJobIfDirty(
+                    type: .buildArchitectureDiagram,
+                    inputHash: IntelligenceAggregateSignatures.architectureDiagram(
+                        symbolSignature: symbolSignature,
+                        summarySignature: summarySignature
+                    ),
+                    priority: 210
+                )
+            }
             if await summaryCoverage(files: files) >= 0.35 {
                 await enqueueAggregateJobIfDirty(
                     type: .discoverConnections,

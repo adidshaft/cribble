@@ -7,8 +7,26 @@ All notable changes to Cribble are documented here. The format follows
 
 ## Unreleased
 
-_Nothing yet. Land user-visible changes here, then move them under a version
-heading when you cut a release._
+### New
+- **More images render** — Obsidian-style `![[embeds]]`, raw HTML `<img>` tags,
+  and images kept in `attachments/`, `assets/`, or `images/` folders now display
+  in the reader instead of showing as broken text.
+- **Choose how Cribble AI runs** — a first-run chooser lets you pick on-device
+  (private, local-first) or a cloud CLI. On-device is now the default when your
+  build supports it, and your choice is remembered.
+- **Intelligence for any kind of work** — new generic, on-device insights that
+  serve notes, research, contracts, and case files (not just code): a
+  **Contradiction Report**, a **Glossary** of recurring terms, and a **Timeline**
+  of dated events. Code-only diagrams are skipped automatically in prose vaults.
+- **Send tasks anywhere** — hover a checkbox to add it to Reminders, Calendar, or
+  Cribble's own **Tasks.md**, which collects everything you flag with a backlink
+  to the exact source line. A sidebar Tasks button opens that living index.
+- **Project Pulse** — a glanceable health + progress card in the Intelligence HUD.
+
+### Privacy
+- Remote `http(s)` images are shown as click-to-open links by default rather than
+  loaded automatically (no IP leak). A "Load remote images" setting re-enables
+  inline loading.
 
 ## 1.2.1 — Smarter, more connected Cribble AI
 

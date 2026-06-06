@@ -515,9 +515,94 @@ struct IntelligenceHUDView: View {
 
     // MARK: - Feed
 
+    // MARK: - Project Pulse (health + progress)
+
+    /// Count of per-document summaries produced so far.
+    private var analyzedCount: Int {
+        engine.artifacts.filter { $0.type == .fileSummary }.count
+    }
+
+    /// Analysis progress in 0...1 (summaries / indexed files).
+    private var analysisProgress: Double {
+        guard engine.filesIndexed > 0 else { return 0 }
+        return min(1, Double(analyzedCount) / Double(engine.filesIndexed))
+    }
+
+    private func hasArtifact(_ type: IntelligenceArtifactType) -> Bool {
+        engine.artifacts.contains { $0.type == type }
+    }
+
+    /// A glanceable health + progress card rolling up signals the engine already
+    /// produces. Domain-agnostic, so it reads the same for code or prose vaults.
+    private var projectPulseCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Project Pulse", systemImage: "waveform.path.ecg")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Spacer()
+                if engine.pendingJobs > 0 {
+                    Text("\(engine.pendingJobs) queued")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Analyzed")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Spacer()
+                    Text("\(analyzedCount) / \(engine.filesIndexed)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                ProgressView(value: analysisProgress)
+                    .tint(.accentColor)
+            }
+
+            HStack(spacing: 8) {
+                pulseChip(
+                    icon: hasArtifact(.contradictionReport) ? "exclamationmark.bubble.fill" : "checkmark.seal",
+                    text: hasArtifact(.contradictionReport) ? "Contradictions flagged" : "No conflicts found",
+                    tint: hasArtifact(.contradictionReport) ? .orange : .green
+                )
+                if hasArtifact(.glossary) {
+                    pulseChip(icon: "character.book.closed", text: "Glossary", tint: .white.opacity(0.6))
+                }
+                if hasArtifact(.timeline) {
+                    pulseChip(icon: "calendar.day.timeline.left", text: "Timeline", tint: .white.opacity(0.6))
+                }
+            }
+
+            if engine.staleCount > 0 {
+                pulseChip(icon: "clock.arrow.circlepath", text: "\(engine.staleCount) may be stale", tint: .yellow)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func pulseChip(icon: String, text: String, tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .semibold))
+            Text(text)
+                .font(.system(size: 10, weight: .medium))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(tint.opacity(0.12), in: Capsule())
+    }
+
     private var feedTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                projectPulseCard
+
                 HStack(spacing: 10) {
                     metricTile(title: "Files", value: "\(engine.filesIndexed)", icon: "doc.text.magnifyingglass")
                     metricTile(title: "Artifacts", value: "\(engine.artifacts.count)", icon: "square.stack.3d.up")

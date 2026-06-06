@@ -380,6 +380,77 @@ final class CribbleUITests: XCTestCase {
         XCTAssertFalse(store.selectedRenderedMarkdown.contains("[🖼 banner](https://example.com/banner.png)"))
     }
 
+    func testImageHeavyNoteRendersAfterDuplicateTitleIsStripped() async throws {
+        let defaults = UserDefaults.standard
+        let oldLoadRemoteImages = defaults.object(forKey: "loadRemoteImages")
+        defaults.set(false, forKey: "loadRemoteImages")
+        defer {
+            if let oldLoadRemoteImages {
+                defaults.set(oldLoadRemoteImages, forKey: "loadRemoteImages")
+            } else {
+                defaults.removeObject(forKey: "loadRemoteImages")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ImageHeavyNote-\(UUID().uuidString)", isDirectory: true)
+        let attachmentsURL = rootURL.appendingPathComponent("attachments", isDirectory: true)
+        try FileManager.default.createDirectory(at: attachmentsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let pngData = Data([
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+            0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+            0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
+            0x00, 0x03, 0x01, 0x01, 0x00, 0x18, 0xDD, 0x8D,
+            0xB0, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+            0x44, 0xAE, 0x42, 0x60, 0x82
+        ])
+        try pngData.write(to: rootURL.appendingPathComponent("pic.png"))
+        try pngData.write(to: attachmentsURL.appendingPathComponent("attached.png"))
+
+        let noteURL = rootURL.appendingPathComponent("Image Manual Check.md")
+        try """
+        # Image Manual Check
+
+        Adjacent markdown image:
+
+        ![alt](pic.png)
+
+        Obsidian embed:
+
+        ![[pic.png]]
+
+        Attachment fallback:
+
+        ![attached](attached.png)
+
+        Raw HTML image:
+
+        <img src="pic.png" alt="html pic">
+
+        Remote image should be blocked until enabled:
+
+        ![remote](https://example.com/y.png)
+        """.write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+        store.select(url: noteURL)
+        await store.waitForRenderToComplete()
+
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("Adjacent markdown image:"), store.selectedRenderedMarkdown)
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("![alt](file://"), store.selectedRenderedMarkdown)
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("![pic.png](file://"), store.selectedRenderedMarkdown)
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("![attached](file://"), store.selectedRenderedMarkdown)
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("![html pic](file://"), store.selectedRenderedMarkdown)
+        XCTAssertTrue(store.selectedRenderedMarkdown.contains("[🖼 remote](https://example.com/y.png)"), store.selectedRenderedMarkdown)
+    }
+
     func testAddToTasksAnchorsSourceAndDeduplicatesBacklink() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

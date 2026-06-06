@@ -68,6 +68,14 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(editorApplicationURL?.path, forKey: Keys.editorApplicationPath) }
     }
 
+    /// When off (the default), remote `http(s)` images in notes are shown as
+    /// click-to-open links instead of being fetched automatically — fetching
+    /// would leak the reader's IP to arbitrary hosts. The key string is also
+    /// read directly in `MarkdownLibraryStore` at render time.
+    @Published var loadRemoteImages: Bool {
+        didSet { UserDefaults.standard.set(loadRemoteImages, forKey: Keys.loadRemoteImages) }
+    }
+
     init() {
         let scale = UserDefaults.standard.double(forKey: Keys.readerFontScale)
         // Clamp into the current range so a previously-saved (now out-of-range)
@@ -82,6 +90,7 @@ final class AppSettings: ObservableObject {
         showLinkedFileCards = UserDefaults.standard.object(forKey: Keys.showLinkedFileCards) as? Bool ?? true
         showOutline = UserDefaults.standard.object(forKey: Keys.showOutline) as? Bool ?? true
         isFocusMode = UserDefaults.standard.object(forKey: Keys.isFocusMode) as? Bool ?? false
+        loadRemoteImages = UserDefaults.standard.object(forKey: Keys.loadRemoteImages) as? Bool ?? false
         if let path = UserDefaults.standard.string(forKey: Keys.editorApplicationPath), !path.isEmpty {
             editorApplicationURL = URL(fileURLWithPath: path)
         } else {
@@ -138,6 +147,7 @@ final class AppSettings: ObservableObject {
         static let showLinkedFileCards = "showLinkedFileCards"
         static let showOutline = "showOutline"
         static let isFocusMode = "isFocusMode"
+        static let loadRemoteImages = "loadRemoteImages"
         static let editorApplicationPath = "editorApplicationPath"
         static let appearance = "appearance"
         static let readerFontName = "readerFontName"

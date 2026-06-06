@@ -474,7 +474,14 @@ final class MarkdownLibraryStore: ObservableObject {
         // Fast path: if we already rendered this exact body recently
         // (back/forward navigation, or re-select), publish the cached
         // version synchronously and skip the detached pipeline entirely.
-        let sourceHash = document.rawMarkdown.hashValue
+        // The remote-image preference is folded into the hash so toggling it
+        // busts stale renders.
+        let loadRemoteImages = UserDefaults.standard.bool(forKey: "loadRemoteImages")
+        let documentRoot = rootURL(for: document.url)
+        var hasher = Hasher()
+        hasher.combine(document.rawMarkdown)
+        hasher.combine(loadRemoteImages)
+        let sourceHash = hasher.finalize()
         if let cached = renderCache[document.url], cached.sourceHash == sourceHash {
             selectedRenderedMarkdown = cached.rendered
             selectedLinkedFiles = cached.linkedFiles
@@ -485,13 +492,22 @@ final class MarkdownLibraryStore: ObservableObject {
         let index = linkIndex
         let documentsSnapshot = documents
         let documentURL = document.url
-        renderTask = Task { [document, index, documentsSnapshot, documentURL, sourceHash] in
+        renderTask = Task { [document, index, documentsSnapshot, documentURL, sourceHash, documentRoot, loadRemoteImages] in
             let result = await Task.detached(priority: .userInitiated) { () -> (rendered: String, linkedFiles: [LinkedFileSummary]) in
                 let preprocessed = MarkdownDisplayPreprocessor.prepare(
                     document.rawMarkdown,
                     documentTitle: document.title
                 )
-                let rendered = WikiLinkParser.renderForMarkdown(preprocessed, index: index)
+                // Normalize embeds / HTML <img> / attachment-folder paths into
+                // resolvable image refs *before* the wiki-link pass (which would
+                // otherwise mangle `![[…]]` embeds).
+                let withImages = MarkdownImageRewriter.rewrite(
+                    preprocessed,
+                    noteDirectory: document.url.deletingLastPathComponent(),
+                    rootURL: documentRoot,
+                    loadRemoteImages: loadRemoteImages
+                )
+                let rendered = WikiLinkParser.renderForMarkdown(withImages, index: index)
                 let linkedFiles = MarkdownLibraryStore.linkedFiles(
                     for: document,
                     index: index,

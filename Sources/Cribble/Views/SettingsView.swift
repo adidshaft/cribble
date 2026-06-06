@@ -58,6 +58,9 @@ struct SettingsView: View {
 
                 Toggle("Show linked file cards", isOn: $settings.showLinkedFileCards)
                     .help("Show a compact linked-files strip above each Markdown document")
+
+                Toggle("Load remote images", isOn: $settings.loadRemoteImages)
+                    .help("When off, http(s) images in notes appear as click-to-open links instead of loading automatically — keeping your reading private (no IP leak to remote hosts).")
             }
 
             Section("External Editor") {

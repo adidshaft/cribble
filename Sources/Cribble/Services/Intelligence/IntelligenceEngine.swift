@@ -433,7 +433,7 @@ final class IntelligenceEngine: ObservableObject {
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: projectID, type: type, inputHash: inputHash, priority: priority))
     }
 
-    private static func gitMarkerSignature(rootURL: URL) -> String {
+    nonisolated private static func gitMarkerSignature(rootURL: URL) -> String {
         guard let gitDirectory = gitDirectoryURL(containing: rootURL) else {
             return ContentHasher.hash("git:none")
         }
@@ -453,38 +453,46 @@ final class IntelligenceEngine: ObservableObject {
         return ContentHasher.combine(entries.map(ContentHasher.hash))
     }
 
-    private static func gitDirectoryURL(containing rootURL: URL) -> URL? {
+    nonisolated static func gitDirectoryURL(containing rootURL: URL) -> URL? {
         let manager = FileManager.default
-        var current = rootURL.standardizedFileURL
-        while true {
-            let marker = current.appendingPathComponent(".git")
+        var currentPath = rootURL.standardizedFileURL.path
+        var visited = Set<String>()
+
+        for _ in 0..<128 {
+            guard !currentPath.isEmpty, visited.insert(currentPath).inserted else { return nil }
+            let markerPath = (currentPath as NSString).appendingPathComponent(".git")
             var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: marker.path, isDirectory: &isDirectory) {
-                if isDirectory.boolValue { return marker }
-                if let content = try? String(contentsOf: marker, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+            if manager.fileExists(atPath: markerPath, isDirectory: &isDirectory) {
+                if isDirectory.boolValue {
+                    return URL(fileURLWithPath: markerPath, isDirectory: true).standardizedFileURL
+                }
+                if let content = try? String(contentsOfFile: markerPath, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
                    content.hasPrefix("gitdir: ") {
                     let rawPath = String(content.dropFirst(8))
                     if rawPath.hasPrefix("/") {
-                        return URL(fileURLWithPath: rawPath)
+                        return URL(fileURLWithPath: rawPath, isDirectory: true).standardizedFileURL
                     }
-                    return current.appendingPathComponent(rawPath).standardizedFileURL
+                    let resolved = (currentPath as NSString).appendingPathComponent(rawPath)
+                    return URL(fileURLWithPath: resolved, isDirectory: true).standardizedFileURL
                 }
             }
 
-            let parent = current.deletingLastPathComponent()
-            if parent.path == current.path { return nil }
-            current = parent
+            let parentPath = (currentPath as NSString).deletingLastPathComponent
+            if parentPath == currentPath { return nil }
+            currentPath = parentPath
         }
+
+        return nil
     }
 
-    private static func fileContentOrStamp(_ url: URL) -> String {
+    nonisolated private static func fileContentOrStamp(_ url: URL) -> String {
         if let content = try? String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) {
             return content
         }
         return fileStamp(url)
     }
 
-    private static func fileStamp(_ url: URL) -> String {
+    nonisolated private static func fileStamp(_ url: URL) -> String {
         guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else {
             return "missing"
         }

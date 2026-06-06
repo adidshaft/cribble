@@ -3,15 +3,36 @@ import Foundation
 struct FolderScanner {
     func scan(rootURL: URL) throws -> [MarkdownNode] {
         try createReadmeIfNeeded(in: rootURL)
-        return try scanChildren(in: rootURL)
+        var state = ScanState()
+        return try scanChildren(in: rootURL, depth: 0, state: &state)
     }
 
-    private func scanChildren(in folderURL: URL) throws -> [MarkdownNode] {
-        let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isHiddenKey, .localizedNameKey, .creationDateKey, .contentModificationDateKey]
+    private func scanChildren(in folderURL: URL, depth: Int, state: inout ScanState) throws -> [MarkdownNode] {
+        guard depth <= maxDepth, state.visitedFolderCount < maxFolders else {
+            return []
+        }
+
+        let resourceKeys: Set<URLResourceKey> = [
+            .isDirectoryKey,
+            .isHiddenKey,
+            .isSymbolicLinkKey,
+            .isPackageKey,
+            .localizedNameKey,
+            .creationDateKey,
+            .contentModificationDateKey,
+            .fileResourceIdentifierKey
+        ]
+        let folderValues = try folderURL.resourceValues(forKeys: resourceKeys)
+        if let resourceIdentifier = folderValues.fileResourceIdentifier,
+           !state.visitedResourceIDs.insert(String(describing: resourceIdentifier)).inserted {
+            return []
+        }
+        state.visitedFolderCount += 1
+
         let urls = try FileManager.default.contentsOfDirectory(
             at: folderURL,
             includingPropertiesForKeys: Array(resourceKeys),
-            options: [.skipsPackageDescendants]
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
         )
 
         var folders: [MarkdownNode] = []
@@ -26,8 +47,14 @@ struct FolderScanner {
             }
 
             if values.isDirectory == true {
+                guard shouldScanDirectory(name: name, values: values) else {
+                    continue
+                }
+                guard depth < maxDepth, state.visitedFolderCount < maxFolders else {
+                    continue
+                }
                 try createReadmeIfNeeded(in: url)
-                let children = try scanChildren(in: url)
+                let children = try scanChildren(in: url, depth: depth + 1, state: &state)
                 folders.append(
                     MarkdownNode(
                         id: url.standardizedFileURL,
@@ -62,9 +89,13 @@ struct FolderScanner {
     }
 
     private let fileSortMode: FileSortMode
+    private let maxFolders: Int
+    private let maxDepth: Int
 
-    init(fileSortMode: FileSortMode = .name) {
+    init(fileSortMode: FileSortMode = .name, maxFolders: Int = 4_000, maxDepth: Int = 32) {
         self.fileSortMode = fileSortMode
+        self.maxFolders = maxFolders
+        self.maxDepth = maxDepth
     }
 
     private func fileComparator(_ lhs: MarkdownNode, _ rhs: MarkdownNode) -> Bool {
@@ -101,5 +132,37 @@ struct FolderScanner {
 
     private func readmeURL(in folderURL: URL) -> URL {
         folderURL.appendingPathComponent("README.md")
+    }
+
+    private func shouldScanDirectory(name: String, values: URLResourceValues) -> Bool {
+        guard values.isSymbolicLink != true, values.isPackage != true else {
+            return false
+        }
+        return !Self.ignoredDirectoryNames.contains(name)
+            && !Self.ignoredDirectoryNames.contains(name.lowercased())
+    }
+
+    private static let ignoredDirectoryNames: Set<String> = [
+        ".build",
+        ".cache",
+        ".cribble",
+        ".git",
+        ".next",
+        ".pytest_cache",
+        ".swiftpm",
+        ".venv",
+        "__pycache__",
+        "build",
+        "DerivedData",
+        "dist",
+        "node_modules",
+        "Pods",
+        "target",
+        "venv"
+    ]
+
+    private struct ScanState {
+        var visitedFolderCount = 0
+        var visitedResourceIDs = Set<String>()
     }
 }

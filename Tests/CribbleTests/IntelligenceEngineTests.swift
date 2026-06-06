@@ -364,6 +364,24 @@ final class IntelligenceEngineTests: XCTestCase {
         )
     }
 
+    func testGitDirectoryWalkTerminatesAndFindsAncestorRepo() throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("cribble-gitwalk-\(UUID().uuidString)", isDirectory: true)
+        let nested = root.appendingPathComponent("a/b/c/d/e", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        XCTAssertNil(IntelligenceEngine.gitDirectoryURL(containing: nested))
+
+        let gitDirectory = root.appendingPathComponent(".git", isDirectory: true)
+        try FileManager.default.createDirectory(at: gitDirectory, withIntermediateDirectories: true)
+
+        XCTAssertEqual(
+            IntelligenceEngine.gitDirectoryURL(containing: nested)?.standardizedFileURL,
+            gitDirectory.standardizedFileURL
+        )
+    }
+
     // MARK: - WorkspaceScanner
 
     func testScannerDetectsAddChangeRemove() async throws {

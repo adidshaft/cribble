@@ -55,4 +55,55 @@ final class FolderScannerTests: XCTestCase {
 
         XCTAssertEqual(markdownNames, ["newer", "older"])
     }
+
+    func testScannerSkipsHeavyGeneratedDirectories() throws {
+        let root = try Fixture.makeFolder()
+        let notes = root.appendingPathComponent("Notes")
+        try FileManager.default.createDirectory(at: notes, withIntermediateDirectories: true)
+        try "# Real".write(to: notes.appendingPathComponent("real.md"), atomically: true, encoding: .utf8)
+
+        let ignoredNames = ["node_modules", ".git", ".build", "dist", "DerivedData"]
+        for name in ignoredNames {
+            let ignored = root.appendingPathComponent(name).appendingPathComponent("nested")
+            try FileManager.default.createDirectory(at: ignored, withIntermediateDirectories: true)
+            try "# Ignored".write(to: ignored.appendingPathComponent("ignored.md"), atomically: true, encoding: .utf8)
+        }
+
+        let nodes = try FolderScanner().scan(rootURL: root)
+
+        XCTAssertEqual(nodes.map(\.name), ["Notes", "README"])
+        XCTAssertEqual(nodes.first?.children.map(\.name), ["README", "real"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("node_modules/README.md").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(".build/README.md").path))
+    }
+
+    func testScannerSkipsSymlinkCycles() throws {
+        let root = try Fixture.makeFolder()
+        let folder = root.appendingPathComponent("A")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "# Note".write(to: folder.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: folder.appendingPathComponent("loop"),
+            withDestinationURL: root
+        )
+
+        let nodes = try FolderScanner().scan(rootURL: root)
+
+        XCTAssertEqual(nodes.map(\.name), ["A", "README"])
+        XCTAssertEqual(nodes.first?.children.map(\.name), ["note", "README"])
+    }
+
+    func testScannerHonorsTraversalBudget() throws {
+        let root = try Fixture.makeFolder()
+        let first = root.appendingPathComponent("First")
+        let second = first.appendingPathComponent("Second")
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        try "# Deep".write(to: second.appendingPathComponent("deep.md"), atomically: true, encoding: .utf8)
+
+        let nodes = try FolderScanner(maxFolders: 2, maxDepth: 32).scan(rootURL: root)
+
+        XCTAssertEqual(nodes.map(\.name), ["First", "README"])
+        XCTAssertEqual(nodes.first?.children.map(\.name), ["README"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: second.appendingPathComponent("README.md").path))
+    }
 }

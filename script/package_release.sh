@@ -32,6 +32,7 @@ RW_DMG_PATH="$OUT_DIR/$APP_NAME-$VERSION-rw.dmg"
 APP_NOTARY_ZIP="$OUT_DIR/$APP_NAME-$VERSION-app-notary.zip"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
+PRIVACY_MANIFEST_SOURCE="$ROOT_DIR/Sources/Cribble/PrivacyInfo.xcprivacy"
 PYTHON_DEPS="$OUT_DIR/python-deps"
 SPARKLE_PUBLIC_ED_KEY="YfAh7JbGoiQoB9KqD7U9S+Olejk9jDNSUc7Z0I+o820="
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://github.com/adidshaft/cribble/releases/download/stable/appcast.xml}"
@@ -106,6 +107,13 @@ if [[ -f "$APP_ICON_SOURCE" ]]; then
   cp "$APP_ICON_SOURCE" "$APP_RESOURCES/Cribble.icns"
 else
   echo "warning: app icon not found at $APP_ICON_SOURCE — shipping default Swift icon" >&2
+fi
+
+if [[ -f "$PRIVACY_MANIFEST_SOURCE" ]]; then
+  cp "$PRIVACY_MANIFEST_SOURCE" "$APP_RESOURCES/PrivacyInfo.xcprivacy"
+else
+  echo "error: privacy manifest missing at $PRIVACY_MANIFEST_SOURCE" >&2
+  exit 1
 fi
 
 # Copy every SwiftPM resource bundle produced by the linked package graph.

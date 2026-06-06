@@ -65,6 +65,7 @@ let package = Package(
                 "Views/IntelligenceHUD/README.md"
             ],
             resources: [
+                .copy("PrivacyInfo.xcprivacy"),
                 .process("Resources/AppIconLight.png"),
                 .process("Resources/AppIconDark.png"),
                 .copy("Resources/Graph"),

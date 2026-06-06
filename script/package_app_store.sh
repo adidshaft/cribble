@@ -20,6 +20,7 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
+PRIVACY_MANIFEST_SOURCE="$ROOT_DIR/Sources/Cribble/PrivacyInfo.xcprivacy"
 PKG_PATH="$OUT_DIR/$APP_NAME-$VERSION-mas.pkg"
 
 cd "$ROOT_DIR"
@@ -56,6 +57,13 @@ chmod +x "$APP_BINARY"
 
 if [[ -f "$APP_ICON_SOURCE" ]]; then
   cp "$APP_ICON_SOURCE" "$APP_RESOURCES/Cribble.icns"
+fi
+
+if [[ -f "$PRIVACY_MANIFEST_SOURCE" ]]; then
+  cp "$PRIVACY_MANIFEST_SOURCE" "$APP_RESOURCES/PrivacyInfo.xcprivacy"
+else
+  echo "error: privacy manifest missing at $PRIVACY_MANIFEST_SOURCE" >&2
+  exit 1
 fi
 
 shopt -s nullglob

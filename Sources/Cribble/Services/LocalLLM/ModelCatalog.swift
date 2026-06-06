@@ -107,10 +107,31 @@ enum ModelCatalog {
     /// Cloud CLI providers (work in any build with the CLI installed).
     static var cloudModels: [LocalModel] { all.filter { $0.kind.isCloud } }
 
-    /// The model selected on first launch. Defaults to a cloud provider so the
-    /// HUD works out of the box even in SwiftPM-CLI builds where MLX's Metal
-    /// library isn't compiled; on-device models are one tap away in the picker.
-    static var defaultModel: LocalModel { cloudModels.first ?? all[0] }
+    /// Whether on-device (MLX) execution is even compiled into this build. False
+    /// for plain `swift build` CLI/dev builds; true for the shipped App Store /
+    /// DMG app. Drives whether the first-run chooser can default to local.
+    static var isOnDeviceAvailable: Bool {
+        #if canImport(MLXLLM)
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// The local model we recommend for first-time on-device users — the
+    /// fastest/smallest Gemma so the initial download is as light as possible.
+    static var recommendedOnDevice: LocalModel? {
+        localModels.first { $0.speedLabel == "Flash" } ?? localModels.first
+    }
+
+    /// The model selected on first launch before the user makes an explicit
+    /// choice. Prefers on-device when this build supports it (local-first), and
+    /// falls back to a cloud CLI provider in builds without MLX compiled so the
+    /// HUD still works out of the box.
+    static var defaultModel: LocalModel {
+        if isOnDeviceAvailable, let local = recommendedOnDevice { return local }
+        return cloudModels.first ?? all[0]
+    }
 
     static func model(withID id: String) -> LocalModel? {
         all.first { $0.id == id }

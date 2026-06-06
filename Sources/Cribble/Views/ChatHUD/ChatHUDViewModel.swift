@@ -45,6 +45,15 @@ final class ChatHUDViewModel: ObservableObject {
     @Published var selectedModel: LocalModel
     @Published private(set) var modelPhase: ModelPhase = .idle
 
+    /// True until the user has explicitly picked an engine at least once. Drives
+    /// the first-run engine chooser shown over the empty state.
+    @Published var needsEngineChoice: Bool
+
+    private enum ModelDefaultsKey {
+        static let selectedModelID = "chatHUD.selectedModelID"
+        static let hasChosenEngine = "chatHUD.hasChosenEngine"
+    }
+
     /// Status line shown under the model chip / in the input area.
     @Published private(set) var statusMessage: String?
 
@@ -80,7 +89,10 @@ final class ChatHUDViewModel: ObservableObject {
         self.library = library
         self.semanticIndex = semanticIndex
         self.injectedEngine = engine
-        self.selectedModel = ModelCatalog.defaultModel
+        let defaults = UserDefaults.standard
+        let savedID = defaults.string(forKey: ModelDefaultsKey.selectedModelID)
+        self.selectedModel = savedID.flatMap(ModelCatalog.model(withID:)) ?? ModelCatalog.defaultModel
+        self.needsEngineChoice = !defaults.bool(forKey: ModelDefaultsKey.hasChosenEngine)
         let fullName = NSFullUserName()
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
     }
@@ -277,10 +289,23 @@ final class ChatHUDViewModel: ObservableObject {
     func selectModel(_ model: LocalModel) {
         guard model.id != selectedModel.id else { return }
         selectedModel = model
+        UserDefaults.standard.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
         // Force a reload on next send; loading is lazy and on-demand.
         modelPhase = .idle
         loadedModelID = nil
         statusMessage = nil
+    }
+
+    /// Commits the first-run engine choice: persists the pick and dismisses the
+    /// chooser. Selecting the already-current model still records the choice.
+    func chooseEngine(_ model: LocalModel) {
+        if model.id != selectedModel.id {
+            selectModel(model)
+        } else {
+            UserDefaults.standard.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
+        }
+        UserDefaults.standard.set(true, forKey: ModelDefaultsKey.hasChosenEngine)
+        needsEngineChoice = false
     }
 
     // MARK: - Generation

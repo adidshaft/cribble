@@ -64,7 +64,11 @@ struct ChatHUDView: View {
     private var transcript: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                if viewModel.messages.isEmpty {
+                if viewModel.needsEngineChoice {
+                    EngineChoiceView(viewModel: viewModel)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 50)
+                } else if viewModel.messages.isEmpty {
                     ChatEmptyState(viewModel: viewModel)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 70)

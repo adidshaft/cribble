@@ -186,6 +186,14 @@ cat >"$INFO_PLIST" <<PLIST
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSRemindersUsageDescription</key>
+  <string>Cribble can add a task from a note's checkbox to your Reminders.</string>
+  <key>NSRemindersFullAccessUsageDescription</key>
+  <string>Cribble can add a task from a note's checkbox to your Reminders.</string>
+  <key>NSCalendarsUsageDescription</key>
+  <string>Cribble can add a task from a note's checkbox to your Calendar.</string>
+  <key>NSCalendarsFullAccessUsageDescription</key>
+  <string>Cribble can add a task from a note's checkbox to your Calendar.</string>
   <key>SUFeedURL</key>
   <string>$SPARKLE_FEED_URL</string>
   <key>SUPublicEDKey</key>

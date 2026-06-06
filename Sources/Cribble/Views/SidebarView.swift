@@ -243,6 +243,15 @@ private struct SidebarControls: View {
             sortMenu
 
             sidebarIconButton(
+                title: "Tasks",
+                systemImage: "checklist",
+                disabled: !library.hasFolders,
+                help: "Open Tasks.md — everything you've collected from your notes"
+            ) {
+                library.openTasksFile()
+            }
+
+            sidebarIconButton(
                 title: "Project Intelligence",
                 systemImage: intelligenceSymbol,
                 disabled: !library.hasFolders,

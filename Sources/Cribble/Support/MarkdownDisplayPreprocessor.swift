@@ -9,8 +9,22 @@ enum MarkdownDisplayPreprocessor {
         // untouched here. The reader detects them downstream and renders them as
         // interactive checkboxes (`TaskListView`); rewriting them to ☐/☑ glyphs
         // would both look worse (bullet + box) and hide them from that detector.
-        return withFootnotes
+        let withoutTaskAnchors = stripTaskBlockAnchors(withFootnotes)
+        return withoutTaskAnchors
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Hides Obsidian-style block anchors (`^id`) that Cribble appends to task
+    /// lines when exporting them — matching how Obsidian renders them (invisible
+    /// in reading view). Scoped to task lines so we never strip a `^` that's
+    /// meaningful prose or math elsewhere.
+    private static func stripTaskBlockAnchors(_ markdown: String) -> String {
+        markdown
+            .components(separatedBy: "\n")
+            .map { line in
+                TaskCheckbox.isTaskLine(line) ? TaskCheckbox.strippingBlockAnchor(line) : line
+            }
+            .joined(separator: "\n")
     }
 
     static func isEssentiallyEmpty(_ markdown: String, documentTitle: String) -> Bool {

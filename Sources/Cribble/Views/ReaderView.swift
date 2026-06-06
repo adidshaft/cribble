@@ -177,6 +177,15 @@ private struct ReaderDocumentView: View {
                                                 ordinal: ordinal,
                                                 currentlyChecked: currentlyChecked
                                             )
+                                        },
+                                        onAddTask: { ordinal, target in
+                                            Task {
+                                                await library.addTaskToTracker(
+                                                    in: document.url,
+                                                    ordinal: ordinal,
+                                                    exportTo: target
+                                                )
+                                            }
                                         }
                                     )
                                     .id(section.anchor)
@@ -894,6 +903,8 @@ private struct ReaderMarkdownSection: View {
     let taskOrdinalBase: Int
     // (globalOrdinal, currentlyChecked) -> persist the flip to the file.
     let onToggleTask: (Int, Bool) -> Void
+    // (globalOrdinal, optional export target) -> add to Tasks.md and/or a tracker.
+    let onAddTask: (Int, TaskExportTarget?) -> Void
 
     @Environment(\.readerPrimaryFontName) private var primaryFontName
     @Environment(\.readerMonospaceFontName) private var monospaceFontName
@@ -956,6 +967,7 @@ private struct ReaderMarkdownSection: View {
                         sectionAnchor: section.anchor,
                         highlightsByBlock: highlightsByBlock,
                         onToggle: onToggleTask,
+                        onAddTask: onAddTask,
                         onUpdateHighlightNote: onUpdateHighlightNote
                     )
                 }

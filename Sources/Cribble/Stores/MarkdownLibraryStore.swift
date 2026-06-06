@@ -1071,6 +1071,88 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    /// Sends a note's checkbox to a tracker. Always records it in the vault's
+    /// `Tasks.md` aggregator (backlinked to the exact source line via a block
+    /// anchor), and optionally also creates a Reminder / Calendar event.
+    func addTaskToTracker(in documentURL: URL, ordinal: Int, exportTo target: TaskExportTarget?) async {
+        let url = documentURL.standardizedFileURL
+        let located: TaskCheckbox.LocatedTask?
+        do {
+            located = try TaskCheckbox.locateAndAnchor(fileURL: url, ordinal: ordinal)
+        } catch {
+            errorMessage = "Couldn't read the task: \(error.localizedDescription)"
+            return
+        }
+        guard let located, !located.label.isEmpty else {
+            statusMessage = "Couldn't locate that checkbox"
+            return
+        }
+
+        // The anchor may have just been written into the source note.
+        selfWriteSuppressionDeadline = Date().addingTimeInterval(1.5)
+        reloadDocumentInPlace(url)
+
+        let stem = url.deletingPathExtension().lastPathComponent
+        let backlink = "[[\(stem)#^\(located.anchor)]]"
+        appendToTasksFile(root: rootURL(for: url), label: located.label, backlink: backlink)
+
+        guard let target else {
+            statusMessage = "Added to Tasks"
+            return
+        }
+        do {
+            let notes = "From Cribble note: \(stem)\n\(backlink)"
+            try await TaskExporter.export(target, title: located.label, notes: notes)
+            statusMessage = target == .reminders ? "Added to Reminders" : "Added to Calendar"
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Appends a task to the vault-root `Tasks.md`, creating it if missing and
+    /// de-duplicating by backlink. This is the single living index of everything
+    /// the user has flagged across the whole vault.
+    private func appendToTasksFile(root: URL?, label: String, backlink: String) {
+        guard let root else { return }
+        let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
+        var existing = (try? String(contentsOf: tasksURL, encoding: .utf8)) ?? ""
+        if existing.isEmpty {
+            existing = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n\n"
+        }
+        guard !existing.contains(backlink) else {
+            statusMessage = "Already in Tasks"
+            return
+        }
+        if !existing.hasSuffix("\n") { existing += "\n" }
+        existing += "- [ ] \(label) — \(backlink)\n"
+        do {
+            selfWriteSuppressionDeadline = Date().addingTimeInterval(1.5)
+            try existing.write(to: tasksURL, atomically: true, encoding: .utf8)
+            if documents.contains(where: { $0.url.standardizedFileURL == tasksURL }) {
+                reloadDocumentInPlace(tasksURL)
+            } else {
+                refresh(keepStatusQuiet: true)
+            }
+        } catch {
+            errorMessage = "Couldn't update Tasks.md: \(error.localizedDescription)"
+        }
+    }
+
+    /// Opens (creating if needed) the vault's `Tasks.md` aggregator.
+    func openTasksFile() {
+        guard let root = activeRootURL else {
+            statusMessage = "Open a folder to collect tasks"
+            return
+        }
+        let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
+        if !FileManager.default.fileExists(atPath: tasksURL.path) {
+            let seed = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n"
+            try? seed.write(to: tasksURL, atomically: true, encoding: .utf8)
+            refresh(keepStatusQuiet: true)
+        }
+        select(url: tasksURL)
+    }
+
     private func reloadDocumentInPlace(_ url: URL) {
         guard let reloaded = try? loader.load(url: url) else { return }
         if let index = documents.firstIndex(where: { $0.url.standardizedFileURL == url }) {

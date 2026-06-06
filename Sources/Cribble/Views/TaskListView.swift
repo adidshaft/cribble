@@ -15,6 +15,7 @@ struct TaskListView: View {
     let sectionAnchor: String
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
     let onToggle: (_ globalOrdinal: Int, _ currentlyChecked: Bool) -> Void
+    let onAddTask: (_ globalOrdinal: Int, _ target: TaskExportTarget?) -> Void
     let onUpdateHighlightNote: (UUID, String) -> Void
 
     var body: some View {
@@ -32,6 +33,7 @@ struct TaskListView: View {
                     blockIndex: blockIndex,
                     highlights: highlights,
                     onToggle: { currentlyChecked in onToggle(globalOrdinal, currentlyChecked) },
+                    onAddTask: { target in onAddTask(globalOrdinal, target) },
                     onUpdateHighlightNote: onUpdateHighlightNote
                 )
             }
@@ -48,11 +50,13 @@ private struct TaskRow: View {
     let blockIndex: Int
     let highlights: [ResolvedHighlight]
     let onToggle: (_ currentlyChecked: Bool) -> Void
+    let onAddTask: (_ target: TaskExportTarget?) -> Void
     let onUpdateHighlightNote: (UUID, String) -> Void
 
     @Environment(\.readerPrimaryFontName) private var primaryFontName
     @Environment(\.readerMonospaceFontName) private var monospaceFontName
     @State private var checked: Bool
+    @State private var isHovering = false
 
     init(
         item: TaskListItem,
@@ -62,6 +66,7 @@ private struct TaskRow: View {
         blockIndex: Int,
         highlights: [ResolvedHighlight],
         onToggle: @escaping (Bool) -> Void,
+        onAddTask: @escaping (TaskExportTarget?) -> Void,
         onUpdateHighlightNote: @escaping (UUID, String) -> Void
     ) {
         self.item = item
@@ -71,6 +76,7 @@ private struct TaskRow: View {
         self.blockIndex = blockIndex
         self.highlights = highlights
         self.onToggle = onToggle
+        self.onAddTask = onAddTask
         self.onUpdateHighlightNote = onUpdateHighlightNote
         _checked = State(initialValue: item.isChecked)
     }
@@ -120,13 +126,44 @@ private struct TaskRow: View {
             .highlightInteractionOverlay(highlights, onUpdateNote: onUpdateHighlightNote)
             .opacity(checked ? 0.55 : 1)
             .fixedSize(horizontal: false, vertical: true)
+
+            addTaskMenu
+                .opacity(isHovering ? 1 : 0)
         }
         .padding(.leading, CGFloat(indentLevel) * 20)
+        .onHover { isHovering = $0 }
         .onChange(of: item.isChecked) { _, newValue in
             // Reconcile with the parsed truth after a write/reload (or an
             // external edit) — also reverts the optimistic flip if the write
             // was skipped because the on-disk state had changed.
             checked = newValue
         }
+    }
+
+    private var addTaskMenu: some View {
+        Menu {
+            Button {
+                onAddTask(nil)
+            } label: {
+                Label("Add to Tasks", systemImage: "text.badge.plus")
+            }
+            Divider()
+            ForEach(TaskExportTarget.allCases) { target in
+                Button {
+                    onAddTask(target)
+                } label: {
+                    Label(target.label, systemImage: target.systemImage)
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 13 * fontScale))
+                .foregroundStyle(.secondary)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Add this task to Tasks, Reminders, or Calendar")
+        .pointingHandOnHover()
     }
 }

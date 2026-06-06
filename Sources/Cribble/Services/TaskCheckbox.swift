@@ -59,6 +59,100 @@ enum TaskCheckbox {
         parse(line: line) != nil
     }
 
+    /// An Obsidian-style trailing block anchor (`^abc123`) at the end of a line,
+    /// or nil. The leading space is intentionally part of the match so callers
+    /// can strip it cleanly for display.
+    private static let blockAnchorRegex = try! NSRegularExpression(
+        pattern: #"\s+\^([A-Za-z0-9][A-Za-z0-9_-]*)\s*$"#
+    )
+
+    /// Returns the block-anchor id on `line`, if present.
+    static func blockAnchor(in line: String) -> String? {
+        let ns = line as NSString
+        guard let match = blockAnchorRegex.firstMatch(in: line, range: NSRange(location: 0, length: ns.length)),
+              match.numberOfRanges >= 2 else { return nil }
+        return ns.substring(with: match.range(at: 1))
+    }
+
+    /// Removes a trailing block anchor from a single line (for display).
+    static func strippingBlockAnchor(_ line: String) -> String {
+        let ns = line as NSString
+        guard let match = blockAnchorRegex.firstMatch(in: line, range: NSRange(location: 0, length: ns.length)) else {
+            return line
+        }
+        return ns.replacingCharacters(in: match.range, with: "")
+    }
+
+    struct LocatedTask: Equatable {
+        let label: String
+        let anchor: String
+    }
+
+    /// Finds the `ordinal`-th task checkbox (same counting rules as `toggle`),
+    /// returning its label and a stable block anchor — creating and persisting a
+    /// `^cribble-XXXXXX` anchor at the end of the line if one isn't already
+    /// there. The anchor is what lets an aggregated task link back to the exact
+    /// source line. Byte-level insertion preserves the rest of the file.
+    static func locateAndAnchor(fileURL: URL, ordinal: Int) throws -> LocatedTask? {
+        var data = try Data(contentsOf: fileURL)
+        let newline: UInt8 = 0x0A
+
+        var lineRanges: [Range<Int>] = []
+        var start = data.startIndex
+        var cursor = data.startIndex
+        while cursor < data.endIndex {
+            if data[cursor] == newline {
+                lineRanges.append(start..<cursor)
+                start = cursor + 1
+            }
+            cursor += 1
+        }
+        lineRanges.append(start..<data.endIndex)
+
+        var inFrontMatter = false
+        var sawFirstLine = false
+        var inFence = false
+        var fenceMarker: Character = "`"
+        var count = 0
+
+        for range in lineRanges {
+            let line = String(decoding: data[range], as: UTF8.self)
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if !sawFirstLine {
+                sawFirstLine = true
+                if trimmed == "---" { inFrontMatter = true; continue }
+            }
+            if inFrontMatter {
+                if trimmed == "---" || trimmed == "..." { inFrontMatter = false }
+                continue
+            }
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                let marker: Character = trimmed.first == "`" ? "`" : "~"
+                if !inFence { inFence = true; fenceMarker = marker }
+                else if marker == fenceMarker { inFence = false }
+                continue
+            }
+            if inFence { continue }
+            guard let parsed = parse(line: line) else { continue }
+
+            if count == ordinal {
+                let displayLabel = strippingBlockAnchor(parsed.label)
+                    .trimmingCharacters(in: .whitespaces)
+                if let existing = blockAnchor(in: line) {
+                    return LocatedTask(label: displayLabel, anchor: existing)
+                }
+                let anchor = "cribble-" + String(UUID().uuidString.prefix(6)).lowercased()
+                let insertion = Array(" ^\(anchor)".utf8)
+                data.insert(contentsOf: insertion, at: range.upperBound)
+                try data.write(to: fileURL, options: [.atomic])
+                return LocatedTask(label: displayLabel, anchor: anchor)
+            }
+            count += 1
+        }
+        return nil
+    }
+
     enum ToggleResult: Equatable {
         case toggled        // wrote the new state
         case stateMismatch  // the on-disk checkbox wasn't in the expected state (skip — likely edited)

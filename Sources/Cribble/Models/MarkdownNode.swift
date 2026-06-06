@@ -1,7 +1,7 @@
 import Foundation
 
-struct MarkdownNode: Identifiable, Hashable {
-    enum Kind: String, Codable, Hashable {
+struct MarkdownNode: Identifiable, Hashable, Sendable {
+    enum Kind: String, Codable, Hashable, Sendable {
         case folder
         case markdown
     }

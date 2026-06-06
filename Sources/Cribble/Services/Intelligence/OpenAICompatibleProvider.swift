@@ -52,6 +52,26 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         }
     }
 
+    static func availableModelIDs(baseURL: URL, session: URLSession = .shared) async throws -> [String] {
+        var request = URLRequest(url: baseURL.appendingPathComponent("models"))
+        request.timeoutInterval = 5
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw OpenAICompatibleProviderError.unexpectedResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let detail = String(data: data, encoding: .utf8)?.prefix(200) ?? ""
+            throw OpenAICompatibleProviderError.httpError(http.statusCode, String(detail))
+        }
+        guard
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let dataArray = json["data"] as? [[String: Any]]
+        else {
+            throw OpenAICompatibleProviderError.unexpectedResponse
+        }
+        return dataArray.compactMap { $0["id"] as? String }.sorted()
+    }
+
     func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String {
         var body: [String: Any] = [
             "model": model,
@@ -82,9 +102,11 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         guard
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
             let choices = json["choices"] as? [[String: Any]],
-            let message = choices.first?["message"] as? [String: Any],
-            let content = message["content"] as? String
+            let choice = choices.first
         else {
+            throw LocalChatEngineError.generationFailed("Unexpected response shape")
+        }
+        guard let content = Self.extractText(from: choice) else {
             throw LocalChatEngineError.generationFailed("Unexpected response shape")
         }
         return content
@@ -113,10 +135,47 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         if let apiKey { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
     }
 
+    private static func extractText(from choice: [String: Any]) -> String? {
+        if let message = choice["message"] as? [String: Any] {
+            if let text = message["content"] as? String, !text.isEmpty {
+                return text
+            }
+            if let parts = message["content"] as? [[String: Any]] {
+                let text = parts.compactMap { part -> String? in
+                    if let value = part["text"] as? String { return value }
+                    if let text = part["text"] as? [String: Any] { return text["value"] as? String }
+                    return nil
+                }.joined()
+                if !text.isEmpty { return text }
+            }
+            if let reasoning = message["reasoning"] as? String, !reasoning.isEmpty {
+                return reasoning
+            }
+            if let text = message["content"] as? String {
+                return text
+            }
+        }
+        return choice["text"] as? String
+    }
+
     /// Common local runner endpoints, probed in order during first-run setup.
     static let knownLocalEndpoints: [(name: String, url: URL)] = [
         ("Ollama", URL(string: "http://localhost:11434/v1")!),
         ("llama.cpp", URL(string: "http://localhost:8080/v1")!),
         ("LM Studio", URL(string: "http://localhost:1234/v1")!)
     ]
+}
+
+private enum OpenAICompatibleProviderError: LocalizedError {
+    case httpError(Int, String)
+    case unexpectedResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .httpError(let status, let detail):
+            return detail.isEmpty ? "Runner returned HTTP \(status)." : "Runner returned HTTP \(status): \(detail)"
+        case .unexpectedResponse:
+            return "Runner did not return an OpenAI-compatible models list."
+        }
+    }
 }

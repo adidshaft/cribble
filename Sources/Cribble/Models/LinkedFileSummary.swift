@@ -1,6 +1,6 @@
 import Foundation
 
-struct LinkedFileSummary: Identifiable, Equatable {
+struct LinkedFileSummary: Identifiable, Equatable, Sendable {
     let id: URL
     let title: String
     let subtitle: String

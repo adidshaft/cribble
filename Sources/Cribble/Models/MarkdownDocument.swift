@@ -1,6 +1,6 @@
 import Foundation
 
-struct MarkdownDocument: Equatable {
+struct MarkdownDocument: Equatable, Sendable {
     let url: URL
     let title: String
     let rawMarkdown: String
@@ -16,7 +16,7 @@ struct MarkdownDocument: Equatable {
     }
 }
 
-struct DocumentHeading: Equatable, Hashable {
+struct DocumentHeading: Equatable, Hashable, Sendable {
     let level: Int
     let title: String
 

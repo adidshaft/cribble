@@ -209,69 +209,58 @@ private struct SidebarControls: View {
     @EnvironmentObject private var intelligence: IntelligenceEngine
 
     var body: some View {
-        #if compiler(>=6.1)
-        if #available(macOS 26.0, *) {
-            GlassEffectContainer(spacing: 8) {
-                controls
-            }
-        } else {
-            controls
-        }
-        #else
         controls
-        #endif
     }
 
     private var controls: some View {
-        HStack(spacing: 8) {
-            Button {
-                library.chooseFolder(sortMode: settings.fileSortMode)
-            } label: {
-                Label("Open Folder", systemImage: "folder.badge.plus")
-            }
-            .cribbleGlassIconButton(prominent: true)
-            .help("Open a Markdown folder and keep it in the sidebar")
-
-            Button {
-                library.refresh(sortMode: settings.fileSortMode)
-            } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
-            }
-            .cribbleGlassIconButton()
-            .disabled(!library.hasFolders)
-            .help("Reload the opened Markdown folders")
-
-            Button {
-                library.removeSelectedFolder()
-            } label: {
-                Label("Remove Folder", systemImage: "folder.badge.minus")
-            }
-            .cribbleGlassIconButton()
-            .disabled(library.selectedRootURL == nil)
-            .help("Remove the selected folder from Cribble without deleting files")
-
-            Menu {
-                Picker("Sort Files", selection: $settings.fileSortMode) {
-                    ForEach(FileSortMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
+        HStack {
+            ControlGroup {
+                Button {
+                    library.chooseFolder(sortMode: settings.fileSortMode)
+                } label: {
+                    Label("Open Folder", systemImage: "folder.badge.plus")
                 }
-            } label: {
-                Label("Sort", systemImage: "arrow.up.arrow.down")
-            }
-            .cribbleGlassIconButton()
-            .disabled(!library.hasFolders)
-            .help("Sort files inside folders by name, created date, or updated date")
+                .help("Open a Markdown folder and keep it in the sidebar")
 
-            Button {
-                IntelligenceHUDController.shared.toggle()
-            } label: {
-                Label("Project Intelligence", systemImage: intelligenceSymbol)
-                    .foregroundStyle(intelligenceTint)
+                Button {
+                    library.refresh(sortMode: settings.fileSortMode)
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(!library.hasFolders)
+                .help("Reload the opened Markdown folders")
+
+                Button {
+                    library.removeSelectedFolder()
+                } label: {
+                    Label("Remove Folder", systemImage: "folder.badge.minus")
+                }
+                .disabled(library.selectedRootURL == nil)
+                .help("Remove the selected folder from Cribble without deleting files")
+
+                Menu {
+                    Picker("Sort Files", selection: $settings.fileSortMode) {
+                        ForEach(FileSortMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                }
+                .menuIndicator(.hidden)
+                .disabled(!library.hasFolders)
+                .help("Sort files inside folders by name, created date, or updated date")
+
+                Button {
+                    IntelligenceHUDController.shared.toggle()
+                } label: {
+                    Label("Project Intelligence", systemImage: intelligenceSymbol)
+                }
+                .disabled(!library.hasFolders)
+                .help(intelligenceHelp)
             }
-            .cribbleGlassIconButton()
-            .disabled(!library.hasFolders)
-            .help(intelligenceHelp)
+            .labelStyle(.iconOnly)
+            .controlSize(.regular)
 
             Spacer(minLength: 0)
         }
@@ -286,15 +275,6 @@ private struct SidebarControls: View {
         case .scanning, .working: "brain.head.profile.fill"
         case .idle: "brain.head.profile.fill"
         case .driftDetected: "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var intelligenceTint: Color {
-        switch intelligence.status {
-        case .off: .secondary
-        case .ready, .scanning, .working: .blue
-        case .idle: .green
-        case .driftDetected: .orange
         }
     }
 

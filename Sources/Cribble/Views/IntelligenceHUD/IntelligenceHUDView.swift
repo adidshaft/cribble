@@ -95,17 +95,7 @@ struct IntelligenceHUDView: View {
 
     @ViewBuilder
     private var headerControlCluster: some View {
-        #if compiler(>=6.1)
-        if #available(macOS 26.0, *) {
-            GlassEffectContainer(spacing: 8) {
-                headerControlContent
-            }
-        } else {
-            headerControlContent
-        }
-        #else
         headerControlContent
-        #endif
     }
 
     private var headerControlContent: some View {
@@ -146,14 +136,13 @@ struct IntelligenceHUDView: View {
             .font(.system(size: 10, weight: .semibold))
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(color.opacity(0.16), in: Capsule())
-            .cribbleGlass(in: Capsule())
             .foregroundStyle(color)
     }
 
     /// Inline scope toggle (#1). Plain buttons (not a Menu) so they work even when
     /// the floating panel isn't the key window — a system Menu popup needs key.
     private var scopeControl: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             scopeSegment(title: "Folder", icon: "folder", active: !engine.isAllFolders) {
                 if let root = activeRootURL() { Task { await engine.enable(rootURL: root) } }
             }
@@ -162,8 +151,6 @@ struct IntelligenceHUDView: View {
                 if !roots.isEmpty { Task { await engine.enableAllFolders(roots: roots) } }
             }
         }
-        .padding(2)
-        .cribbleGlass(in: Capsule())
         .help("Scan just this folder, or all opened folders")
     }
 
@@ -175,10 +162,8 @@ struct IntelligenceHUDView: View {
             }
             .foregroundStyle(.white.opacity(active ? 1 : 0.55))
             .padding(.horizontal, 9).padding(.vertical, 3)
-            .background(active ? Color.accentColor.opacity(0.42) : .clear, in: Capsule())
-            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .cribbleGlassCapsuleButton(prominent: active)
     }
 
     /// Inline model button: toggles an in-panel overlay list (not a system Menu),
@@ -234,8 +219,11 @@ struct IntelligenceHUDView: View {
         }
         .padding(.bottom, 6)
         .frame(width: 320)
-        .background(Color.black.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 14))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(.white.opacity(0.10), lineWidth: 0.75)
+        }
         .padding(.top, 44).padding(.trailing, 70)
     }
 
@@ -345,7 +333,6 @@ struct IntelligenceHUDView: View {
         }
         .padding(8)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
@@ -603,7 +590,6 @@ struct IntelligenceHUDView: View {
                             .padding(10)
                             .frame(maxWidth: .infinity)
                             .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-                            .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
                         }
                         .buttonStyle(.plain)
                     }
@@ -628,7 +614,6 @@ struct IntelligenceHUDView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func resourceDecisionRow(_ decision: BackgroundScheduler.Decision) -> some View {
@@ -702,7 +687,6 @@ struct IntelligenceHUDView: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func suggestedEdgeRow(_ edge: KnowledgeEdge) -> some View {
@@ -758,7 +742,6 @@ struct IntelligenceHUDView: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Graph
@@ -1001,7 +984,6 @@ struct IntelligenceHUDView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-                .cribbleGlass(in: RoundedRectangle(cornerRadius: 10))
             } else {
                 emptyState(
                     icon: "questionmark.bubble",
@@ -1015,7 +997,6 @@ struct IntelligenceHUDView: View {
                     .font(.system(size: 12))
                     .padding(.horizontal, 12).padding(.vertical, 9)
                     .background(Color.white.opacity(0.08), in: Capsule())
-                    .cribbleGlass(in: Capsule())
                     .onSubmit(ask)
                 Button(action: ask) {
                     Image(systemName: isAsking ? "ellipsis" : "arrow.up.circle.fill")

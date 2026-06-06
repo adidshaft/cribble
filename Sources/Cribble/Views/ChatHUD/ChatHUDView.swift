@@ -34,19 +34,7 @@ struct ChatHUDView: View {
 
     // No bar — just three floating controls, top-right, over the content.
     private var header: some View {
-        Group {
-            #if compiler(>=6.1)
-            if #available(macOS 26.0, *) {
-                GlassEffectContainer(spacing: 8) {
-                    headerControls
-                }
-            } else {
-                headerControls
-            }
-            #else
-            headerControls
-            #endif
-        }
+        headerControls
         .padding(.horizontal, 14)
         .padding(.top, 12)
         .padding(.bottom, 4)
@@ -127,7 +115,6 @@ private struct HeaderIcon: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.white.opacity(hovered ? 1.0 : 0.68))
                 .scaleEffect(hovered ? 1.08 : 1.0)
-                .frame(width: 16, height: 16)
         }
         .disabled(disabled)
         .cribbleGlassIconButton(size: 30)

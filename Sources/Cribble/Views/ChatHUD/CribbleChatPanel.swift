@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// Floating, non-activating HUD panel that hosts the Local Chat interface above
-/// the main window (and other apps). Translucent dark "hudWindow" backdrop.
+/// the main window (and other apps). The SwiftUI root owns the glass surface.
 final class CribbleChatPanel: NSPanel {
     init(contentRect: NSRect) {
         // Borderless (no titlebar / "top bar") — the SwiftUI content owns all
@@ -183,27 +183,14 @@ final class ChatHUDController {
             onToggleMode: { [weak self] in self?.toggleMode() }
         )
 
-        let visualEffect = NSVisualEffectView()
-        visualEffect.material = .hudWindow
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        visualEffect.wantsLayer = true
-        visualEffect.layer?.cornerRadius = 16
-        visualEffect.layer?.masksToBounds = true
-
         // First-click works even when the panel isn't key (focus stolen by
         // another app) — see FirstMouseHostingView.
         let hosting = FirstMouseHostingView(rootView: root)
-        hosting.translatesAutoresizingMaskIntoConstraints = false
-        visualEffect.addSubview(hosting)
-        NSLayoutConstraint.activate([
-            hosting.leadingAnchor.constraint(equalTo: visualEffect.leadingAnchor),
-            hosting.trailingAnchor.constraint(equalTo: visualEffect.trailingAnchor),
-            hosting.topAnchor.constraint(equalTo: visualEffect.topAnchor),
-            hosting.bottomAnchor.constraint(equalTo: visualEffect.bottomAnchor)
-        ])
-
-        panel.contentView = visualEffect
+        hosting.frame = NSRect(origin: .zero, size: initialFrame.size)
+        hosting.autoresizingMask = [.width, .height]
+        hosting.wantsLayer = true
+        hosting.layer?.backgroundColor = NSColor.clear.cgColor
+        panel.contentView = hosting
         if panel.frame.width < 320 {
             panel.setContentSize(initialFrame.size)
             panel.center()

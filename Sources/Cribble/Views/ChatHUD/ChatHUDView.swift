@@ -17,7 +17,7 @@ struct ChatHUDView: View {
             ChatInputBar(viewModel: viewModel)
         }
         .frame(minWidth: 320, minHeight: 460)
-        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 16))
+        .hudSurface(for: presentation)
         .foregroundStyle(.white)
         .environment(\.colorScheme, .dark)
     }
@@ -89,6 +89,24 @@ struct ChatHUDView: View {
             }
         }
         .frame(maxHeight: .infinity)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func hudSurface(for presentation: ChatHUDPresentation) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        switch presentation {
+        case .floating:
+            self
+                .cribbleInteractiveGlass(in: shape)
+                .cribbleGlassContainer()
+                .clipShape(shape)
+        case .menuBar:
+            self
+                .cribbleMaterialSurface(in: shape)
+                .clipShape(shape)
+        }
     }
 }
 

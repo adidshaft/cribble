@@ -53,7 +53,9 @@ struct IntelligenceHUDView: View {
             }
         }
         .frame(minWidth: 380, minHeight: 520)
-        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 16))
+        .cribbleInteractiveGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .cribbleGlassContainer()
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(alignment: .topTrailing) {
             if showModelPicker { modelPickerOverlay }
         }
@@ -479,7 +481,6 @@ struct IntelligenceHUDView: View {
         }
         .foregroundStyle(.white.opacity(0.85))
         .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(Color.white.opacity(0.04))
     }
 
     // MARK: - Tabs
@@ -815,7 +816,6 @@ struct IntelligenceHUDView: View {
             }
             .padding(.bottom, 12)
         }
-        .background(Color.black.opacity(0.15))
     }
 
     private func artifactRow(_ artifact: IntelligenceArtifact) -> some View {
@@ -959,7 +959,6 @@ struct IntelligenceHUDView: View {
         .font(.system(size: 9))
         .foregroundStyle(.white.opacity(0.5))
         .padding(.horizontal, 14).padding(.vertical, 5)
-        .background(Color.black.opacity(0.15))
     }
 
     // MARK: - Ask

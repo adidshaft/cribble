@@ -321,6 +321,7 @@ struct IntelligenceHUDView: View {
                 Spacer()
             }
             .font(.system(size: 10, weight: .semibold))
+            .cribbleGlassContainer()
         }
         .padding(8)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))

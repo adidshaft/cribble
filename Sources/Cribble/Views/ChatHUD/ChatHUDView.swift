@@ -130,7 +130,6 @@ struct ChatEmptyState: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 56, height: 56)
-                    .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
             }
 
             Text("What can Cribble do for you?")
@@ -169,6 +168,7 @@ struct ChatEmptyState: View {
         }
         .padding(.top, 4)
         .disabled(viewModel.isGenerating)
+        .cribbleGlassContainer()
     }
 
     private var modelHint: some View {

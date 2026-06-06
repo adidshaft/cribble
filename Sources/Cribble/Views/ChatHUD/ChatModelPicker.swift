@@ -33,7 +33,6 @@ struct ModelPickerButton: View {
             Circle()
                 .fill(dotColor)
                 .frame(width: 5, height: 5)
-                .shadow(color: dotColor.opacity(0.6), radius: 2)
             Text(viewModel.selectedModel.shortName)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))

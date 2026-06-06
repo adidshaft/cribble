@@ -108,7 +108,6 @@ struct ChatInputBar: View {
                 }
             }
             .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12), strokeOpacity: 0.10)
-            .shadow(color: Color.black.opacity(0.25), radius: 10, y: 5)
             .padding(.horizontal, 2)
         }
     }
@@ -133,7 +132,6 @@ struct ChatInputBar: View {
                 }
             }
             .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12), strokeOpacity: 0.10)
-            .shadow(color: Color.black.opacity(0.25), radius: 10, y: 5)
             .padding(.horizontal, 2)
         }
     }
@@ -174,8 +172,8 @@ struct ChatInputBar: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .cribbleGlass(in: RoundedRectangle(cornerRadius: 22))
-        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
+        .cribbleInteractiveGlass(in: RoundedRectangle(cornerRadius: 22))
+        .cribbleGlassContainer()
         .onAppear { inputFocused = true }
     }
 
@@ -308,11 +306,7 @@ struct AttachmentChipRow: View {
         .padding(.leading, 8)
         .padding(.trailing, 6)
         .padding(.vertical, 4)
-        .background(Color.white.opacity(0.06))
-        .overlay {
-            Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.75)
-        }
-        .clipShape(Capsule())
+        .cribbleMaterialSurface(in: Capsule(), strokeOpacity: 0.10)
         .pointingHandOnHover()
     }
 }

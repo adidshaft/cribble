@@ -17,7 +17,12 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Getting Started]] | Highlights, bookmarks, wiki links, search, shortcuts | 2 min |
 | [[Cribble AI]] | The on-device AI chat — ask, link, and summarize your notes | 3 min |
 | [[Feature Tour]] | Zoom overlays, reading trails, semantic search, pathfinder | 3 min |
+| [[Tasks and Intelligence]] | Send checkboxes to Reminders/Calendar, folder-wide insights | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
+
+## New in 1.3.1 — Tasks & generic intelligence (experimental)
+
+Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, and let on-device intelligence build a **Contradiction Report**, **Glossary**, and **Timeline** for any kind of folder — not just code. → [[Tasks and Intelligence]]
 
 ## New in 1.2.0 — Cribble AI
 

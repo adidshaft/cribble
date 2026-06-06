@@ -18,6 +18,12 @@ enum JobRunnerError: LocalizedError {
     }
 }
 
+struct JobDrainResult: Sendable, Equatable {
+    var ranJobs: Int
+    var allowedTier: IntelligenceJobTier
+    var providerUsable: Bool
+}
+
 /// Drains the job queue one job at a time, respecting the scheduler's allowed
 /// tier and the single-concurrent-SLM-job cap (design plan §8.3). Bridges
 /// deterministic queue state and the (serialized) `IntelligenceProvider`.
@@ -36,6 +42,8 @@ actor JobRunner {
     private let projectName: String
     private let rootURL: URL
     private let maxInputChars: Int
+    private let maxAggregateSummaries = 80
+    private let maxAggregateSummaryChars = 24_000
     private let graphDirectory: URL
     /// Optional headless Mermaid validator (best-effort; see MermaidRenderValidator).
     private let mermaidValidator: (@Sendable (String) async -> Bool)?
@@ -67,12 +75,17 @@ actor JobRunner {
     @discardableResult
     func runNext() async -> Bool {
         let tier = await scheduler.allowedTier()
+        let providerUsable = tier >= .tier2 ? await isProviderUsable() : false
+        return await runNext(allowedTier: tier, providerUsable: providerUsable)
+    }
+
+    @discardableResult
+    private func runNext(allowedTier tier: IntelligenceJobTier, providerUsable: Bool) async -> Bool {
         guard tier != .none else { return false }
 
-        // If no model is usable, only pull deterministic jobs — otherwise a
-        // model-needing job at the front of the queue would block the model-free
-        // diagram/drift jobs behind it (they'd never run until a model arrives).
-        let providerUsable = await isProviderUsable()
+        // If no model is usable, only pull deterministic jobs. Otherwise a
+        // model-needing job at the front of the queue would block model-free
+        // diagram/drift jobs behind it until a model arrives.
         guard let job = await db.dequeueNextJob(projectID: projectID, maxTier: tier, deterministicOnly: !providerUsable) else {
             return false
         }
@@ -92,13 +105,29 @@ actor JobRunner {
     }
 
     /// Drains up to `limit` jobs, stopping early when nothing is eligible.
-    func drain(limit: Int = 100) async {
+    @discardableResult
+    func drain(limit: Int = 100, allowedTier suppliedTier: IntelligenceJobTier? = nil) async -> JobDrainResult {
+        let tier: IntelligenceJobTier
+        if let suppliedTier {
+            tier = suppliedTier
+        } else {
+            tier = await scheduler.allowedTier()
+        }
+        guard tier != .none else {
+            return JobDrainResult(ranJobs: 0, allowedTier: tier, providerUsable: false)
+        }
+
+        // Provider checks can touch model inventory or a local runner. Do it once
+        // per drain, and skip it entirely when the current resource policy allows
+        // only deterministic Tier-1 work.
+        let providerUsable = tier >= .tier2 ? await isProviderUsable() : false
         var ran = 0
         while ran < limit {
-            let didRun = await runNext()
+            let didRun = await runNext(allowedTier: tier, providerUsable: providerUsable)
             if !didRun { break }
             ran += 1
         }
+        return JobDrainResult(ranJobs: ran, allowedTier: tier, providerUsable: providerUsable)
     }
 
     // MARK: - Executor dispatch
@@ -204,11 +233,7 @@ actor JobRunner {
 
     private func updateProjectIndex(_ job: IntelligenceJob) async throws -> String? {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
-        let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
-        let summaries: [(path: String, summary: String)] = summaryArtifacts.compactMap { artifact in
-            guard let content = artifacts.content(for: artifact) else { return nil }
-            return (artifact.title ?? artifact.relativePath, content)
-        }
+        let summaries = await aggregateSummaryInputs()
         guard !summaries.isEmpty else { throw JobRunnerError.missingInput }
         let output = try await provider.generate(
             prompt: Prompts.projectIndex(projectName: projectName, summaries: summaries),
@@ -227,11 +252,7 @@ actor JobRunner {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         let graph = DependencyGraph.build(from: await db.allSymbols(projectID: projectID))
         let mermaid = graph.mermaid()
-        let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
-        let summaries: [(path: String, summary: String)] = summaryArtifacts.compactMap { artifact in
-            guard let content = artifacts.content(for: artifact) else { return nil }
-            return (artifact.title ?? artifact.relativePath, content)
-        }
+        let summaries = await aggregateSummaryInputs()
         let output = try await provider.generate(
             prompt: Prompts.architectureNarration(graphMermaid: mermaid, summaries: summaries),
             maxTokens: 1200
@@ -249,11 +270,7 @@ actor JobRunner {
 
     private func discoverConnections(_ job: IntelligenceJob) async throws -> String? {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
-        let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
-        let summaries: [(path: String, summary: String)] = summaryArtifacts.compactMap { artifact in
-            guard let content = artifacts.content(for: artifact) else { return nil }
-            return (artifact.title ?? artifact.relativePath, content)
-        }
+        let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
 
         let output = try await provider.generate(
@@ -373,6 +390,21 @@ actor JobRunner {
         let url = resolve(relativePath)
         guard let raw = try? String(contentsOf: url, encoding: .utf8), !raw.isEmpty else { return nil }
         return String(raw.prefix(maxInputChars))
+    }
+
+    private func aggregateSummaryInputs() async -> [(path: String, summary: String)] {
+        let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
+        var summaries: [(path: String, summary: String)] = []
+        var remainingChars = maxAggregateSummaryChars
+
+        for artifact in summaryArtifacts.prefix(maxAggregateSummaries) where remainingChars > 0 {
+            guard let content = artifacts.content(for: artifact), !content.isEmpty else { continue }
+            let clipped = String(content.prefix(remainingChars))
+            summaries.append((artifact.title ?? artifact.relativePath, clipped))
+            remainingChars -= clipped.count
+        }
+
+        return summaries
     }
 
     /// Trims, checks non-empty, and cross-references any paths against known files.

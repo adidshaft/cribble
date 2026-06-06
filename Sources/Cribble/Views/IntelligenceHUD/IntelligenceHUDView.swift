@@ -531,6 +531,10 @@ struct IntelligenceHUDView: View {
                     metricTile(title: "Insights", value: "\(activeResearchInsights.count)", icon: "sparkle.magnifyingglass")
                 }
 
+                if let decision = engine.resourceDecision {
+                    resourceDecisionRow(decision)
+                }
+
                 if engine.staleCount > 0 {
                     Label("\(engine.staleCount) artifacts may be stale", systemImage: "exclamationmark.triangle")
                         .font(.system(size: 11, weight: .medium))
@@ -608,6 +612,31 @@ struct IntelligenceHUDView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func resourceDecisionRow(_ decision: BackgroundScheduler.Decision) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: resourceIcon(for: decision))
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 18)
+                .foregroundStyle(resourceColor(for: decision).opacity(0.95))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(decision.userFacingSummary)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(resourceDetail(for: decision))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .lineLimit(1)
+            }
+            Spacer()
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(resourceColor(for: decision).opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(resourceColor(for: decision).opacity(0.18), lineWidth: 0.5)
+        }
     }
 
     private func researchInsightRow(_ insight: ResearchInsight) -> some View {
@@ -930,6 +959,11 @@ struct IntelligenceHUDView: View {
                 Text("·")
                 Text("\(engine.staleCount) stale").foregroundStyle(.orange.opacity(0.8))
             }
+            if let decision = engine.resourceDecision {
+                Text("·")
+                Text(decision.userFacingSummary)
+                    .foregroundStyle(resourceColor(for: decision).opacity(0.8))
+            }
             Spacer()
             if let activity = engine.lastActivity {
                 Text(activity).lineLimit(1).truncationMode(.tail).foregroundStyle(.white.opacity(0.45))
@@ -1005,6 +1039,14 @@ struct IntelligenceHUDView: View {
                 contextRow("Knowledge edges", value: "\(engine.knowledgeEdges.count)")
                 contextRow("Suggested edges", value: "\(suggestedEdges.count)")
 
+                if let decision = engine.resourceDecision {
+                    sectionHeader("RESOURCE POLICY")
+                    contextRow("Current gate", value: decision.userFacingSummary)
+                    contextRow("Allowed work", value: allowedWorkLabel(decision.allowedTier))
+                    contextRow("User idle", value: "\(Int(decision.conditions.userIdleSeconds))s")
+                    contextRow("System load", value: String(format: "%.2fx", decision.conditions.systemLoadRatio))
+                }
+
                 if !allRoots().isEmpty {
                     sectionHeader("FOLDERS")
                     ForEach(allRoots(), id: \.path) { root in
@@ -1054,6 +1096,39 @@ struct IntelligenceHUDView: View {
         }
         .font(.system(size: 11))
         .padding(.vertical, 2)
+    }
+
+    private func resourceIcon(for decision: BackgroundScheduler.Decision) -> String {
+        switch decision.reason {
+        case .memoryPressure: "memorychip"
+        case .thermalPressure: "thermometer.high"
+        case .highSystemLoad, .systemBusy: "cpu"
+        case .lowPower: "battery.25"
+        case .idleWindow: "moon.zzz"
+        case .waitingForIdle: "hourglass"
+        }
+    }
+
+    private func resourceColor(for decision: BackgroundScheduler.Decision) -> Color {
+        switch decision.allowedTier {
+        case .none: .red
+        case .tier1: .orange
+        case .tier2: .yellow
+        case .tier3: .green
+        }
+    }
+
+    private func resourceDetail(for decision: BackgroundScheduler.Decision) -> String {
+        "\(allowedWorkLabel(decision.allowedTier)) | idle \(Int(decision.conditions.userIdleSeconds))s | load \(String(format: "%.2fx", decision.conditions.systemLoadRatio))"
+    }
+
+    private func allowedWorkLabel(_ tier: IntelligenceJobTier) -> String {
+        switch tier {
+        case .none: "No background work"
+        case .tier1: "Deterministic only"
+        case .tier2: "Light model work"
+        case .tier3: "Full local intelligence"
+        }
     }
 
     private func contextReceiptRow(_ item: ContextReceipt.Item) -> some View {

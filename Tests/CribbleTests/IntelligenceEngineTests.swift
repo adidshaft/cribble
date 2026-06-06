@@ -2,17 +2,26 @@ import XCTest
 @testable import Cribble
 
 /// Canned provider so job execution is testable without a model.
-private final class MockIntelligenceProvider: IntelligenceProvider {
+private final class MockIntelligenceProvider: IntelligenceProvider, @unchecked Sendable {
     let displayName = "Mock"
     let response: String
     let availability: ProviderAvailability
+    private let lock = NSLock()
+    private var _availabilityChecks = 0
+
+    var availabilityChecks: Int {
+        lock.withLock { _availabilityChecks }
+    }
 
     init(response: String, availability: ProviderAvailability = .available) {
         self.response = response
         self.availability = availability
     }
 
-    func checkAvailability() async -> ProviderAvailability { availability }
+    func checkAvailability() async -> ProviderAvailability {
+        lock.withLock { _availabilityChecks += 1 }
+        return availability
+    }
     func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String { response }
     func embed(text: String) async throws -> [Float]? { nil }
 }
@@ -250,19 +259,23 @@ final class IntelligenceEngineTests: XCTestCase {
     // MARK: - BackgroundScheduler policy
 
     func testSchedulerPolicy() {
-        func make(idle: TimeInterval, thermal: ProcessInfo.ThermalState, battery: Bool, active: Bool) -> BackgroundScheduler.Conditions {
-            .init(userIdleSeconds: idle, thermalState: thermal, isOnBattery: battery, appIsActive: active, appIsForeground: active)
+        func make(idle: TimeInterval, thermal: ProcessInfo.ThermalState, battery: Bool, active: Bool, load: Double = 0) -> BackgroundScheduler.Conditions {
+            .init(userIdleSeconds: idle, thermalState: thermal, isOnBattery: battery, appIsActive: active, appIsForeground: active, systemLoadRatio: load)
         }
         let threshold: TimeInterval = 60
 
         // Thermal pressure halts everything.
         XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 999, thermal: .serious, battery: false, active: false), idleThreshold: threshold), .none)
-        // On battery → tier 1 only.
+        // Busy systems pause or stay deterministic-only so Cribble yields to
+        // other processes before thermal pressure kicks in.
+        XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 999, thermal: .nominal, battery: false, active: false, load: 2.1), idleThreshold: threshold), .none)
+        XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 999, thermal: .nominal, battery: false, active: false, load: 1.2), idleThreshold: threshold), .tier1)
+        // On battery -> tier 1 only.
         XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 999, thermal: .nominal, battery: true, active: false), idleThreshold: threshold), .tier1)
-        // Plugged + idle → tier 3.
+        // Plugged + idle -> tier 3.
         XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 120, thermal: .nominal, battery: false, active: false), idleThreshold: threshold), .tier3)
-        // Plugged + active, not idle → tier 2.
-        XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 5, thermal: .nominal, battery: false, active: true), idleThreshold: threshold), .tier2)
+        // Plugged + active, not idle -> deterministic only.
+        XCTAssertEqual(BackgroundScheduler.policy(for: make(idle: 5, thermal: .nominal, battery: false, active: true), idleThreshold: threshold), .tier1)
     }
 
     // MARK: - WorkspaceScanner
@@ -402,5 +415,24 @@ final class IntelligenceEngineTests: XCTestCase {
         let pending = await db.jobs(projectID: "p", status: .pending)
         XCTAssertEqual(pending.count, 1)
         XCTAssertEqual(pending.first?.attemptCount, 0)
+    }
+
+    func testDrainSkipsProviderProbeWhenPolicyAllowsOnlyTierOne() async throws {
+        let db = try IntelligenceDatabase(path: ":memory:")
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .summarizeFile, inputHash: "h1", inputPaths: ["a.swift"]))
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 5, thermalState: .nominal, isOnBattery: false, appIsActive: true, appIsForeground: true)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: URL(fileURLWithPath: NSTemporaryDirectory()))
+        let provider = MockIntelligenceProvider(response: "x")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: URL(fileURLWithPath: "/tmp"))
+
+        let result = await runner.drain(limit: 10)
+
+        XCTAssertEqual(result.allowedTier, .tier1)
+        XCTAssertEqual(result.ranJobs, 0)
+        XCTAssertEqual(provider.availabilityChecks, 0)
+        let pendingCount = await db.pendingJobCount(projectID: "p")
+        XCTAssertEqual(pendingCount, 1)
     }
 }

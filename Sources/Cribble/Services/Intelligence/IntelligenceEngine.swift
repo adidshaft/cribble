@@ -34,6 +34,7 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var staleCount = 0
     @Published private(set) var lastActivity: String?
     @Published private(set) var isEnabled = false
+    @Published private(set) var resourceDecision: BackgroundScheduler.Decision?
     /// Download progress (0...1) while fetching the on-device model, else nil.
     @Published private(set) var modelDownloadFraction: Double?
 
@@ -65,6 +66,7 @@ final class IntelligenceEngine: ObservableObject {
     /// made libdispatch trip a Swift executor-isolation assertion and crash the
     /// app whenever memory pressure changed.
     private let memoryMonitor = MemoryPressureMonitor()
+    private let appActivity = AppActivityMonitor()
 
     /// How often the idle loop wakes to drain the queue. Scanning happens only on
     /// change (FSEvents), not on every tick.
@@ -134,14 +136,17 @@ final class IntelligenceEngine: ObservableObject {
             return
         }
         await database.resetRunningJobs()
+        appActivity.start()
 
-        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryFlag = memoryMonitor.flag] in
-            BackgroundScheduler.Conditions(
+        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryFlag = memoryMonitor.flag, appActivity] in
+            let app = appActivity.snapshot
+            return BackgroundScheduler.Conditions(
                 userIdleSeconds: Self.systemIdleSeconds(),
                 thermalState: ProcessInfo.processInfo.thermalState,
                 isOnBattery: pauseOnBattery && ProcessInfo.processInfo.isLowPowerModeEnabled,
-                appIsActive: true,
-                appIsForeground: true,
+                appIsActive: app.isActive,
+                appIsForeground: app.isForeground,
+                systemLoadRatio: BackgroundScheduler.currentSystemLoadRatio(),
                 memoryPressured: memoryFlag.value
             )
         })
@@ -205,6 +210,7 @@ final class IntelligenceEngine: ObservableObject {
         pendingJobs = 0
         filesIndexed = 0
         staleCount = 0
+        resourceDecision = nil
     }
 
     /// Re-enables intelligence for a project on app launch if the user had it on.
@@ -261,39 +267,53 @@ final class IntelligenceEngine: ObservableObject {
         isTicking = true
         defer { isTicking = false }
 
-        // Honor memory pressure immediately — don't even scan under pressure.
-        if memoryMonitor.flag.value {
-            status = .working("Paused (low memory)")
+        guard let scheduler else { return }
+        let decision = await scheduler.decision()
+        resourceDecision = decision
+
+        // Honor hard resource stops immediately; don't even scan under pressure.
+        if decision.allowedTier == .none {
+            status = .working(decision.userFacingSummary)
+            lastActivity = decision.userFacingSummary
             return
         }
 
         // Re-scan (and re-hash files) only when something actually changed.
         if initialScan || needsScan {
-            needsScan = false
-            if initialScan { status = .scanning(done: 0, total: 0) }
-            let scanner = WorkspaceScanner(
-                db: db,
-                projectID: projectID,
-                roots: scanRoots.isEmpty ? [rootURL] : scanRoots,
-                fileLimit: maxFilesManaged
-            )
-            let result = await scanner.scan()
-            if result.changed > 0 || result.added > 0 {
-                lastActivity = "Indexed \(result.added + result.changed) file(s)"
+            if !initialScan && decision.allowedTier < .tier3 {
+                lastActivity = "Changes queued; waiting for idle"
+                filesIndexed = await db.files(projectID: projectID).count
+                pendingJobs = await db.pendingJobCount(projectID: projectID)
+                staleCount = await db.staleArtifactCount(projectID: projectID)
+            } else {
+                needsScan = false
+                if initialScan { status = .scanning(done: 0, total: 0) }
+                let scanner = WorkspaceScanner(
+                    db: db,
+                    projectID: projectID,
+                    roots: scanRoots.isEmpty ? [rootURL] : scanRoots,
+                    fileLimit: maxFilesManaged
+                )
+                let result = await scanner.scan()
+                if result.changed > 0 || result.added > 0 {
+                    lastActivity = "Indexed \(result.added + result.changed) file(s)"
+                }
+                let managedFileCount = await db.files(projectID: projectID).count
+                if result.limitReached || managedFileCount >= maxFilesManaged {
+                    lastActivity = "Large project — indexing first \(maxFilesManaged) eligible files"
+                }
+                filesIndexed = managedFileCount
+                pendingJobs = await db.pendingJobCount(projectID: projectID)
+                staleCount = await db.staleArtifactCount(projectID: projectID)
+                await enqueueAggregateJobs()
             }
-            let managedFileCount = await db.files(projectID: projectID).count
-            if result.limitReached || managedFileCount >= maxFilesManaged {
-                lastActivity = "Large project — indexing first \(maxFilesManaged) eligible files"
-            }
-            filesIndexed = managedFileCount
-            pendingJobs = await db.pendingJobCount(projectID: projectID)
-            staleCount = await db.staleArtifactCount(projectID: projectID)
-            await enqueueAggregateJobs()
         }
 
-        status = .working("Processing")
-        await runner.drain(limit: 6)   // bounded per tick so the loop stays responsive
-        await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
+        status = .working(decision.allowedTier >= .tier2 ? "Processing" : decision.userFacingSummary)
+        let drain = await runner.drain(limit: 6, allowedTier: decision.allowedTier)   // bounded per tick so the loop stays responsive
+        if drain.ranJobs > 0 {
+            await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
+        }
         await enforceDiskBudget()
         await refreshState()
     }
@@ -364,7 +384,11 @@ final class IntelligenceEngine: ObservableObject {
             let count = content.split(separator: "\n").filter { $0.hasPrefix("- ") }.count
             status = count > 0 ? .driftDetected(count) : (pendingJobs > 0 ? .working("Processing") : .idle)
         } else {
-            status = pendingJobs > 0 ? .working("\(pendingJobs) queued") : .idle
+            if pendingJobs > 0, let decision = resourceDecision, decision.allowedTier < .tier2 {
+                status = .working(decision.userFacingSummary)
+            } else {
+                status = pendingJobs > 0 ? .working("\(pendingJobs) queued") : .idle
+            }
         }
     }
 
@@ -669,4 +693,49 @@ final class MemoryPressureMonitor: @unchecked Sendable {
     }
 
     deinit { source.cancel() }
+}
+
+/// Tracks AppKit activity on the main actor and exposes a lock-protected
+/// snapshot to the scheduler's background condition probe.
+final class AppActivityMonitor: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _isActive = false
+    private var _isForeground = false
+    private var observers: [NSObjectProtocol] = []
+
+    var snapshot: (isActive: Bool, isForeground: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (_isActive, _isForeground)
+    }
+
+    @MainActor
+    func start() {
+        updateFromApp()
+        guard observers.isEmpty else { return }
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            NSApplication.didBecomeActiveNotification,
+            NSApplication.didResignActiveNotification,
+            NSApplication.didHideNotification,
+            NSApplication.didUnhideNotification
+        ]
+        observers = names.map { name in
+            center.addObserver(forName: name, object: NSApp, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.updateFromApp() }
+            }
+        }
+    }
+
+    @MainActor
+    private func updateFromApp() {
+        lock.lock()
+        _isActive = NSApp.isActive
+        _isForeground = !NSApp.isHidden
+        lock.unlock()
+    }
+
+    deinit {
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+    }
 }

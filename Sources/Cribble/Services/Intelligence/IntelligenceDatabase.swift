@@ -605,15 +605,19 @@ actor IntelligenceDatabase {
         run("DELETE FROM artifacts WHERE id = ?;") { stmt in bindText(stmt, 1, id) }
     }
 
-    /// Wipes all artifacts and jobs for a project so intelligence can be rebuilt
-    /// from scratch (used by Clear Cache and poison-recovery).
+    /// Wipes all derived and indexed data for a project so intelligence can be
+    /// rebuilt from scratch (used by Clear Cache and poison-recovery).
     func reset(projectID: String) {
+        run("DELETE FROM artifact_provenance WHERE artifact_id IN (SELECT id FROM artifacts WHERE project_id = ?);") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM embeddings WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM artifacts WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM jobs WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM git_commits WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM knowledge_edges WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM knowledge_nodes WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
         run("DELETE FROM research_insights WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM symbols WHERE file_id IN (SELECT id FROM files WHERE project_id = ?);") { stmt in bindText(stmt, 1, projectID) }
+        run("DELETE FROM files WHERE project_id = ?;") { stmt in bindText(stmt, 1, projectID) }
     }
 
     func markArtifactPublished(id: String) {

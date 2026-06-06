@@ -447,13 +447,18 @@ actor JobRunner {
 
     private func aggregateSummaryInputs() async -> [(path: String, summary: String)] {
         let summaryArtifacts = await db.artifacts(projectID: projectID, type: .fileSummary)
+        let currentSourceHashes = Set((await db.files(projectID: projectID)).map(\.hash))
         var summaries: [(path: String, summary: String)] = []
+        var seenPaths: Set<String> = []
         var remainingChars = maxAggregateSummaryChars
 
         for artifact in summaryArtifacts.prefix(IntelligenceAggregateSignatures.maxSummaryInputs) where remainingChars > 0 {
+            guard !Set(artifact.sourceHashes).isDisjoint(with: currentSourceHashes) else { continue }
+            let path = artifact.title ?? artifact.relativePath
+            guard seenPaths.insert(path).inserted else { continue }
             guard let content = artifacts.content(for: artifact), !content.isEmpty else { continue }
             let clipped = String(content.prefix(remainingChars))
-            summaries.append((artifact.title ?? artifact.relativePath, clipped))
+            summaries.append((path, clipped))
             remainingChars -= clipped.count
         }
 

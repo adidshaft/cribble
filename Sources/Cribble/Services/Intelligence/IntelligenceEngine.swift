@@ -254,7 +254,10 @@ final class IntelligenceEngine: ObservableObject {
         researchInsights = []
         resetDirtyGates()
         needsScan = true
-        await tick(initialScan: true)
+        for _ in 0..<50 where isTicking {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        await tick(initialScan: true, forceFullRun: true)
     }
 
 
@@ -353,10 +356,14 @@ final class IntelligenceEngine: ObservableObject {
         guard !files.isEmpty else { return }
         let artifacts = await db.artifacts(projectID: projectID)
         let symbols = await db.allSymbols(projectID: projectID)
+        let currentFileHashes = Set(files.map(\.hash))
+        let currentArtifacts = artifacts.filter { artifact in
+            artifact.type != .fileSummary || !Set(artifact.sourceHashes).isDisjoint(with: currentFileHashes)
+        }
         let filesSignature = IntelligenceAggregateSignatures.allFiles(files)
         let markdownSignature = IntelligenceAggregateSignatures.markdownFiles(files)
         let symbolSignature = IntelligenceAggregateSignatures.symbols(symbols)
-        let summarySignature = IntelligenceAggregateSignatures.summaries(artifacts)
+        let summarySignature = IntelligenceAggregateSignatures.summaries(currentArtifacts)
 
         // Workspace lens: code-only aggregations (dependency/architecture/drift)
         // would be empty noise in a prose vault (notes, research, contracts), so
@@ -404,27 +411,27 @@ final class IntelligenceEngine: ObservableObject {
                 )
             }
             if await summaryCoverage(files: files) >= 0.35 {
-                await enqueueAggregateJobIfDirty(
-                    type: .discoverConnections,
-                    inputHash: IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature),
-                    priority: 220
-                )
                 // Generic insight aggregations — valuable for any workspace
                 // (notes, research, contracts), not just code.
                 await enqueueAggregateJobIfDirty(
                     type: .detectContradictions,
                     inputHash: IntelligenceAggregateSignatures.contradictions(summarySignature: summarySignature),
-                    priority: 230
+                    priority: 220
                 )
                 await enqueueAggregateJobIfDirty(
                     type: .buildGlossary,
                     inputHash: IntelligenceAggregateSignatures.glossary(summarySignature: summarySignature),
-                    priority: 240
+                    priority: 230
                 )
                 await enqueueAggregateJobIfDirty(
                     type: .buildTimeline,
                     inputHash: IntelligenceAggregateSignatures.timeline(summarySignature: summarySignature),
-                    priority: 250
+                    priority: 240
+                )
+                await enqueueAggregateJobIfDirty(
+                    type: .discoverConnections,
+                    inputHash: IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature),
+                    priority: 260
                 )
             }
         }

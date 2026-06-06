@@ -519,7 +519,7 @@ struct IntelligenceHUDView: View {
 
     /// Count of per-document summaries produced so far.
     private var analyzedCount: Int {
-        engine.artifacts.filter { $0.type == .fileSummary }.count
+        min(engine.filesIndexed, Set(visibleFileSummaries.flatMap(\.sourceHashes)).count)
     }
 
     /// Analysis progress in 0...1 (summaries / indexed files).
@@ -1255,8 +1255,14 @@ struct IntelligenceHUDView: View {
     // MARK: - Derived
 
     private var visibleArtifacts: [IntelligenceArtifact] {
-        guard !engine.hasCodeFiles else { return engine.artifacts }
-        return engine.artifacts.filter { !Self.codeOnlyArtifactTypes.contains($0.type) }
+        let artifacts = engine.hasCodeFiles
+            ? engine.artifacts
+            : engine.artifacts.filter { !Self.codeOnlyArtifactTypes.contains($0.type) }
+        return Self.deduplicatingFileSummaries(artifacts)
+    }
+
+    private var visibleFileSummaries: [IntelligenceArtifact] {
+        visibleArtifacts.filter { $0.type == .fileSummary }
     }
 
     private static let codeOnlyArtifactTypes: Set<IntelligenceArtifactType> = [
@@ -1266,6 +1272,15 @@ struct IntelligenceHUDView: View {
         .ioBehavior,
         .driftReport
     ]
+
+    private static func deduplicatingFileSummaries(_ artifacts: [IntelligenceArtifact]) -> [IntelligenceArtifact] {
+        var seenSummaryTitles: Set<String> = []
+        return artifacts.filter { artifact in
+            guard artifact.type == .fileSummary else { return true }
+            let key = artifact.title ?? artifact.relativePath
+            return seenSummaryTitles.insert(key).inserted
+        }
+    }
 
     private var selectedArtifact: IntelligenceArtifact? {
         visibleArtifacts.first { $0.id == selectedArtifactID }

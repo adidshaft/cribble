@@ -108,6 +108,31 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertEqual(count, 1)
     }
 
+    func testResetClearsIndexedFilesSoCacheRebuildReenqueuesWork() async throws {
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await db.upsertFile(projectID: "p", path: "a.md", hash: "h1", sizeBytes: 10, language: SourceLanguage.markdown.rawValue)
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .summarizeFile, inputHash: "h1", inputPaths: ["a.md"]))
+        await db.insertArtifact(IntelligenceArtifact(
+            id: "artifact",
+            projectID: "p",
+            type: .fileSummary,
+            relativePath: "summaries/a.md",
+            title: "a.md",
+            contentHash: "c1",
+            sourceHashes: ["h1"],
+            isPublished: false
+        ))
+
+        await db.reset(projectID: "p")
+
+        let files = await db.files(projectID: "p")
+        let pendingJobs = await db.pendingJobCount(projectID: "p")
+        let artifacts = await db.artifacts(projectID: "p")
+        XCTAssertEqual(files.count, 0)
+        XCTAssertEqual(pendingJobs, 0)
+        XCTAssertTrue(artifacts.isEmpty)
+    }
+
     func testEnqueueDeduplicatesByInputHash() async throws {
         let db = try IntelligenceDatabase(path: ":memory:")
         let job = IntelligenceJob(projectID: "p", type: .summarizeFile, inputHash: "h1", inputPaths: ["a.swift"])

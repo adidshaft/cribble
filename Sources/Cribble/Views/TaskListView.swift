@@ -10,6 +10,7 @@ struct TaskListView: View {
     let items: [TaskListItem]
     let baseURL: URL
     let fontScale: Double
+    let isHighlightMode: Bool
     /// Document-global ordinal of `items[0]`.
     let ordinalBase: Int
     let sectionAnchor: String
@@ -29,6 +30,7 @@ struct TaskListView: View {
                     item: item,
                     baseURL: baseURL,
                     fontScale: fontScale,
+                    isHighlightMode: isHighlightMode,
                     sectionAnchor: sectionAnchor,
                     blockIndex: blockIndex,
                     highlights: highlights,
@@ -46,6 +48,7 @@ private struct TaskRow: View {
     let item: TaskListItem
     let baseURL: URL
     let fontScale: Double
+    let isHighlightMode: Bool
     let sectionAnchor: String
     let blockIndex: Int
     let highlights: [ResolvedHighlight]
@@ -62,6 +65,7 @@ private struct TaskRow: View {
         item: TaskListItem,
         baseURL: URL,
         fontScale: Double,
+        isHighlightMode: Bool,
         sectionAnchor: String,
         blockIndex: Int,
         highlights: [ResolvedHighlight],
@@ -72,6 +76,7 @@ private struct TaskRow: View {
         self.item = item
         self.baseURL = baseURL
         self.fontScale = fontScale
+        self.isHighlightMode = isHighlightMode
         self.sectionAnchor = sectionAnchor
         self.blockIndex = blockIndex
         self.highlights = highlights
@@ -91,6 +96,8 @@ private struct TaskRow: View {
     }
 
     var body: some View {
+        let textSelectionEnabled = isHighlightMode || !highlights.isEmpty
+
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Button {
                 let wasChecked = checked
@@ -119,7 +126,7 @@ private struct TaskRow: View {
                     .strong(.fontWeight(.semibold))
             )
             .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
-            .textual.textSelection(.enabled)
+            .cribbleTextualSelection(textSelectionEnabled)
             .environment(\.textInteractionSectionAnchor, sectionAnchor)
             .environment(\.textInteractionBlockIndex, blockIndex)
             .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: item.label))

@@ -211,7 +211,6 @@ private struct ReaderDocumentView: View {
                         Text(document.title)
                             .font(ReaderTypography.primary(settings.readerFontName, size: 30 * fontScale))
                             .fontWeight(.semibold)
-                            .textSelection(.enabled)
 
                         if showLinkedFileCards, !linkedFiles.isEmpty {
                             LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
@@ -239,6 +238,7 @@ private struct ReaderDocumentView: View {
                                         section: section,
                                         baseURL: document.url.deletingLastPathComponent(),
                                         fontScale: fontScale,
+                                        isHighlightMode: isHighlightMode,
                                         highlightsByBlock: sectionPlan.highlightsByBlock,
                                         onUpdateHighlightNote: { highlightID, note in
                                             updateHighlightNote(id: highlightID, note: note)
@@ -969,6 +969,7 @@ private struct ReaderMarkdownSection: View {
     let section: ReadingSection
     let baseURL: URL
     let fontScale: Double
+    let isHighlightMode: Bool
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
     let onUpdateHighlightNote: (UUID, String) -> Void
     // Number of task checkboxes in all sections before this one — added to a
@@ -991,6 +992,7 @@ private struct ReaderMarkdownSection: View {
                 case .markdown(_, let markdown):
                     if let idx = indexedBlock.markdownIndex {
                         let blockHighlights = highlightsByBlock[BlockKey(sectionAnchor: section.anchor, blockIndex: idx)] ?? []
+                        let textSelectionEnabled = isHighlightMode || !blockHighlights.isEmpty
                         StructuredText(
                             markdown,
                             parser: HighlightedMarkdownParser(
@@ -1016,7 +1018,7 @@ private struct ReaderMarkdownSection: View {
                                 .strong(.fontWeight(.semibold))
                         )
                         .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
-                        .textual.textSelection(.enabled)
+                        .cribbleTextualSelection(textSelectionEnabled)
                         .environment(\.textInteractionSectionAnchor, section.anchor)
                         .environment(\.textInteractionBlockIndex, idx)
                         .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: markdown))
@@ -1036,6 +1038,7 @@ private struct ReaderMarkdownSection: View {
                         items: items,
                         baseURL: baseURL,
                         fontScale: fontScale,
+                        isHighlightMode: isHighlightMode,
                         ordinalBase: taskOrdinalBase + indexedBlock.taskBaseInSection,
                         sectionAnchor: section.anchor,
                         highlightsByBlock: highlightsByBlock,
@@ -1206,7 +1209,7 @@ private struct SyntaxHighlightedCodeBlockView: View {
         StructuredText(markdown: fencedMarkdown)
             .font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale))
             .textual.structuredTextStyle(.gitHub)
-            .textual.textSelection(.enabled)
+            .cribbleTextualSelection(false)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -1459,7 +1462,6 @@ private struct CodeSourceView: View {
         ScrollView(.horizontal) {
             Text(source.isEmpty ? " " : source)
                 .font(.system(size: 13 * fontScale, design: .monospaced))
-                .textSelection(.enabled)
                 .lineSpacing(2)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

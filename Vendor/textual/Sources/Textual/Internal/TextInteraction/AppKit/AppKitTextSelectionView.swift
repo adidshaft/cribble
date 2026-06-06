@@ -38,7 +38,6 @@
         }
       }
       .onChange(of: textSelectionModel?.selectedRange, initial: true, updateSelectionRects)
-      .onChange(of: layout, initial: true, updateSelectionRects)
     }
 
     private func updateSelectionRects() {

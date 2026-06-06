@@ -280,6 +280,8 @@ private extension IntelligenceArtifactType {
             return "Files"
         case .researchInsight:
             return "Research"
+        case .contradictionReport, .glossary, .timeline:
+            return "Insights"
         }
     }
 }

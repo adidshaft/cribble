@@ -390,6 +390,23 @@ final class IntelligenceEngine: ObservableObject {
                     inputHash: IntelligenceAggregateSignatures.discoveredConnections(summarySignature: summarySignature),
                     priority: 220
                 )
+                // Generic insight aggregations — valuable for any workspace
+                // (notes, research, contracts), not just code.
+                await enqueueAggregateJobIfDirty(
+                    type: .detectContradictions,
+                    inputHash: IntelligenceAggregateSignatures.contradictions(summarySignature: summarySignature),
+                    priority: 230
+                )
+                await enqueueAggregateJobIfDirty(
+                    type: .buildGlossary,
+                    inputHash: IntelligenceAggregateSignatures.glossary(summarySignature: summarySignature),
+                    priority: 240
+                )
+                await enqueueAggregateJobIfDirty(
+                    type: .buildTimeline,
+                    inputHash: IntelligenceAggregateSignatures.timeline(summarySignature: summarySignature),
+                    priority: 250
+                )
             }
         }
 

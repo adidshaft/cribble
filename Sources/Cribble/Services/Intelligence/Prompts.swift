@@ -144,6 +144,75 @@ enum Prompts {
         ]
     }
 
+    // MARK: - Generic document insights (any workspace, not just code)
+
+    /// Renders the shared document context block used by the generic insight
+    /// prompts: a titled excerpt per document, bounded by `aggregateSummaryInputs`.
+    private static func documentContext(_ documents: [(path: String, summary: String)], limit: Int = 80, excerpt: Int = 700) -> String {
+        documents.prefix(limit)
+            .map { "### \($0.path)\n\($0.summary.prefix(excerpt))" }
+            .joined(separator: "\n\n")
+    }
+
+    static func contradictionReport(documents: [(path: String, summary: String)]) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You compare a collection of documents and surface where they disagree. \
+            \(antiHallucination) Read the documents below and report concrete \
+            contradictions, conflicting claims, or inconsistent facts/values/dates \
+            across them. This applies to any domain — research findings, guidelines, \
+            contracts, manuscripts, or notes.
+
+            Output Markdown only:
+            # Contradiction Report
+            - **Conflict:** one sentence describing the disagreement.
+              - `document A`: the claim it makes.
+              - `document B`: the conflicting claim.
+
+            Cite only the document titles/paths listed below. If you find no \
+            contradictions, write "No contradictions found across the current documents."
+            """),
+            EngineMessage(role: .user, content: documentContext(documents))
+        ]
+    }
+
+    static func glossary(documents: [(path: String, summary: String)]) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You build a glossary of the key terms, entities, and concepts that recur \
+            across a document collection — people, organizations, places, defined \
+            terms, drugs, parties, technical concepts, whatever is salient. \
+            \(antiHallucination)
+
+            Output Markdown only:
+            # Glossary
+            - **Term** — a concise definition grounded in the documents, noting which \
+              document(s) it appears in by title/path.
+
+            Sort alphabetically. Include only terms actually present below. Cap at 40 entries.
+            """),
+            EngineMessage(role: .user, content: documentContext(documents))
+        ]
+    }
+
+    static func timeline(documents: [(path: String, summary: String)]) -> [EngineMessage] {
+        [
+            EngineMessage(role: .system, content: """
+            You reconstruct a chronological timeline of events, milestones, or dated \
+            facts mentioned across a document collection. \(antiHallucination)
+
+            Output Markdown only:
+            # Timeline
+            - **<date or ordering cue>** — what happened, citing the source document by \
+              title/path.
+
+            Order earliest to latest. Use only dates/events present below. If the \
+            documents contain no datable events, write "No dated events found."
+            """),
+            EngineMessage(role: .user, content: documentContext(documents))
+        ]
+    }
+
     static let summarySchema = JSONSchemaHint(
         name: "markdown_summary",
         example: "# Title\n\nA concise paragraph describing purpose and key behavior."

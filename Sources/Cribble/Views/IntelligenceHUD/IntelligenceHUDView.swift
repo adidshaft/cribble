@@ -1311,6 +1311,7 @@ struct IntelligenceHUDView: View {
     private var groupedArtifacts: [(String, [IntelligenceArtifact])] {
         let order: [(String, [IntelligenceArtifactType])] = [
             ("Overview", [.projectIndex]),
+            ("Insights", [.contradictionReport, .glossary, .timeline]),
             ("Connections", [.connectionsGraph]),
             ("Architecture", [.architectureDiagram, .dependencyDiagram]),
             ("Changes", [.diffSummary, .commitSummary]),
@@ -1477,6 +1478,9 @@ private extension IntelligenceArtifactType {
         case .driftReport: "exclamationmark.triangle"
         case .fileSummary: "doc.text"
         case .researchInsight: "doc.text.magnifyingglass"
+        case .contradictionReport: "exclamationmark.bubble"
+        case .glossary: "character.book.closed"
+        case .timeline: "calendar.day.timeline.left"
         }
     }
 }

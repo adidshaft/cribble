@@ -145,6 +145,9 @@ actor JobRunner {
         case .buildArchitectureDiagram: return try await buildArchitectureDiagram(job)
         case .detectArchitectureDrift:  return try await detectArchitectureDrift(job)
         case .discoverConnections:      return try await discoverConnections(job)
+        case .detectContradictions:     return try await detectContradictions(job)
+        case .buildGlossary:            return try await buildGlossary(job)
+        case .buildTimeline:            return try await buildTimeline(job)
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports:
             // These are driven directly by WorkspaceScanner, not the queue.
             throw JobRunnerError.unsupportedJobType(job.type)
@@ -389,6 +392,57 @@ actor JobRunner {
         let url = resolve(relativePath)
         guard let raw = try? String(contentsOf: url, encoding: .utf8), !raw.isEmpty else { return nil }
         return String(raw.prefix(maxInputChars))
+    }
+
+    private func detectContradictions(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        let summaries = await aggregateSummaryInputs()
+        guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
+        let output = try await provider.generate(
+            prompt: Prompts.contradictionReport(documents: summaries),
+            maxTokens: 1200
+        )
+        let body = try await validatedMarkdown(output)
+        let artifact = try await artifacts.store(
+            type: .contradictionReport, relativePath: "insights/contradictions.md",
+            title: "Contradiction Report", content: body, sourceHashes: [job.inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        return artifact.id
+    }
+
+    private func buildGlossary(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        let summaries = await aggregateSummaryInputs()
+        guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
+        let output = try await provider.generate(
+            prompt: Prompts.glossary(documents: summaries),
+            maxTokens: 1400
+        )
+        let body = try await validatedMarkdown(output)
+        let artifact = try await artifacts.store(
+            type: .glossary, relativePath: "insights/glossary.md",
+            title: "Glossary", content: body, sourceHashes: [job.inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        return artifact.id
+    }
+
+    private func buildTimeline(_ job: IntelligenceJob) async throws -> String? {
+        guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
+        let summaries = await aggregateSummaryInputs()
+        guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
+        let output = try await provider.generate(
+            prompt: Prompts.timeline(documents: summaries),
+            maxTokens: 1200
+        )
+        let body = try await validatedMarkdown(output)
+        let artifact = try await artifacts.store(
+            type: .timeline, relativePath: "insights/timeline.md",
+            title: "Timeline", content: body, sourceHashes: [job.inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        return artifact.id
     }
 
     private func aggregateSummaryInputs() async -> [(path: String, summary: String)] {

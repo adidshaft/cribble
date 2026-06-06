@@ -81,6 +81,18 @@ enum IntelligenceAggregateSignatures {
         ContentHasher.combine(["git-probe", filesSignature, gitMarkerSignature])
     }
 
+    static func contradictions(summarySignature: String) -> String {
+        ContentHasher.combine(["contradictions", summarySignature])
+    }
+
+    static func glossary(summarySignature: String) -> String {
+        ContentHasher.combine(["glossary", summarySignature])
+    }
+
+    static func timeline(summarySignature: String) -> String {
+        ContentHasher.combine(["timeline", summarySignature])
+    }
+
     private static func hashEntries(_ namespace: String, _ entries: [String]) -> String {
         ContentHasher.combine([namespace] + entries.map(ContentHasher.hash))
     }

@@ -30,6 +30,12 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     case detectArchitectureDrift = "detect_architecture_drift"
     case discoverConnections = "discover_connections"
 
+    // Tier 3 — generic, content-agnostic aggregations. These serve any
+    // workspace (notes, research, contracts, case files) — not just code.
+    case detectContradictions = "detect_contradictions"
+    case buildGlossary = "build_glossary"
+    case buildTimeline = "build_timeline"
+
     /// The scheduling tier this job belongs to. Drives idle-awareness gating in
     /// `BackgroundScheduler`.
     var tier: IntelligenceJobTier {
@@ -38,7 +44,8 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
             return .tier1
         case .analyzeFile, .summarizeFile, .summarizeDiff, .summarizeCommit, .extractFallbackLogic:
             return .tier2
-        case .extractIOBehavior, .buildDependencyDiagram, .buildConnectionsGraph, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift, .discoverConnections:
+        case .extractIOBehavior, .buildDependencyDiagram, .buildConnectionsGraph, .buildArchitectureDiagram, .updateProjectIndex, .detectArchitectureDrift, .discoverConnections,
+             .detectContradictions, .buildGlossary, .buildTimeline:
             return .tier3
         }
     }
@@ -50,7 +57,8 @@ enum IntelligenceJobType: String, Codable, Sendable, CaseIterable {
     var requiresProvider: Bool {
         switch self {
         case .analyzeFile, .summarizeFile, .summarizeDiff, .summarizeCommit,
-             .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex, .discoverConnections:
+             .extractFallbackLogic, .extractIOBehavior, .buildArchitectureDiagram, .updateProjectIndex, .discoverConnections,
+             .detectContradictions, .buildGlossary, .buildTimeline:
             return true
         case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports,
              .buildDependencyDiagram, .buildConnectionsGraph, .detectArchitectureDrift:
@@ -95,6 +103,10 @@ enum IntelligenceArtifactType: String, Codable, Sendable {
     case ioBehavior = "io_behavior"
     case driftReport = "drift_report"
     case researchInsight = "research_insight"
+    // Generic insight artifacts (serve any document collection).
+    case contradictionReport = "contradiction_report"
+    case glossary = "glossary"
+    case timeline = "timeline"
 }
 
 /// A unit of work as stored in / loaded from the queue.

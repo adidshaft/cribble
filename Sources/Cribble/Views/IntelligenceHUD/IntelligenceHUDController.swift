@@ -123,7 +123,8 @@ final class IntelligenceHUDController {
                     NSWorkspace.shared.activateFileViewerSelecting([url])
                 }
             },
-            allRoots: { [weak library] in library?.rootURLs ?? [] }
+            allRoots: { [weak library] in library?.rootURLs ?? [] },
+            latestContextReceipt: { ChatHUDController.shared.latestContextReceipt }
         )
 
         let visualEffect = NSVisualEffectView()

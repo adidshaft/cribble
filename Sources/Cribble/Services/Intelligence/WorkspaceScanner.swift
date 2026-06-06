@@ -45,15 +45,17 @@ struct WorkspaceScanner: Sendable {
     let projectID: String
     /// One root for folder scope, several for "all folders" scope.
     let roots: [URL]
+    let fileLimit: Int
 
     init(db: IntelligenceDatabase, projectID: String, rootURL: URL) {
         self.init(db: db, projectID: projectID, roots: [rootURL])
     }
 
-    init(db: IntelligenceDatabase, projectID: String, roots: [URL]) {
+    init(db: IntelligenceDatabase, projectID: String, roots: [URL], fileLimit: Int = 8_000) {
         self.db = db
         self.projectID = projectID
         self.roots = roots.map(\.standardizedFileURL)
+        self.fileLimit = fileLimit
     }
 
     /// When spanning multiple folders, stored paths are absolute (so they stay
@@ -63,7 +65,8 @@ struct WorkspaceScanner: Sendable {
     /// Directories never descended into.
     private static let ignoredDirectories: Set<String> = [
         ".git", ".build", ".cribble", "node_modules", ".swiftpm",
-        "DerivedData", ".venv", "venv", "dist", "build", ".next", "Pods"
+        "DerivedData", ".venv", "venv", "dist", "build", ".next", "Pods",
+        ".turbo", ".expo", ".vercel", "coverage"
     ]
     /// Files larger than this are skipped for summarization (still hashed cheaply
     /// would be wasteful — we skip entirely). 512 KB keeps prompts bounded.
@@ -76,6 +79,7 @@ struct WorkspaceScanner: Sendable {
         var removed = 0
         var skipped = 0
         var jobsEnqueued = 0
+        var limitReached = false
     }
 
     /// Performs a full incremental scan and returns a summary.
@@ -84,7 +88,9 @@ struct WorkspaceScanner: Sendable {
         let fileManager = FileManager.default
 
         var seenPaths: Set<String> = []
-        let onDisk = enumerateFiles(fileManager: fileManager)
+        let enumeration = enumerateFiles(fileManager: fileManager)
+        let onDisk = enumeration.urls
+        result.limitReached = enumeration.limitReached
 
         for url in onDisk {
             let relativePath = pathKey(of: url)
@@ -137,11 +143,15 @@ struct WorkspaceScanner: Sendable {
             if enqueued { result.jobsEnqueued += 1 }
         }
 
-        // Reconcile deletions: anything tracked but no longer on disk.
-        for tracked in await db.files(projectID: projectID) where !seenPaths.contains(tracked.path) {
-            await db.markArtifactsStale(projectID: projectID, containingSourceHash: tracked.hash)
-            await db.deleteFile(projectID: projectID, path: tracked.path)
-            result.removed += 1
+        // Reconcile deletions only after a complete scan. When a huge repo hits
+        // the managed-file cap, `seenPaths` is intentionally partial; deleting
+        // every tracked row outside that prefix would churn the cache.
+        if !result.limitReached {
+            for tracked in await db.files(projectID: projectID) where !seenPaths.contains(tracked.path) {
+                await db.markArtifactsStale(projectID: projectID, containingSourceHash: tracked.hash)
+                await db.deleteFile(projectID: projectID, path: tracked.path)
+                result.removed += 1
+            }
         }
 
         return result
@@ -149,7 +159,7 @@ struct WorkspaceScanner: Sendable {
 
     // MARK: - Helpers
 
-    private func enumerateFiles(fileManager: FileManager) -> [URL] {
+    private func enumerateFiles(fileManager: FileManager) -> (urls: [URL], limitReached: Bool) {
         var urls: [URL] = []
         for root in roots {
             guard let enumerator = fileManager.enumerator(
@@ -168,10 +178,13 @@ struct WorkspaceScanner: Sendable {
                 let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
                 if values?.isRegularFile == true {
                     urls.append(url)
+                    if urls.count >= fileLimit {
+                        return (urls, true)
+                    }
                 }
             }
         }
-        return urls
+        return (urls, false)
     }
 
     /// The DB key for a file: absolute path in multi-folder mode, else relative to

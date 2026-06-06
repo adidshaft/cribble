@@ -326,6 +326,24 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertTrue(paths.contains(rootA.appendingPathComponent("a.md").standardizedFileURL.path))
     }
 
+    func testScannerLimitDoesNotDeletePreviouslyTrackedFilesOutsidePartialScan() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-limit-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try "# A".write(to: root.appendingPathComponent("a.md"), atomically: true, encoding: .utf8)
+        try "# B".write(to: root.appendingPathComponent("b.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let first = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        XCTAssertEqual(first.added, 2)
+
+        let limited = await WorkspaceScanner(db: db, projectID: "p", roots: [root], fileLimit: 1).scan()
+        XCTAssertTrue(limited.limitReached)
+        let tracked = await db.files(projectID: "p")
+        XCTAssertEqual(tracked.count, 2)
+    }
+
     // MARK: - JobRunner end to end
 
     func testRunnerSummarizesFileAndAnchorsProvenance() async throws {

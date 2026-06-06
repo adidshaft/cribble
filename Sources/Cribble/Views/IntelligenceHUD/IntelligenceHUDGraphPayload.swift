@@ -1,6 +1,36 @@
 import Foundation
 
 extension GraphPayload {
+    func pruned(maxNodes: Int, maxEdges: Int) -> GraphPayload {
+        guard nodes.count > maxNodes || edges.count > maxEdges else { return self }
+
+        let limitedEdges = Array(edges.prefix(maxEdges))
+        let edgeDegree = limitedEdges.reduce(into: [String: Int]()) { result, edge in
+            result[edge.source, default: 0] += 1
+            result[edge.target, default: 0] += 1
+        }
+        let edgeNodeIDs = Set(limitedEdges.flatMap { [$0.source, $0.target] })
+        let rankedNodes = nodes
+            .filter { edgeNodeIDs.contains($0.id) || $0.weight >= 6 }
+            .sorted { lhs, rhs in
+                let lhsRank = edgeDegree[lhs.id, default: 0] + lhs.weight
+                let rhsRank = edgeDegree[rhs.id, default: 0] + rhs.weight
+                return lhsRank == rhsRank
+                    ? lhs.label.localizedStandardCompare(rhs.label) == .orderedAscending
+                    : lhsRank > rhsRank
+            }
+        let visibleNodes = Array(rankedNodes.prefix(maxNodes))
+        let visibleIDs = Set(visibleNodes.map(\.id))
+        let visibleEdges = limitedEdges.filter { visibleIDs.contains($0.source) && visibleIDs.contains($0.target) }
+
+        return GraphPayload(
+            title: title,
+            nodes: visibleNodes,
+            edges: visibleEdges,
+            isPlaceholder: isPlaceholder
+        )
+    }
+
     static func intelligence(
         projectName: String?,
         filesIndexed: Int,

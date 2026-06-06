@@ -28,12 +28,13 @@ struct IntelligenceHUDView: View {
     @State private var isEnabling = false
     @State private var showModelPicker = false
     @State private var zoomRequest: ZoomOverlayRequest?
+    @State private var selectedGraphLens: IntelligenceGraphLens = .visual
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider().overlay(Color.white.opacity(0.08))
-            if engine.isEnabled {
+            if engine.isEnabled && !isViewingDifferentFolder {
                 if engine.needsModelDownload || engine.modelDownloadFraction != nil {
                     modelBanner
                 }
@@ -225,10 +226,10 @@ struct IntelligenceHUDView: View {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.5))
-            Text("Build local intelligence for\n\(activeRootURL()?.lastPathComponent ?? "this folder")?")
+            Text(enablePromptTitle)
                 .font(.system(size: 15, weight: .semibold))
                 .multilineTextAlignment(.center)
-            Text("Cribble scans the folder on-device and keeps a living set of summaries, diagrams, and audits — every claim links back to the source.")
+            Text(enablePromptDetail)
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
@@ -265,6 +266,17 @@ struct IntelligenceHUDView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
+    }
+
+    private var enablePromptTitle: String {
+        "Build local intelligence for\n\(activeRootURL()?.lastPathComponent ?? "this folder")?"
+    }
+
+    private var enablePromptDetail: String {
+        if isViewingDifferentFolder, let enabled = engine.enabledProjectName {
+            return "Intelligence is currently showing \(enabled). Start a separate local index for this selected folder, or switch back to \(enabled) in the sidebar."
+        }
+        return "Cribble scans the folder on-device and keeps a living set of summaries, diagrams, and audits — every claim links back to the source."
     }
 
     // MARK: - Model download banner
@@ -541,21 +553,29 @@ struct IntelligenceHUDView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.62))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(graphPayload.title)
+                    Text(visibleGraphPayload.title)
                         .font(.system(size: 12, weight: .semibold))
-                    Text(graphPayload.isPlaceholder ? "Placeholder graph until relationship APIs are populated" : "Loaded from generated intelligence graph artifacts")
+                    Text(graphSubtitle)
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.46))
                 }
                 Spacer()
-                Text("\(graphPayload.nodes.count) nodes")
+                Picker("Graph lens", selection: $selectedGraphLens) {
+                    ForEach(IntelligenceGraphLens.allCases) { lens in
+                        Label(lens.rawValue, systemImage: lens.icon).tag(lens)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 220)
+                Text("\(visibleGraphPayload.nodes.count) nodes")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.54))
             }
             .padding(.horizontal, 14)
             .padding(.top, 12)
 
-            GraphViewport(payload: graphPayload, onOpenSource: onOpenSource)
+            GraphViewport(payload: visibleGraphPayload, onOpenSource: onOpenSource)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
                 .overlay {
@@ -920,6 +940,14 @@ struct IntelligenceHUDView: View {
         engine.artifacts.first { $0.id == selectedArtifactID }
     }
 
+    private var isViewingDifferentFolder: Bool {
+        guard engine.isEnabled, !engine.isAllFolders,
+              let activePath = activeRootURL()?.standardizedFileURL.path,
+              let enabledPath = engine.enabledRootPath
+        else { return false }
+        return activePath != enabledPath
+    }
+
     private var activeResearchInsights: [ResearchInsight] {
         engine.researchInsights
             .filter { $0.status != .dismissed }
@@ -943,6 +971,27 @@ struct IntelligenceHUDView: View {
         return " · \(Int((confidence * 100).rounded()))%"
     }
 
+    private var visibleGraphPayload: GraphPayload {
+        let filteredEdges = graphEdges(for: selectedGraphLens)
+        let filteredNodes = graphNodes(for: filteredEdges)
+        let payload = GraphPayload.intelligence(
+            projectName: engine.enabledProjectName,
+            filesIndexed: engine.filesIndexed,
+            knowledgeNodes: filteredNodes,
+            knowledgeEdges: filteredEdges,
+            artifacts: engine.artifacts,
+            content: { engine.content(for: $0) }
+        )
+        return payload.pruned(maxNodes: selectedGraphLens.maxNodes, maxEdges: selectedGraphLens.maxEdges)
+    }
+
+    private var graphSubtitle: String {
+        if visibleGraphPayload.isPlaceholder {
+            return "Placeholder graph until intelligence builds relationships"
+        }
+        return selectedGraphLens.subtitle
+    }
+
     private var graphPayload: GraphPayload {
         GraphPayload.intelligence(
             projectName: engine.enabledProjectName,
@@ -952,6 +1001,49 @@ struct IntelligenceHUDView: View {
             artifacts: engine.artifacts,
             content: { engine.content(for: $0) }
         )
+    }
+
+    private func graphEdges(for lens: IntelligenceGraphLens) -> [KnowledgeEdge] {
+        let edges: [KnowledgeEdge]
+        switch lens {
+        case .visual:
+            edges = engine.knowledgeEdges.filter { $0.status != .dismissed }
+        case .trust:
+            edges = engine.knowledgeEdges.filter { $0.status == .accepted }
+        case .research:
+            edges = engine.knowledgeEdges.filter { edge in
+                edge.status != .dismissed
+                    && (edge.status == .suggested
+                        || edge.origin == .llmSuggested
+                        || edge.kind == .semanticSimilarity
+                        || edge.kind == .researchSupports
+                        || edge.kind == .researchQuestion)
+            }
+        }
+        return edges.sorted { lhs, rhs in
+            if lhs.status != rhs.status { return lhs.status.sortRank < rhs.status.sortRank }
+            if lhs.origin != rhs.origin { return lhs.origin.sortRank < rhs.origin.sortRank }
+            return (lhs.confidence ?? 0) > (rhs.confidence ?? 0)
+        }
+    }
+
+    private func graphNodes(for edges: [KnowledgeEdge]) -> [KnowledgeNode] {
+        guard !engine.knowledgeNodes.isEmpty else { return [] }
+        guard !edges.isEmpty else {
+            return Array(engine.knowledgeNodes.prefix(selectedGraphLens.maxNodes))
+        }
+        let endpointIDs = Set(edges.flatMap { [$0.fromNodeID, $0.toNodeID] })
+        let degree = edges.reduce(into: [String: Int]()) { result, edge in
+            result[edge.fromNodeID, default: 0] += 1
+            result[edge.toNodeID, default: 0] += 1
+        }
+        return engine.knowledgeNodes
+            .filter { endpointIDs.contains($0.id) }
+            .sorted { lhs, rhs in
+                degree[lhs.id, default: 0] == degree[rhs.id, default: 0]
+                    ? lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+                    : degree[lhs.id, default: 0] > degree[rhs.id, default: 0]
+            }
     }
 
     /// Artifacts grouped into display sections, in a stable section order.
@@ -968,6 +1060,46 @@ struct IntelligenceHUDView: View {
         return order.compactMap { section in
             let items = engine.artifacts.filter { section.1.contains($0.type) }
             return items.isEmpty ? nil : (section.0, items)
+        }
+    }
+}
+
+private enum IntelligenceGraphLens: String, CaseIterable, Identifiable {
+    case visual = "Visual"
+    case trust = "Trust"
+    case research = "Research"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .visual: "circle.hexagongrid"
+        case .trust: "checkmark.seal"
+        case .research: "sparkle.magnifyingglass"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .visual: "Readable topology across accepted and suggested relationships"
+        case .trust: "Accepted relationships only, best for source-grounded navigation"
+        case .research: "Suggested and model-discovered relationships for review"
+        }
+    }
+
+    var maxNodes: Int {
+        switch self {
+        case .visual: 90
+        case .trust: 120
+        case .research: 70
+        }
+    }
+
+    var maxEdges: Int {
+        switch self {
+        case .visual: 140
+        case .trust: 180
+        case .research: 100
         }
     }
 }
@@ -1002,6 +1134,27 @@ private extension KnowledgeEdge.Kind {
         case .semanticSimilarity: "Semantic similarity"
         case .researchSupports: "Research support"
         case .researchQuestion: "Research question"
+        }
+    }
+}
+
+private extension KnowledgeEdge.Status {
+    var sortRank: Int {
+        switch self {
+        case .accepted: 0
+        case .suggested: 1
+        case .dismissed: 2
+        }
+    }
+}
+
+private extension KnowledgeEdge.Origin {
+    var sortRank: Int {
+        switch self {
+        case .deterministic: 0
+        case .userAccepted: 1
+        case .llmSuggested: 2
+        case .web: 3
         }
     }
 }

@@ -120,6 +120,14 @@ final class IntelligenceEngine: ObservableObject {
         self.scanRoots = scanRoots
         self.isAllFolders = allFolders
         settings.setEnabled(true, projectID: projectID)
+        artifacts = []
+        knowledgeNodes = []
+        knowledgeEdges = []
+        researchInsights = []
+        pendingJobs = 0
+        filesIndexed = 0
+        staleCount = 0
+        lastActivity = "Preparing \(allFolders ? "all folders" : nominalRoot.lastPathComponent)"
 
         guard let database = try? IntelligenceDatabase(path: cacheDir.appendingPathComponent("intelligence.db").path) else {
             status = .off
@@ -263,14 +271,23 @@ final class IntelligenceEngine: ObservableObject {
         if initialScan || needsScan {
             needsScan = false
             if initialScan { status = .scanning(done: 0, total: 0) }
-            let scanner = WorkspaceScanner(db: db, projectID: projectID, roots: scanRoots.isEmpty ? [rootURL] : scanRoots)
+            let scanner = WorkspaceScanner(
+                db: db,
+                projectID: projectID,
+                roots: scanRoots.isEmpty ? [rootURL] : scanRoots,
+                fileLimit: maxFilesManaged
+            )
             let result = await scanner.scan()
             if result.changed > 0 || result.added > 0 {
                 lastActivity = "Indexed \(result.added + result.changed) file(s)"
             }
-            if await db.files(projectID: projectID).count > maxFilesManaged {
-                lastActivity = "Large project — summarizing within limits"
+            let managedFileCount = await db.files(projectID: projectID).count
+            if result.limitReached || managedFileCount >= maxFilesManaged {
+                lastActivity = "Large project — indexing first \(maxFilesManaged) eligible files"
             }
+            filesIndexed = managedFileCount
+            pendingJobs = await db.pendingJobCount(projectID: projectID)
+            staleCount = await db.staleArtifactCount(projectID: projectID)
             await enqueueAggregateJobs()
         }
 

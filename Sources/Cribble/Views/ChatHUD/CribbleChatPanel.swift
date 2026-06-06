@@ -122,6 +122,10 @@ final class ChatHUDController {
         popover?.performClose(nil)
     }
 
+    var latestContextReceipt: ContextReceipt? {
+        viewModel?.lastContextReceipt
+    }
+
     // MARK: - Presentations
 
     private func presentFloating() {

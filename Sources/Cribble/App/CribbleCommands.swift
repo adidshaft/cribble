@@ -156,6 +156,8 @@ struct CribbleCommands: Commands {
                 .keyboardShortcut("j", modifiers: [.command])
                 .disabled(toggleChatHUD == nil)
 
+            Divider()
+
             Button("Summarize Current Note", action: { summarizeWithAI?() })
                 .disabled(summarizeWithAI == nil)
 
@@ -165,11 +167,15 @@ struct CribbleCommands: Commands {
             Button("Find Related Notes", action: { findRelatedWithAI?() })
                 .disabled(findRelatedWithAI == nil)
 
+            Divider()
+
             Button("Draft Today with AI", action: { draftTodayWithAI?() })
                 .disabled(draftTodayWithAI == nil)
 
             Button("Extract Tasks from Current Note", action: { extractTasksWithAI?() })
                 .disabled(extractTasksWithAI == nil)
+
+            Divider()
 
             Button("Project Intelligence", action: { toggleIntelligenceHUD?() })
                 .keyboardShortcut("i", modifiers: [.command, .option])

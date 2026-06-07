@@ -117,7 +117,13 @@ struct SettingsView: View {
                     } else {
                         VStack(spacing: 8) {
                             ForEach(extensionRegistry.installedExtensions) { installed in
-                                ExtensionManifestRow(extension: installed)
+                                ExtensionManifestRow(
+                                    extension: installed,
+                                    isEnabled: extensionRegistry.isEnabled(installed),
+                                    onEnabledChange: { enabled in
+                                        extensionRegistry.setEnabled(enabled, for: installed)
+                                    }
+                                )
                             }
                         }
                     }
@@ -154,6 +160,8 @@ struct SettingsView: View {
 
 private struct ExtensionManifestRow: View {
     let `extension`: InstalledCribbleExtension
+    let isEnabled: Bool
+    let onEnabledChange: (Bool) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -175,9 +183,21 @@ private struct ExtensionManifestRow: View {
                 Text("\(`extension`.manifest.kind.title) • \(`extension`.location.title)")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                if !`extension`.manifest.permissions.isEmpty {
+                    Text(`extension`.manifest.permissions.map(\.title).joined(separator: ", "))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             Spacer()
+
+            Toggle("Enabled", isOn: Binding(
+                get: { isEnabled },
+                set: { enabled in onEnabledChange(enabled) }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
         }
         .padding(8)
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))

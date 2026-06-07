@@ -18,7 +18,28 @@ enum CribbleExtensionKind: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum CribbleExtensionPermission: String, Codable, CaseIterable, Identifiable {
+    case readCurrentNote = "read-current-note"
+    case readProjectNotes = "read-project-notes"
+    case proposeFileChanges = "propose-file-changes"
+    case networkOpenAICompatible = "network-openai-compatible"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .readCurrentNote: "Read Current Note"
+        case .readProjectNotes: "Read Project Notes"
+        case .proposeFileChanges: "Propose File Changes"
+        case .networkOpenAICompatible: "Network Runner"
+        }
+    }
+}
+
 struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
+    static let supportedAPIVersion = 1
+
+    let apiVersion: Int
     let id: String
     let name: String
     let version: String
@@ -26,9 +47,10 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let summary: String
     let entrypoint: String?
     let homepage: URL?
-    let permissions: [String]
+    let permissions: [CribbleExtensionPermission]
 
     enum CodingKeys: String, CodingKey {
+        case apiVersion
         case id
         case name
         case version
@@ -39,7 +61,21 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case permissions
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        apiVersion = try container.decodeIfPresent(Int.self, forKey: .apiVersion) ?? Self.supportedAPIVersion
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        version = try container.decode(String.self, forKey: .version)
+        kind = try container.decode(CribbleExtensionKind.self, forKey: .kind)
+        summary = try container.decode(String.self, forKey: .summary)
+        entrypoint = try container.decodeIfPresent(String.self, forKey: .entrypoint)
+        homepage = try container.decodeIfPresent(URL.self, forKey: .homepage)
+        permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
+    }
+
     init(
+        apiVersion: Int = Self.supportedAPIVersion,
         id: String,
         name: String,
         version: String,
@@ -47,8 +83,9 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         summary: String,
         entrypoint: String? = nil,
         homepage: URL? = nil,
-        permissions: [String] = []
+        permissions: [CribbleExtensionPermission] = []
     ) {
+        self.apiVersion = apiVersion
         self.id = id
         self.name = name
         self.version = version
@@ -82,20 +119,26 @@ struct InstalledCribbleExtension: Identifiable, Equatable {
 
 enum ExtensionManifestError: LocalizedError, Equatable {
     case unreadable
+    case unsupportedAPIVersion(Int)
     case missingRequiredField(String)
     case invalidID(String)
     case invalidEntrypoint(String)
+    case invalidHomepage(String)
 
     var errorDescription: String? {
         switch self {
         case .unreadable:
             return "The manifest is not valid JSON."
+        case .unsupportedAPIVersion(let version):
+            return "Extension API version \(version) is not supported."
         case .missingRequiredField(let field):
             return "The manifest is missing \(field)."
         case .invalidID(let id):
             return "\(id) is not a reverse-DNS extension id."
         case .invalidEntrypoint(let entrypoint):
             return "\(entrypoint) must be a relative path inside the extension folder."
+        case .invalidHomepage(let url):
+            return "\(url) must be an http or https URL."
         }
     }
 }
@@ -112,6 +155,9 @@ enum ExtensionManifestLoader {
     }
 
     static func validate(_ manifest: CribbleExtensionManifest) throws {
+        if manifest.apiVersion != CribbleExtensionManifest.supportedAPIVersion {
+            throw ExtensionManifestError.unsupportedAPIVersion(manifest.apiVersion)
+        }
         if manifest.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             throw ExtensionManifestError.missingRequiredField("id")
         }
@@ -126,6 +172,9 @@ enum ExtensionManifestLoader {
         }
         if let entrypoint = manifest.entrypoint, !isSafeRelativePath(entrypoint) {
             throw ExtensionManifestError.invalidEntrypoint(entrypoint)
+        }
+        if let homepage = manifest.homepage, !isHTTPURL(homepage) {
+            throw ExtensionManifestError.invalidHomepage(homepage.absoluteString)
         }
     }
 
@@ -143,5 +192,10 @@ enum ExtensionManifestLoader {
               !path.contains("..")
         else { return false }
         return URL(fileURLWithPath: path).pathComponents.allSatisfy { $0 != ".." }
+    }
+
+    private static func isHTTPURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
     }
 }

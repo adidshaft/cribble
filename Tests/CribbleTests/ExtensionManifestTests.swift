@@ -12,7 +12,7 @@ struct ExtensionManifestTests {
             kind: .quickAction,
             summary: "Summarizes the selected note.",
             entrypoint: "dist/main.js",
-            permissions: ["read-current-note"]
+            permissions: [.readCurrentNote]
         )
 
         try ExtensionManifestLoader.validate(manifest)
@@ -44,6 +44,7 @@ struct ExtensionManifestTests {
         let url = folder.appendingPathComponent("cribble-extension.json")
         let json = """
         {
+          "apiVersion": 1,
           "id": "com.example.cribble.remote-runner",
           "name": "Remote Runner",
           "version": "0.2.0",
@@ -59,6 +60,38 @@ struct ExtensionManifestTests {
 
         #expect(manifest.id == "com.example.cribble.remote-runner")
         #expect(manifest.kind == .intelligenceProvider)
-        #expect(manifest.permissions == ["network-openai-compatible"])
+        #expect(manifest.permissions == [.networkOpenAICompatible])
+    }
+
+    @Test
+    func rejectsUnsupportedAPIVersion() throws {
+        let manifest = CribbleExtensionManifest(
+            apiVersion: 99,
+            id: "com.example.cribble.future",
+            name: "Future",
+            version: "9.0.0",
+            kind: .renderer,
+            summary: "Uses a future extension API."
+        )
+
+        #expect(throws: ExtensionManifestError.unsupportedAPIVersion(99)) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func rejectsNonHTTPHomepage() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.homepage",
+            name: "Homepage",
+            version: "1.0.0",
+            kind: .importer,
+            summary: "Has an unsafe homepage scheme.",
+            homepage: URL(string: "file:///tmp/readme")!
+        )
+
+        #expect(throws: ExtensionManifestError.invalidHomepage("file:///tmp/readme")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
     }
 }

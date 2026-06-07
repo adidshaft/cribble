@@ -457,6 +457,7 @@ Latest pass:
   AI menu commands, `cribble-extension.json`, trusted local/VPS/team runners,
   and review-first generated note proposals.
 - Latest `swift test --filter 'CribbleUITests/testOpenTasksCreatesAndSelectsTasksFile|CribbleUITests/testAddToTasksAnchorsSourceAndDeduplicatesBacklink'` passed on 2026-06-08 after clarifying first-time Tasks creation status and tightening isolated store setup in the focused UI tests: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after expanding the Help-menu bundle guard to every direct guide entry: Cribble AI, Workflow Playbook, Tasks and Intelligence, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

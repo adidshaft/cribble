@@ -835,7 +835,16 @@ final class CribbleUITests: XCTestCase {
             .deletingLastPathComponent()
         let demoRoot = projectRoot.appendingPathComponent("Sources/Cribble/Resources/DemoNotes", isDirectory: true)
 
-        for fileName in ["Tasks and Intelligence.md", "Research Review.md"] {
+        let helpGuideFiles = [
+            "Cribble AI.md",
+            "Workflow Playbook.md",
+            "Tasks and Intelligence.md",
+            "Research Review.md",
+            "Team Extension Kit.md",
+            "Extensions and Remote Intelligence.md"
+        ]
+
+        for fileName in helpGuideFiles {
             let url = demoRoot.appendingPathComponent(fileName)
             XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "\(fileName) should be bundled for Help menu onboarding")
         }

@@ -39,6 +39,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
+- Diagnostics now record refresh reuse counts when unchanged note metadata is reused, making performance wins visible in copied reports without changing normal status text.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -92,6 +93,7 @@ swift test
 swift test --filter CribbleUITests
 swift test --filter SemanticSearchIndexTests
 swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -101,12 +103,13 @@ Latest pass:
 - `swift test --filter CribbleUITests` passed on 2026-06-08: 11 XCTest tests, 0 failures.
 - `swift test --filter SemanticSearchIndexTests` passed on 2026-06-08: 9 XCTest tests, 0 failures.
 - `swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'` passed on 2026-06-08: 22 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after refresh instrumentation: 11 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
-1. Add focused instrumentation around refresh reuse counts so performance wins are visible in diagnostics without cluttering normal status text.
-2. Turn the documented executable-plugin trust model into enforced signed bundle verification before enabling any code execution.
-3. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
+1. Turn the documented executable-plugin trust model into enforced signed bundle verification before enabling any code execution.
+2. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
+3. Keep expanding DemoNotes around real team workflows: research review, project intelligence, extension authoring, and import-lane planning.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

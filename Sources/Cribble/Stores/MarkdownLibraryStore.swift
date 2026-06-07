@@ -351,7 +351,7 @@ final class MarkdownLibraryStore: ObservableObject {
         loadTask?.cancel()
         let concurrency = Self.loadConcurrency
         loadTask = Task {
-            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
+            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, reusedCount: Int, loadedCount: Int, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
                     var failedRoots: [URL] = []
                     for rootURL in roots {
@@ -456,7 +456,7 @@ final class MarkdownLibraryStore: ObservableObject {
                         index = nil
                     }
 
-                    return (nodesList, metas, fileSignatures, index, skippedFiles, failedRoots)
+                    return (nodesList, metas, fileSignatures, index, reusedDocuments.count, loadedMetas.count, skippedFiles, failedRoots)
                 }.value
 
                 guard !Task.isCancelled else { return }
@@ -490,6 +490,12 @@ final class MarkdownLibraryStore: ObservableObject {
                     DiagnosticsCenter.shared.record(
                         level: .warning,
                         message: "Skipped \(result.skippedFiles.count) unreadable file(s): \(names)\(suffix)"
+                    )
+                }
+                if result.reusedCount > 0 {
+                    DiagnosticsCenter.shared.record(
+                        level: .info,
+                        message: "Refresh reused \(result.reusedCount) unchanged note metadata record(s); loaded \(result.loadedCount) changed/new note(s)."
                     )
                 }
 

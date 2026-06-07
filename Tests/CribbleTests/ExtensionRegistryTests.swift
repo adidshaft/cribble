@@ -426,6 +426,30 @@ struct ExtensionRegistryTests {
         #expect(template.contains("Electron-style panels"))
         #expect(template.contains("removes its contribution cleanly"))
     }
+
+    @Test
+    func extensionGuideDocumentsExecutableReadinessGates() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let guideURL = projectRoot.appendingPathComponent("docs/extensions.md")
+        let guide = try String(contentsOf: guideURL, encoding: .utf8)
+
+        #expect(guide.contains("Executable Readiness Gates"))
+        #expect(guide.contains("Signed bundle identity"))
+        #expect(guide.contains("Process isolation"))
+        #expect(guide.contains("Permission broker"))
+        #expect(guide.contains("Native consent"))
+        #expect(guide.contains("Previewed writes"))
+        #expect(guide.contains("Secret handling"))
+        #expect(guide.contains("Revocation"))
+        #expect(guide.contains("Audit trail"))
+        #expect(guide.contains("Native UI"))
+        #expect(guide.contains("Until those gates exist in code and tests"))
+        #expect(guide.contains("declarative manifests"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

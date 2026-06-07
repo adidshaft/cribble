@@ -957,6 +957,9 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(teamKit.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
         XCTAssertTrue(teamKit.contains("creating or adapting a manifest"))
+        XCTAssertTrue(teamKit.contains("Executable plugins need a separate readiness review"))
+        XCTAssertTrue(teamKit.contains("process isolation"))
+        XCTAssertTrue(teamKit.contains("native SwiftUI surfaces"))
 
         let workflow = try String(contentsOf: demoRoot.appendingPathComponent("Workflow Playbook.md"), encoding: .utf8)
         XCTAssertTrue(workflow.contains("import-lane declaration"))
@@ -970,6 +973,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(decisionLog.contains("Review boundary"))
         XCTAssertTrue(decisionLog.contains("Help → Copy Extension Proposal"))
         XCTAssertTrue(decisionLog.contains("Help → Copy Remote Runner Setup Review"))
+        XCTAssertTrue(decisionLog.contains("executable readiness gates"))
     }
 
     func testWelcomeStarterChecklistGuidesCoreProductTour() {

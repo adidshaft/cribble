@@ -109,6 +109,28 @@ require:
   and stops background work;
 - a visible audit log for file edits, remote calls, and generated artifacts.
 
+### Executable Readiness Gates
+
+Treat executable plugins as a separate product phase, not an incremental toggle.
+A proposal is not ready to merge runtime execution until it can show evidence
+for every gate below:
+
+| Gate | Required proof |
+| --- | --- |
+| Signed bundle identity | The bundle signature matches the manifest `trust.signingIdentifier`, optional Apple Team ID, and a stable source/release URL. |
+| Process isolation | Third-party code runs outside the Cribble app process with a narrow IPC protocol and no ambient access to note folders. |
+| Permission broker | Reads, writes, network calls, remote-runner use, and generated artifacts are mediated by Cribble, not direct plugin syscalls. |
+| Native consent | A SwiftUI review sheet names developer identity, requested permissions, data boundary, network destinations, writes, and disable/revoke path before first use. |
+| Previewed writes | Source-note edits and generated files use the same preview/review/cancel pattern as AI proposals and import lanes. |
+| Secret handling | API keys, tokens, certificates, and private endpoints stay in Keychain or user-entered runtime settings, never in manifests or plugin bundles. |
+| Revocation | Settings can disable the plugin, clear remembered trust, stop background work, and remove contributed commands/lanes without restart. |
+| Audit trail | Users and maintainers can copy a report of file reads, proposed writes, network destinations, generated artifacts, and plugin errors without leaking secrets. |
+| Native UI | Any user-facing surface is SwiftUI, system controls, menus, toolbars, sheets, Settings, or commands; web views and custom chrome need explicit maintainer approval. |
+
+Until those gates exist in code and tests, executable proposals should ship as
+declarative manifests, validation improvements, native review surfaces, or
+copied proposal/review templates.
+
 API v1 validates the shape of `entrypoint` paths so manifests can evolve without
 breaking compatibility, but executable entrypoints are not launched. It also
 validates optional `trust` declarations:

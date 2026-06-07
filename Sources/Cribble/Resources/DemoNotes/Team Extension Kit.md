@@ -94,6 +94,13 @@ Use **Help → Copy Extension Proposal** or **Settings → Extensions → Copy P
 to copy this shape into a GitHub issue, Discussion, or team thread before anyone
 writes implementation code.
 
+Executable plugins need a separate readiness review before they can exist:
+signed bundle identity, process isolation, a Cribble permission broker, native
+consent, previewed writes, Keychain-only secrets, revocation, audit logs, and
+native SwiftUI surfaces. Until those gates exist in code and tests, prove the
+idea with declarative manifests, validation, Settings, DemoNotes, or copied
+review templates.
+
 Use this proposal shape before writing code:
 
 ```markdown

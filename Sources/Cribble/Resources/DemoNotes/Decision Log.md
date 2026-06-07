@@ -60,6 +60,8 @@ Evidence:
 - [[Team Extension Kit]] defines the contributor review checklist.
 - [[Extensions and Remote Intelligence]] shows the current manifest lanes.
 - **Help → Copy Extension Proposal** gives contributors a read-only-first shape.
+- `docs/extensions.md` lists executable readiness gates before any runtime
+  execution can merge.
 
 Follow-up:
 

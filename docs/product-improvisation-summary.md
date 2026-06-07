@@ -52,6 +52,9 @@ The extension path is intentionally strict:
 - User-facing UI must be native SwiftUI with system controls and SF Symbols.
 - Web views, custom chrome, Electron-style panels, and executable plugins are
   deferred until a signed, sandboxed, revocable trust model exists.
+- Executable plugin work now has explicit readiness gates in `docs/extensions.md`:
+  signed identity, process isolation, brokered permissions, native consent,
+  previewed writes, Keychain-only secrets, revocation, audit trail, and native UI.
 
 ## What Was Verified
 

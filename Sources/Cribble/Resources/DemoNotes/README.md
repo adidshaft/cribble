@@ -54,8 +54,10 @@ A private AI assistant that runs **fully on your Mac**. Press **Command J** (or 
 1. Select this sentence and press **H** to highlight it.
 2. Press **B** to drop a reading bookmark, then scroll away and watch the **Resume** strip appear.
 3. Click a wiki link, like [[Markdown Showcase]], to jump between notes.
-4. Press **Command J** and ask *"what is this library about?"*
-5. Open **Settings → Extensions** and create the example manifest.
+4. Press **Command N**, review the proposed `Untitled.md`, then cancel or create it.
+5. Use **File → Copy Markdown** to copy the current note for another app.
+6. Press **Command J** and ask *"what is this library about?"*
+7. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
 
@@ -63,6 +65,8 @@ Use this like a flight plan. Check items off as you try them; Cribble keeps the
 changes in this demo copy only.
 
 - [ ] Read [[Getting Started]] and highlight one useful sentence.
+- [ ] Press **Command N** and notice that new notes go through a review sheet before writing.
+- [ ] Use **File → Copy Markdown** or right-click a note and copy its Markdown for handoff.
 - [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
 - [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.
 - [ ] Press **P** after visiting a few notes and inspect the Reading Trail.

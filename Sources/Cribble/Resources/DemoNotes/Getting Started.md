@@ -33,11 +33,12 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 
 ## Focus, outline & folders
 
+- **Command N** proposes a new `Untitled.md` note. Review it before Cribble writes anything.
 - **Command Shift F** toggles Focus Mode (hides the sidebar for distraction-free reading).
 - **Command Option O** toggles the headings outline.
 - **Command O** opens a folder, and **Command R** refreshes it.
 - **Right-click a folder** to **Pin** it to the top or **Choose Icon…** — both are sidebar-only; files on disk never move.
-- **Right-click a note** to reveal it in Finder, copy its file path, or copy a `[[Wiki Link]]` for pasting into another note.
+- **Right-click a note** to reveal it in Finder, copy its file path, copy Markdown, or copy a `[[Wiki Link]]` for pasting into another note.
 
 ## Keyboard shortcuts
 

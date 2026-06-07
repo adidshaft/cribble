@@ -55,7 +55,13 @@ enum Prompts {
             You are assembling a project index from per-file summaries. \(antiHallucination) \
             Produce a single Markdown document titled "# \(projectName) — Project Index" with: \
             a one-paragraph overview, a "## Components" section grouping related files, and a \
-            "## Entry points" section. Reference only the files listed below. Output only Markdown.
+            "## Entry points" section. Reference only the files listed below.
+
+            Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
+            plans, or phrases like "The user wants me":
+            /no_think
+
+            Your first visible characters must be "# \(projectName) — Project Index".
             """),
             EngineMessage(role: .user, content: body)
         ]

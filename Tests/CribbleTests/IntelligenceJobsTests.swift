@@ -275,6 +275,48 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.path == "Net.swift" })
     }
 
+    func testProjectIndexFallsBackWhenProviderReturnsEmptyOutput() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-index-fallback-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Alpha\n\nDefines the first note.".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+        try "# Beta\n\nReferences Alpha.".write(to: root.appendingPathComponent("Beta.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let alphaHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("Alpha.md")))
+        let betaHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("Beta.md")))
+        _ = await db.upsertFile(projectID: "p", path: "Alpha.md", hash: alphaHash, sizeBytes: 29, language: "markdown")
+        _ = await db.upsertFile(projectID: "p", path: "Beta.md", hash: betaHash, sizeBytes: 25, language: "markdown")
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        for file in await db.files(projectID: "p") {
+            _ = try await artifacts.store(
+                type: .fileSummary,
+                relativePath: "summaries/\(file.hash).md",
+                title: file.path,
+                content: "\(file.path) is available for indexing.",
+                sourceHashes: [file.hash]
+            )
+        }
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .updateProjectIndex, inputHash: "project-index", priority: 0))
+
+        let provider = StubProvider(text: "")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+        await runner.drain(limit: 5)
+
+        let produced = await db.artifacts(projectID: "p", type: .projectIndex)
+        let index = try XCTUnwrap(produced.first)
+        let content = try XCTUnwrap(artifacts.content(for: index))
+        XCTAssertTrue(content.hasPrefix("# cribble-index-fallback-"))
+        XCTAssertTrue(content.contains("## Components"))
+        XCTAssertTrue(content.contains("`Alpha.md`"))
+        XCTAssertTrue(content.contains("`Beta.md`"))
+        let failed = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertTrue(failed.isEmpty)
+    }
+
     func testDiscoverConnectionsCreatesVirtualResearchAndSuggestedEdges() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-research-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -263,7 +263,7 @@ actor JobRunner {
             prompt: Prompts.projectIndex(projectName: projectName, summaries: summaries),
             maxTokens: 1200
         )
-        let index = try await validatedMarkdown(output)
+        let index = try await validatedProjectIndexMarkdown(output, summaries: summaries)
         let artifact = try await artifacts.store(
             type: .projectIndex, relativePath: "project-index.md",
             title: "\(projectName) — Project Index", content: index, sourceHashes: [job.inputHash]
@@ -516,6 +516,55 @@ actor JobRunner {
         let result = OutputValidator.validateMarkdown(trimmed, knownPaths: known)
         guard result.isValid else { throw JobRunnerError.validationFailed(result.issues) }
         return trimmed
+    }
+
+    private func validatedProjectIndexMarkdown(_ output: String, summaries: [(path: String, summary: String)]) async throws -> String {
+        do {
+            return try await validatedMarkdown(output)
+        } catch JobRunnerError.emptyOutput {
+            return deterministicProjectIndex(from: summaries)
+        } catch JobRunnerError.validationFailed(let issues)
+            where issues.contains("provider returned reasoning instead of the requested artifact") {
+            return deterministicProjectIndex(from: summaries)
+        } catch {
+            throw error
+        }
+    }
+
+    private func deterministicProjectIndex(from summaries: [(path: String, summary: String)]) -> String {
+        let overview = "Generated from \(summaries.count) indexed file summary\(summaries.count == 1 ? "" : "ies") because the local model did not return a usable project index."
+        let components = summaries
+            .prefix(40)
+            .map { summary in
+                "- `\(summary.path)`: \(firstSummarySentence(summary.summary))"
+            }
+            .joined(separator: "\n")
+        let entryPoints = summaries
+            .prefix(8)
+            .map { "- `\($0.path)`" }
+            .joined(separator: "\n")
+        return """
+        # \(projectName) — Project Index
+
+        \(overview)
+
+        ## Components
+        \(components.isEmpty ? "- No file summaries are available yet." : components)
+
+        ## Entry points
+        \(entryPoints.isEmpty ? "- No entry points inferred yet." : entryPoints)
+        """
+    }
+
+    private func firstSummarySentence(_ text: String) -> String {
+        let normalized = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return "Summary unavailable." }
+        if let period = normalized.firstIndex(of: ".") {
+            return String(normalized[...period])
+        }
+        return String(normalized.prefix(180))
     }
 
     private func storeSummary(

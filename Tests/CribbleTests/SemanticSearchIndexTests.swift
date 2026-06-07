@@ -14,22 +14,34 @@ final class SemanticSearchIndexTests: XCTestCase {
     }
 
     func testStableHashIsDeterministicAcrossInstances() {
-        let a = document(title: "Setup", body: "Install the toolchain.")
-        let b = document(title: "Setup", body: "Install the toolchain.")
         XCTAssertEqual(
-            SemanticSearchIndex.stableHash(for: a),
-            SemanticSearchIndex.stableHash(for: b),
+            SemanticSearchIndex.stableHash(title: "Setup", body: "Install the toolchain."),
+            SemanticSearchIndex.stableHash(title: "Setup", body: "Install the toolchain."),
             "Identical content must hash identically so warm launches skip re-embedding."
         )
     }
 
     func testStableHashChangesWithContent() {
-        let original = document(title: "Setup", body: "Install the toolchain.")
-        let editedBody = document(title: "Setup", body: "Install the toolchain and run tests.")
-        let editedTitle = document(title: "Setup Guide", body: "Install the toolchain.")
+        let original = SemanticSearchIndex.stableHash(title: "Setup", body: "Install the toolchain.")
+        let editedBody = SemanticSearchIndex.stableHash(title: "Setup", body: "Install the toolchain and run tests.")
+        let editedTitle = SemanticSearchIndex.stableHash(title: "Setup Guide", body: "Install the toolchain.")
 
-        XCTAssertNotEqual(SemanticSearchIndex.stableHash(for: original), SemanticSearchIndex.stableHash(for: editedBody))
-        XCTAssertNotEqual(SemanticSearchIndex.stableHash(for: original), SemanticSearchIndex.stableHash(for: editedTitle))
+        XCTAssertNotEqual(original, editedBody)
+        XCTAssertNotEqual(original, editedTitle)
+    }
+
+    func testMetaDerivesHashFromDocument() {
+        let doc = document(title: "Setup", body: "Install the toolchain.")
+        let meta = MarkdownDocumentMeta(doc)
+        XCTAssertEqual(meta.contentHash, SemanticSearchIndex.stableHash(title: "Setup", body: "Install the toolchain."))
+    }
+
+    func testMetaBoundsRetainedText() {
+        // A huge note must not pin its full body in the resident metadata — only
+        // a bounded embedding prefix is kept.
+        let big = String(repeating: "word ", count: 100_000) // ~500 KB
+        let meta = MarkdownDocumentMeta(document(title: "Big", body: big))
+        XCTAssertLessThanOrEqual(meta.embeddingPrefix.count, 1500)
     }
 
     func testCosineOfIdenticalNormalizedVectorsIsOne() {

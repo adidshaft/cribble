@@ -47,7 +47,10 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private let loader = DocumentLoader()
     private let monitor = FileChangeMonitor()
-    private(set) var documents: [MarkdownDocument] = []
+    /// Body-free metadata for every note in the open folders. The full text is
+    /// loaded on demand (for the selected note, semantic re-embeds, previews) so
+    /// a large vault never pins all note contents in RAM.
+    private(set) var documents: [MarkdownDocumentMeta] = []
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
     private var renderTask: Task<Void, Never>?
@@ -292,7 +295,7 @@ final class MarkdownLibraryStore: ObservableObject {
         loadTask?.cancel()
         let concurrency = Self.loadConcurrency
         loadTask = Task {
-            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocument], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
+            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
                     var failedRoots: [URL] = []
                     for rootURL in roots {
@@ -375,7 +378,10 @@ final class MarkdownLibraryStore: ObservableObject {
                         index = nil
                     }
 
-                    return (nodesList, docs, index, skippedFiles, failedRoots)
+                    // Drop full bodies now that the link index is built; keep only
+                    // metadata resident.
+                    let metas = docs.map(MarkdownDocumentMeta.init)
+                    return (nodesList, metas, index, skippedFiles, failedRoots)
                 }.value
 
                 guard !Task.isCancelled else { return }
@@ -568,7 +574,7 @@ final class MarkdownLibraryStore: ObservableObject {
     nonisolated private static func linkedFiles(
         for document: MarkdownDocument,
         index: LinkIndex?,
-        allDocuments: [MarkdownDocument]
+        allDocuments: [MarkdownDocumentMeta]
     ) -> [LinkedFileSummary] {
         guard let index else { return [] }
         var seen = Set<URL>()
@@ -715,7 +721,7 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
-    func fuzzyMatches(for targetName: String) -> [MarkdownDocument] {
+    func fuzzyMatches(for targetName: String) -> [MarkdownDocumentMeta] {
         let normalizedQuery = LinkIndex.normalize(targetName)
         return documents.filter { doc in
             let filename = doc.url.deletingPathExtension().lastPathComponent
@@ -1236,7 +1242,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private func reloadDocumentInPlace(_ url: URL) {
         guard let reloaded = try? loader.load(url: url) else { return }
         if let index = documents.firstIndex(where: { $0.url.standardizedFileURL == url }) {
-            documents[index] = reloaded
+            documents[index] = MarkdownDocumentMeta(reloaded)
         }
         renderCache.removeValue(forKey: reloaded.url)
         renderCacheOrder.removeAll { $0 == reloaded.url }

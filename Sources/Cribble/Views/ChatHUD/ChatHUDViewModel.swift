@@ -717,7 +717,7 @@ final class ChatHUDViewModel: ObservableObject {
 
     private func searchFiles(matching query: String) -> [TaggedFileToken] {
         let documents = library.documents
-        let ranked: [MarkdownDocument]
+        let ranked: [MarkdownDocumentMeta]
         if query.isEmpty {
             ranked = Array(documents.prefix(6))
         } else {

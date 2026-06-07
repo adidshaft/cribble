@@ -137,7 +137,7 @@ final class SemanticSearchIndex: ObservableObject {
 
     /// Re-embeds any new or changed documents in the background and drops
     /// entries for files that no longer exist. Cheap when nothing changed.
-    func reindex(documents: [MarkdownDocument]) {
+    func reindex(documents: [MarkdownDocumentMeta]) {
         indexTask?.cancel()
         let documents = documents
         indexTask = Task { @MainActor in
@@ -154,18 +154,18 @@ final class SemanticSearchIndex: ObservableObject {
             updated.reserveCapacity(documents.count)
             var changed = false
 
-            for document in documents {
+            for meta in documents {
                 if Task.isCancelled { return }
-                let path = document.url.standardizedFileURL.path
-                let hash = Self.stableHash(for: document)
+                let path = meta.url.standardizedFileURL.path
+                let hash = meta.contentHash
 
                 if let existing = entries[path], existing.hash == hash {
                     updated[path] = existing
                     continue
                 }
 
-                if let vector = await engine.vector(for: Self.embeddingText(for: document)) {
-                    updated[path] = Entry(hash: hash, title: document.title, vector: vector)
+                if let vector = await engine.vector(for: Self.embeddingText(for: meta)) {
+                    updated[path] = Entry(hash: hash, title: meta.title, vector: vector)
                     changed = true
                 }
             }
@@ -286,18 +286,25 @@ final class SemanticSearchIndex: ObservableObject {
 
     // MARK: - Text & math helpers
 
-    private static func embeddingText(for document: MarkdownDocument) -> String {
-        var parts: [String] = [document.title]
-        parts.append(contentsOf: document.headings.prefix(16).map(\.title))
-        parts.append(strip(String(document.rawMarkdown.prefix(1500))))
+    private static func embeddingText(for meta: MarkdownDocumentMeta) -> String {
+        var parts: [String] = [meta.title]
+        parts.append(contentsOf: meta.headings.prefix(16).map(\.title))
+        parts.append(meta.embeddingPrefix)
         return parts
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// The de-noised leading slice of a body that feeds the embedding. Computed
+    /// once at load time and retained in `MarkdownDocumentMeta` so the full body
+    /// need not stay in memory.
+    nonisolated static func embeddingPrefix(forBody body: String) -> String {
+        strip(String(body.prefix(1500)))
+    }
+
     /// Light markdown de-noising so syntax characters don't dominate the
     /// embedding. Intentionally conservative — we keep the words.
-    private static func strip(_ text: String) -> String {
+    nonisolated private static func strip(_ text: String) -> String {
         var output = text
         for token in ["#", "*", "`", ">", "_", "~"] {
             output = output.replacingOccurrences(of: token, with: " ")
@@ -316,14 +323,14 @@ final class SemanticSearchIndex: ObservableObject {
     }
 
     /// Stable across launches (unlike `hashValue`, which is per-process salted).
-    static func stableHash(for document: MarkdownDocument) -> UInt64 {
+    nonisolated static func stableHash(title: String, body: String) -> UInt64 {
         var hash: UInt64 = 0xcbf29ce484222325
         let prime: UInt64 = 0x100000001b3
-        for byte in document.title.utf8 {
+        for byte in title.utf8 {
             hash = (hash ^ UInt64(byte)) &* prime
         }
         hash = (hash ^ 0x2f) &* prime
-        for byte in document.rawMarkdown.utf8 {
+        for byte in body.utf8 {
             hash = (hash ^ UInt64(byte)) &* prime
         }
         return hash

@@ -35,23 +35,16 @@ struct NotePreviewPopover: View {
 
     private func loadPreview() {
         Task {
-            // Check if we already have it in library documents
-            if let doc = await MainActor.run(body: { library.documents.first(where: { $0.url == url }) }) {
+            // Bodies aren't held in memory; load the note's text on demand.
+            do {
+                let doc = try DocumentLoader().load(url: url)
                 title = doc.title
                 previewText = cleanPreview(doc.rawMarkdown)
-                isLoading = false
-            } else {
-                // Read from disk asynchronously
-                do {
-                    let doc = try DocumentLoader().load(url: url)
-                    title = doc.title
-                    previewText = cleanPreview(doc.rawMarkdown)
-                } catch {
-                    title = url.deletingPathExtension().lastPathComponent
-                    previewText = "Could not load preview context."
-                }
-                isLoading = false
+            } catch {
+                title = url.deletingPathExtension().lastPathComponent
+                previewText = "Could not load preview context."
             }
+            isLoading = false
         }
     }
 

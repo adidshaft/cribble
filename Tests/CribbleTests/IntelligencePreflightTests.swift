@@ -25,7 +25,10 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(summary.detail.contains("Endpoint: ai.example.com"))
         XCTAssertTrue(summary.detail.contains("Model: qwen3-32b"))
         XCTAssertTrue(summary.detail.contains("Trust: Team-controlled VPS"))
-        XCTAssertTrue(summary.detail.contains("may leave this Mac"))
+        XCTAssertEqual(
+            summary.dataBoundaryDetail,
+            "Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner."
+        )
     }
 
     func testRemoteRunnerSummaryMatchesExtensionProfileByURLAndModel() {
@@ -93,6 +96,7 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertEqual(summary.title, "Local processing")
         XCTAssertTrue(summary.detail.contains("Qwen 3"))
         XCTAssertTrue(summary.detail.contains("app support cache"))
+        XCTAssertNil(summary.dataBoundaryDetail)
     }
 
     func testExtensionRunnerConsentStoreRequiresApprovalForRemoteProfiles() {

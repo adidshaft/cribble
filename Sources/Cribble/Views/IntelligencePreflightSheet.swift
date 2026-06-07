@@ -53,6 +53,14 @@ struct IntelligencePreflightSheet: View {
                     title: runnerSummary.title,
                     detail: runnerSummary.detail
                 )
+                if let dataBoundaryDetail = runnerSummary.dataBoundaryDetail {
+                    preflightRow(
+                        icon: "exclamationmark.triangle",
+                        title: "Data boundary",
+                        detail: dataBoundaryDetail,
+                        tint: .orange
+                    )
+                }
                 preflightRow(
                     icon: "internaldrive",
                     title: "Disk budget",
@@ -78,10 +86,10 @@ struct IntelligencePreflightSheet: View {
         .frame(width: 460)
     }
 
-    private func preflightRow(icon: String, title: String, detail: String) -> some View {
+    private func preflightRow(icon: String, title: String, detail: String, tint: Color = .secondary) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(tint)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -100,6 +108,7 @@ struct IntelligencePreflightRunnerSummary: Equatable {
     let icon: String
     let title: String
     let detail: String
+    let dataBoundaryDetail: String?
 
     static func current(
         runnerURL: String?,
@@ -115,7 +124,8 @@ struct IntelligencePreflightRunnerSummary: Equatable {
                 isRemote: false,
                 icon: "lock.laptopcomputer",
                 title: "Local processing",
-                detail: "Cribble scans locally with \(onDeviceModelLabel) and stores its index in its app support cache."
+                detail: "Cribble scans locally with \(onDeviceModelLabel) and stores its index in its app support cache.",
+                dataBoundaryDetail: nil
             )
         }
 
@@ -131,7 +141,8 @@ struct IntelligencePreflightRunnerSummary: Equatable {
                 isRemote: true,
                 icon: "network.badge.shield.half.filled",
                 title: "Remote runner selected",
-                detail: "Endpoint: \(host). Model: \(modelID). Trust: \(trust). Prompts and note context may leave this Mac."
+                detail: "Endpoint: \(host). Model: \(modelID). Trust: \(trust).",
+                dataBoundaryDetail: Self.remoteDataBoundaryDetail
             )
         }
 
@@ -140,9 +151,12 @@ struct IntelligencePreflightRunnerSummary: Equatable {
             isRemote: false,
             icon: "lock.laptopcomputer",
             title: label,
-            detail: "Endpoint: \(host). Model: \(modelID). Cribble keeps processing on this Mac or local network endpoint."
+            detail: "Endpoint: \(host). Model: \(modelID). Cribble keeps processing on this Mac or local network endpoint.",
+            dataBoundaryDetail: nil
         )
     }
+
+    static let remoteDataBoundaryDetail = "Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner."
 
     private static func isLoopback(_ host: String) -> Bool {
         host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
@@ -189,7 +203,7 @@ struct ExtensionRunnerConsentSheet: View {
                 consentRow(
                     icon: "exclamationmark.triangle",
                     title: "Context boundary",
-                    detail: "Prompts and note context may leave this Mac when Project Intelligence uses this runner."
+                    detail: IntelligencePreflightRunnerSummary.remoteDataBoundaryDetail
                 )
                 consentRow(
                     icon: usesKeychain ? "key.fill" : "key",

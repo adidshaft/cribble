@@ -44,7 +44,7 @@ final class MLXChatEngine: LocalChatEngine, @unchecked Sendable {
 
         // Cap memory growth so a large model can't balloon the working set on
         // smaller Macs; MLX recycles its buffer cache against this budget.
-        MLX.GPU.set(cacheLimit: 256 * 1024 * 1024)
+        MLX.Memory.cacheLimit = 256 * 1024 * 1024
 
         let configuration = ModelConfiguration(id: model.huggingFaceRepo)
         do {

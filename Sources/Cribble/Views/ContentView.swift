@@ -33,6 +33,7 @@ struct ContentView: View {
 
     private var sceneConfiguredContent: some View {
         alertContent
+            .focusedSceneValue(\.newNoteAction, newNoteAction)
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.importFileAction, importFileAction)
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
@@ -131,6 +132,10 @@ struct ContentView: View {
 
     private var openTasksAction: (() -> Void)? {
         library.hasFolders ? { library.openTasksFile() } : nil
+    }
+
+    private var newNoteAction: (() -> Void)? {
+        library.hasFolders ? { library.proposeBlankNote() } : nil
     }
 
     private var alertContent: some View {

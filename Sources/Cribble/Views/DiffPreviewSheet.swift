@@ -9,7 +9,7 @@ struct DiffPreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Review AI Link Changes")
+                Text(title)
                     .font(.title2.weight(.semibold))
                 Spacer()
             }
@@ -44,16 +44,32 @@ struct DiffPreviewSheet: View {
                     .keyboardShortcut(.cancelAction)
                     .help("Discard the suggested AI patch")
                 Spacer()
-                Button("Apply Changes", action: onApply)
+                Button(applyTitle, action: onApply)
                     .keyboardShortcut(.defaultAction)
                     .disabled(diff.isEmpty)
                     .cribbleGlassButton(prominent: true)
-                    .help("Apply the reviewed Markdown link changes")
+                    .help(applyHelp)
             }
         }
         .padding(22)
         .frame(width: 760, height: 560)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var isNewFileProposal: Bool {
+        !diff.files.isEmpty && diff.files.allSatisfy { $0.oldPath == "/dev/null" }
+    }
+
+    private var title: String {
+        isNewFileProposal ? "Review New Note" : "Review AI Link Changes"
+    }
+
+    private var applyTitle: String {
+        isNewFileProposal ? "Create Note" : "Apply Changes"
+    }
+
+    private var applyHelp: String {
+        isNewFileProposal ? "Create the reviewed Markdown note" : "Apply the reviewed Markdown link changes"
     }
 }
 

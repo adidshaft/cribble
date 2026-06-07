@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CribbleCommands: Commands {
+    @FocusedValue(\.newNoteAction) private var newNote
     @FocusedValue(\.openFolderAction) private var openFolder
     @FocusedValue(\.importFileAction) private var importFile
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
@@ -37,6 +38,12 @@ struct CribbleCommands: Commands {
     var body: some Commands {
         // File — folder operations (replaces the default "New" group).
         CommandGroup(replacing: .newItem) {
+            Button("New Note", action: { newNote?() })
+                .keyboardShortcut("n", modifiers: [.command])
+                .disabled(newNote == nil)
+
+            Divider()
+
             Button("Open Folder…", action: { openFolder?() })
                 .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
@@ -184,6 +191,10 @@ struct CribbleCommands: Commands {
     }
 }
 
+private struct NewNoteActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct OpenFolderActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -313,6 +324,11 @@ private struct ToggleReadingTrailActionKey: FocusedValueKey {
 }
 
 extension FocusedValues {
+    var newNoteAction: (() -> Void)? {
+        get { self[NewNoteActionKey.self] }
+        set { self[NewNoteActionKey.self] = newValue }
+    }
+
     var openFolderAction: (() -> Void)? {
         get { self[OpenFolderActionKey.self] }
         set { self[OpenFolderActionKey.self] = newValue }

@@ -48,6 +48,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `P` | Toggle the Reading Trail panel |
 | `Esc` | Exit highlight mode · close a zoom overlay |
 | `⌘ ←` / `⌘ →` | Back · Forward |
+| `⌘ N` | New note |
 | `⌘ ⌥ O` | Toggle outline |
 | `⌘ ⇧ F` | Toggle Focus Mode |
 | `⌘ O` / `⌘ R` | Open folder · Refresh |

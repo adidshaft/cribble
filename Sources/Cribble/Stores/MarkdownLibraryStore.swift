@@ -292,6 +292,13 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    func proposeBlankNote() {
+        presentNewNoteProposal(fileName: "Untitled.md", content: "# Untitled")
+        if pendingDiff != nil {
+            statusMessage = "Review the new note"
+        }
+    }
+
     func openRootLanding(_ rootURL: URL, sortMode: FileSortMode) {
         let standardized = rootURL.standardizedFileURL
         if !rootURLs.contains(standardized) {
@@ -1090,7 +1097,7 @@ final class MarkdownLibraryStore: ObservableObject {
             self.pendingDiffRootURL = nil
             self.pendingDiffMode = nil
             self.pendingDiffSuccessMessage = nil
-            refresh()
+            refresh(keepStatusQuiet: true)
             statusMessage = successMessage ?? (appliedMode == .updateReadme ? "Applied README changes" : "Applied AI link suggestions")
         } catch {
             pendingDiffError = error.localizedDescription
@@ -1803,7 +1810,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.3.9"
+    private static let bundledDemoNotesVersion = "1.4.0"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

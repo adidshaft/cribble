@@ -796,6 +796,35 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Opened Tasks")
     }
 
+    func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        try "# Existing\n".write(to: rootURL.appendingPathComponent("Untitled.md"), atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        store.proposeBlankNote()
+
+        let pending = try XCTUnwrap(store.pendingDiff)
+        XCTAssertEqual(pending.files.first?.oldPath, "/dev/null")
+        XCTAssertEqual(pending.files.first?.newPath, "Untitled 2.md")
+        XCTAssertEqual(store.statusMessage, "Review the new note")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: rootURL.appendingPathComponent("Untitled 2.md").path))
+
+        store.applyPendingDiff()
+        await store.waitForLoadToComplete()
+
+        let createdURL = rootURL.appendingPathComponent("Untitled 2.md")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: createdURL.path))
+        XCTAssertEqual(try String(contentsOf: createdURL, encoding: .utf8), "# Untitled\n")
+        XCTAssertEqual(store.statusMessage, "Created Untitled 2.md")
+    }
+
     func testTaskExternalExportStatusNamesTasksAndDestination() {
         XCTAssertEqual(
             TaskTrackerStatus.externalExportMessage(target: .reminders, addedToTasks: true),

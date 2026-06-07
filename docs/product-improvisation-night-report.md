@@ -26,6 +26,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
+- File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
@@ -56,6 +57,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
 - File now includes Copy Markdown (`Command-Option-Shift-M`) for the selected note, giving users a native Mac handoff path into chat, email, issue trackers, and other Markdown tools without revealing paths or creating wiki links.
+- The diff preview sheet now labels brand-new file proposals as “Review New Note” with a “Create Note” action, so manual and AI-generated note creation no longer look like link-edit reviews.
 - The Import setup sheet now explains the safe import-lane model as a three-step path: declare file types, review the data-only manifest, and disable the lane cleanly.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
@@ -298,6 +300,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native Copy Markdown command: 21 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Chat HUD, welcome, extension-guide, and native command work: 210 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar Copy Markdown handoff: 22 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native New Note proposals: 23 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

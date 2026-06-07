@@ -76,6 +76,7 @@ private struct ShortcutReferencePopover: View {
             shortcutSection("App", rows: [
                 ("Command Left / Right", "Back / Forward"),
                 ("Command F", "Find in files"),
+                ("Command N", "New note"),
                 ("Command O", "Open folder"),
                 ("Command Shift I", "Import"),
                 ("Command R", "Refresh folder"),

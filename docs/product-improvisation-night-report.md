@@ -132,6 +132,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
   first read-only version, data contract, native Mac surface, later-not-first-PR
   scope, least access, preview-before-write, secrets, and clean disable behavior
   before implementation starts.
+- Settings Extensions now includes Copy Proposal, giving contributors a native
+  way to copy the same idea-first, read-only-first extension proposal template
+  before writing implementation code.
 - Settings now lets extension authors copy a concise manifest review summary for any installed extension, making support threads, PR reviews, and team approval flows easier.
 - Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Settings can now create starter extension manifests directly in the active folder's `.cribble/extensions` directory, making the project-local team workflow actionable from the app.
@@ -429,6 +432,9 @@ Latest pass:
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding the AI Menu section to the in-reader shortcut popover: 1 XCTest test, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08
+  after adding the Settings Copy Proposal extension template: 13 Swift Testing
+  tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

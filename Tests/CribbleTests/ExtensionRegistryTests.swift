@@ -400,6 +400,23 @@ struct ExtensionRegistryTests {
         #expect(combined.contains("SwiftUI settings"))
         #expect(combined.contains("SF Symbols"))
     }
+
+    @Test
+    func extensionProposalTemplateCopiesIdeaFirstSafetyContract() {
+        let template = ExtensionProposalTemplate.markdown
+
+        #expect(template.contains("## Extension idea"))
+        #expect(template.contains("## First read-only version"))
+        #expect(template.contains("## Data contract"))
+        #expect(template.contains("## Native Mac surface"))
+        #expect(template.contains("## Later, not first PR"))
+        #expect(template.contains("declarative and read-only"))
+        #expect(template.contains("least note access"))
+        #expect(template.contains("Secrets stay out"))
+        #expect(template.contains("native SwiftUI"))
+        #expect(template.contains("SF Symbols"))
+        #expect(template.contains("removes its contribution cleanly"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

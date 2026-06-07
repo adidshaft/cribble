@@ -108,6 +108,10 @@ struct SettingsView: View {
                             copyExtensionDashboardSummary()
                         }
                         .help("Copy installed/enabled extension counts and active contribution lanes")
+                        Button("Copy Proposal") {
+                            copyExtensionProposalTemplate()
+                        }
+                        .help("Copy the extension idea template for issues, Discussions, or team review")
                         Button("Open Kit") {
                             library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
                         }
@@ -294,6 +298,56 @@ struct SettingsView: View {
         NSPasteboard.general.setString(summary.reviewSummary, forType: .string)
         extensionStatus = "Copied extension dashboard summary"
     }
+
+    private func copyExtensionProposalTemplate() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ExtensionProposalTemplate.markdown, forType: .string)
+        extensionStatus = "Copied extension proposal template"
+    }
+}
+
+enum ExtensionProposalTemplate {
+    static let markdown = """
+    ## Extension idea
+
+    Audience:
+    Workflow:
+    Why Cribble:
+
+    ## First read-only version
+
+    Manifest kind:
+    What appears in Cribble:
+    What user reviews before anything changes:
+
+    ## Data contract
+
+    Reads:
+    Writes:
+    Network:
+    Secrets:
+    Disable behavior:
+
+    ## Native Mac surface
+
+    SwiftUI surface:
+    System controls/SF Symbols:
+    Settings or command entry point:
+
+    ## Later, not first PR
+
+    What would need executable code:
+    What would need project-wide reads:
+    What would need source-note writes:
+
+    Safety checklist:
+    - First mergeable version is declarative and read-only.
+    - Writes use explicit preview/review/cancel.
+    - Reads request the least note access that proves the workflow.
+    - Secrets stay out of manifests, examples, fixtures, and docs.
+    - UI uses native SwiftUI, Settings, sheets, menus, commands, toolbars, focused values, system controls, and SF Symbols.
+    - Disabling the extension removes its contribution cleanly.
+    """
 }
 
 struct ExtensionStarterRule: Identifiable, Equatable {

@@ -104,6 +104,32 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(review.contains("Disable/revoke"))
     }
 
+    func testProjectIntelligencePreflightReviewCopiesScopeAndBoundary() {
+        let summary = IntelligencePreflightRunnerSummary(
+            isRemote: true,
+            icon: "network.badge.shield.half.filled",
+            title: "Remote runner selected",
+            detail: "Endpoint: ai.example.com. Model: qwen3-32b. Trust: Team-controlled VPS.",
+            dataBoundaryDetail: RemoteRunnerDataBoundary.detail
+        )
+
+        let review = summary.preflightReviewSummary(
+            scope: .folder,
+            roots: [URL(fileURLWithPath: "/Users/example/Research Notes")],
+            performanceMode: .balanced
+        )
+
+        XCTAssertTrue(review.contains("Project Intelligence preflight review"))
+        XCTAssertTrue(review.contains("Scope: This Folder"))
+        XCTAssertTrue(review.contains("Folders: Research Notes"))
+        XCTAssertTrue(review.contains("Endpoint: ai.example.com"))
+        XCTAssertTrue(review.contains(RemoteRunnerDataBoundary.detail))
+        XCTAssertTrue(review.contains("Performance: Balanced"))
+        XCTAssertTrue(review.contains("retention, logging, and access controls"))
+        XCTAssertTrue(review.contains("Secrets stay in Keychain-backed app flows"))
+        XCTAssertTrue(review.contains("switch runner, or disable the contributing extension"))
+    }
+
     func testExtensionRunnerConsentReviewSummaryNamesApprovalDetails() {
         let profile = ExtensionIntelligenceProviderProfile(
             id: "com.example.runner.research-gpu",

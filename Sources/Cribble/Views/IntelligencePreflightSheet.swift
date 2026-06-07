@@ -27,6 +27,7 @@ struct IntelligencePreflightSheet: View {
     let performanceMode: PerformanceMode
     let onCancel: () -> Void
     let onStart: () -> Void
+    @State private var copiedReview = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -77,6 +78,14 @@ struct IntelligencePreflightSheet: View {
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
+                if runnerSummary.isRemote {
+                    Button {
+                        copyPreflightReview()
+                    } label: {
+                        Label(copiedReview ? "Copied" : "Copy Review", systemImage: copiedReview ? "checkmark" : "doc.on.doc")
+                    }
+                    .help("Copy scope, runner, data boundary, performance mode, and review prompts")
+                }
                 Spacer()
                 Button("Start", action: onStart)
                     .keyboardShortcut(.defaultAction)
@@ -85,6 +94,15 @@ struct IntelligencePreflightSheet: View {
         }
         .padding(22)
         .frame(width: 460)
+    }
+
+    private func copyPreflightReview() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(
+            runnerSummary.preflightReviewSummary(scope: scope, roots: roots, performanceMode: performanceMode),
+            forType: .string
+        )
+        copiedReview = true
     }
 
     private func preflightRow(icon: String, title: String, detail: String, tint: Color = .secondary) -> some View {
@@ -158,6 +176,30 @@ struct IntelligencePreflightRunnerSummary: Equatable {
     }
 
     static let remoteDataBoundaryDetail = RemoteRunnerDataBoundary.detail
+
+    func preflightReviewSummary(
+        scope: IntelligencePreflightScope,
+        roots: [URL],
+        performanceMode: PerformanceMode
+    ) -> String {
+        let folderNames = roots.map(\.lastPathComponent).joined(separator: ", ")
+        return """
+        Project Intelligence preflight review
+        Scope: \(scope.title)
+        Folders: \(folderNames.isEmpty ? "No folder selected." : folderNames)
+        Runner: \(title)
+        Detail: \(detail)
+        Context boundary: \(dataBoundaryDetail ?? "Processing stays on this Mac or local network endpoint.")
+        Performance: \(performanceMode.title): \(performanceMode.subtitle)
+
+        Approval checklist:
+        - Requested folder scope is appropriate for this run.
+        - Remote endpoint ownership, retention, logging, and access controls are understood before starting.
+        - Note context is appropriate for this runner.
+        - Secrets stay in Keychain-backed app flows, not manifests, docs, examples, fixtures, or notes.
+        - User knows how to cancel, switch runner, or disable the contributing extension.
+        """
+    }
 
     private static func isLoopback(_ host: String) -> Bool {
         host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")

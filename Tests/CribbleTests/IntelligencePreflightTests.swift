@@ -105,6 +105,11 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(summary.contains("Source extension: Team Runner"))
         XCTAssertTrue(summary.contains(RemoteRunnerDataBoundary.detail))
         XCTAssertTrue(summary.contains("saved in Keychain"))
+        XCTAssertTrue(summary.contains("Approval checklist"))
+        XCTAssertTrue(summary.contains("Endpoint is controlled by the user, team, or trusted vendor."))
+        XCTAssertTrue(summary.contains("Secrets stay out of manifests and notes; use Keychain only."))
+        XCTAssertTrue(summary.contains("Requested context is appropriate for this runner."))
+        XCTAssertTrue(summary.contains("Disable path is understood before approval."))
         XCTAssertTrue(summary.contains("Disable/revoke"))
     }
 

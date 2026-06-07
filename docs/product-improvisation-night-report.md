@@ -79,6 +79,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The remote-runner consent sheet now includes Copy Review, letting users paste
   runner, endpoint, model, embedding model, data-boundary, Keychain, source, and
   disable/revoke details into a team thread before approving a VPS/team runner.
+- Copied remote-runner reviews now include an approval checklist for endpoint
+  ownership, Keychain-only secrets, context fit, and disable-path understanding.
 - Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
@@ -448,6 +450,9 @@ Latest pass:
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.
+- Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
+  after adding the remote-runner approval checklist to copied consent reviews:
+  8 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding the AI Menu section to the in-reader shortcut popover: 1 XCTest test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08
   after adding the Settings Copy Proposal extension template: 13 Swift Testing

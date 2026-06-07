@@ -64,6 +64,11 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
             "Source extension: \(sourceName)",
             "Context boundary: \(RemoteRunnerDataBoundary.detail)",
             "API key: \(usesKeychain ? "saved in Keychain for this endpoint" : "not selected in Keychain for this endpoint")",
+            "Approval checklist:",
+            "- Endpoint is controlled by the user, team, or trusted vendor.",
+            "- Secrets stay out of manifests and notes; use Keychain only.",
+            "- Requested context is appropriate for this runner.",
+            "- Disable path is understood before approval.",
             "Disable/revoke: disable the extension in Settings or choose a different runner"
         ]
         .compactMap { $0 }

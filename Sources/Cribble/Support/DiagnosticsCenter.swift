@@ -339,6 +339,10 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
     let remoteRunnerCount: Int
     let rendererCount: Int
     let importerCount: Int
+    let activeQuickActionCount: Int
+    let activeRemoteRunnerCount: Int
+    let activeRendererCount: Int
+    let activeImporterCount: Int
     let warnings: [String]
     let entries: [Entry]
 
@@ -354,6 +358,11 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
         remoteRunnerCount = installed.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
         rendererCount = installed.reduce(0) { $0 + $1.manifest.renderers.count }
         importerCount = installed.reduce(0) { $0 + $1.manifest.importers.count }
+        let enabled = installed.filter { !disabledIDs.contains($0.manifest.id) }
+        activeQuickActionCount = enabled.reduce(0) { $0 + $1.manifest.quickActions.count }
+        activeRemoteRunnerCount = enabled.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
+        activeRendererCount = enabled.reduce(0) { $0 + $1.manifest.renderers.count }
+        activeImporterCount = enabled.reduce(0) { $0 + $1.manifest.importers.count }
         self.warnings = warnings
         entries = installed.map { installed in
             let manifest = installed.manifest
@@ -374,7 +383,8 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
             "- Installed: \(installedCount)",
             "- Enabled: \(enabledCount)",
             "- Warnings: \(warningCount)",
-            "- Contributions: \(quickActionCount) quick actions, \(remoteRunnerCount) remote runners, \(rendererCount) renderers, \(importerCount) importers"
+            "- Installed contributions: \(quickActionCount) quick actions, \(remoteRunnerCount) remote runners, \(rendererCount) renderers, \(importerCount) importers",
+            "- Active contributions: \(activeQuickActionCount) quick actions, \(activeRemoteRunnerCount) remote runners, \(activeRendererCount) renderers, \(activeImporterCount) importers"
         ]
 
         if !warnings.isEmpty {

@@ -48,6 +48,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Diagnostics now record refresh reuse counts when unchanged note metadata is reused, making performance wins visible in copied reports without changing normal status text.
 - File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
+- Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -104,6 +105,7 @@ swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'
 swift test --filter Extension
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -120,6 +122,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Workflow Playbook entry points: 11 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Copy Wiki Link: 12 XCTest tests, 0 failures.
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after Team Extension Kit DemoNotes work: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar note context menu actions: 13 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

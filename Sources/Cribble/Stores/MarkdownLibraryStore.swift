@@ -932,7 +932,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func revealSelectedDocumentInFinder() {
         guard let selectedDocument else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([selectedDocument.url])
+        revealInFinder(selectedDocument.url)
     }
 
     func copySelectedDocumentPath() {
@@ -942,9 +942,25 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func copySelectedDocumentWikiLink() {
         guard let selectedDocument else { return }
-        let title = selectedDocument.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return }
-        let link = "[[\(title.replacingOccurrences(of: "|", with: "\\|"))]]"
+        copyWikiLink(title: selectedDocument.title)
+    }
+
+    func revealInFinder(_ url: URL) {
+        NSWorkspace.shared.activateFileViewerSelecting([url.standardizedFileURL])
+    }
+
+    func copyWikiLink(for url: URL) {
+        let standardized = url.standardizedFileURL
+        let title = documents.first { $0.url.standardizedFileURL == standardized }?.title
+            ?? selectedDocument.flatMap { $0.url.standardizedFileURL == standardized ? $0.title : nil }
+            ?? standardized.deletingPathExtension().lastPathComponent
+        copyWikiLink(title: title)
+    }
+
+    private func copyWikiLink(title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let link = "[[\(trimmed.replacingOccurrences(of: "|", with: "\\|"))]]"
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(link, forType: .string)
         statusMessage = "Copied \(link)"

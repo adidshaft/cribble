@@ -50,6 +50,26 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(NSPasteboard.general.string(forType: .string), #"[[Team Review \| June]]"#)
         XCTAssertEqual(store.statusMessage, #"Copied [[Team Review \| June]]"#)
     }
+
+    func testCopyWikiLinkForURLUsesLoadedMetadata() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SidebarWikiLink-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = rootURL.appendingPathComponent("meeting.md")
+        try "# Better Team Rituals\n\nNotes.\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        NSPasteboard.general.clearContents()
+        store.copyWikiLink(for: noteURL)
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "[[Better Team Rituals]]")
+        XCTAssertEqual(store.statusMessage, "Copied [[Better Team Rituals]]")
+    }
     
     func testLibraryStoreSearchFiltering() throws {
         let store = MarkdownLibraryStore(includeBundledDemo: false)

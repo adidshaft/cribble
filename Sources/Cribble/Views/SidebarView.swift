@@ -105,6 +105,20 @@ struct SidebarView: View {
                     }
                 }
 
+                if node.isMarkdownFile {
+                    Button("Reveal in Finder", systemImage: "folder") {
+                        library.revealInFinder(node.url)
+                    }
+
+                    Button("Copy File Path", systemImage: "doc.on.doc") {
+                        library.copyActualPath(for: node.url)
+                    }
+
+                    Button("Copy Wiki Link", systemImage: "link") {
+                        library.copyWikiLink(for: node.url)
+                    }
+                }
+
                 if library.isImportedRoot(node.url) {
                     Divider()
 

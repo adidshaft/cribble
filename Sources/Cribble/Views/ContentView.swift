@@ -112,6 +112,7 @@ struct ContentView: View {
             .focusedSceneValue(\.copyDecisionEntryTemplateAction, copyDecisionEntryTemplate)
             .focusedSceneValue(\.copyResearchReviewTemplateAction, copyResearchReviewTemplate)
             .focusedSceneValue(\.copyRemoteRunnerSetupReviewAction, copyRemoteRunnerSetupReview)
+            .focusedSceneValue(\.copyProductReadinessCheckpointAction, copyProductReadinessCheckpoint)
             .focusedSceneValue(\.copyStarterChecklistAction, copyStarterChecklist)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
     }
@@ -138,6 +139,12 @@ struct ContentView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(RemoteRunnerSetupReview.markdown, forType: .string)
         library.statusMessage = "Copied remote runner setup review"
+    }
+
+    private func copyProductReadinessCheckpoint() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ProductReadinessCheckpointTemplate.markdown, forType: .string)
+        library.statusMessage = "Copied product readiness checkpoint"
     }
 
     private func copyStarterChecklist() {

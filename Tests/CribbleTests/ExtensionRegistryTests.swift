@@ -487,6 +487,7 @@ struct ExtensionRegistryTests {
         let checkpoint = try String(contentsOf: checkpointURL, encoding: .utf8)
 
         #expect(checkpoint.contains("Strong Product Signal"))
+        #expect(checkpoint.contains("Help > Copy Product Readiness Checkpoint"))
         #expect(checkpoint.contains("Ready To Keep"))
         #expect(checkpoint.contains("Stop Conditions"))
         #expect(checkpoint.contains("Keep Going Only If"))

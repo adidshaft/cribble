@@ -8,6 +8,8 @@ improvisation branch. The long record is
 [`product-improvisation-night-report.md`](product-improvisation-night-report.md);
 the shorter narrative is
 [`product-improvisation-summary.md`](product-improvisation-summary.md).
+Use **Help > Copy Product Readiness Checkpoint** in the app when you need a
+pasteable checkpoint for a pull request, release note, or maintainer handoff.
 
 ## Strong Product Signal
 

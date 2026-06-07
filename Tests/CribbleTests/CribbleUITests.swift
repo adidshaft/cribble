@@ -1045,6 +1045,20 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(template.contains("Did any note context leave this Mac?"))
     }
 
+    func testProductReadinessCheckpointTemplateNamesStopConditions() {
+        let template = ProductReadinessCheckpointTemplate.markdown
+
+        XCTAssertTrue(template.contains("# Product Readiness Checkpoint"))
+        XCTAssertTrue(template.contains("Strong product signal"))
+        XCTAssertTrue(template.contains("Ready to keep"))
+        XCTAssertTrue(template.contains("Stop conditions"))
+        XCTAssertTrue(template.contains("Keep going only if"))
+        XCTAssertTrue(template.contains("Verification snapshot"))
+        XCTAssertTrue(template.contains("executable plugin runtime"))
+        XCTAssertTrue(template.contains("source-note writes without preview/review/cancel"))
+        XCTAssertTrue(template.contains("remote intelligence that hides retention"))
+    }
+
     func testImportLaneSetupReviewKeepsExecutionBoundariesClear() {
         let review = ImportLaneSetupReview.markdown
 

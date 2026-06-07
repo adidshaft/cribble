@@ -78,6 +78,7 @@ Focused validation passed across the newest work:
 - Open-source extension contribution guide links and strict first-PR rules.
 - Bundled Extension Contribution Guide note and native Help entry.
 - Product readiness checkpoint with keep, stop, defer, and verification sections.
+- Help-copy template for product readiness checkpoints and maintainer handoffs.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics that distinguish local runners from remote runners before asking

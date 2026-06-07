@@ -48,6 +48,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copyDecisionEntryTemplateAction) private var copyDecisionEntryTemplate
     @FocusedValue(\.copyResearchReviewTemplateAction) private var copyResearchReviewTemplate
     @FocusedValue(\.copyRemoteRunnerSetupReviewAction) private var copyRemoteRunnerSetupReview
+    @FocusedValue(\.copyProductReadinessCheckpointAction) private var copyProductReadinessCheckpoint
     @FocusedValue(\.copyStarterChecklistAction) private var copyStarterChecklist
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
@@ -244,6 +245,9 @@ struct CribbleCommands: Commands {
 
             Button("Copy Remote Runner Setup Review", action: { copyRemoteRunnerSetupReview?() })
                 .disabled(copyRemoteRunnerSetupReview == nil)
+
+            Button("Copy Product Readiness Checkpoint", action: { copyProductReadinessCheckpoint?() })
+                .disabled(copyProductReadinessCheckpoint == nil)
 
             Button("Copy Starter Checklist", action: { copyStarterChecklist?() })
                 .disabled(copyStarterChecklist == nil)
@@ -460,6 +464,10 @@ private struct CopyResearchReviewTemplateActionKey: FocusedValueKey {
 }
 
 private struct CopyRemoteRunnerSetupReviewActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopyProductReadinessCheckpointActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -717,6 +725,11 @@ extension FocusedValues {
     var copyRemoteRunnerSetupReviewAction: (() -> Void)? {
         get { self[CopyRemoteRunnerSetupReviewActionKey.self] }
         set { self[CopyRemoteRunnerSetupReviewActionKey.self] = newValue }
+    }
+
+    var copyProductReadinessCheckpointAction: (() -> Void)? {
+        get { self[CopyProductReadinessCheckpointActionKey.self] }
+        set { self[CopyProductReadinessCheckpointActionKey.self] = newValue }
     }
 
     var copyStarterChecklistAction: (() -> Void)? {

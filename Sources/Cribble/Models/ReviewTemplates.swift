@@ -90,3 +90,50 @@ enum ResearchReviewTemplate {
     - Which generated artifact was copied or saved?
     """
 }
+
+enum ProductReadinessCheckpointTemplate {
+    static let markdown = """
+    # Product Readiness Checkpoint
+
+    Branch:
+    Date:
+    Owner:
+
+    ## Strong product signal
+
+    -
+
+    ## Ready to keep
+
+    | Area | Evidence |
+    | --- | --- |
+    |  |  |
+
+    ## Stop conditions
+
+    Stop and design separately if the next change needs:
+
+    - executable plugin runtime;
+    - signed bundle loading;
+    - hidden extension execution;
+    - broad project reads without a consent boundary;
+    - source-note writes without preview/review/cancel;
+    - secrets in manifests, docs, examples, fixtures, tests, or DemoNotes;
+    - non-native extension UI without explicit maintainer approval;
+    - remote intelligence that hides retention, logging, endpoint ownership, or revocation.
+
+    ## Keep going only if
+
+    -
+
+    ## Verification snapshot
+
+    - Tests:
+    - Manual checks:
+    - Known residual noise:
+
+    ## Not done on purpose
+
+    -
+    """
+}

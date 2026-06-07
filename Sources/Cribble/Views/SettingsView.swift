@@ -333,6 +333,7 @@ enum ExtensionProposalTemplate {
     SwiftUI surface:
     System controls/SF Symbols:
     Settings or command entry point:
+    Non-native UI needed? If yes, explain maintainer approval:
 
     ## Later, not first PR
 
@@ -346,6 +347,7 @@ enum ExtensionProposalTemplate {
     - Reads request the least note access that proves the workflow.
     - Secrets stay out of manifests, examples, fixtures, and docs.
     - UI uses native SwiftUI, Settings, sheets, menus, commands, toolbars, focused values, system controls, and SF Symbols.
+    - First version does not need web views, custom chrome, Electron-style panels, or non-native UI.
     - Disabling the extension removes its contribution cleanly.
     """
 }

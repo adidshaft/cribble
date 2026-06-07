@@ -151,6 +151,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings Extensions now includes Copy Proposal, giving contributors a native
   way to copy the same idea-first, read-only-first extension proposal template
   before writing implementation code.
+- The in-app Copy Proposal template now mirrors the hard native UI guard from
+  GitHub: first versions should not require web views, custom chrome,
+  Electron-style panels, or non-native UI without maintainer approval.
 - Help now includes `Open Extension Settings` beside the extension and remote
   intelligence guides, giving users a native jump from learning about manifests
   to managing them.
@@ -463,6 +466,9 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08
   after adding the Settings Copy Proposal extension template: 13 Swift Testing
   tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08
+  after bringing the in-app Copy Proposal template in line with the hard native
+  UI guard: 13 Swift Testing tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after teaching DemoNotes about Settings > Extensions > Copy Proposal: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Cribble AI to the welcome Start With grid: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after the Settings proposal, DemoNotes handoff, and Welcome AI entry work: 2 XCTest tests and 13 Swift Testing tests, 0 failures.

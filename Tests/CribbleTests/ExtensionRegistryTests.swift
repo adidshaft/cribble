@@ -415,6 +415,10 @@ struct ExtensionRegistryTests {
         #expect(template.contains("Secrets stay out"))
         #expect(template.contains("native SwiftUI"))
         #expect(template.contains("SF Symbols"))
+        #expect(template.contains("Non-native UI needed?"))
+        #expect(template.contains("web views"))
+        #expect(template.contains("custom chrome"))
+        #expect(template.contains("Electron-style panels"))
         #expect(template.contains("removes its contribution cleanly"))
     }
 }

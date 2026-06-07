@@ -47,10 +47,12 @@ handoffs instead of living only as ideas.
 
 - Recent commits include native Today/New Note workflows, Help guide recovery,
   Settings extension starter rules, diagnostic health summary, daily chat quick
-  action, recent-note welcome shortcuts, and extension idea templates.
+  action, recent-note welcome shortcuts, extension idea templates, and the
+  Decision Log workflow.
 - Full-suite validation has passed multiple times during the branch; the latest
-  full run after the native New Note/Today work was `214 XCTest + 41 Swift
-  Testing`, 0 failures. Later focused suites passed for each subsequent slice.
+  full run after the Help command, Decision Log DemoNotes, remote-runner,
+  diagnostics, and report work was `235 XCTest + 43 Swift Testing`, 0 failures.
+  Later focused suites passed for the native Decision Log entry points.
 - Known residual noise: intermittent CoreData XPC messages from the macOS test
   environment during broad runs. These have not failed tests.
 - Intentionally not done: executable plugin runtime, signed bundle loading, or

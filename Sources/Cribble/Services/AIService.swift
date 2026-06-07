@@ -88,24 +88,40 @@ struct AIService {
 
         // Resolve symlinks so prefix-stripping works when the folder is e.g.
         // `/var/folders/…` but enumerated URLs come back `/private/var/folders/…`.
-        let basePath = folderURL.resolvingSymlinksInPath().path
+        let basePrefix = folderURL.resolvingSymlinksInPath().path + "/"
         var files: [(path: String, size: Int, url: URL)] = []
         for case let url as URL in enumerator where url.pathExtension.lowercased() == "md" {
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? .max
-            let relative = url.resolvingSymlinksInPath().path
-                .replacingOccurrences(of: basePath + "/", with: "")
+            let filePath = url.resolvingSymlinksInPath().path
+            let relative = filePath.hasPrefix(basePrefix)
+                ? String(filePath.dropFirst(basePrefix.count))
+                : filePath
             files.append((relative, size, url))
         }
         files.sort { $0.size < $1.size }
 
         var sections: [String] = []
         var remaining = maxCharacters
+        var omitted = 0
         for file in files {
+            // Cheap pre-check: a file's byte size lower-bounds its section
+            // length, so skip the content read entirely when it cannot fit.
+            // (`continue` rather than `break` keeps the omitted count exact.)
+            guard file.size <= remaining else {
+                omitted += 1
+                continue
+            }
             guard let content = try? String(contentsOf: file.url, encoding: .utf8) else { continue }
             let section = "=== \(file.path) ===\n\(content)\n"
-            guard section.count <= remaining else { continue }
+            guard section.count <= remaining else {
+                omitted += 1
+                continue
+            }
             remaining -= section.count
             sections.append(section)
+        }
+        if omitted > 0 {
+            sections.append("=== NOTE: \(omitted) file(s) omitted — context budget exhausted ===\n")
         }
         return sections.joined(separator: "\n")
     }
@@ -125,12 +141,20 @@ struct AIService {
             model: config.modelID,
             session: session
         )
+        // The shared prompts assume CLI filesystem access; adapt them for the
+        // runner, which only sees the inlined <vault> block.
+        let systemPrompt = prompt + """
+
+
+        NOTE: You cannot access the filesystem. The folder's full contents are inlined in the <vault> block of the user message; each file begins with a `=== relative/path.md ===` header. Treat those as the folder's files, and use exactly those relative paths in any diff headers (`--- a/<path>` / `+++ b/<path>`).
+        """
         let messages = [
-            EngineMessage(role: .system, content: prompt),
+            EngineMessage(role: .system, content: systemPrompt),
             EngineMessage(role: .user, content: "<vault>\n\(context)\n</vault>")
         ]
         do {
-            return try await provider.generate(prompt: messages, schema: nil, maxTokens: 2_048)
+            // 4k tokens: diff outputs are long; CLI paths have no cap.
+            return try await provider.generate(prompt: messages, schema: nil, maxTokens: 4_096)
         } catch {
             throw AIServiceError.commandFailed(error.localizedDescription)
         }

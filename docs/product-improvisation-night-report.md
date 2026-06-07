@@ -554,6 +554,10 @@ Latest pass:
   notes with type/path/saved-status metadata attached.
 - Intelligence Ask answers now include Copy Answer, preserving the original
   question plus answer text for notes, issues, PRs, and team review threads.
+- Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
+- Latest combined `swift test --filter 'CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after the newest import, DemoNotes, and Intelligence handoff work: 5 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

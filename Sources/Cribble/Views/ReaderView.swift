@@ -2235,6 +2235,7 @@ private struct CribbleCodeBlockStyle: StructuredText.CodeBlockStyle {
 private struct WelcomeView: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @State private var copiedStarterChecklist = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -2342,16 +2343,35 @@ private struct WelcomeView: View {
                 .frame(maxWidth: 560)
             }
 
-            Button("Reset DemoNotes") {
-                library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true)
+            HStack(spacing: 12) {
+                Button {
+                    copyStarterChecklist()
+                } label: {
+                    Label(copiedStarterChecklist ? "Copied Checklist" : "Copy Starter Checklist",
+                          systemImage: copiedStarterChecklist ? "checkmark" : "doc.on.doc")
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .help("Copy a short tour order for trying Cribble with a team or project")
+
+                Button("Reset DemoNotes") {
+                    library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true)
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .help("Restore the bundled demo library to a clean copy")
             }
-            .buttonStyle(.plain)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .help("Restore the bundled demo library to a clean copy")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
+    }
+
+    private func copyStarterChecklist() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(WelcomeStarterChecklist.markdown, forType: .string)
+        copiedStarterChecklist = true
     }
 
     private func demoStartButton(_ title: String, systemImage: String, note: String) -> some View {
@@ -2420,4 +2440,21 @@ private struct WelcomeView: View {
         .cribbleGlassButton()
         .help("Continue \(shortcut.title)")
     }
+}
+
+enum WelcomeStarterChecklist {
+    static let markdown = """
+    # Cribble Starter Checklist
+
+    - [ ] Open a Markdown folder or the bundled Demo Tour.
+    - [ ] Read [[Getting Started]] and highlight one useful sentence.
+    - [ ] Open [[Cribble AI]] and choose the model boundary you trust.
+    - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
+    - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
+    - [ ] Review [[Workflow Playbook]] for a real team workflow.
+    - [ ] Open [[Team Extension Kit]] before designing an extension.
+    - [ ] Use **Settings -> Extensions -> Copy Proposal** for new extension ideas.
+    - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.
+    - [ ] Review [[Extensions and Remote Intelligence]] before using a VPS or remote runner.
+    """
 }

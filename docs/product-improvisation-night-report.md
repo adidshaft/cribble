@@ -526,6 +526,10 @@ Latest pass:
 - Settings > Extensions copied dashboard summaries now include practical next
   steps for contributors: fix warnings, start with project-local examples, keep
   v1 read-only/reviewed, and gate remote runners behind data-boundary review.
+- The first-screen welcome now includes a native Copy Starter Checklist action
+  for sharing the recommended tour order: basics, AI model boundary, Tasks,
+  workflow playbook, extension proposal, native/read-only guardrails, and remote
+  runner review.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

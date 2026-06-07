@@ -924,6 +924,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(tasks.contains("reviewed before note context"))
     }
 
+    func testWelcomeStarterChecklistGuidesCoreProductTour() {
+        let checklist = WelcomeStarterChecklist.markdown
+
+        XCTAssertTrue(checklist.contains("Cribble Starter Checklist"))
+        XCTAssertTrue(checklist.contains("[[Getting Started]]"))
+        XCTAssertTrue(checklist.contains("[[Cribble AI]]"))
+        XCTAssertTrue(checklist.contains("model boundary"))
+        XCTAssertTrue(checklist.contains("Tasks.md"))
+        XCTAssertTrue(checklist.contains("[[Workflow Playbook]]"))
+        XCTAssertTrue(checklist.contains("[[Team Extension Kit]]"))
+        XCTAssertTrue(checklist.contains("Copy Proposal"))
+        XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))
+        XCTAssertTrue(checklist.contains("VPS or remote runner"))
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

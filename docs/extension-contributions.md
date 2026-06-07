@@ -77,10 +77,11 @@ the best way: declarative, inspectable, reversible, and easy to test.
 | Renderer | A safe alias for an existing built-in renderer | No file access |
 | Importer | Declared file extensions and review copy for a future converter | No execution; user-selected files only |
 
-Importer proposals must use **File > Import > Copy Review** before adding or
-adapting a manifest. Remote-runner proposals must use **Help > Copy Remote
-Runner Setup Review** so ownership, retention, logging, access controls,
-Keychain handling, and revocation are visible.
+Importer proposals must use **Help > Copy Import Lane Setup Review** or
+**File > Import > Copy Review** before adding or adapting a manifest.
+Remote-runner proposals must use **Help > Copy Remote Runner Setup Review** so
+ownership, retention, logging, access controls, Keychain handling, and
+revocation are visible.
 
 ## Executable Plugins
 

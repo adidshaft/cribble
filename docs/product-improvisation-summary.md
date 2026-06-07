@@ -86,6 +86,9 @@ Focused validation passed across the newest work:
   copyable templates, diagnostics, and GitHub actions.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
+- Help-copy template for import lane setup reviews, exposed from both Help and
+  the import sheet.
+- Remote Project Intelligence preflight copy review for team/VPS runner starts.
 - Diagnostics that distinguish local runners from remote runners before asking
   for Keychain credential recovery.
 - Diagnostics next actions and visible recovery strip.

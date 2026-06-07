@@ -619,6 +619,18 @@ Latest pass:
 - Help menu actions are now grouped into clearer native sections for DemoNotes,
   guides, extension settings, copyable templates, diagnostics, and GitHub
   actions, reducing menu scan cost as the onboarding surface grows.
+- Copied extension review summaries now separate the open-source contribution
+  guide from the manifest reference, so pasted PR/team handoffs point people to
+  the strict read-only, least-writing, native-SwiftUI rules first and the schema
+  details second.
+- Help now includes Copy Import Lane Setup Review, sharing the same importer
+  safety checklist as File > Import > Copy Review. Public docs, DemoNotes, Team
+  Extension Kit, and the starter checklist all point importer authors to that
+  native Help path before any converter runtime exists.
+- Project Intelligence preflight now offers Copy Review when a remote runner is
+  selected, letting users paste folder scope, endpoint/model/trust, context
+  boundary, performance mode, Keychain-secret expectations, and revocation
+  prompts before starting a VPS/team intelligence run.
 - `docs/extensions.md` now defines executable-plugin readiness gates: signed
   bundle identity, process isolation, Cribble-mediated permissions, native
   consent, previewed writes, Keychain-only secrets, revocation, audit trails, and
@@ -646,6 +658,9 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions` passed on 2026-06-08 after adding the branch readiness checkpoint: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testProductReadinessCheckpointTemplateNamesStopConditions|ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions'` passed on 2026-06-08 after adding Help > Copy Product Readiness Checkpoint: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics` passed on 2026-06-08 after grouping the Help menu into native sections: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests/installedExtensionReviewSummaryIncludesManifestDetails|ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings'` passed on 2026-06-08 after separating contribution guide and manifest-reference links in copied extension reviews: 2 Swift Testing tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics|CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after exposing Help > Copy Import Lane Setup Review and moving the importer checklist to shared templates: 4 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligencePreflightTests/testProjectIntelligencePreflightReviewCopiesScopeAndBoundary|IntelligencePreflightTests/testRemoteRunnerSummaryIncludesEndpointModelAndTrustLabel|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation'` passed on 2026-06-08 after adding Copy Review to remote Project Intelligence preflight: 3 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

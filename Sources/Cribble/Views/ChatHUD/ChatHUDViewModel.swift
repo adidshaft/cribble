@@ -98,6 +98,15 @@ final class ChatHUDViewModel: ObservableObject {
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
     }
 
+    func syncEngineChoiceFromDefaults() {
+        let defaults = UserDefaults.standard
+        if let savedID = defaults.string(forKey: ModelDefaultsKey.selectedModelID),
+           let savedModel = ModelCatalog.model(withID: savedID) {
+            selectedModel = savedModel
+        }
+        needsEngineChoice = !Self.hasCompletedEngineChoice(defaults: defaults)
+    }
+
     private static func hasCompletedEngineChoice(defaults: UserDefaults) -> Bool {
         return (defaults.object(forKey: ModelDefaultsKey.hasChosenEngine) as? Bool) == true
     }

@@ -161,7 +161,10 @@ final class ChatHUDController {
     }
 
     private func ensureViewModel() -> ChatHUDViewModel? {
-        if let viewModel { return viewModel }
+        if let viewModel {
+            viewModel.syncEngineChoiceFromDefaults()
+            return viewModel
+        }
         guard let library else { return nil }
         let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
         vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }

@@ -318,6 +318,22 @@ final class ChatHUDLogicTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testEngineChoiceSyncRestoresChooserWhenChoiceFlagIsDeleted() {
+        withCleanEngineChoiceDefaults {
+            let chosen = ModelCatalog.cloudModels.last ?? ModelCatalog.defaultModel
+            let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            viewModel.chooseEngine(chosen)
+            XCTAssertFalse(viewModel.needsEngineChoice)
+
+            UserDefaults.standard.removeObject(forKey: "chatHUD.hasChosenEngine")
+            viewModel.syncEngineChoiceFromDefaults()
+
+            XCTAssertTrue(viewModel.needsEngineChoice)
+            XCTAssertEqual(viewModel.selectedModel.id, chosen.id)
+        }
+    }
+
     func testCLIFlattenIncludesSystemAndTurns() {
         let prompt = CLIChatEngine.flatten([
             EngineMessage(role: .system, content: "RULES"),

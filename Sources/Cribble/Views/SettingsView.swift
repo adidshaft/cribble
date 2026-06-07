@@ -85,6 +85,14 @@ struct SettingsView: View {
 
             Section("Extensions") {
                 VStack(alignment: .leading, spacing: 10) {
+                    ExtensionDashboard(
+                        summary: ExtensionDashboardSummary(
+                            installed: extensionRegistry.installedExtensions,
+                            disabledIDs: extensionRegistry.disabledExtensionIDs,
+                            warningCount: extensionRegistry.loadWarnings.count
+                        )
+                    )
+
                     HStack {
                         Label("Extension folders", systemImage: "puzzlepiece.extension")
                         Spacer()
@@ -264,6 +272,105 @@ struct SettingsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(installed.reviewSummary, forType: .string)
         extensionStatus = "Copied \(installed.manifest.name) extension details"
+    }
+}
+
+struct ExtensionDashboardSummary: Equatable {
+    let installedCount: Int
+    let enabledCount: Int
+    let warningCount: Int
+    let quickActionCount: Int
+    let remoteRunnerCount: Int
+    let rendererCount: Int
+    let importerCount: Int
+
+    init(
+        installed: [InstalledCribbleExtension],
+        disabledIDs: Set<String>,
+        warningCount: Int
+    ) {
+        self.installedCount = installed.count
+        self.enabledCount = installed.filter { !disabledIDs.contains($0.manifest.id) }.count
+        self.warningCount = warningCount
+        quickActionCount = installed.reduce(0) { $0 + $1.manifest.quickActions.count }
+        remoteRunnerCount = installed.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
+        rendererCount = installed.reduce(0) { $0 + $1.manifest.renderers.count }
+        importerCount = installed.reduce(0) { $0 + $1.manifest.importers.count }
+    }
+
+    var statusTitle: String {
+        if warningCount > 0 {
+            return "\(warningCount) warning\(warningCount == 1 ? "" : "s") need review"
+        }
+        if installedCount == 0 {
+            return "Ready for your first extension"
+        }
+        if enabledCount == 0 {
+            return "All extensions are disabled"
+        }
+        return "\(enabledCount) enabled extension\(enabledCount == 1 ? "" : "s")"
+    }
+
+    var statusDetail: String {
+        if warningCount > 0 {
+            return "Check Again reloads manifests after you fix validation issues."
+        }
+        if installedCount == 0 {
+            return "Create a read-only quick action or project-local example to start safely."
+        }
+        return "\(installedCount) installed; API v1 remains declarative and data-only."
+    }
+}
+
+private struct ExtensionDashboard: View {
+    let summary: ExtensionDashboardSummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Label(summary.statusTitle, systemImage: summary.warningCount > 0 ? "exclamationmark.triangle" : "checkmark.shield")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(summary.warningCount > 0 ? .orange : .primary)
+                Spacer(minLength: 8)
+                Text(summary.statusDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
+            }
+
+            HStack(spacing: 6) {
+                ExtensionDashboardMetric(title: "Actions", value: summary.quickActionCount, systemImage: "bolt")
+                ExtensionDashboardMetric(title: "Runners", value: summary.remoteRunnerCount, systemImage: "brain.head.profile")
+                ExtensionDashboardMetric(title: "Renderers", value: summary.rendererCount, systemImage: "doc.richtext")
+                ExtensionDashboardMetric(title: "Importers", value: summary.importerCount, systemImage: "square.and.arrow.down")
+            }
+        }
+        .padding(10)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct ExtensionDashboardMetric: View {
+    let title: String
+    let value: Int
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+                .frame(width: 14)
+            Text("\(value)")
+                .font(.caption.weight(.semibold))
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(.background.opacity(0.45), in: RoundedRectangle(cornerRadius: 6))
     }
 }
 

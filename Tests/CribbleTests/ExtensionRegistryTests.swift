@@ -299,6 +299,86 @@ struct ExtensionRegistryTests {
         }
         #expect(restored.trustDecision(for: reinstalled) == nil)
     }
+
+    @Test
+    func extensionDashboardSummaryCountsInstalledLanesAndWarnings() {
+        let root = URL(fileURLWithPath: "/tmp/CribbleExtensionDashboard")
+        let installed = [
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.quick",
+                    name: "Quick",
+                    version: "1.0.0",
+                    kind: .quickAction,
+                    summary: "Quick action.",
+                    permissions: [.readCurrentNote],
+                    quickActions: [
+                        CribbleExtensionQuickAction(id: "a", title: "A", icon: "bolt", prompt: "A"),
+                        CribbleExtensionQuickAction(id: "b", title: "B", icon: "bolt", prompt: "B")
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("quick/cribble-extension.json"),
+                location: .user
+            ),
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.runner",
+                    name: "Runner",
+                    version: "1.0.0",
+                    kind: .intelligenceProvider,
+                    summary: "Runner.",
+                    permissions: [.networkOpenAICompatible],
+                    intelligenceProviders: [
+                        CribbleExtensionIntelligenceProvider(
+                            id: "gpu",
+                            title: "GPU",
+                            baseURL: URL(string: "https://runner.example.com/v1")!,
+                            modelID: "team-model",
+                            embeddingModelID: nil,
+                            trustLabel: "Team GPU"
+                        )
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("runner/cribble-extension.json"),
+                location: .user
+            ),
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.importer",
+                    name: "Importer",
+                    version: "1.0.0",
+                    kind: .importer,
+                    summary: "Importer.",
+                    importers: [
+                        CribbleExtensionImporter(
+                            id: "chat",
+                            title: "Chat",
+                            fileExtensions: ["json"],
+                            outputFormat: "markdown"
+                        )
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("importer/cribble-extension.json"),
+                location: .user
+            )
+        ]
+
+        let summary = ExtensionDashboardSummary(
+            installed: installed,
+            disabledIDs: ["com.example.runner"],
+            warningCount: 2
+        )
+
+        #expect(summary.installedCount == 3)
+        #expect(summary.enabledCount == 2)
+        #expect(summary.warningCount == 2)
+        #expect(summary.quickActionCount == 2)
+        #expect(summary.remoteRunnerCount == 1)
+        #expect(summary.rendererCount == 0)
+        #expect(summary.importerCount == 1)
+        #expect(summary.statusTitle == "2 warnings need review")
+        #expect(summary.statusDetail.contains("Check Again reloads manifests"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

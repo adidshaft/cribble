@@ -311,6 +311,49 @@ Start with an idea before a runtime. A good proposal should explain:
 - what data it needs to read, write, or send over the network;
 - what native SwiftUI surface users would review before anything changes.
 
+### Idea Proposal Template
+
+Use this shape for issues, Discussions, or early pull requests. It keeps
+ambitious ideas welcome while making the first mergeable step concrete:
+
+```markdown
+## Extension idea
+
+Audience:
+Workflow:
+Why Cribble:
+
+## First read-only version
+
+Manifest kind:
+What appears in Cribble:
+What user reviews before anything changes:
+
+## Data contract
+
+Reads:
+Writes:
+Network:
+Secrets:
+Disable behavior:
+
+## Native Mac surface
+
+SwiftUI surface:
+System controls/SF Symbols:
+Settings or command entry point:
+
+## Later, not first PR
+
+What would need executable code:
+What would need project-wide reads:
+What would need source-note writes:
+```
+
+Fill `Reads`, `Writes`, `Network`, and `Secrets` with `none` when possible. If
+they are not `none`, describe the smallest scope and the user-visible consent or
+review surface.
+
 Default rules for extension pull requests:
 
 - **Read-only first.** New extension capabilities should start as manifest

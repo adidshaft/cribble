@@ -88,6 +88,37 @@ When proposing a new plugin or extension, start with the idea rather than code:
 Good ideas can be ambitious. The first version should still be small enough to
 disable cleanly, inspect in Settings, and explain to a non-technical reader.
 
+Use this proposal shape before writing code:
+
+```markdown
+## Extension idea
+Audience:
+Workflow:
+Why Cribble:
+
+## First read-only version
+Manifest kind:
+What appears in Cribble:
+What user reviews before anything changes:
+
+## Data contract
+Reads:
+Writes:
+Network:
+Secrets:
+Disable behavior:
+
+## Native Mac surface
+SwiftUI surface:
+System controls/SF Symbols:
+Settings or command entry point:
+
+## Later, not first PR
+What would need executable code:
+What would need project-wide reads:
+What would need source-note writes:
+```
+
 ## Remote runner policy
 
 Remote intelligence can be excellent when it is intentional. Use it for a large

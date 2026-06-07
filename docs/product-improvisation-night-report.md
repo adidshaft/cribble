@@ -310,6 +310,7 @@ Latest pass:
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests'` passed on 2026-06-08 after adding the native Today note workflow, sidebar/welcome/menu entry points, nested Daily note creation, and DemoNotes onboarding: 26 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the native New Note and Today note workflows: 214 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the date-aware Draft today chat quick action and DemoNotes onboarding: 38 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after adding the open-source extension idea proposal template to `docs/extensions.md` and DemoNotes Team Extension Kit: 1 XCTest test, 0 failures. A docs search also confirmed read-only, first read-only version, native Mac surface, and later-not-first-PR checklist language across contributor surfaces.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

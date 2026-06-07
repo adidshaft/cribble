@@ -25,6 +25,7 @@ struct ModelPickerButton: View {
         switch viewModel.selectedModel.kind {
         case .localMLX: .blue
         case .claudeCLI, .codexCLI: .green
+        case .localRunner: .orange
         }
     }
 
@@ -166,6 +167,8 @@ private struct ModelRow: View {
             switch availability {
             case .cloud:
                 Image(systemName: "cloud").foregroundStyle(.secondary).help("Runs via your Terminal session")
+            case .runner:
+                Image(systemName: "network").foregroundStyle(.orange).help("Served by your local runner")
             case .downloaded:
                 Image(systemName: "checkmark.circle").foregroundStyle(.green).help("Downloaded")
             case .notDownloaded:

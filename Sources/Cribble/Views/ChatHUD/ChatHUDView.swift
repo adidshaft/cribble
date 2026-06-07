@@ -204,6 +204,8 @@ struct ChatEmptyState: View {
                 return ("checkmark.circle", "\(model.name) is on your Mac — ready to chat.")
             case .notDownloaded:
                 return ("arrow.down.circle", "\(model.name) (\(model.approximateSize)) downloads the first time you send.")
+            case .runner:
+                return ("network", "\(model.name) is served by your local runner.")
             }
         }()
 

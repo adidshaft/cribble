@@ -281,6 +281,31 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(ModelCatalog.defaultModel.kind.isCloud)
     }
 
+    // MARK: - Local runner catalog entries
+
+    func testRunnerModelIDRoundTrips() {
+        let model = LocalModel.runnerModel(modelID: "qwen2.5:7b")
+        XCTAssertEqual(model.id, "runner:qwen2.5:7b")
+        XCTAssertEqual(model.kind, .localRunner)
+        XCTAssertEqual(model.name, "qwen2.5:7b")
+        // Resolution is pure — a persisted runner selection resolves even
+        // before the store has probed the runner.
+        let resolved = ModelCatalog.model(withID: "runner:qwen2.5:7b")
+        XCTAssertEqual(resolved?.id, "runner:qwen2.5:7b")
+        XCTAssertEqual(resolved?.kind, .localRunner)
+    }
+
+    func testRunnerKindIsLocalNotCloud() {
+        XCTAssertFalse(ModelKind.localRunner.isCloud)
+    }
+
+    func testRunnerAvailabilityIsRunner() {
+        let model = LocalModel.runnerModel(modelID: "m")
+        if case .runner = ModelInventory.availability(of: model) {} else {
+            XCTFail("Expected .runner availability")
+        }
+    }
+
     @MainActor
     func testEngineChooserShowsForFreshDefaults() {
         withCleanEngineChoiceDefaults {

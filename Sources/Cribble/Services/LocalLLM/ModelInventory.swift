@@ -8,6 +8,8 @@ enum ModelAvailability {
     case downloaded
     /// On-device model that will download on first use.
     case notDownloaded
+    /// Served by the user's local runner — nothing to download.
+    case runner
 }
 
 /// Checks whether an on-device model has already been downloaded, by looking in
@@ -15,6 +17,7 @@ enum ModelAvailability {
 /// drive the download-state icons in the model picker.
 enum ModelInventory {
     static func availability(of model: LocalModel) -> ModelAvailability {
+        if model.kind == .localRunner { return .runner }
         if model.kind.isCloud { return .cloud }
         return isDownloaded(model) ? .downloaded : .notDownloaded
     }

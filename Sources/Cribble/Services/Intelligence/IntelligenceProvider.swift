@@ -94,6 +94,10 @@ final class LocalEngineIntelligenceProvider: IntelligenceProvider, @unchecked Se
             return ModelInventory.isDownloaded(model) ? .available : .unavailable(reason: "Model not downloaded")
         case .claudeCLI, .codexCLI:
             return .available
+        case .localRunner:
+            // Placeholder until LocalRunnerChatEngine lands (plan Task 3/4);
+            // the factory currently returns UnavailableChatEngine for this kind.
+            return .unavailable(reason: "Local runner engine not wired up yet")
         }
     }
 

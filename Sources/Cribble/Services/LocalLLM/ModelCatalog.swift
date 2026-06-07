@@ -8,8 +8,11 @@ enum ModelKind: String, Hashable {
     case claudeCLI
     /// OpenAI Codex via the local `codex` CLI (cloud).
     case codexCLI
+    /// A model served by the user's OpenAI-compatible local runner
+    /// (Ollama, llama.cpp, LM Studio, …) configured in `LocalRunnerStore`.
+    case localRunner
 
-    var isCloud: Bool { self != .localMLX }
+    var isCloud: Bool { self == .claudeCLI || self == .codexCLI }
 }
 
 /// A model the HUD can run — either an on-device MLX model or a cloud CLI
@@ -39,6 +42,24 @@ struct LocalModel: Identifiable, Hashable {
     var shortName: String {
         if speedLabel == "Flash" { return "Flash" }
         return name.split(separator: " ").first.map(String.init) ?? name
+    }
+
+    /// Prefix marking a model served by the local runner; the suffix is the
+    /// runner-side model id, so the selection is self-describing and survives
+    /// restarts without needing the runner to be reachable.
+    static let runnerIDPrefix = "runner:"
+
+    /// A dynamic catalog entry for a model served by the configured runner.
+    static func runnerModel(modelID: String) -> LocalModel {
+        LocalModel(
+            id: runnerIDPrefix + modelID,
+            name: modelID,
+            speedLabel: "Runner",
+            approximateSize: "Local runner",
+            blurb: "Served by your OpenAI-compatible local runner.",
+            recommendedMemoryGB: 0,
+            kind: .localRunner
+        )
     }
 }
 
@@ -148,7 +169,19 @@ enum ModelCatalog {
         return cloudModels.first ?? all[0]
     }
 
+    /// Models served by the configured local runner, from the store's cached
+    /// `/v1/models` probe. Empty when no runner is configured.
+    @MainActor
+    static var runnerModels: [LocalModel] {
+        LocalRunnerStore.shared.cachedModelIDs.map(LocalModel.runnerModel(modelID:))
+    }
+
     static func model(withID id: String) -> LocalModel? {
-        all.first { $0.id == id }
+        if id.hasPrefix(LocalModel.runnerIDPrefix) {
+            let modelID = String(id.dropFirst(LocalModel.runnerIDPrefix.count))
+            guard !modelID.isEmpty else { return nil }
+            return .runnerModel(modelID: modelID)
+        }
+        return all.first { $0.id == id }
     }
 }

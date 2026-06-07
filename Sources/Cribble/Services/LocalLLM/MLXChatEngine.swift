@@ -167,6 +167,9 @@ enum LocalChatEngineFactory {
             #else
             return UnavailableChatEngine()
             #endif
+        case .localRunner:
+            // Placeholder until LocalRunnerChatEngine lands (plan Task 3/4).
+            return UnavailableChatEngine()
         }
     }
 }

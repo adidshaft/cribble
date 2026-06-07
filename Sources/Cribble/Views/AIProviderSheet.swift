@@ -33,11 +33,11 @@ struct AIProviderSheet: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                ForEach(availableProviders) { provider in
+                ForEach(AIProvider.availableProviders) { provider in
                     Button {
                         onSelect(provider, mode)
                     } label: {
-                        Label(provider.rawValue, systemImage: icon(for: provider))
+                        Label(provider.rawValue, systemImage: provider.systemImage)
                             .frame(maxWidth: .infinity)
                     }
                     .controlSize(.large)
@@ -58,18 +58,6 @@ struct AIProviderSheet: View {
         .padding(24)
         .frame(width: 460)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
-    }
-
-    private var availableProviders: [AIProvider] {
-        LocalRunnerStore.shared.isConfigured ? AIProvider.allCases : AIProvider.cliProviders
-    }
-
-    private func icon(for provider: AIProvider) -> String {
-        switch provider {
-        case .codex: "terminal"
-        case .claude: "brain.head.profile"
-        case .localRunner: "network"
-        }
     }
 
     private func help(for provider: AIProvider) -> String {

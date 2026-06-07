@@ -407,14 +407,11 @@ struct IntelligenceHUDView: View {
         }
         let baseURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         showModelPicker = false
-        await engine.setLocalRunner(baseURL: baseURL, model: modelID)
-        // Publish the runner app-wide: chat, Pathfinder, and AI Link Notes all
-        // resolve the runner from this store (issue #3 — one config surface).
-        LocalRunnerStore.shared.configure(
-            baseURLString: baseURL,
+        await engine.setLocalRunner(
+            baseURL: baseURL,
+            model: modelID,
             displayName: localRunnerName == "Custom" ? nil : localRunnerName,
-            modelIDs: localRunnerModelIDs,
-            defaultModelID: modelID
+            availableModels: localRunnerModelIDs
         )
     }
 

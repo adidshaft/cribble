@@ -2027,11 +2027,11 @@ private struct EmptyReadmePanel: View {
             }
 
             HStack(spacing: 10) {
-                ForEach(availableProviders) { provider in
+                ForEach(AIProvider.availableProviders) { provider in
                     Button {
                         onFillReadme(provider)
                     } label: {
-                        Label("Fill + Link with \(provider.rawValue)", systemImage: icon(for: provider))
+                        Label("Fill + Link with \(provider.rawValue)", systemImage: provider.systemImage)
                     }
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)
@@ -2043,18 +2043,6 @@ private struct EmptyReadmePanel: View {
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var availableProviders: [AIProvider] {
-        LocalRunnerStore.shared.isConfigured ? AIProvider.allCases : AIProvider.cliProviders
-    }
-
-    private func icon(for provider: AIProvider) -> String {
-        switch provider {
-        case .codex: "terminal"
-        case .claude: "brain.head.profile"
-        case .localRunner: "network"
-        }
     }
 
     private func help(for provider: AIProvider) -> String {

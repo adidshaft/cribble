@@ -19,6 +19,23 @@ enum AIProvider: String, CaseIterable, Identifiable {
     }
 }
 
+extension AIProvider {
+    /// SF Symbol for provider buttons (shared by AIProviderSheet & ReaderView).
+    var systemImage: String {
+        switch self {
+        case .codex: "terminal"
+        case .claude: "brain.head.profile"
+        case .localRunner: "network"
+        }
+    }
+
+    /// Providers to offer in pickers: the runner appears only when configured.
+    @MainActor
+    static var availableProviders: [AIProvider] {
+        LocalRunnerStore.shared.isConfigured ? allCases : cliProviders
+    }
+}
+
 enum AIMode: String, CaseIterable, Identifiable {
     case suggestLinks
     case updateReadme

@@ -852,10 +852,18 @@ final class IntelligenceEngine: ObservableObject {
         performanceMode = mode
     }
 
-    /// Points intelligence at an OpenAI-compatible local runner (Ollama, llama.cpp…).
-    func setLocalRunner(baseURL: String, model: String) async {
+    /// Points Intelligence at an OpenAI-compatible runner and publishes the
+    /// configuration app-wide (chat, Pathfinder, AI Link Notes all resolve the
+    /// runner from `LocalRunnerStore`) — one config surface, issue #3.
+    func setLocalRunner(baseURL: String, model: String, displayName: String?, availableModels: [String]) async {
         settings.localRunnerBaseURL = baseURL
         settings.modelID = model
+        LocalRunnerStore.shared.configure(
+            baseURLString: baseURL,
+            displayName: displayName,
+            modelIDs: availableModels,
+            defaultModelID: model
+        )
         await rebuildRunner()
         await runNow()
     }

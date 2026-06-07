@@ -113,7 +113,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Full folder refresh now prunes the reader render cache by stable note content hash instead of clearing every rendered note, keeping unchanged notes warm after single-file external edits.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
-- DemoNotes home now also guides beginners through the new review-first New Note flow and Copy Markdown handoff, making ordinary note creation/export part of the first-minute tour.
+- DemoNotes home now also guides beginners through the new review-first New Note
+  flow, Copy Markdown handoff, and Copy Markdown Link handoff, making ordinary
+  note creation/export part of the first-minute tour.
 - Empty README panels now offer native starter actions for New Note, Today, and the Tasks Guide beside the AI README-fill action, so a sparse folder gives users multiple useful next steps.
 - DemoNotes AI onboarding now consistently uses the native `Command J` chat shortcut and the bundled demo version was bumped so installed DemoNotes refresh.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
@@ -136,6 +138,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
 - File now includes Copy Markdown (`Command-Option-Shift-M`) for the selected note, giving users a native Mac handoff path into chat, email, issue trackers, and other Markdown tools without revealing paths or creating wiki links.
+- File and sidebar note menus now include Copy Markdown Link, producing a
+  portable `[Title](relative/path.md)` handoff with escaped titles and encoded
+  nested paths for GitHub, email, docs, and chat.
 - The diff preview sheet now labels brand-new file proposals as “Review New Note” with a “Create Note” action, so manual and AI-generated note creation no longer look like link-edit reviews.
 - The Import setup sheet now explains the safe import-lane model as a three-step path: declare file types, review the data-only manifest, and disable the lane cleanly.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
@@ -197,7 +202,10 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Extension diagnostics now separate installed contribution totals from active contribution totals, so disabled lanes are visible but not mistaken for currently available behavior.
 - File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
-- Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, Copy Markdown, and Copy Wiki Link directly in the context menu, using cached metadata for link titles and resilient disk reads for Markdown handoff.
+- Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path,
+  Copy Markdown, Copy Markdown Link, and Copy Wiki Link directly in the context
+  menu, using cached metadata for link titles and resilient disk reads for
+  Markdown handoff.
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
 - The in-reader shortcut popover now includes Find in Files, Import, Copy Markdown, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
@@ -420,6 +428,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar Copy Markdown handoff: 22 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native New Note proposals: 23 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes New Note and Copy Markdown onboarding: 26 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testCopySelectedDocumentMarkdownLinkUsesTitleAndFileName|CribbleUITests/testCopyMarkdownLinkForURLUsesRelativeEncodedPath|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding Copy Markdown Link to File/sidebar handoff surfaces and DemoNotes onboarding: 3 XCTest tests, 0 failures.
 - Docs-only validation on 2026-06-08 confirmed `SECURITY.md` includes extension manifests, remote runners, Keychain/API-key redaction, diagnostic reports, importer/renderer declarations, and hidden execution guidance.
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after adding visible New Note entry points to the sidebar controls and welcome surface: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after clarifying the review sheet subtitle and cancel help for new-note proposals: 1 XCTest test, 0 failures.

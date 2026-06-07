@@ -1098,6 +1098,11 @@ final class MarkdownLibraryStore: ObservableObject {
         statusMessage = "Copied Markdown for \(selectedDocument.title)"
     }
 
+    func copySelectedDocumentMarkdownLink() {
+        guard let selectedDocument else { return }
+        copyMarkdownLink(for: selectedDocument.url)
+    }
+
     func copySelectedDocumentWikiLink() {
         guard let selectedDocument else { return }
         copyWikiLink(title: selectedDocument.title)
@@ -1115,6 +1120,20 @@ final class MarkdownLibraryStore: ObservableObject {
         copyWikiLink(title: title)
     }
 
+    func copyMarkdownLink(for url: URL) {
+        let standardized = url.standardizedFileURL
+        let title = titleForLink(to: standardized)
+        let path = markdownLinkPath(for: standardized)
+        let escapedTitle = title
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "[", with: "\\[")
+            .replacingOccurrences(of: "]", with: "\\]")
+        let link = "[\(escapedTitle)](\(path))"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(link, forType: .string)
+        statusMessage = "Copied Markdown link for \(title)"
+    }
+
     private func copyWikiLink(title: String) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -1122,6 +1141,31 @@ final class MarkdownLibraryStore: ObservableObject {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(link, forType: .string)
         statusMessage = "Copied \(link)"
+    }
+
+    private func titleForLink(to standardized: URL) -> String {
+        documents.first { $0.url.standardizedFileURL == standardized }?.title
+            ?? selectedDocument.flatMap { $0.url.standardizedFileURL == standardized ? $0.title : nil }
+            ?? standardized.deletingPathExtension().lastPathComponent
+    }
+
+    private func markdownLinkPath(for standardized: URL) -> String {
+        let root = rootURLs
+            .map(\.standardizedFileURL)
+            .filter { standardized.isSameFileOrDescendant(of: $0) }
+            .max { $0.path.count < $1.path.count }
+        let rawPath: String
+        if let root {
+            rawPath = standardized.pathRelative(to: root)
+        } else {
+            rawPath = standardized.lastPathComponent
+        }
+        return rawPath
+            .split(separator: "/", omittingEmptySubsequences: false)
+            .map { component in
+                String(component).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String(component)
+            }
+            .joined(separator: "/")
     }
 
     func runAILinking(provider: AIProvider, mode: AIMode) {
@@ -1957,5 +2001,12 @@ private extension URL {
         let path = standardizedFileURL.path
         let rootPath = rootURL.standardizedFileURL.path
         return path == rootPath || path.hasPrefix(rootPath + "/")
+    }
+
+    func pathRelative(to rootURL: URL) -> String {
+        let path = standardizedFileURL.path
+        let rootPath = rootURL.standardizedFileURL.path
+        guard path.hasPrefix(rootPath + "/") else { return lastPathComponent }
+        return String(path.dropFirst(rootPath.count + 1))
     }
 }

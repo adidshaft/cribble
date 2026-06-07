@@ -68,6 +68,23 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Copied Markdown for Launch Brief")
     }
 
+    func testCopySelectedDocumentMarkdownLinkUsesTitleAndFileName() {
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.selectedDocument = MarkdownDocument(
+            url: URL(fileURLWithPath: "/tmp/launch brief.md"),
+            title: "Launch [Brief]",
+            rawMarkdown: "# Launch Brief\n",
+            headings: [],
+            outboundLinks: []
+        )
+
+        NSPasteboard.general.clearContents()
+        store.copySelectedDocumentMarkdownLink()
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), #"[Launch \[Brief\]](launch%20brief.md)"#)
+        XCTAssertEqual(store.statusMessage, "Copied Markdown link for Launch [Brief]")
+    }
+
     func testCopyWikiLinkForURLUsesLoadedMetadata() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("SidebarWikiLink-\(UUID().uuidString)", isDirectory: true)
@@ -107,6 +124,27 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertEqual(NSPasteboard.general.string(forType: .string), markdown)
         XCTAssertEqual(store.statusMessage, "Copied Markdown for Project Brief")
+    }
+
+    func testCopyMarkdownLinkForURLUsesRelativeEncodedPath() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SidebarMarkdownLink-\(UUID().uuidString)", isDirectory: true)
+        let folderURL = rootURL.appendingPathComponent("Team Notes", isDirectory: true)
+        try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = folderURL.appendingPathComponent("launch brief.md")
+        try "# Launch Brief\n\nBody.\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        NSPasteboard.general.clearContents()
+        store.copyMarkdownLink(for: noteURL)
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "[Launch Brief](Team%20Notes/launch%20brief.md)")
+        XCTAssertEqual(store.statusMessage, "Copied Markdown link for Launch Brief")
     }
 
     func testFolderRefreshRecordsDiagnosticsSnapshot() async throws {

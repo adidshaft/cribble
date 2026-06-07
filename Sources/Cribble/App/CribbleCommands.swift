@@ -11,6 +11,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.revealSelectedDocumentAction) private var revealSelectedDocument
     @FocusedValue(\.copySelectedDocumentPathAction) private var copySelectedDocumentPath
     @FocusedValue(\.copySelectedDocumentMarkdownAction) private var copySelectedDocumentMarkdown
+    @FocusedValue(\.copySelectedDocumentMarkdownLinkAction) private var copySelectedDocumentMarkdownLink
     @FocusedValue(\.copySelectedDocumentWikiLinkAction) private var copySelectedDocumentWikiLink
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
@@ -92,6 +93,9 @@ struct CribbleCommands: Commands {
             Button("Copy Markdown", action: { copySelectedDocumentMarkdown?() })
                 .keyboardShortcut("m", modifiers: [.command, .option, .shift])
                 .disabled(copySelectedDocumentMarkdown == nil)
+
+            Button("Copy Markdown Link", action: { copySelectedDocumentMarkdownLink?() })
+                .disabled(copySelectedDocumentMarkdownLink == nil)
 
             Button("Copy Wiki Link", action: { copySelectedDocumentWikiLink?() })
                 .keyboardShortcut("l", modifiers: [.command, .option, .shift])
@@ -282,6 +286,10 @@ private struct CopySelectedDocumentMarkdownActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct CopySelectedDocumentMarkdownLinkActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct CopySelectedDocumentWikiLinkActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -467,6 +475,11 @@ extension FocusedValues {
     var copySelectedDocumentMarkdownAction: (() -> Void)? {
         get { self[CopySelectedDocumentMarkdownActionKey.self] }
         set { self[CopySelectedDocumentMarkdownActionKey.self] = newValue }
+    }
+
+    var copySelectedDocumentMarkdownLinkAction: (() -> Void)? {
+        get { self[CopySelectedDocumentMarkdownLinkActionKey.self] }
+        set { self[CopySelectedDocumentMarkdownLinkActionKey.self] = newValue }
     }
 
     var copySelectedDocumentWikiLinkAction: (() -> Void)? {

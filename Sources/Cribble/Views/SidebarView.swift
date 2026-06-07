@@ -185,6 +185,10 @@ struct SidebarView: View {
                         library.copyMarkdown(for: node.url)
                     }
 
+                    Button("Copy Markdown Link", systemImage: "link") {
+                        library.copyMarkdownLink(for: node.url)
+                    }
+
                     Button("Copy Wiki Link", systemImage: "link") {
                         library.copyWikiLink(for: node.url)
                     }

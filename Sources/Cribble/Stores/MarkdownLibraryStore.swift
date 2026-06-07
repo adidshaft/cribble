@@ -79,7 +79,12 @@ final class MarkdownLibraryStore: ObservableObject {
     // 16 saturates an SSD without thrashing the dispatch queue.
     private static let loadConcurrency = 16
 
+    /// Whether this instance persists session state (last-opened note). False
+    /// for test/preview instances so they don't pollute UserDefaults.
+    private let persistsState: Bool
+
     init(restore: Bool = true, includeBundledDemo: Bool = true) {
+        persistsState = restore
         if restore {
             pinnedPaths = Set(UserDefaults.standard.stringArray(forKey: Keys.pinnedFolders) ?? [])
             folderIcons = UserDefaults.standard.dictionary(forKey: Keys.folderIcons) as? [String: String] ?? [:]
@@ -388,6 +393,8 @@ final class MarkdownLibraryStore: ObservableObject {
 
                 if let selectedURL = self.selectedURL {
                     self.select(url: selectedURL)
+                } else if let restored = self.restorableLastOpenedURL() {
+                    self.select(url: restored)
                 } else if let first = self.firstReadableURL(in: result.nodes) {
                     self.select(url: first)
                 }
@@ -467,6 +474,9 @@ final class MarkdownLibraryStore: ObservableObject {
             let document = try loader.load(url: documentURL)
             selectedDocument = document
             scheduleRender(for: document)
+            if persistsState {
+                UserDefaults.standard.set(documentURL.standardizedFileURL.path, forKey: Keys.lastOpenedFile)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1484,6 +1494,19 @@ final class MarkdownLibraryStore: ObservableObject {
         .uniqued()
     }
 
+    /// The last note the user had open, if it still exists inside a currently
+    /// open folder — so launching reopens where they left off instead of jumping
+    /// to the first file.
+    private func restorableLastOpenedURL() -> URL? {
+        guard persistsState,
+              let path = UserDefaults.standard.string(forKey: Keys.lastOpenedFile),
+              !path.isEmpty else { return nil }
+        let url = URL(fileURLWithPath: path).standardizedFileURL
+        guard FileManager.default.fileExists(atPath: url.path),
+              rootURLs.contains(where: { url.isSameFileOrDescendant(of: $0) }) else { return nil }
+        return url
+    }
+
     private func firstReadableURL(in nodes: [MarkdownNode]) -> URL? {
         for node in nodes {
             if node.readmeURL != nil {
@@ -1535,6 +1558,7 @@ final class MarkdownLibraryStore: ObservableObject {
         static let pinnedFolders = "pinnedFolders"
         static let folderIcons = "folderIcons"
         static let legacyLastFolderPath = "lastFolderPath"
+        static let lastOpenedFile = "lastOpenedFile"
         static let bundledDemoNotesVersion = "bundledDemoNotesVersion"
     }
 }

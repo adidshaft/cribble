@@ -11,9 +11,11 @@ manifests first, trusted execution later.
 
 ## 1. Extension manifests
 
-Open **Settings → Extensions** and use **Create Example**. Cribble can write
-starter folders for quick actions, trusted runners, renderer aliases, and import
-lanes. The Quick Action template looks like this:
+Open **Settings → Extensions** and use **Create Example** for a personal
+extension, or **Create Project Example** when you want the manifest to live in
+the active folder's `.cribble/extensions` directory. Cribble can write starter
+folders for quick actions, trusted runners, renderer aliases, and import lanes.
+The Quick Action template looks like this:
 
 ```json
 {
@@ -36,9 +38,12 @@ lanes. The Quick Action template looks like this:
 }
 ```
 
-Cribble validates the manifest and lists it in Settings. API v1 extensions use
-`"runtime": "declarative"` and Cribble rejects executable runtimes for now. That
-boundary keeps the system safe while the design matures.
+Cribble validates the manifest and lists it in Settings. Use **Check Again** to
+reload manifests after editing them, and use the copy-details button on an
+installed extension row when you want to paste a review summary into a team
+handoff. API v1 extensions use `"runtime": "declarative"` and Cribble rejects
+executable runtimes for now. That boundary keeps the system safe while the
+design matures.
 
 ## 2. Project-local plugins
 
@@ -53,7 +58,9 @@ Research Folder/
 ```
 
 That makes a folder portable: the notes, the reading conventions, and future
-automation hooks can travel together.
+automation hooks can travel together. This is the path to use when a team wants
+the same prompts, runner profile, renderer aliases, or import lanes to follow a
+shared vault.
 
 ## 3. Remote intelligence runners
 

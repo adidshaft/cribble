@@ -37,6 +37,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 - **Command Option O** toggles the headings outline.
 - **Command O** opens a folder, and **Command R** refreshes it.
 - **Right-click a folder** to **Pin** it to the top or **Choose Icon…** — both are sidebar-only; files on disk never move.
+- **Right-click a note** to reveal it in Finder, copy its file path, or copy a `[[Wiki Link]]` for pasting into another note.
 
 ## Keyboard shortcuts
 

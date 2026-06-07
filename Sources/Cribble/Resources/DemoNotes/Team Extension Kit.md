@@ -32,6 +32,11 @@ Team Notes/
 Cribble gives project-local extensions precedence over user-level extensions, so
 teams can keep the current folder's rules close to the current folder's work.
 
+In **Settings → Extensions**, use **Create Project Example** to write one of
+these starter manifests into the active folder. After editing the JSON, click
+**Check Again** to reload it and copy the extension details when someone needs
+to review the manifest in a pull request or team chat.
+
 ## Start with four lanes
 
 | Lane | Good first use | Permission posture |
@@ -55,6 +60,7 @@ pull request or handoff note:
 - If it uses a remote runner, who controls the endpoint?
 - Does the manifest avoid secrets, tokens, and private keys?
 - Is the source URL or signing identity filled in when known?
+- Did someone paste the copied extension details into the review thread?
 - Can a non-technical reader understand why this exists?
 
 ## Remote runner policy

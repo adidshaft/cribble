@@ -57,7 +57,8 @@ Use this flow when a folder should carry its own tools.
 4. Add an import lane for future exports, chat logs, or research bundles.
 5. Keep remote runners explicit and store secrets in Keychain, not manifests.
 
-See [[Extensions and Remote Intelligence]] for copy-ready manifests.
+See [[Team Extension Kit]] for a team review checklist, then open
+[[Extensions and Remote Intelligence]] for copy-ready manifests.
 
 ## When to use remote intelligence
 
@@ -84,4 +85,4 @@ The product should stay boring in the right places:
 That is the center of Cribble: a native reader that can become a workbench
 without making beginners carry the complexity.
 
-← Back to [[README|Home]] · next: [[Research Review]] · [[Extensions and Remote Intelligence]]
+← Back to [[README|Home]] · next: [[Research Review]] · [[Team Extension Kit]] · [[Extensions and Remote Intelligence]]

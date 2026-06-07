@@ -37,6 +37,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
 - DemoNotes now include a `Workflow Playbook` that explains practical flows for reading, project brief creation, team extension conventions, and trusted remote intelligence use.
 - DemoNotes now include a `Research Review` workflow for evidence-heavy folders, claim tables, source trails, extension quick actions, and intentional remote-runner use.
+- DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
 - File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
@@ -102,6 +103,7 @@ swift test --filter SemanticSearchIndexTests
 swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'
 swift test --filter Extension
 swift test --filter CribbleUITests
+swift test --filter 'LinkIndexTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -117,6 +119,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after selected-note menu actions: 11 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Workflow Playbook entry points: 11 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Copy Wiki Link: 12 XCTest tests, 0 failures.
+- Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after Team Extension Kit DemoNotes work: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

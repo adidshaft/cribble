@@ -206,7 +206,9 @@ The AI menu exposes common workflows without prompt memorization:
 - **Project Intelligence**
 
 Generated notes and task/index proposals still use the same review-first
-preview flow before writing.
+preview flow before writing. Project Intelligence artifacts can be copied as
+Markdown with type/path/save metadata, and Ask answers can be copied with the
+original question attached for issues, PRs, notes, or team review.
 
 ## Design Direction
 

@@ -486,11 +486,31 @@ private struct ImportGuidanceSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Set Up an Import Lane")
                         .font(.title3.weight(.semibold))
-                    Text("Import uses enabled declarative extensions to match source files before converter execution is allowed. Create a starter lane, review it, then adapt it for your team.")
+                    Text("Import starts with enabled declarative extensions. Create a starter lane, review the manifest, then adapt it for your team before any converter execution exists.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ImportSafetyRow(
+                    icon: "doc.text.magnifyingglass",
+                    title: "1. Declare the files",
+                    detail: "The manifest lists file extensions and the intended output format."
+                )
+                ImportSafetyRow(
+                    icon: "checkmark.shield",
+                    title: "2. Review the lane",
+                    detail: "API v1 stays data-only: no scripts, binaries, or network calls run from importers."
+                )
+                ImportSafetyRow(
+                    icon: "power",
+                    title: "3. Disable cleanly",
+                    detail: "Turning the extension off removes its import lane from the app."
+                )
+            }
+            .padding(12)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 8) {
                 Button {
@@ -548,6 +568,30 @@ private struct ImportGuidanceSheet: View {
         }
         .padding(24)
         .frame(width: 430)
+    }
+}
+
+private struct ImportSafetyRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 16)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 

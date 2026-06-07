@@ -167,30 +167,54 @@ struct ChatEmptyState: View {
 
     private var quickActions: some View {
         VStack(spacing: 6) {
-            ForEach((QuickActions.all + viewModel.extensionQuickActions).prefix(4)) { action in
-                Button {
-                    viewModel.runQuickAction(action)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: action.icon)
-                            .font(.system(size: 11))
-                            .frame(width: 16)
-                        Text(action.title)
-                            .font(.system(size: 12, weight: .medium))
-                        Spacer(minLength: 0)
-                    }
-                    .foregroundStyle(.white.opacity(0.85))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .frame(width: 200)
-                }
-                .cribbleGlassCapsuleButton()
-                .pointingHandOnHover()
+            quickActionGroup(QuickActions.all.prefix(4))
+
+            if !viewModel.extensionQuickActions.isEmpty {
+                Text("Extensions")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .frame(width: 200, alignment: .leading)
+                    .padding(.top, 4)
+
+                quickActionGroup(viewModel.extensionQuickActions.prefix(3), showsSource: true)
             }
         }
         .padding(.top, 4)
         .disabled(viewModel.isGenerating)
         .cribbleGlassContainer()
+    }
+
+    private func quickActionGroup<S: Sequence>(
+        _ actions: S,
+        showsSource: Bool = false
+    ) -> some View where S.Element == QuickAction {
+        ForEach(Array(actions)) { action in
+            Button {
+                viewModel.runQuickAction(action)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: action.icon)
+                        .font(.system(size: 11))
+                        .frame(width: 16)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(action.title)
+                            .font(.system(size: 12, weight: .medium))
+                        if showsSource, let source = action.extensionSourceName {
+                            Text(source)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.horizontal, 12)
+                .padding(.vertical, showsSource ? 7 : 8)
+                .frame(width: 200)
+            }
+            .cribbleGlassCapsuleButton()
+            .pointingHandOnHover()
+        }
     }
 
     private var modelHint: some View {
@@ -220,5 +244,14 @@ struct ChatEmptyState: View {
         .cribbleMaterialSurface(in: Capsule())
         .padding(.horizontal, 24)
         .padding(.top, 4)
+    }
+}
+
+private extension QuickAction {
+    var extensionSourceName: String? {
+        if case .extension(let name) = source {
+            return name
+        }
+        return nil
     }
 }

@@ -16,6 +16,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Installed extension rows can reveal their manifest in Finder, making the declarative system easier to inspect and debug.
 - Duplicate id handling, with project-local extensions taking precedence over user-level extensions.
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
+- Chat HUD empty state now gives installed extension quick actions their own visible section instead of hiding them behind the built-in action limit.
 - Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.

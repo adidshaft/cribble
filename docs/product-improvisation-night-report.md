@@ -443,6 +443,7 @@ Latest pass:
   tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after teaching DemoNotes about Settings > Extensions > Copy Proposal: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Cribble AI to the welcome Start With grid: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after the Settings proposal, DemoNotes handoff, and Welcome AI entry work: 2 XCTest tests and 13 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

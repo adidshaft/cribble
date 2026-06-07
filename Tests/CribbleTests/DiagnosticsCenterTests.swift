@@ -50,6 +50,8 @@ final class DiagnosticsCenterTests: XCTestCase {
 
         let report = DiagnosticsCenter.shared.makeReport(library: nil, settings: nil, intelligence: snapshot)
 
+        XCTAssertTrue(report.contains("## Health Summary"))
+        XCTAssertTrue(report.contains("- Intelligence: enabled, Working (Processing), 7 pending"))
         XCTAssertTrue(report.contains("## Intelligence"))
         XCTAssertTrue(report.contains("Provider: On-device model"))
         XCTAssertTrue(report.contains("Performance mode: Power"))
@@ -84,6 +86,69 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Render cache: 6 kept, 2 pruned from 8"))
         XCTAssertEqual(snapshot.compactSummary, "Refreshed 42 files in 0.12s · 39 reused · 3 loaded · 1 skipped")
         XCTAssertEqual(snapshot.cacheSummary, "6 render cache entries kept, 2 pruned")
+    }
+
+    func testHealthSummaryFormatsTopLevelStateWithoutSecrets() {
+        let refresh = RefreshDiagnosticsSnapshot(
+            date: Date(timeIntervalSince1970: 100),
+            duration: 0.125,
+            totalDocuments: 42,
+            loadedDocuments: 3,
+            reusedDocuments: 39,
+            skippedFiles: 1,
+            failedRoots: 0,
+            renderCacheEntriesBefore: 8,
+            renderCacheEntriesAfter: 6,
+            renderCacheEntriesPruned: 2
+        )
+        let intelligence = IntelligenceDiagnosticsSnapshot(
+            isEnabled: true,
+            scope: "single folder",
+            statusDescription: "Working (Processing)",
+            modelID: "team-model",
+            runnerBaseURL: "https://runner.example.com/v1?token=secret",
+            usesKeychainCredential: true,
+            performanceMode: "Balanced",
+            pendingJobs: 2,
+            filesIndexed: 10,
+            staleArtifacts: 1,
+            lastActivity: "Indexed",
+            resourceDecisionSummary: nil,
+            allowedTier: nil,
+            modelDownloadFraction: nil
+        )
+        let extensions = ExtensionDiagnosticsSnapshot(
+            installed: [],
+            disabledIDs: [],
+            warnings: ["bad manifest"]
+        )
+        let crash = CrashReportFile(
+            url: URL(fileURLWithPath: "/tmp/Cribble_2026-06-08.ips"),
+            modifiedAt: Date(timeIntervalSince1970: 200),
+            size: 2048
+        )
+
+        let summary = DiagnosticsHealthSummary(
+            selectedDocumentPath: "/tmp/Notes/Daily.md",
+            rootCount: 2,
+            status: "Ready",
+            error: nil,
+            refresh: refresh,
+            intelligence: intelligence,
+            extensions: extensions,
+            crashReport: crash
+        ).formattedReportSection
+
+        XCTAssertTrue(summary.contains("Selection: Daily.md"))
+        XCTAssertTrue(summary.contains("Folders: 2"))
+        XCTAssertTrue(summary.contains("Current status: Ready"))
+        XCTAssertTrue(summary.contains("Current error: none"))
+        XCTAssertTrue(summary.contains("Refresh: Refreshed 42 files in 0.12s"))
+        XCTAssertTrue(summary.contains("Intelligence: enabled, Working (Processing), 2 pending"))
+        XCTAssertTrue(summary.contains("Extensions: 0/0 enabled, 1 warnings"))
+        XCTAssertTrue(summary.contains("Crash report: Cribble_2026-06-08.ips"))
+        XCTAssertFalse(summary.contains("token"))
+        XCTAssertFalse(summary.contains("secret"))
     }
 
     func testExtensionSnapshotFormatsInstalledLanesAndWarnings() {

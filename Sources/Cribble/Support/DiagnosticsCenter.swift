@@ -103,6 +103,16 @@ final class DiagnosticsCenter: ObservableObject {
         let refreshSection = latestRefreshSnapshot?.formattedReportSection ?? "No refresh performance snapshot recorded."
         let intelligenceSection = intelligence?.formattedReportSection ?? "No intelligence diagnostics snapshot recorded."
         let extensionSection = extensions?.formattedReportSection ?? "No extension diagnostics snapshot recorded."
+        let healthSummary = DiagnosticsHealthSummary(
+            selectedDocumentPath: library?.selectedDocument?.url.path,
+            rootCount: library?.rootURLs.count ?? 0,
+            status: library?.statusMessage,
+            error: library?.errorMessage,
+            refresh: latestRefreshSnapshot,
+            intelligence: intelligence,
+            extensions: extensions,
+            crashReport: latestCrashReport
+        ).formattedReportSection
 
         let crashReportSection = latestCrashReportSection()
 
@@ -110,6 +120,9 @@ final class DiagnosticsCenter: ObservableObject {
         # Cribble Diagnostic Report
 
         Generated: \(Self.timestamp(Date()))
+
+        ## Health Summary
+        \(healthSummary)
 
         ## App
         - Version: \(appVersion)
@@ -291,6 +304,58 @@ final class DiagnosticsCenter: ObservableObject {
         static let sessionActive = "diagnosticSessionActive"
         static let lastLaunchTime = "diagnosticLastLaunchTime"
         static let lastCleanTerminationTime = "diagnosticLastCleanTerminationTime"
+    }
+}
+
+struct DiagnosticsHealthSummary: Equatable {
+    let selectedDocumentPath: String?
+    let rootCount: Int
+    let status: String?
+    let error: String?
+    let refresh: RefreshDiagnosticsSnapshot?
+    let intelligence: IntelligenceDiagnosticsSnapshot?
+    let extensions: ExtensionDiagnosticsSnapshot?
+    let crashReport: CrashReportFile?
+
+    var formattedReportSection: String {
+        [
+            "- Selection: \(selectionSummary)",
+            "- Folders: \(rootCount)",
+            "- Current status: \(emptyFallback(status, fallback: "none"))",
+            "- Current error: \(emptyFallback(error, fallback: "none"))",
+            "- Refresh: \(refresh?.compactSummary ?? "no snapshot")",
+            "- Intelligence: \(intelligenceSummary)",
+            "- Extensions: \(extensionSummary)",
+            "- Crash report: \(crashReportSummary)"
+        ].joined(separator: "\n")
+    }
+
+    private var selectionSummary: String {
+        guard let selectedDocumentPath, !selectedDocumentPath.isEmpty else { return "none" }
+        return URL(fileURLWithPath: selectedDocumentPath).lastPathComponent
+    }
+
+    private var intelligenceSummary: String {
+        guard let intelligence else { return "no snapshot" }
+        let enabled = intelligence.isEnabled ? "enabled" : "off"
+        return "\(enabled), \(intelligence.statusDescription), \(intelligence.pendingJobs) pending"
+    }
+
+    private var extensionSummary: String {
+        guard let extensions else { return "no snapshot" }
+        return "\(extensions.enabledCount)/\(extensions.installedCount) enabled, \(extensions.warningCount) warnings"
+    }
+
+    private var crashReportSummary: String {
+        guard let crashReport else { return "none found" }
+        return "\(crashReport.url.lastPathComponent), \(crashReport.formattedSize)"
+    }
+
+    private func emptyFallback(_ value: String?, fallback: String) -> String {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return fallback
+        }
+        return value
     }
 }
 

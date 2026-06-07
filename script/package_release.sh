@@ -15,6 +15,17 @@ ARCHS="${ARCHS:-arm64 x86_64}"
 # Keychain profile for `xcrun notarytool` if you want this script to notarize
 # + staple the DMG automatically. Leave NOTARY_PROFILE empty to skip.
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+# Alternative notary authentication for CI/local release machines without a
+# stored keychain profile. For App Store Connect team API keys, provide
+# NOTARY_KEY, NOTARY_KEY_ID, and NOTARY_ISSUER. For individual API keys, omit
+# NOTARY_ISSUER. Apple ID auth requires all three APPLE_ID values below.
+NOTARY_KEY="${NOTARY_KEY:-}"
+NOTARY_KEY_ID="${NOTARY_KEY_ID:-}"
+NOTARY_ISSUER="${NOTARY_ISSUER:-}"
+NOTARY_APPLE_ID="${NOTARY_APPLE_ID:-}"
+NOTARY_PASSWORD="${NOTARY_PASSWORD:-}"
+NOTARY_TEAM_ID="${NOTARY_TEAM_ID:-}"
+REQUIRE_NOTARIZATION="${REQUIRE_NOTARIZATION:-0}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENTITLEMENTS_PATH="${ENTITLEMENTS_PATH:-$ROOT_DIR/Cribble.DeveloperID.entitlements}"
@@ -55,6 +66,38 @@ if [[ "$SIGN_IDENTITY" == "-" ]]; then
   CODESIGN_ARGS=(--force --options runtime --sign -)
 else
   CODESIGN_ARGS=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
+fi
+
+NOTARY_ARGS=()
+if [[ -n "$NOTARY_PROFILE" ]]; then
+  NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
+elif [[ -n "$NOTARY_KEY" || -n "$NOTARY_KEY_ID" || -n "$NOTARY_ISSUER" ]]; then
+  if [[ -z "$NOTARY_KEY" || -z "$NOTARY_KEY_ID" ]]; then
+    echo "error: NOTARY_KEY and NOTARY_KEY_ID are required for API-key notarization" >&2
+    exit 1
+  fi
+  NOTARY_ARGS=(--key "$NOTARY_KEY" --key-id "$NOTARY_KEY_ID")
+  if [[ -n "$NOTARY_ISSUER" ]]; then
+    NOTARY_ARGS+=(--issuer "$NOTARY_ISSUER")
+  fi
+elif [[ -n "$NOTARY_APPLE_ID" || -n "$NOTARY_PASSWORD" || -n "$NOTARY_TEAM_ID" ]]; then
+  if [[ -z "$NOTARY_APPLE_ID" || -z "$NOTARY_PASSWORD" || -z "$NOTARY_TEAM_ID" ]]; then
+    echo "error: NOTARY_APPLE_ID, NOTARY_PASSWORD, and NOTARY_TEAM_ID are required for Apple ID notarization" >&2
+    exit 1
+  fi
+  NOTARY_ARGS=(--apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$NOTARY_TEAM_ID")
+fi
+
+if [[ "$SIGN_IDENTITY" == "-" && ${#NOTARY_ARGS[@]} -gt 0 ]]; then
+  echo "error: notarized releases must be signed with Developer ID, not ad-hoc signing" >&2
+  echo "       Set SIGN_IDENTITY='Developer ID Application: ...'." >&2
+  exit 1
+fi
+
+if [[ "$REQUIRE_NOTARIZATION" == "1" && ${#NOTARY_ARGS[@]} -eq 0 ]]; then
+  echo "error: REQUIRE_NOTARIZATION=1 but no notary credentials were provided" >&2
+  echo "       Set NOTARY_PROFILE, NOTARY_KEY/NOTARY_KEY_ID[/NOTARY_ISSUER], or Apple ID notary vars." >&2
+  exit 1
 fi
 
 resolve_executable() {
@@ -238,11 +281,11 @@ chmod -R u+w "$APP_BUNDLE"
 find "$APP_BUNDLE" -name '._*' -delete
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
-if [[ -n "$NOTARY_PROFILE" ]]; then
+if [[ ${#NOTARY_ARGS[@]} -gt 0 ]]; then
   rm -f "$APP_NOTARY_ZIP"
   /usr/bin/ditto -c -k --keepParent "$APP_BUNDLE" "$APP_NOTARY_ZIP"
-  echo "Submitting app bundle to Apple notary service via profile '$NOTARY_PROFILE'..."
-  /usr/bin/xcrun notarytool submit "$APP_NOTARY_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+  echo "Submitting app bundle to Apple notary service..."
+  /usr/bin/xcrun notarytool submit "$APP_NOTARY_ZIP" "${NOTARY_ARGS[@]}" --wait
   echo "Stapling notary ticket to app bundle..."
   /usr/bin/xcrun stapler staple "$APP_BUNDLE"
   /usr/bin/xcrun stapler validate "$APP_BUNDLE"
@@ -269,9 +312,9 @@ PYTHONPATH="$PYTHON_DEPS" /usr/bin/python3 "$ROOT_DIR/script/build_dmg.py" \
 # Gatekeeper on macOS 15.4+ refuses to open the DMG with "Cribble is
 # damaged" — that's the most common cause of "the app crashes" reports
 # from non-developer users.
-if [[ -n "$NOTARY_PROFILE" ]]; then
-  echo "Submitting DMG to Apple notary service via profile '$NOTARY_PROFILE'..."
-  /usr/bin/xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+if [[ ${#NOTARY_ARGS[@]} -gt 0 ]]; then
+  echo "Submitting DMG to Apple notary service..."
+  /usr/bin/xcrun notarytool submit "$DMG_PATH" "${NOTARY_ARGS[@]}" --wait
   echo "Stapling notary ticket to DMG..."
   /usr/bin/xcrun stapler staple "$DMG_PATH"
   /usr/bin/xcrun stapler validate "$DMG_PATH"

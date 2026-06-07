@@ -44,6 +44,17 @@ echo "== Minimum macOS =="
 echo
 echo "== Code signature =="
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+if [[ "${REQUIRE_DEVELOPER_ID:-0}" == "1" ]]; then
+  SIGNING_INFO="$(/usr/bin/codesign -dvvv "$APP_PATH" 2>&1)"
+  if ! /usr/bin/grep -q "Authority=Developer ID Application:" <<<"$SIGNING_INFO"; then
+    echo "App is not signed with Developer ID Application; public downloads will be blocked by Gatekeeper" >&2
+    exit 1
+  fi
+  if ! /usr/bin/grep -q "TeamIdentifier=" <<<"$SIGNING_INFO"; then
+    echo "App signature is missing a TeamIdentifier; public downloads will be blocked by Gatekeeper" >&2
+    exit 1
+  fi
+fi
 
 echo
 echo "== Sparkle updater =="

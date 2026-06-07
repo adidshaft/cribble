@@ -82,6 +82,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
+- The welcome screen now includes a direct Cribble AI DemoNotes tile, making
+  summaries, simple explanations, related-note discovery, reviewed index
+  creation, and chat onboarding visible from the first screen.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
 - Missing wiki-link recovery now creates notes through the same review/apply sheet instead of writing directly, while existing targets still open immediately.
@@ -439,6 +442,7 @@ Latest pass:
   after adding the Settings Copy Proposal extension template: 13 Swift Testing
   tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after teaching DemoNotes about Settings > Extensions > Copy Proposal: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Cribble AI to the welcome Start With grid: 1 XCTest test, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

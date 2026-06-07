@@ -2331,6 +2331,7 @@ private struct WelcomeView: View {
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 124), spacing: 8)], spacing: 8) {
                     demoStartButton("Basics", systemImage: "list.bullet.rectangle", note: "Getting Started.md")
+                    demoStartButton("Cribble AI", systemImage: "sparkles", note: "Cribble AI.md")
                     demoStartButton("Tasks", systemImage: "checklist.checked", note: "Tasks and Intelligence.md")
                     demoStartButton("Workflows", systemImage: "point.3.connected.trianglepath.dotted", note: "Workflow Playbook.md")
                     demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")

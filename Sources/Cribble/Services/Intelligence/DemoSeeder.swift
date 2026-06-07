@@ -16,7 +16,9 @@ enum DemoSeeder {
         projectID: String
     ) async -> Bool {
         let fm = FileManager.default
-        let looksLikeDemo = fm.fileExists(atPath: rootURL.appendingPathComponent("Feature Tour.md").path)
+        let looksLikeDemo = fm.fileExists(atPath: rootURL.appendingPathComponent("README.md").path)
+            && fm.fileExists(atPath: rootURL.appendingPathComponent("Getting Started.md").path)
+            && fm.fileExists(atPath: rootURL.appendingPathComponent("Feature Tour.md").path)
             && fm.fileExists(atPath: rootURL.appendingPathComponent("Markdown Showcase.md").path)
         guard looksLikeDemo else { return false }
         guard await db.artifacts(projectID: projectID).isEmpty else { return false }
@@ -39,26 +41,38 @@ enum DemoSeeder {
     private static let projectIndex = """
     # DemoNotes — Project Index
 
-    This workspace contains Markdown demonstrations showcasing Cribble's core features.
+    This workspace is a living onboarding tour for Cribble: native reading, private AI,
+    tasks, Project Intelligence, research review, and the new extension framework.
 
     ## Files
 
     | File | Purpose | Key Topics |
     |------|---------|------------|
-    | Feature Tour.md | Interactive walkthrough | Wiki links, highlights, bookmarks |
+    | README.md | Tour index | Start path, checklist, role-oriented routes |
+    | Getting Started.md | First reading workflow | Highlights, bookmarks, wiki links, search |
+    | Cribble AI.md | Private assistant guide | Chat HUD, current-note context, patch preview |
+    | Feature Tour.md | Interactive walkthrough | Zoom overlays, trails, pathfinder, semantic search |
+    | Tasks and Intelligence.md | Action and analysis workflow | Tasks.md, Reminders, Calendar, Project Intelligence |
+    | Workflow Playbook.md | Practical weekly flows | Reading, research, teams, remote runners |
+    | Research Review.md | Evidence-heavy review | Claims, source trails, review quick actions |
+    | Team Extension Kit.md | Team plugin conventions | Manifest layout, review checklist, remote-runner policy |
+    | Extensions and Remote Intelligence.md | Extension and VPS path | Declarative plugins, trusted runners, importer/renderer lanes |
     | Markdown Showcase.md | Rendering reference | LaTeX equations, Mermaid diagrams, task lists |
-    | Diagnostics.md | Troubleshooting guide | Diagnostic reports, system checks |
 
     ## Connections
 
-    - **Feature Tour** references concepts demonstrated in **Markdown Showcase** (e.g., wiki link syntax).
-    - **Diagnostics** is standalone — no inbound or outbound wiki links.
+    - **README** routes beginners into **Getting Started** and power users into
+      **Workflow Playbook**, **Research Review**, and **Team Extension Kit**.
+    - **Tasks and Intelligence** bridges everyday checkboxes into Project Intelligence.
+    - **Extensions and Remote Intelligence** and **Team Extension Kit** form the plugin
+      path: safe manifests first, trusted remote runners when teams need more compute.
+    - **Markdown Showcase** remains the rendering reference that other notes point to.
 
     ## Statistics
 
-    - 3 documents, ~2,400 words total
-    - 5 wiki links across documents
-    - 2 Mermaid diagrams, 1 LaTeX block
+    - 10 tour documents covering beginner, research, team, and power-user paths
+    - Extension lanes: quick actions, intelligence providers, renderers, and importers
+    - Remote runner guidance includes endpoint ownership, Keychain secrets, and revocation
     """
 
     private static let contentMap = """
@@ -68,16 +82,26 @@ enum DemoSeeder {
 
     ```mermaid
     graph LR
-        FT["Feature Tour"] -->|wiki link| MS["Markdown Showcase"]
-        FT -->|references| D["Diagnostics"]
+        Home["README"] --> GS["Getting Started"]
+        Home --> AI["Cribble AI"]
+        Home --> FT["Feature Tour"]
+        Home --> TI["Tasks and Intelligence"]
+        Home --> WP["Workflow Playbook"]
+        Home --> RR["Research Review"]
+        Home --> TEK["Team Extension Kit"]
+        Home --> ERI["Extensions and Remote Intelligence"]
+        Home --> MS["Markdown Showcase"]
 
-        FT ---|topics| WL["Wiki Links"]
-        FT ---|topics| HL["Highlights"]
-        FT ---|topics| BM["Bookmarks"]
-
-        MS ---|topics| MM["Mermaid Diagrams"]
-        MS ---|topics| LX["LaTeX Math"]
-        MS ---|topics| TL["Task Lists"]
+        GS ---|reader basics| Read["Highlights / Bookmarks / Search"]
+        FT ---|advanced reading| Trail["Zoom / Trails / Pathfinder"]
+        AI ---|assistant| Chat["Chat HUD / Diff Preview"]
+        TI ---|action loop| Tasks["Tasks.md / Reminders / Calendar"]
+        TI ---|analysis| Intel["Project Intelligence"]
+        RR ---|evidence| Claims["Claims / Sources / Follow-up"]
+        WP ---|workflow| Teams["Readers / Researchers / Teams"]
+        TEK ---|plugins| Manifests["Declarative Manifests"]
+        ERI ---|runners| VPS["Trusted VPS / OpenAI-Compatible Runner"]
+        MS ---|rendering| Render["Mermaid / LaTeX / Tables"]
     ```
     """
 
@@ -86,22 +110,26 @@ enum DemoSeeder {
 
     ## Observations
 
-    - **Diagnostics.md** has no inbound wiki links from other notes. Consider adding
-      a `[[Diagnostics]]` reference in Feature Tour under a "Troubleshooting" section.
-    - **Markdown Showcase.md** contains a Mermaid `pie` chart but no `sequenceDiagram`.
-      The app supports both — consider adding a sequence diagram example.
-    - **Feature Tour.md** mentions "bookmarks" but does not include a visible bookmark
-      demonstration. A seeded bookmark annotation would make the feature self-documenting.
+    - The tour now covers both light and complex users: **Getting Started** for a
+      two-minute path, **Workflow Playbook** for recurring work, and **Research Review**
+      for evidence-heavy folders.
+    - Extension onboarding has two layers: **Team Extension Kit** for team policy and
+      **Extensions and Remote Intelligence** for copy-ready manifests and trusted runners.
+    - **Tasks and Intelligence** connects everyday checkbox capture to broader folder
+      analysis, making Project Intelligence feel useful beyond code repositories.
+    - **Markdown Showcase** is intentionally retained as the renderer reference.
 
     ## Coverage
 
     | Feature | Demonstrated | Notes |
     |---------|-------------|-------|
-    | Wiki links | ✅ | 5 links across 2 files |
-    | Highlights | ✅ | Feature Tour includes examples |
-    | Bookmarks | ⚠️ | Mentioned but not demonstrated |
-    | Mermaid | ✅ | Pie chart in Showcase |
-    | LaTeX | ✅ | Equations in Showcase |
-    | Task lists | ✅ | Nested tasks in Showcase |
+    | Reader basics | ✅ | Getting Started and Feature Tour |
+    | Private AI chat | ✅ | Cribble AI plus Chat HUD checklist |
+    | Tasks workflow | ✅ | Tasks and Intelligence |
+    | Project Intelligence | ✅ | Preflight, Ask, artifacts, and source trails |
+    | Research review | ✅ | Claims, evidence, and follow-up actions |
+    | Extension framework | ✅ | Team Extension Kit and Extensions and Remote Intelligence |
+    | Remote runner trust | ✅ | Handoff checklist, Keychain guidance, revocation |
+    | Markdown rendering | ✅ | Markdown Showcase |
     """
 }

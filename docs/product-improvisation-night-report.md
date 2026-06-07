@@ -22,6 +22,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - The Project Intelligence preflight now names remote runner endpoints, selected models, and extension trust labels before scanning notes, making VPS/team-runner decisions more explicit.
 - Extension-provided remote runner profiles now show a compact handoff strip in the Intelligence HUD with trust/source details and a copyable endpoint/model/API-key/revocation checklist.
+- Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
@@ -45,6 +46,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
 - DemoNotes now include a remote-runner handoff checklist for endpoint ownership, model id, trust label, note context, Keychain entry, and revocation.
+- Seeded Project Intelligence artifacts for DemoNotes now match the current tour, including Tasks and Intelligence, Workflow Playbook, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
 - The Import setup sheet now explains the safe import-lane model as a three-step path: declare file types, review the data-only manifest, and disable the lane cleanly.
@@ -163,6 +165,9 @@ swift test --filter CribbleUITests
 swift test --filter IntelligenceEngineTests
 swift test --filter CribbleUITests
 swift test --filter CribbleUITests
+swift test --filter IntelligenceEngineTests
+swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts
+swift test --filter IntelligenceEngineTests
 ```
 
 Latest pass:
@@ -208,6 +213,9 @@ Latest pass:
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after Intelligence Ask starter chips: 25 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Open Tasks failure reporting: 16 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Import setup safety-path UI: 16 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after custom remote-runner handoff UI: 25 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after refreshing DemoNotes seeded artifacts: 1 XCTest test, 0 failures.
+- Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after refreshed seeded artifacts: 25 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

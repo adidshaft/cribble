@@ -397,6 +397,11 @@ struct IntelligenceHUDView: View {
                     profile: selectedExtensionProviderProfile,
                     onCopy: { copyRunnerHandoff(selectedExtensionProviderProfile) }
                 )
+            } else if let remoteRunnerHandoff {
+                CustomRunnerHandoffStrip(
+                    handoff: remoteRunnerHandoff,
+                    onCopy: { copyCustomRunnerHandoff(remoteRunnerHandoff) }
+                )
             }
             SecureField("API key (optional)", text: $localRunnerAPIKey)
                 .font(.system(size: 10))
@@ -466,6 +471,12 @@ struct IntelligenceHUDView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(profile.handoffSummary, forType: .string)
         localRunnerStatus = .ready("Copied runner handoff details.")
+    }
+
+    private func copyCustomRunnerHandoff(_ handoff: CustomRunnerHandoff) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(handoff.summary, forType: .string)
+        localRunnerStatus = .ready("Copied custom runner checklist.")
     }
 
     @MainActor
@@ -1652,6 +1663,19 @@ struct IntelligenceHUDView: View {
         return isLoopback ? nil : "Remote runner: prompts and note context may leave this Mac."
     }
 
+    private var remoteRunnerHandoff: CustomRunnerHandoff? {
+        guard let url = URL(string: localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let host = url.host?.lowercased()
+        else { return nil }
+        let isLoopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
+        guard !isLoopback else { return nil }
+        return CustomRunnerHandoff(
+            name: localRunnerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Custom Runner" : localRunnerName,
+            baseURL: url,
+            modelID: localRunnerModelID.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+
     private var usesRemoteRunner: Bool {
         guard let runnerURL = engine.settings.localRunnerBaseURL,
               let url = URL(string: runnerURL),
@@ -1832,6 +1856,69 @@ private struct LocalRunnerProbeStatus: Equatable {
 
     static func failed(_ message: String) -> LocalRunnerProbeStatus {
         LocalRunnerProbeStatus(message: message, isError: true)
+    }
+}
+
+private struct CustomRunnerHandoff: Equatable {
+    let name: String
+    let baseURL: URL
+    let modelID: String
+
+    var hostLabel: String {
+        baseURL.host ?? baseURL.absoluteString
+    }
+
+    var summary: String {
+        [
+            "Runner: \(name)",
+            "Endpoint: \(baseURL.absoluteString)",
+            "Model: \(modelID.isEmpty ? "enter before use" : modelID)",
+            "Trust label: Custom remote runner",
+            "Context boundary: note context may leave this Mac",
+            "API key: enter in the Intelligence HUD; store in Keychain when needed",
+            "Review: confirm endpoint ownership, retention policy, logs, and revocation path",
+            "Disable/revoke: choose a different runner, clear the API key, or remove the endpoint"
+        ].joined(separator: "\n")
+    }
+}
+
+private struct CustomRunnerHandoffStrip: View {
+    let handoff: CustomRunnerHandoff
+    let onCopy: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.orange.opacity(0.9))
+                .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Custom remote runner")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.86))
+                Text("\(handoff.name) · \(handoff.hostLabel)")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 6)
+
+            Button {
+                onCopy()
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .buttonStyle(.plain)
+            .help("Copy custom runner checklist")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Custom remote runner handoff: \(handoff.name), \(handoff.hostLabel)")
     }
 }
 

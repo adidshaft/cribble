@@ -162,6 +162,8 @@ final class IntelligenceJobsTests: XCTestCase {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-demo-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
+        try "# Welcome".write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+        try "# Getting Started".write(to: root.appendingPathComponent("Getting Started.md"), atomically: true, encoding: .utf8)
         try "# Tour".write(to: root.appendingPathComponent("Feature Tour.md"), atomically: true, encoding: .utf8)
         try "# Showcase".write(to: root.appendingPathComponent("Markdown Showcase.md"), atomically: true, encoding: .utf8)
 
@@ -169,9 +171,28 @@ final class IntelligenceJobsTests: XCTestCase {
         let store = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
         let seeded = await DemoSeeder.seedIfDemoNotes(rootURL: root, store: store, db: db, projectID: "p")
         XCTAssertTrue(seeded)
-        let types = Set(await db.artifacts(projectID: "p").map(\.type))
+        let artifacts = await db.artifacts(projectID: "p")
+        let types = Set(artifacts.map(\.type))
         XCTAssertTrue(types.contains(.projectIndex))
         XCTAssertTrue(types.contains(.architectureDiagram))
+        let seededContent = artifacts
+            .compactMap { store.content(for: $0) }
+            .joined(separator: "\n")
+        XCTAssertFalse(seededContent.contains("Diagnostics.md"))
+        XCTAssertTrue(seededContent.contains("Extensions and Remote Intelligence"))
+        XCTAssertTrue(seededContent.contains("Tasks and Intelligence"))
+        XCTAssertTrue(seededContent.contains("Team Extension Kit"))
+
+        let staleDemo = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-stale-demo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: staleDemo, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: staleDemo) }
+        try "# Tour".write(to: staleDemo.appendingPathComponent("Feature Tour.md"), atomically: true, encoding: .utf8)
+        try "# Showcase".write(to: staleDemo.appendingPathComponent("Markdown Showcase.md"), atomically: true, encoding: .utf8)
+        let staleDB = try IntelligenceDatabase(path: ":memory:")
+        let staleStore = ArtifactStore(db: staleDB, projectID: "stale", cacheDirectory: staleDemo.appendingPathComponent("c"))
+        let staleSeeded = await DemoSeeder.seedIfDemoNotes(rootURL: staleDemo, store: staleStore, db: staleDB, projectID: "stale")
+        XCTAssertFalse(staleSeeded)
+
         // A non-demo folder is left alone.
         let empty = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-nodemo-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: empty, withIntermediateDirectories: true)

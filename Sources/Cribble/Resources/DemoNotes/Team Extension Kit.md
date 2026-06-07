@@ -116,6 +116,7 @@ Disable behavior:
 SwiftUI surface:
 System controls/SF Symbols:
 Settings or command entry point:
+Non-native UI needed? If yes, explain maintainer approval:
 
 ## Later, not first PR
 What would need executable code:

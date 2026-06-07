@@ -39,6 +39,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
+- Cribble now has a local extension trust-decision store for future executable plugin consent/revocation, with Settings controls to revoke or clear remembered trust decisions while API v1 remains data-only.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
@@ -109,12 +110,13 @@ Latest pass:
 - `swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'` passed on 2026-06-08: 22 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after refresh instrumentation: 11 XCTest tests, 0 failures.
 - Latest `swift test --filter Extension` passed on 2026-06-08 after trust declarations: 23 Swift Testing tests, 0 failures.
+- Latest `swift test --filter Extension` passed on 2026-06-08 after the trust-decision store: 27 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
 1. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 2. Keep expanding DemoNotes around real team workflows: research review, project intelligence, extension authoring, and import-lane planning.
-3. Add a future consent/revocation store for executable plugins before any code execution is enabled.
+3. Add signed bundle verification only after the consent/revocation path is fully wired into an executable plugin sandbox.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

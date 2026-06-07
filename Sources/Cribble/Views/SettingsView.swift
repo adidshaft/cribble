@@ -118,11 +118,18 @@ struct SettingsView: View {
                                 ExtensionManifestRow(
                                     extension: installed,
                                     isEnabled: extensionRegistry.isEnabled(installed),
+                                    trustDecision: extensionRegistry.trustDecision(for: installed),
                                     onEnabledChange: { enabled in
                                         extensionRegistry.setEnabled(enabled, for: installed)
                                     },
                                     onReveal: {
                                         extensionRegistry.reveal(installed)
+                                    },
+                                    onRevokeTrust: {
+                                        extensionRegistry.revokeTrust(for: installed)
+                                    },
+                                    onClearTrust: {
+                                        extensionRegistry.clearTrustDecision(for: installed)
                                     }
                                 )
                             }
@@ -197,8 +204,11 @@ struct SettingsView: View {
 private struct ExtensionManifestRow: View {
     let `extension`: InstalledCribbleExtension
     let isEnabled: Bool
+    let trustDecision: ExtensionTrustDecision?
     let onEnabledChange: (Bool) -> Void
     let onReveal: () -> Void
+    let onRevokeTrust: () -> Void
+    let onClearTrust: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -225,6 +235,9 @@ private struct ExtensionManifestRow: View {
                     .foregroundStyle(.tertiary)
                 if let trust = `extension`.manifest.trust {
                     Text("Trust: \(trust.summary)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Text("Future executable consent: \(trustDecisionLabel)")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -257,10 +270,30 @@ private struct ExtensionManifestRow: View {
                 ))
                 .labelsHidden()
                 .toggleStyle(.switch)
+
+                if `extension`.manifest.trust != nil {
+                    Menu {
+                        Button("Revoke Future Consent", action: onRevokeTrust)
+                        Button("Clear Trust Decision", action: onClearTrust)
+                            .disabled(trustDecision == nil)
+                    } label: {
+                        Image(systemName: "checkmark.shield")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .help("Manage stored trust decisions for future executable plugin support")
+                }
             }
         }
         .padding(8)
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var trustDecisionLabel: String {
+        switch trustDecision {
+        case .approved: "approved, but executable plugins are still blocked"
+        case .revoked: "revoked"
+        case nil: "not requested"
+        }
     }
 
     private var iconName: String {

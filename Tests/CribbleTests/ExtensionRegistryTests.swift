@@ -178,6 +178,45 @@ struct ExtensionRegistryTests {
         #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "mermaid")
         #expect(registry.importerCapabilities.contains { $0.title == "Chat Export" })
     }
+
+    @Test
+    func reloadPrunesStaleTrustDecisions() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        let keptID = "com.example.cribble.trusted"
+        try fixture.writeTrustedQuickAction(
+            folder: fixture.userExtensions.appendingPathComponent("trusted", isDirectory: true),
+            id: keptID,
+            name: "Trusted"
+        )
+
+        let registry = fixture.makeRegistry()
+        guard let installed = registry.installedExtensions.first else {
+            Issue.record("Expected installed extension")
+            return
+        }
+
+        registry.revokeTrust(for: installed)
+        #expect(registry.trustDecision(for: installed) == .revoked)
+
+        try FileManager.default.removeItem(at: fixture.userExtensions.appendingPathComponent("trusted", isDirectory: true))
+        registry.reload(projectRoots: [])
+
+        let restored = fixture.makeRegistry()
+        try fixture.writeTrustedQuickAction(
+            folder: fixture.userExtensions.appendingPathComponent("trusted", isDirectory: true),
+            id: keptID,
+            name: "Trusted"
+        )
+        restored.reload(projectRoots: [])
+
+        guard let reinstalled = restored.installedExtensions.first else {
+            Issue.record("Expected reinstalled extension")
+            return
+        }
+        #expect(restored.trustDecision(for: reinstalled) == nil)
+    }
 }
 
 private struct ExtensionRegistryFixture {
@@ -236,6 +275,42 @@ private struct ExtensionRegistryFixture {
                     title: actionTitle,
                     icon: "bolt",
                     prompt: "Run \(actionTitle)."
+                )
+            ]
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(manifest).write(
+            to: folder.appendingPathComponent("cribble-extension.json"),
+            options: .atomic
+        )
+    }
+
+    func writeTrustedQuickAction(
+        folder: URL,
+        id: String,
+        name: String
+    ) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let manifest = CribbleExtensionManifest(
+            id: id,
+            name: name,
+            version: "0.1.0",
+            kind: .quickAction,
+            summary: "Test trusted extension.",
+            trust: CribbleExtensionTrustDeclaration(
+                developerName: "Example Team",
+                signingIdentifier: "\(id).signed",
+                teamIdentifier: "ABCDE12345",
+                sourceURL: URL(string: "https://example.com/source")!
+            ),
+            permissions: [.readCurrentNote],
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "trusted-action",
+                    title: "Trusted action",
+                    icon: "bolt",
+                    prompt: "Run trusted action."
                 )
             ]
         )

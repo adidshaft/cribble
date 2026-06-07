@@ -118,6 +118,11 @@ validates optional `trust` declarations:
 - `teamIdentifier`: optional 10-character Apple Team ID.
 - `sourceURL`: optional `http` or `https` URL for the extension source or release page.
 
+Cribble also keeps a local trust-decision store for future executable plugins.
+Settings can revoke or clear a remembered trust decision for manifests that
+declare trust metadata. This does not enable executable plugins in API v1; it
+only establishes the consent and revocation path ahead of code execution.
+
 ## Kinds
 
 ### Quick Action

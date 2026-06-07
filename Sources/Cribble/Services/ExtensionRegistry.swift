@@ -12,15 +12,18 @@ final class ExtensionRegistry: ObservableObject {
     private let fileManager: FileManager
     private let defaults: UserDefaults
     private let userExtensionsFolder: URL
+    private let trustDecisionStore: ExtensionTrustDecisionStore
 
     init(
         fileManager: FileManager = .default,
         defaults: UserDefaults = .standard,
-        userExtensionsFolder: URL = ExtensionRegistry.defaultUserExtensionsFolder
+        userExtensionsFolder: URL = ExtensionRegistry.defaultUserExtensionsFolder,
+        trustDecisionStore: ExtensionTrustDecisionStore? = nil
     ) {
         self.fileManager = fileManager
         self.defaults = defaults
         self.userExtensionsFolder = userExtensionsFolder
+        self.trustDecisionStore = trustDecisionStore ?? ExtensionTrustDecisionStore(defaults: defaults)
         disabledExtensionIDs = Set(defaults.stringArray(forKey: Keys.disabledExtensionIDs) ?? [])
         reload(projectRoots: [])
     }
@@ -35,6 +38,18 @@ final class ExtensionRegistry: ObservableObject {
         } else {
             disabledExtensionIDs.insert(installed.manifest.id)
         }
+    }
+
+    func trustDecision(for installed: InstalledCribbleExtension) -> ExtensionTrustDecision? {
+        trustDecisionStore.decision(for: installed.manifest)
+    }
+
+    func revokeTrust(for installed: InstalledCribbleExtension) {
+        trustDecisionStore.revoke(installed.manifest)
+    }
+
+    func clearTrustDecision(for installed: InstalledCribbleExtension) {
+        trustDecisionStore.clearDecision(for: installed.manifest)
     }
 
     var quickActions: [QuickAction] {
@@ -118,6 +133,7 @@ final class ExtensionRegistry: ObservableObject {
             }
             return $0.manifest.kind.title < $1.manifest.kind.title
         }
+        trustDecisionStore.prune(toInstalledManifests: installedExtensions.map(\.manifest))
         loadWarnings = warnings
     }
 

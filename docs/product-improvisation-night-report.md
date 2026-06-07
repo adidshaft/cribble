@@ -523,6 +523,9 @@ Latest pass:
 - Remote-runner handoffs on 2026-06-08 now copy the same approval checklist
   used by consent reviews, covering endpoint ownership, Keychain-only secrets,
   context fit, and the disable path before note context can leave the Mac.
+- Settings > Extensions copied dashboard summaries now include practical next
+  steps for contributors: fix warnings, start with project-local examples, keep
+  v1 read-only/reviewed, and gate remote runners behind data-boundary review.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

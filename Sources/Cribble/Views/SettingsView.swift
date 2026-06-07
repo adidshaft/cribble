@@ -471,6 +471,11 @@ struct ExtensionDashboardSummary: Equatable {
         Active renderers: \(rendererCount)
         Active importers: \(importerCount)
         Safety contract: API v1 is declarative, read-only first, least-access, and native SwiftUI for user-facing UI.
+        Next steps:
+        - Fix validation warnings, then use Check Again.
+        - Start with Create Project Example for a folder-local, reviewable manifest.
+        - Keep the first version read-only; writes should use preview/review/cancel.
+        - Remote runners need explicit data-boundary review and Keychain-only secrets.
         Contributor guide: docs/extensions.md
         """
     }

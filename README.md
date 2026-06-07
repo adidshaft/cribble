@@ -108,6 +108,8 @@ respectful of the user's files.
 - Provides XXS-to-XXL reader text sizing.
 - Supports wiki links such as `[[Home]]`, `[[Note#Heading]]`, and
   `[[Note|Label]]`.
+- Turns missing wiki links into review-first new-note proposals, so users can
+  link before writing without silent file creation.
 - Shows linked files inline in the document and as a collapsible linked-files
   panel.
 - Drops one reading bookmark per page at the current reading section with `B`

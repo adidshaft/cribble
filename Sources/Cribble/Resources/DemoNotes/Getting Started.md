@@ -25,7 +25,10 @@ Type `[[Note Name]]` to connect notes. Click to follow:
 - [[Cribble AI]] — the on-device assistant.
 - [[Feature Tour]] — zoom, trails, search, pathfinder.
 
-Linking a note that doesn't exist yet — like [[A Note I Haven't Written]] — still works: Cribble offers to create it for you, so linking can come before writing.
+Linking a note that doesn't exist yet — like [[A Note I Haven't Written]] —
+still works: Cribble offers to create it for you, then shows the new note in the
+same review sheet used by AI and daily-note proposals. Linking can come before
+writing, and you still approve before anything is saved.
 
 ## Search (keyword + semantic)
 

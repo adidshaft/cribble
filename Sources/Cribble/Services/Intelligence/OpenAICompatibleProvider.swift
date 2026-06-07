@@ -157,9 +157,6 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
                 }.joined()
                 if !text.isEmpty { return text }
             }
-            if let reasoning = message["reasoning"] as? String, !reasoning.isEmpty {
-                return reasoning
-            }
             if let text = message["content"] as? String {
                 return text
             }

@@ -176,8 +176,11 @@ final class IntelligenceEngine: ObservableObject {
         self.isEnabled = true
         self.status = .ready
 
-        await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
+        let repairedOnStart = await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
         await database.removeCompletedJobsWithMissingArtifacts(projectID: projectID)
+        if repairedOnStart > 0 {
+            needsScan = true
+        }
         if !allFolders {
             await DemoSeeder.seedIfDemoNotes(rootURL: nominalRoot, store: artifactStore, db: database, projectID: projectID)
         }
@@ -192,9 +195,10 @@ final class IntelligenceEngine: ObservableObject {
     /// Detects a poisoned cache — artifacts whose stored content is actually a
     /// provider error — and wipes the project's artifacts/jobs so they regenerate
     /// cleanly. Samples up to 60 artifacts to stay cheap.
-    private func recoverIfPoisoned(database: IntelligenceDatabase, store: ArtifactStore, projectID: String) async {
+    @discardableResult
+    private func recoverIfPoisoned(database: IntelligenceDatabase, store: ArtifactStore, projectID: String) async -> Int {
         let sample = await database.artifacts(projectID: projectID).prefix(60)
-        guard !sample.isEmpty else { return }
+        guard !sample.isEmpty else { return 0 }
         var bad = 0
         var repaired = 0
         let knownPaths = Set(await database.files(projectID: projectID).map(\.path))
@@ -253,7 +257,9 @@ final class IntelligenceEngine: ObservableObject {
             await database.reset(projectID: projectID)
             try? FileManager.default.removeItem(at: store.cacheDirectory)
             lastActivity = "Cleared a misconfigured cache; rebuilding"
+            return max(repaired, 1)
         }
+        return repaired
     }
 
     /// Disables intelligence for the current project and stops all work.
@@ -607,6 +613,13 @@ final class IntelligenceEngine: ObservableObject {
 
     private func refreshState() async {
         guard let db, let projectID else { return }
+        if let artifactStore {
+            let repaired = await recoverIfPoisoned(database: db, store: artifactStore, projectID: projectID)
+            if repaired > 0 {
+                await db.removeCompletedJobsWithMissingArtifacts(projectID: projectID)
+                needsScan = true
+            }
+        }
         artifacts = await db.artifacts(projectID: projectID)
         knowledgeNodes = await db.knowledgeNodes(projectID: projectID)
         knowledgeEdges = await db.knowledgeEdges(projectID: projectID)

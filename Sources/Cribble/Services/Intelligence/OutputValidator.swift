@@ -69,14 +69,31 @@ enum OutputValidator {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = trimmed.lowercased()
         guard !trimmed.isEmpty else { return false }
-        if lower.hasPrefix("the user wants me")
+        if lower.hasPrefix("the user wants ")
             || lower.hasPrefix("i need to ")
             || lower.hasPrefix("let me analyze")
-            || lower.hasPrefix("let's analyze") {
+            || lower.hasPrefix("let's analyze")
+            || lower.hasPrefix("let's look at")
+            || lower.hasPrefix("input analysis:")
+            || lower.hasPrefix("analysis of `")
+            || lower.hasPrefix("drafting the ") {
+            return true
+        }
+        let firstLines = lower
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .prefix(8)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        if firstLines.contains(where: { line in
+            line.hasPrefix("i need to ")
+                || line.hasPrefix("let me ")
+                || line.hasPrefix("let's ")
+                || line.hasPrefix("input analysis:")
+                || line.hasPrefix("drafting the ")
+        }) {
             return true
         }
         return lower.contains("output markdown only")
-            && (lower.contains("the user wants me") || lower.contains("i need to"))
+            && (lower.contains("the user wants") || lower.contains("i need to"))
     }
 
     /// Detects when a provider returned an *error message* instead of a real

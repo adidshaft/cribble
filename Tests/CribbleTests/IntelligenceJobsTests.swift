@@ -79,6 +79,20 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertFalse(OutputValidator.looksLikeReasoningLeak(cleaned))
     }
 
+    func testReasoningLeakDetectsPlannerWithoutRecoverableHeading() {
+        let raw = """
+        The user wants a chronological timeline of events in the document collection.
+        I need to scan through the provided text for dates and ordering cues.
+
+        Let's look at the input text:
+        1. README.md: no explicit dates.
+        """
+
+        let cleaned = OutputValidator.stripReasoningPreamble(raw)
+        XCTAssertEqual(cleaned, raw.trimmingCharacters(in: .whitespacesAndNewlines))
+        XCTAssertTrue(OutputValidator.looksLikeReasoningLeak(cleaned))
+    }
+
     func testRunnerDoesNotStoreErrorOutput() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-err-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

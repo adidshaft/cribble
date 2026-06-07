@@ -360,6 +360,11 @@ private struct ReaderDocumentView: View {
         })
         .focusedSceneValue(\.dropReadingBookmarkAction, { dropReadingBookmark() })
         .focusedSceneValue(\.highlightSelectionAction, { handleHighlightKey() })
+        .focusedSceneValue(\.toggleReadingTrailAction, {
+            withAnimation(.snappy(duration: 0.2)) {
+                readingTrail.isPanelVisible.toggle()
+            }
+        })
         // Textual's NSTextInteractionView shows its own NSMenu on right-click
         // over text, which shadowed any SwiftUI `.contextMenu` we attached
         // here. Inject our custom items through Textual's env hook so they

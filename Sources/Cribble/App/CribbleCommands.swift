@@ -28,6 +28,9 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
+    @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
+    @FocusedValue(\.highlightSelectionAction) private var highlightSelection
+    @FocusedValue(\.toggleReadingTrailAction) private var toggleReadingTrail
 
     var body: some Commands {
         // File — folder operations (replaces the default "New" group).
@@ -98,9 +101,14 @@ struct CribbleCommands: Commands {
 
             Divider()
 
-            Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
-            Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
-            Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
+            Button("Drop Reading Bookmark", action: { dropReadingBookmark?() })
+                .disabled(dropReadingBookmark == nil)
+
+            Button("Highlight", action: { highlightSelection?() })
+                .disabled(highlightSelection == nil)
+
+            Button("Toggle Reading Trail", action: { toggleReadingTrail?() })
+                .disabled(toggleReadingTrail == nil)
         }
 
         CommandGroup(after: .textEditing) {
@@ -283,6 +291,10 @@ private struct HighlightSelectionActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct ToggleReadingTrailActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var openFolderAction: (() -> Void)? {
         get { self[OpenFolderActionKey.self] }
@@ -427,5 +439,10 @@ extension FocusedValues {
     var highlightSelectionAction: (() -> Void)? {
         get { self[HighlightSelectionActionKey.self] }
         set { self[HighlightSelectionActionKey.self] = newValue }
+    }
+
+    var toggleReadingTrailAction: (() -> Void)? {
+        get { self[ToggleReadingTrailActionKey.self] }
+        set { self[ToggleReadingTrailActionKey.self] = newValue }
     }
 }

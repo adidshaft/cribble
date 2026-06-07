@@ -76,7 +76,7 @@ struct ChatInputBar: View {
 
     @ViewBuilder
     private var slashCommandList: some View {
-        if !viewModel.slashCommands.isEmpty {
+        if viewModel.isSlashCommandQuery {
             VStack(alignment: .leading, spacing: 1) {
                 Text("COMMANDS")
                     .font(.system(size: 9, weight: .bold))
@@ -85,26 +85,53 @@ struct ChatInputBar: View {
                     .padding(.top, 8)
                     .padding(.bottom, 4)
 
-                ForEach(viewModel.slashCommands) { action in
-                    Button {
-                        viewModel.runQuickAction(action)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: action.icon)
-                                .font(.system(size: 12))
-                                .foregroundStyle(.white.opacity(0.7))
-                                .frame(width: 16)
-                            Text(action.title)
+                if viewModel.slashCommands.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .frame(width: 16)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("No command matches")
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.9))
-                            Spacer(minLength: 0)
+                                .foregroundStyle(.white.opacity(0.85))
+                            Text("Try /summarize, /index, or an installed extension action.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.white.opacity(0.45))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .contentShape(Rectangle())
+                        Spacer(minLength: 0)
+                        Button("Clear") {
+                            viewModel.clearSlashCommandQuery()
+                        }
+                        .font(.system(size: 10, weight: .semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                        .pointingHandOnHover()
                     }
-                    .buttonStyle(.plain)
-                    .pointingHandOnHover()
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                } else {
+                    ForEach(viewModel.slashCommands) { action in
+                        Button {
+                            viewModel.runQuickAction(action)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: action.icon)
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .frame(width: 16)
+                                Text(action.title)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.9))
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .pointingHandOnHover()
+                    }
                 }
             }
             .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12), strokeOpacity: 0.10)

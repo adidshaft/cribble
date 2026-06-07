@@ -72,6 +72,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
 - The in-reader shortcut popover now includes Find in Files, Import, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
+- Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
+- Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -152,6 +154,8 @@ swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
+swift test --filter ChatHUDLogicTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -192,6 +196,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after actionable extension Settings empty state: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after the native Open Tasks command: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes Tasks instructions: 16 XCTest tests, 0 failures.
+- Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash command no-match recovery: 33 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after reader-focused menu commands: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

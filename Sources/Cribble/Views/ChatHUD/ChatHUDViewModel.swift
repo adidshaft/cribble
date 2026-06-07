@@ -40,6 +40,7 @@ final class ChatHUDViewModel: ObservableObject {
     @Published private(set) var autocomplete: FileAutocompleteState?
     /// Slash-command palette suggestions (non-empty when the draft starts "/").
     @Published private(set) var slashCommands: [QuickAction] = []
+    @Published private(set) var isSlashCommandQuery = false
     @Published private(set) var extensionQuickActions: [QuickAction] = []
 
     // MARK: Model
@@ -133,10 +134,12 @@ final class ChatHUDViewModel: ObservableObject {
 
         // `/` at the very start opens the command palette.
         if text.hasPrefix("/") {
+            isSlashCommandQuery = true
             slashCommands = QuickActions.matching(String(text.dropFirst()), extensions: extensionQuickActions)
             autocomplete = nil
             return
         }
+        isSlashCommandQuery = false
         slashCommands = []
 
         guard let mention = Self.activeMentionQuery(in: text) else {
@@ -152,10 +155,19 @@ final class ChatHUDViewModel: ObservableObject {
     /// Runs a quick action's prompt as a message.
     func runQuickAction(_ action: QuickAction) {
         guard !isGenerating else { return }
+        isSlashCommandQuery = false
         slashCommands = []
         autocomplete = nil
         draft = action.prompt
         send()
+    }
+
+    func clearSlashCommandQuery() {
+        guard isSlashCommandQuery else { return }
+        draft = ""
+        slashCommands = []
+        isSlashCommandQuery = false
+        autocomplete = nil
     }
 
     func updateExtensionQuickActions(_ actions: [QuickAction]) {

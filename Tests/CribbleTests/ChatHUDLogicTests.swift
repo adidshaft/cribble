@@ -179,6 +179,21 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
     }
 
+    @MainActor
+    func testSlashCommandNoMatchStateCanBeCleared() {
+        let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+
+        viewModel.updateDraft("/zzzzzz")
+
+        XCTAssertTrue(viewModel.isSlashCommandQuery)
+        XCTAssertTrue(viewModel.slashCommands.isEmpty)
+
+        viewModel.clearSlashCommandQuery()
+
+        XCTAssertFalse(viewModel.isSlashCommandQuery)
+        XCTAssertTrue(viewModel.draft.isEmpty)
+    }
+
     func testConnectionMessagesIncludeBothNotes() {
         let messages = ContextAssembler.connectionMessages(
             modelName: "Gemma 4",

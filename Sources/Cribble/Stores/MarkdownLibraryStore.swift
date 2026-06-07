@@ -14,6 +14,14 @@ final class MarkdownLibraryStore: ObservableObject {
         var id: URL { url }
     }
 
+    struct DocumentShortcut: Identifiable, Equatable {
+        let url: URL
+        let title: String
+        let subtitle: String
+
+        var id: URL { url }
+    }
+
     @Published var rootURLs: [URL] = []
     @Published var nodes: [MarkdownNode] = [] {
         didSet { cachedFilteredNodes = nil }
@@ -123,6 +131,21 @@ final class MarkdownLibraryStore: ObservableObject {
                 title: displayName(forRoot: standardized),
                 documentCount: count,
                 icon: folderIcon(for: standardized)
+            )
+        }
+    }
+
+    var recentDocumentShortcuts: [DocumentShortcut] {
+        let documentsByPath = Dictionary(uniqueKeysWithValues: documents.map { ($0.url.standardizedFileURL.path, $0) })
+        var seen = Set<String>()
+        return history.reversed().compactMap { url -> DocumentShortcut? in
+            let standardized = url.standardizedFileURL
+            guard seen.insert(standardized.path).inserted,
+                  let document = documentsByPath[standardized.path] else { return nil }
+            return DocumentShortcut(
+                url: standardized,
+                title: document.title,
+                subtitle: relativePath(for: standardized) ?? standardized.lastPathComponent
             )
         }
     }

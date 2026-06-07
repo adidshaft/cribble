@@ -2265,6 +2265,22 @@ private struct WelcomeView: View {
                 }
             }
 
+            if !library.recentDocumentShortcuts.isEmpty {
+                VStack(spacing: 8) {
+                    Text("Continue")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 164), spacing: 8)], spacing: 8) {
+                        ForEach(library.recentDocumentShortcuts.prefix(6)) { shortcut in
+                            recentDocumentButton(shortcut)
+                        }
+                    }
+                    .frame(maxWidth: 560)
+                }
+            }
+
             VStack(spacing: 8) {
                 Text("Start with")
                     .font(.caption.weight(.semibold))
@@ -2329,5 +2345,34 @@ private struct WelcomeView: View {
         .controlSize(.regular)
         .cribbleGlassButton()
         .help("Open \(shortcut.title)")
+    }
+
+    private func recentDocumentButton(_ shortcut: MarkdownLibraryStore.DocumentShortcut) -> some View {
+        Button {
+            library.select(url: shortcut.url)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.text")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 16)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(shortcut.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Text(shortcut.subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .controlSize(.regular)
+        .cribbleGlassButton()
+        .help("Continue \(shortcut.title)")
     }
 }

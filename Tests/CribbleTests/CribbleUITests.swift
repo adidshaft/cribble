@@ -452,6 +452,37 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "No Markdown files in \(rootURL.lastPathComponent)")
     }
 
+    func testRecentDocumentShortcutsUseHistoryOrderAndSkipStaleEntries() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RecentShortcuts-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let firstURL = rootURL.appendingPathComponent("First.md")
+        let secondURL = rootURL.appendingPathComponent("Second.md")
+        let staleURL = rootURL.appendingPathComponent("Missing.md")
+        try "# First\n".write(to: firstURL, atomically: true, encoding: .utf8)
+        try "# Second\n".write(to: secondURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        store.select(url: firstURL)
+        store.select(url: secondURL)
+        store.history.append(staleURL)
+        store.select(url: firstURL)
+
+        let shortcuts = store.recentDocumentShortcuts
+
+        XCTAssertEqual(shortcuts.map(\.url), [
+            firstURL.standardizedFileURL,
+            secondURL.standardizedFileURL
+        ])
+        XCTAssertEqual(shortcuts.first?.title, "First")
+        XCTAssertEqual(shortcuts.first?.subtitle, "First.md")
+    }
+
     func testReadmeAIUsesSelectedReadmeFolder() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

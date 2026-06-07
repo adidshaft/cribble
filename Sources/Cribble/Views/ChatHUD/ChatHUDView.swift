@@ -64,7 +64,7 @@ struct ChatHUDView: View {
     private var transcript: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                if viewModel.needsEngineChoice || UserDefaults.standard.integer(forKey: "chatHUD.engineChoiceVersion") < 1 {
+                if viewModel.needsEngineChoice {
                     EngineChoiceView(viewModel: viewModel)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 50)

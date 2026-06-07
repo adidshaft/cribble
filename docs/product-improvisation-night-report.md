@@ -520,6 +520,9 @@ Latest pass:
   first-run engine chooser, toolbar help, and Intelligence preview release note
   around local-first AI with explicit data boundaries instead of absolute
   no-cloud claims.
+- Remote-runner handoffs on 2026-06-08 now copy the same approval checklist
+  used by consent reviews, covering endpoint ownership, Keychain-only secrets,
+  context fit, and the disable path before note context can leave the Mac.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

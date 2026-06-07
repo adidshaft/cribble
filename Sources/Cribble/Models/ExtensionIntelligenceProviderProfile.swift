@@ -45,6 +45,11 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
             "Source extension: \(sourceName)",
             "Context boundary: \(isLoopback ? "stays on this Mac/local network endpoint" : RemoteRunnerDataBoundary.detail)",
             "API key: enter in the Intelligence HUD; store in Keychain when needed",
+            "Approval checklist:",
+            "- Endpoint is controlled by the user, team, or trusted vendor.",
+            "- Secrets stay out of manifests and notes; use Keychain only.",
+            "- Requested context is appropriate for this runner.",
+            "- Disable path is understood before approval.",
             "Disable/revoke: disable the extension in Settings or choose a different runner"
         ]
         if let embeddingModelID, !embeddingModelID.isEmpty {

@@ -81,6 +81,11 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(handoff.contains("Trust label: Team-controlled VPS"))
         XCTAssertTrue(handoff.contains(RemoteRunnerDataBoundary.detail))
         XCTAssertTrue(handoff.contains("store in Keychain"))
+        XCTAssertTrue(handoff.contains("Approval checklist"))
+        XCTAssertTrue(handoff.contains("Endpoint is controlled by the user, team, or trusted vendor."))
+        XCTAssertTrue(handoff.contains("Secrets stay out of manifests and notes; use Keychain only."))
+        XCTAssertTrue(handoff.contains("Requested context is appropriate for this runner."))
+        XCTAssertTrue(handoff.contains("Disable path is understood before approval."))
         XCTAssertTrue(handoff.contains("Disable/revoke"))
     }
 

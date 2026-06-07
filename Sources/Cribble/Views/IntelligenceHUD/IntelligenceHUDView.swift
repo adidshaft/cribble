@@ -1888,7 +1888,12 @@ private struct CustomRunnerHandoff: Equatable {
             "Trust label: Custom remote runner",
             "Context boundary: \(RemoteRunnerDataBoundary.detail)",
             "API key: enter in the Intelligence HUD; store in Keychain when needed",
-            "Review: confirm endpoint ownership, retention policy, logs, and revocation path",
+            "Approval checklist:",
+            "- Endpoint is controlled by the user, team, or trusted vendor.",
+            "- Secrets stay out of manifests and notes; use Keychain only.",
+            "- Requested context is appropriate for this runner.",
+            "- Disable path is understood before approval.",
+            "Review: confirm retention policy, logging, and access controls before use",
             "Disable/revoke: choose a different runner, clear the API key, or remove the endpoint"
         ].joined(separator: "\n")
     }

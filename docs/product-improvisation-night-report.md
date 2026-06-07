@@ -3,6 +3,58 @@
 Date: 2026-06-08
 Branch: `codex/product-improvisation-night`
 
+## Executive summary
+
+This branch turned Cribble from a fast Markdown reader with AI experiments into
+a broader, safer Mac-native knowledge workspace. The highest-signal gains are:
+
+- **Safer extensibility:** a declarative extension framework with validation,
+  Settings visibility, project-local manifests, remote-runner profiles, renderer
+  aliases, importer lanes, contributor guidance, and strict API v1 safety
+  boundaries before executable plugin code exists.
+- **Remote intelligence with consent:** OpenAI-compatible local/VPS/team runner
+  profiles are visible, reviewable, redacted in diagnostics, and gated before
+  non-loopback extension runners can process notes.
+- **Beginner-to-power-user onboarding:** DemoNotes, Help, Settings, Welcome,
+  and Chat HUD now expose practical paths for basics, tasks, research review,
+  team extensions, remote intelligence, daily notes, and Markdown handoff.
+- **More native Mac workflows:** File/Help/View/AI commands now cover New Note,
+  Today, Import, Open Tasks, Copy Markdown, Copy Wiki Link, diagnostics, and
+  guide recovery with disabled states and familiar shortcuts.
+- **Performance and supportability:** no-op refreshes reuse metadata, render
+  cache survives stable content, semantic indexing skips identical inputs, and
+  diagnostic reports now include a scannable health summary plus refresh,
+  intelligence, and extension state.
+
+The product signal is strongest in four areas: safe extension authoring, trusted
+remote intelligence, everyday capture/handoff, and recoverable onboarding. Those
+areas now have app surfaces, docs, DemoNotes, tests, and copied-review/diagnostic
+handoffs instead of living only as ideas.
+
+## Product signal map
+
+| Signal | What users can do now | Why it matters |
+| --- | --- | --- |
+| Extensions | Create/read/review declarative manifests, project examples, quick actions, remote runners, renderer aliases, and import lanes | Opens a plugin ecosystem without sacrificing local-first trust |
+| Remote intelligence | Use local or trusted OpenAI-compatible runners with Keychain credentials, consent, and diagnostics redaction | Lets advanced users use VPS/team GPUs while keeping context boundaries visible |
+| First-minute onboarding | Open DemoNotes, role-based guides, recent notes, opened folders, New Note, Today, and Copy Markdown from native surfaces | Makes Cribble useful before users understand the whole product |
+| Daily work | Capture `Daily/YYYY-MM-DD.md`, collect Tasks, copy Markdown/wiki links, resume recent notes, and use Chat HUD commands | Broadens beyond “reader” into daily knowledge workflow |
+| Maintainer support | Copy reports with health summary, refresh metrics, intelligence state, extension state, and crash report presence | Speeds debugging and extension review without leaking secrets |
+
+## Current branch shape
+
+- Recent commits include native Today/New Note workflows, Help guide recovery,
+  Settings extension starter rules, diagnostic health summary, daily chat quick
+  action, recent-note welcome shortcuts, and extension idea templates.
+- Full-suite validation has passed multiple times during the branch; the latest
+  full run after the native New Note/Today work was `214 XCTest + 41 Swift
+  Testing`, 0 failures. Later focused suites passed for each subsequent slice.
+- Known residual noise: intermittent CoreData XPC messages from the macOS test
+  environment during broad runs. These have not failed tests.
+- Intentionally not done: executable plugin runtime, signed bundle loading, or
+  hidden extension execution. API v1 remains declarative until a sandboxed,
+  signed, revocable trust model is ready.
+
 ## What changed
 
 ### Extension foundation

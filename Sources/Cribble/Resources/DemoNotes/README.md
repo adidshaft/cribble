@@ -56,9 +56,10 @@ A private AI assistant that runs **fully on your Mac**. Press **Command J** (or 
 3. Click a wiki link, like [[Markdown Showcase]], to jump between notes.
 4. Press **Command N**, review the proposed `Untitled.md`, then cancel or create it.
 5. Press **Command Shift N** to open or propose today's note.
-6. Use **File → Copy Markdown** to copy the current note for another app.
-7. Press **Command J** and ask *"what is this library about?"*
-8. Open **Settings → Extensions** and create the example manifest.
+6. Press **Command J**, choose **Draft today**, and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
+7. Use **File → Copy Markdown** to copy the current note for another app.
+8. Press **Command J** and ask *"what is this library about?"*
+9. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
 
@@ -68,6 +69,7 @@ changes in this demo copy only.
 - [ ] Read [[Getting Started]] and highlight one useful sentence.
 - [ ] Press **Command N** and notice that new notes go through a review sheet before writing.
 - [ ] Press **Command Shift N** and notice the daily note also waits for review before writing.
+- [ ] Open **Cribble AI** and try **Draft today** for an AI-assisted daily note proposal.
 - [ ] Use **File → Copy Markdown** or right-click a note and copy its Markdown for handoff.
 - [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
 - [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.

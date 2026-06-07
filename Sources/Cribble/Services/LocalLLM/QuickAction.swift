@@ -17,43 +17,56 @@ struct QuickAction: Identifiable, Hashable {
 }
 
 enum QuickActions {
-    static let all: [QuickAction] = [
-        QuickAction(
-            id: "summarize",
-            title: "Summarize",
-            icon: "text.alignleft",
-            prompt: "Summarize the current note in 3–5 concise bullet points.",
-            aliases: ["brief", "recap", "tl;dr", "overview"]
-        ),
-        QuickAction(
-            id: "related",
-            title: "Find related",
-            icon: "doc.text.magnifyingglass",
-            prompt: "Which other notes in my workspace relate to this one, and how? List them with a one-line reason each.",
-            aliases: ["connections", "similar", "search", "graph"]
-        ),
-        QuickAction(
-            id: "links",
-            title: "Suggest links",
-            icon: "link",
-            prompt: "Suggest sparse, high-confidence [[wiki links]] connecting the notes in context. Reply with a unified diff only.",
-            aliases: ["backlinks", "wiki", "connect"]
-        ),
-        QuickAction(
-            id: "index",
-            title: "Create index",
-            icon: "list.bullet.rectangle",
-            prompt: "Create a single index note that links and briefly describes the notes in context. Output it as a CREATE: index.md block.",
-            aliases: ["map", "table of contents", "toc", "overview"]
-        ),
-        QuickAction(
-            id: "simplify",
-            title: "Explain simply",
-            icon: "lightbulb",
-            prompt: "Explain the current note in simple, plain language a beginner could follow.",
-            aliases: ["eli5", "beginner", "plain", "teach"]
-        )
-    ]
+    static var all: [QuickAction] {
+        builtIns(todayTitle: dailyNoteTitle())
+    }
+
+    static func builtIns(todayTitle: String) -> [QuickAction] {
+        [
+            QuickAction(
+                id: "summarize",
+                title: "Summarize",
+                icon: "text.alignleft",
+                prompt: "Summarize the current note in 3–5 concise bullet points.",
+                aliases: ["brief", "recap", "tl;dr", "overview"]
+            ),
+            QuickAction(
+                id: "today-note",
+                title: "Draft today",
+                icon: "calendar.badge.plus",
+                prompt: "Draft a useful daily note for \(todayTitle). Reply with a CREATE: Daily/\(todayTitle).md block only, with sections for Notes, Decisions, Tasks, and Follow-ups.",
+                aliases: ["daily", "journal", "capture", "log", "standup"]
+            ),
+            QuickAction(
+                id: "related",
+                title: "Find related",
+                icon: "doc.text.magnifyingglass",
+                prompt: "Which other notes in my workspace relate to this one, and how? List them with a one-line reason each.",
+                aliases: ["connections", "similar", "search", "graph"]
+            ),
+            QuickAction(
+                id: "links",
+                title: "Suggest links",
+                icon: "link",
+                prompt: "Suggest sparse, high-confidence [[wiki links]] connecting the notes in context. Reply with a unified diff only.",
+                aliases: ["backlinks", "wiki", "connect"]
+            ),
+            QuickAction(
+                id: "index",
+                title: "Create index",
+                icon: "list.bullet.rectangle",
+                prompt: "Create a single index note that links and briefly describes the notes in context. Output it as a CREATE: index.md block.",
+                aliases: ["map", "table of contents", "toc", "overview"]
+            ),
+            QuickAction(
+                id: "simplify",
+                title: "Explain simply",
+                icon: "lightbulb",
+                prompt: "Explain the current note in simple, plain language a beginner could follow.",
+                aliases: ["eli5", "beginner", "plain", "teach"]
+            )
+        ]
+    }
 
     static func matching(_ query: String, extensions: [QuickAction] = []) -> [QuickAction] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -88,5 +101,15 @@ enum QuickActions {
             return 7
         }
         return nil
+    }
+
+    private static func dailyNoteTitle(date: Date = Date(), calendar: Calendar = .current) -> String {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(
+            format: "%04d-%02d-%02d",
+            components.year ?? 0,
+            components.month ?? 1,
+            components.day ?? 1
+        )
     }
 }

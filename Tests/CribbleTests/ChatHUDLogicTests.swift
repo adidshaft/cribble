@@ -177,12 +177,23 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(QuickActions.matching("").count, QuickActions.all.count)
         XCTAssertTrue(QuickActions.matching("sum").contains { $0.id == "summarize" })
         XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
+        XCTAssertTrue(QuickActions.matching("daily").contains { $0.id == "today-note" })
     }
 
     func testSlashCommandsMatchAliasesAndRankStrongMatchesFirst() {
         let matches = QuickActions.matching("eli5")
 
         XCTAssertEqual(matches.first?.id, "simplify")
+    }
+
+    func testDailyQuickActionCreatesDatedDailyNoteBlock() {
+        let action = QuickActions.builtIns(todayTitle: "2026-06-08")
+            .first { $0.id == "today-note" }
+
+        XCTAssertEqual(action?.title, "Draft today")
+        XCTAssertEqual(action?.icon, "calendar.badge.plus")
+        XCTAssertTrue(action?.prompt.contains("CREATE: Daily/2026-06-08.md") == true)
+        XCTAssertTrue(action?.prompt.contains("block only") == true)
     }
 
     func testSlashCommandsMatchExtensionSourceName() {

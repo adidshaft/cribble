@@ -920,6 +920,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("extension profiles get a review sheet"))
         XCTAssertTrue(home.contains("Copy a generated Intelligence artifact as Markdown"))
         XCTAssertTrue(home.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(home.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertFalse(home.contains("No cloud, no account"))
 
         let gettingStarted = try String(contentsOf: demoRoot.appendingPathComponent("Getting Started.md"), encoding: .utf8)
@@ -945,11 +946,13 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(extensions.contains("signed/revocable model"))
         XCTAssertTrue(extensions.contains("Chat HUD command surface"))
         XCTAssertTrue(extensions.contains("File → Import → Copy Review"))
+        XCTAssertTrue(extensions.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(extensions.contains("user-selected files only"))
         XCTAssertTrue(extensions.contains("previewed writes"))
 
         let teamKit = try String(contentsOf: demoRoot.appendingPathComponent("Team Extension Kit.md"), encoding: .utf8)
         XCTAssertTrue(teamKit.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(teamKit.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
         XCTAssertTrue(teamKit.contains("creating or adapting a manifest"))
 
@@ -972,6 +975,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("Help -> Copy Extension Proposal"))
         XCTAssertTrue(checklist.contains("Copy Proposal"))
         XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))
+        XCTAssertTrue(checklist.contains("Help -> Copy Remote Runner Setup Review"))
         XCTAssertTrue(checklist.contains("VPS or remote runner"))
     }
 

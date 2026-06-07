@@ -147,7 +147,8 @@ Do **not** put API keys in the manifest. Add the profile here, then paste the
 token into the Intelligence HUD and store it in Keychain when you choose the
 runner.
 
-Before sharing a remote runner profile, write down:
+Before sharing a remote runner profile, use
+**Help → Copy Remote Runner Setup Review** and write down:
 
 - who owns the endpoint;
 - the model id people should select;

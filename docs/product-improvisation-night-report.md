@@ -576,6 +576,9 @@ Latest pass:
   approval template covering endpoint/model/trust, data boundary, Keychain-only
   secrets, retention/logging/access-control review, and revoke paths before a
   runner is configured.
+- DemoNotes home, the Team Extension Kit, the remote-intelligence guide, and the
+  first-run checklist now teach Help > Copy Remote Runner Setup Review as the
+  starting point before sharing or enabling VPS/team runners.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
@@ -584,6 +587,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract` passed on 2026-06-08 after adding the Help > Copy Extension Proposal command: 1 Swift Testing test, 0 failures. A source search confirmed the focused command, Help menu item, pasteboard action, and shared proposal template wiring.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after aligning DemoNotes and the first-run checklist with Help > Copy Extension Proposal: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation` passed on 2026-06-08 after adding Help > Copy Remote Runner Setup Review: 1 XCTest test, 0 failures. A source search confirmed the focused command, Help menu item, pasteboard action, data-boundary wording, Keychain-secret guidance, and retention/logging/access-control review prompt.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after teaching DemoNotes and the first-run checklist to start VPS/team-runner setup with Help > Copy Remote Runner Setup Review: 2 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

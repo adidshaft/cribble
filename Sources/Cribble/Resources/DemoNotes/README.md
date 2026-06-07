@@ -92,7 +92,7 @@ changes in this demo copy only.
 - [ ] Open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
-- [ ] Review the remote runner checklist and notice which data may leave the Mac.
+- [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
 
 Have fun exploring. When you're done, everything you made stays in these files — yours to keep or delete.

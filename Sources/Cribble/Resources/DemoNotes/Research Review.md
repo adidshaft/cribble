@@ -11,6 +11,8 @@ legal notes, design references, or any folder where evidence matters.
 ## Goal
 
 Turn scattered notes into a reviewable brief without losing the source trail.
+Use **Help → Copy Research Review Template** when you want a clean starting
+point for a claim table, gaps, recommendations, and review boundaries.
 
 ## Folder shape
 
@@ -78,6 +80,8 @@ obvious before content leaves your Mac.
 - [ ] Every conclusion links to a note or highlighted source.
 - [ ] Open questions are separated from decisions.
 - [ ] Contradictions are named instead of smoothed over.
+- [ ] **Help → Copy Research Review Template** was used or the same structure was
+  followed.
 - [ ] Remote runner use is intentional and documented.
 - [ ] The final artifact is plain Markdown.
 

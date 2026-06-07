@@ -921,6 +921,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("extension profiles get a review sheet"))
         XCTAssertTrue(home.contains("Copy a generated Intelligence artifact as Markdown"))
         XCTAssertTrue(home.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(home.contains("Help → Copy Research Review Template"))
         XCTAssertTrue(home.contains("Help → Copy Decision Entry Template"))
         XCTAssertTrue(home.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(home.contains("[[Decision Log]]"))
@@ -962,10 +963,16 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(teamKit.contains("process isolation"))
         XCTAssertTrue(teamKit.contains("native SwiftUI surfaces"))
 
+        let researchReview = try String(contentsOf: demoRoot.appendingPathComponent("Research Review.md"), encoding: .utf8)
+        XCTAssertTrue(researchReview.contains("Help → Copy Research Review Template"))
+        XCTAssertTrue(researchReview.contains("claim table"))
+        XCTAssertTrue(researchReview.contains("review boundaries"))
+
         let workflow = try String(contentsOf: demoRoot.appendingPathComponent("Workflow Playbook.md"), encoding: .utf8)
         XCTAssertTrue(workflow.contains("import-lane declaration"))
         XCTAssertTrue(workflow.contains("generated artifact can be inspected and copied as Markdown"))
         XCTAssertTrue(workflow.contains("answer can be copied with the question attached"))
+        XCTAssertTrue(workflow.contains("Help → Copy Research"))
         XCTAssertTrue(workflow.contains("Help → Copy Decision Entry"))
         XCTAssertTrue(workflow.contains("[[Decision Log]]"))
 
@@ -989,6 +996,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("model boundary"))
         XCTAssertTrue(checklist.contains("Tasks.md"))
         XCTAssertTrue(checklist.contains("[[Workflow Playbook]]"))
+        XCTAssertTrue(checklist.contains("Help -> Copy Research Review Template"))
         XCTAssertTrue(checklist.contains("Help -> Copy Decision Entry Template"))
         XCTAssertTrue(checklist.contains("[[Team Extension Kit]]"))
         XCTAssertTrue(checklist.contains("Help -> Copy Extension Proposal"))
@@ -1007,6 +1015,17 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(template.contains("Review boundary"))
         XCTAssertTrue(template.contains("What may leave this Mac?"))
         XCTAssertTrue(template.contains("What can be disabled or reverted?"))
+    }
+
+    func testResearchReviewTemplateNamesEvidenceAndBoundaries() {
+        let template = ResearchReviewTemplate.markdown
+
+        XCTAssertTrue(template.contains("# Research Review"))
+        XCTAssertTrue(template.contains("Claim table"))
+        XCTAssertTrue(template.contains("What would change my mind?"))
+        XCTAssertTrue(template.contains("Contradictions or gaps"))
+        XCTAssertTrue(template.contains("Review boundary"))
+        XCTAssertTrue(template.contains("Did any note context leave this Mac?"))
     }
 
     func testImportLaneSetupReviewKeepsExecutionBoundariesClear() {

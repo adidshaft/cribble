@@ -45,7 +45,8 @@ What decisions are repeated across these notes?
 Create a one-page project brief from @README @Tasks and Intelligence @Feature Tour.
 ```
 
-For a more evidence-heavy version of this flow, open [[Research Review]].
+For a more evidence-heavy version of this flow, use **Help → Copy Research
+Review Template** and open [[Research Review]].
 When a decision should survive the week, use **Help → Copy Decision Entry
 Template** or copy the template in [[Decision Log]] and link the evidence that
 changed your mind.

@@ -594,6 +594,9 @@ Latest pass:
 - Help now includes Copy Decision Entry Template, backed by a reusable
   `DecisionLogTemplate.markdown`, so users can start a decision record directly
   from the macOS menu and then compare it with the DemoNotes example.
+- Help now includes Copy Research Review Template, backed by a reusable
+  `ResearchReviewTemplate.markdown`, giving evidence-heavy folders a native
+  starting point for claim tables, gaps, recommendations, and review boundaries.
 - `docs/extensions.md` now defines executable-plugin readiness gates: signed
   bundle identity, process isolation, Cribble-mediated permissions, native
   consent, previewed writes, Keychain-only secrets, revocation, audit trails, and
@@ -614,6 +617,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding the Help > Open Decision Log Guide command and welcome Decisions tile: 2 XCTest tests, 0 failures. A source search confirmed the focused command, ContentView handler, and tile route to `Decision Log.md`.
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionGuideDocumentsExecutableReadinessGates|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding executable plugin readiness gates to the public extension guide, Team Extension Kit, and Decision Log: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testDecisionLogTemplateNamesReviewBoundary'` passed on 2026-06-08 after adding Help > Copy Decision Entry Template and the shared Decision Log template: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testResearchReviewTemplateNamesEvidenceAndBoundaries'` passed on 2026-06-08 after adding Help > Copy Research Review Template and the shared Research Review template: 3 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

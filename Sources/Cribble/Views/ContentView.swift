@@ -109,6 +109,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)
             .focusedSceneValue(\.copyExtensionProposalAction, copyExtensionProposal)
             .focusedSceneValue(\.copyDecisionEntryTemplateAction, copyDecisionEntryTemplate)
+            .focusedSceneValue(\.copyResearchReviewTemplateAction, copyResearchReviewTemplate)
             .focusedSceneValue(\.copyRemoteRunnerSetupReviewAction, copyRemoteRunnerSetupReview)
             .focusedSceneValue(\.copyStarterChecklistAction, copyStarterChecklist)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
@@ -124,6 +125,12 @@ struct ContentView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(DecisionLogTemplate.markdown, forType: .string)
         library.statusMessage = "Copied decision entry template"
+    }
+
+    private func copyResearchReviewTemplate() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ResearchReviewTemplate.markdown, forType: .string)
+        library.statusMessage = "Copied research review template"
     }
 
     private func copyRemoteRunnerSetupReview() {

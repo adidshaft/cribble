@@ -90,7 +90,7 @@ changes in this demo copy only.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
 - [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
-- [ ] Open [[Research Review]] and inspect the evidence-review quick action.
+- [ ] Use **Help → Copy Research Review Template**, then open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.

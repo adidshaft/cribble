@@ -13,7 +13,7 @@ now reads more like a local-first Mac knowledge workspace:
 
 - **Start faster:** Welcome, Help, DemoNotes, shortcuts, and starter checklists
   now point beginners to the right first action, including direct decision-log
-  templates and team workflow routes.
+  templates, research-review templates, and team workflow routes.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
   Link, Copy Wiki Link, Decision Log, and reviewed AI proposals make capture,
   rationale, and handoff feel native.
@@ -64,6 +64,7 @@ Focused validation passed across the newest work:
 - Decision Log DemoNotes workflow for rationale, evidence, review boundaries,
   and follow-up tasks.
 - Help-copy template for new Decision Log entries.
+- Help-copy template for evidence-heavy Research Review briefs.
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
 - Remote-runner consent and handoff checklists.
@@ -75,8 +76,8 @@ Focused validation passed across the newest work:
 
 Full `swift test` passed after the latest broad Help command, Decision Log
 DemoNotes, remote-runner, diagnostics, and report work: 235 XCTest tests and 43
-Swift Testing tests, 0 failures. The newest Decision Log template command was
-then covered by focused tests.
+Swift Testing tests, 0 failures. The newest Decision Log and Research Review
+template commands were then covered by focused tests.
 
 ## Intentionally Not Done
 

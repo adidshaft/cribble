@@ -58,6 +58,39 @@ enum DecisionLogTemplate {
     """
 }
 
+enum ResearchReviewTemplate {
+    static let markdown = """
+    # Research Review
+
+    Goal:
+
+    Scope:
+
+    Sources reviewed:
+    - [[Source note]]
+
+    Claim table:
+    | Claim | Evidence | Confidence | What would change my mind? |
+    | --- | --- | --- | --- |
+    |  |  |  |  |
+
+    Contradictions or gaps:
+    - 
+
+    Decisions or recommendations:
+    - 
+
+    Follow-up:
+    - [ ] Add missing source
+    - [ ] Review with Project Intelligence
+
+    Review boundary:
+    - What did Cribble read?
+    - Did any note context leave this Mac?
+    - Which generated artifact was copied or saved?
+    """
+}
+
 struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
     let id: String
     let title: String

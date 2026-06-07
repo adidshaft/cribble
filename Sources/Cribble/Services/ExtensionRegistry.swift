@@ -71,6 +71,14 @@ final class ExtensionRegistry: ObservableObject {
             }
     }
 
+    var rendererResolver: ExtensionRendererResolver {
+        ExtensionRendererResolver(
+            renderers: installedExtensions
+                .filter { isEnabled($0) && $0.manifest.kind == .renderer }
+                .flatMap(\.manifest.renderers)
+        )
+    }
+
     func reload(projectRoots: [URL]) {
         var loaded: [InstalledCribbleExtension] = []
         var warnings: [String] = []
@@ -188,5 +196,37 @@ final class ExtensionRegistry: ObservableObject {
 
     private enum Keys {
         static let disabledExtensionIDs = "extensions.disabledIDs"
+    }
+}
+
+struct ExtensionRendererResolver: Equatable {
+    static let empty = ExtensionRendererResolver(renderers: [])
+
+    private let aliases: [String: CribbleExtensionRenderer.BuiltInRenderer]
+
+    init(renderers: [CribbleExtensionRenderer]) {
+        var aliases: [String: CribbleExtensionRenderer.BuiltInRenderer] = [:]
+        for renderer in renderers {
+            for language in renderer.languages {
+                aliases[Self.normalize(language)] = renderer.builtInRenderer
+            }
+        }
+        self.aliases = aliases
+    }
+
+    func resolvedLanguage(for language: String?) -> String? {
+        guard let language else { return nil }
+        let normalized = Self.normalize(language)
+        guard !normalized.isEmpty else { return nil }
+        return aliases[normalized]?.rawValue ?? normalized
+    }
+
+    func resolves(_ language: String?, to renderer: CribbleExtensionRenderer.BuiltInRenderer) -> Bool {
+        guard let language else { return false }
+        return aliases[Self.normalize(language)] == renderer
+    }
+
+    private static func normalize(_ language: String) -> String {
+        language.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }

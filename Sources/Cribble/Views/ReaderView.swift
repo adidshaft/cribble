@@ -137,6 +137,7 @@ private struct ReaderDocumentView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var readingAnnotations: ReadingAnnotationsStore
     @EnvironmentObject private var readingTrail: ReadingTrailStore
+    @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     // Reference type so the bridge's per-scroll-tick writes don't invalidate
     // this view's body (which used to re-trigger LazyVStack diffing and
     // updateNSView on every pixel of scrolling — the dominant lag source).
@@ -238,6 +239,7 @@ private struct ReaderDocumentView: View {
                                         section: section,
                                         baseURL: document.url.deletingLastPathComponent(),
                                         fontScale: fontScale,
+                                        rendererResolver: extensionRegistry.rendererResolver,
                                         isHighlightMode: isHighlightMode,
                                         highlightsByBlock: sectionPlan.highlightsByBlock,
                                         onUpdateHighlightNote: { highlightID, note in
@@ -969,6 +971,7 @@ private struct ReaderMarkdownSection: View {
     let section: ReadingSection
     let baseURL: URL
     let fontScale: Double
+    let rendererResolver: ExtensionRendererResolver
     let isHighlightMode: Bool
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
     let onUpdateHighlightNote: (UUID, String) -> Void
@@ -1031,7 +1034,11 @@ private struct ReaderMarkdownSection: View {
                     // Highlights inside fenced code blocks are not supported — these
                     // are rendered by RichCodeBlockView (a separate non-Textual view)
                     // and don't participate in the HighlightedMarkdownParser pipeline.
-                    RichCodeBlockView(language: language, code: code, fontScale: fontScale)
+                    RichCodeBlockView(
+                        language: rendererResolver.resolvedLanguage(for: language),
+                        code: code,
+                        fontScale: fontScale
+                    )
 
                 case .taskList(_, let items):
                     TaskListView(

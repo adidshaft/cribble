@@ -96,6 +96,34 @@ struct ExtensionRegistryTests {
         let reloaded = fixture.makeRegistry()
         #expect(reloaded.disabledExtensionIDs == Set(["com.example.cribble.disabled"]))
     }
+
+    @Test
+    func rendererAliasesResolveOnlyWhenEnabled() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        try fixture.writeRenderer(
+            folder: fixture.userExtensions.appendingPathComponent("renderer", isDirectory: true),
+            id: "com.example.cribble.renderer",
+            name: "Renderer",
+            languages: ["workflow", "flowchart"]
+        )
+
+        let registry = fixture.makeRegistry()
+
+        #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "mermaid")
+        #expect(registry.rendererResolver.resolvedLanguage(for: " FLOWCHART ") == "mermaid")
+        #expect(registry.rendererResolver.resolvedLanguage(for: "swift") == "swift")
+
+        guard let installed = registry.installedExtensions.first else {
+            Issue.record("Expected installed extension")
+            return
+        }
+
+        registry.setEnabled(false, for: installed)
+
+        #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "workflow")
+    }
 }
 
 private struct ExtensionRegistryFixture {
@@ -154,6 +182,36 @@ private struct ExtensionRegistryFixture {
                     title: actionTitle,
                     icon: "bolt",
                     prompt: "Run \(actionTitle)."
+                )
+            ]
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(manifest).write(
+            to: folder.appendingPathComponent("cribble-extension.json"),
+            options: .atomic
+        )
+    }
+
+    func writeRenderer(
+        folder: URL,
+        id: String,
+        name: String,
+        languages: [String]
+    ) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let manifest = CribbleExtensionManifest(
+            id: id,
+            name: name,
+            version: "0.1.0",
+            kind: .renderer,
+            summary: "Test renderer.",
+            renderers: [
+                CribbleExtensionRenderer(
+                    id: "diagram-aliases",
+                    title: "Diagram Aliases",
+                    languages: languages,
+                    builtInRenderer: .mermaid
                 )
             ]
         )

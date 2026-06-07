@@ -77,7 +77,7 @@ Good extensions should feel native, inspectable, and reversible:
 | --- | --- |
 | Quick Action | Turn highlighted text into a follow-up question |
 | Intelligence Provider | Use a trusted OpenAI-compatible runner |
-| Renderer | Preview a custom diagram fence |
+| Renderer | Map a custom diagram fence to a built-in renderer |
 | Importer | Convert exported chats, PDFs, or research bundles into notes |
 
 The rule is simple: every extension declares what it wants, Cribble shows that
@@ -149,8 +149,9 @@ runner.
 
 ### Renderer alias
 
-Declares extra fenced-code languages that should map to a built-in renderer in
-the future. Today this is inspectable metadata only.
+Declares extra fenced-code languages that should map to a built-in renderer.
+For example, a `workflow` fence can render through Cribble's bundled Mermaid
+renderer without running extension code.
 
 ```json
 {

@@ -2453,7 +2453,7 @@ enum WelcomeStarterChecklist {
     - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
     - [ ] Review [[Workflow Playbook]] for a real team workflow.
     - [ ] Open [[Team Extension Kit]] before designing an extension.
-    - [ ] Use **Settings -> Extensions -> Copy Proposal** for new extension ideas.
+    - [ ] Use **Help -> Copy Extension Proposal** or **Settings -> Extensions -> Copy Proposal** for new extension ideas.
     - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.
     - [ ] Review [[Extensions and Remote Intelligence]] before using a VPS or remote runner.
     """

@@ -90,7 +90,7 @@ changes in this demo copy only.
 - [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Open [[Research Review]] and inspect the evidence-review quick action.
-- [ ] Open [[Team Extension Kit]] and skim the manifest review checklist.
+- [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Review the remote runner checklist and notice which data may leave the Mac.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.

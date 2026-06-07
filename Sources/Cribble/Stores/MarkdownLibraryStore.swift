@@ -361,10 +361,12 @@ final class MarkdownLibraryStore: ObservableObject {
         let displayNames = rootDisplayNames
         let previousDocuments = Dictionary(uniqueKeysWithValues: documents.map { ($0.url.standardizedFileURL.path, $0) })
         let previousSignatures = documentRefreshSignatures
+        let renderCacheEntriesBefore = renderCache.count
 
         loadTask?.cancel()
         let concurrency = Self.loadConcurrency
         loadTask = Task {
+            let refreshStartedAt = Date()
             let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, reusedCount: Int, loadedCount: Int, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
                     var failedRoots: [URL] = []
@@ -484,7 +486,7 @@ final class MarkdownLibraryStore: ObservableObject {
                 // folder refresh. This keeps back/forward navigation warm after
                 // a single external edit without depending on fragile changed
                 // path delivery from FSEvents.
-                self.pruneRenderCache(using: result.documents)
+                let prunedRenderCacheEntries = self.pruneRenderCache(using: result.documents)
                 self.filterHistory()
 
                 if let selectedURL = self.selectedURL {
@@ -512,6 +514,18 @@ final class MarkdownLibraryStore: ObservableObject {
                         message: "Refresh reused \(result.reusedCount) unchanged note metadata record(s); loaded \(result.loadedCount) changed/new note(s)."
                     )
                 }
+                DiagnosticsCenter.shared.recordRefreshSnapshot(RefreshDiagnosticsSnapshot(
+                    date: refreshStartedAt,
+                    duration: Date().timeIntervalSince(refreshStartedAt),
+                    totalDocuments: result.documents.count,
+                    loadedDocuments: result.loadedCount,
+                    reusedDocuments: result.reusedCount,
+                    skippedFiles: result.skippedFiles.count,
+                    failedRoots: result.failedRoots.count,
+                    renderCacheEntriesBefore: renderCacheEntriesBefore,
+                    renderCacheEntriesAfter: self.renderCache.count,
+                    renderCacheEntriesPruned: prunedRenderCacheEntries
+                ))
 
                 if !keepStatusQuiet {
                     let skippedCount = result.skippedFiles.count
@@ -679,7 +693,9 @@ final class MarkdownLibraryStore: ObservableObject {
         )
     }
 
-    private func pruneRenderCache(using documents: [MarkdownDocumentMeta]) {
+    @discardableResult
+    private func pruneRenderCache(using documents: [MarkdownDocumentMeta]) -> Int {
+        let before = renderCache.count
         let hashesByPath = Dictionary(uniqueKeysWithValues: documents.map { meta in
             (meta.url.standardizedFileURL.path, meta.contentHash)
         })
@@ -688,6 +704,7 @@ final class MarkdownLibraryStore: ObservableObject {
             hashesByPath[url.standardizedFileURL.path] == entry.contentHash
         }
         renderCacheOrder.removeAll { renderCache[$0] == nil }
+        return before - renderCache.count
     }
 
     nonisolated private static func linkedFiles(

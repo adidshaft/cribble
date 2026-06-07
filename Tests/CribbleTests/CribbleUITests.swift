@@ -35,7 +35,7 @@ final class CribbleUITests: XCTestCase {
     }
 
     func testCopySelectedDocumentWikiLinkUsesDocumentTitle() {
-        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
         store.selectedDocument = MarkdownDocument(
             url: URL(fileURLWithPath: "/tmp/meeting.md"),
             title: "Team Review | June",
@@ -60,7 +60,7 @@ final class CribbleUITests: XCTestCase {
         let noteURL = rootURL.appendingPathComponent("meeting.md")
         try "# Better Team Rituals\n\nNotes.\n".write(to: noteURL, atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
 
@@ -69,6 +69,32 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertEqual(NSPasteboard.general.string(forType: .string), "[[Better Team Rituals]]")
         XCTAssertEqual(store.statusMessage, "Copied [[Better Team Rituals]]")
+    }
+
+    func testFolderRefreshRecordsDiagnosticsSnapshot() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RefreshDiagnostics-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        try "# One\n".write(to: rootURL.appendingPathComponent("One.md"), atomically: true, encoding: .utf8)
+        try "# Two\n".write(to: rootURL.appendingPathComponent("Two.md"), atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        let firstSnapshot = DiagnosticsCenter.shared.latestRefreshSnapshot
+        XCTAssertEqual(firstSnapshot?.totalDocuments, 2)
+        XCTAssertEqual(firstSnapshot?.loadedDocuments, 2)
+
+        store.refresh(sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        let secondSnapshot = DiagnosticsCenter.shared.latestRefreshSnapshot
+        XCTAssertEqual(secondSnapshot?.totalDocuments, 2)
+        XCTAssertEqual(secondSnapshot?.reusedDocuments, 2)
+        XCTAssertEqual(secondSnapshot?.loadedDocuments, 0)
     }
     
     func testLibraryStoreSearchFiltering() throws {

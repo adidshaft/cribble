@@ -8,6 +8,7 @@ final class DiagnosticsCenter: ObservableObject {
     @Published private(set) var events: [DiagnosticEvent] = []
     @Published private(set) var previousSessionDidNotCloseCleanly = false
     @Published private(set) var latestCrashReport: CrashReportFile?
+    @Published private(set) var latestRefreshSnapshot: RefreshDiagnosticsSnapshot?
 
     private let defaults = UserDefaults.standard
     private let maxEvents = 80
@@ -74,6 +75,10 @@ final class DiagnosticsCenter: ObservableObject {
         persistEvents()
     }
 
+    func recordRefreshSnapshot(_ snapshot: RefreshDiagnosticsSnapshot) {
+        latestRefreshSnapshot = snapshot
+    }
+
     func makeReport(library: MarkdownLibraryStore?, settings: AppSettings?) -> String {
         latestCrashReport = Self.findLatestCrashReport()
 
@@ -90,6 +95,7 @@ final class DiagnosticsCenter: ObservableObject {
         let eventLines = events.isEmpty
             ? "No recorded diagnostic events."
             : events.map { "- \($0.formatted)" }.joined(separator: "\n")
+        let refreshSection = latestRefreshSnapshot?.formattedReportSection ?? "No refresh performance snapshot recorded."
 
         let crashReportSection = latestCrashReportSection()
 
@@ -117,6 +123,9 @@ final class DiagnosticsCenter: ObservableObject {
 
         ## Imported Folders
         \(rootPaths)
+
+        ## Latest Refresh
+        \(refreshSection)
 
         ## Recent Events
         \(eventLines)
@@ -255,7 +264,7 @@ final class DiagnosticsCenter: ObservableObject {
         return payload.map(\.event)
     }
 
-    private static func timestamp(_ date: Date) -> String {
+    fileprivate static func timestamp(_ date: Date) -> String {
         diagnosticTimestamp(date)
     }
 
@@ -291,6 +300,32 @@ struct DiagnosticEvent: Identifiable, Equatable {
 
     var formatted: String {
         "\(diagnosticTimestamp(date)) [\(level.rawValue.uppercased())] \(message)"
+    }
+}
+
+struct RefreshDiagnosticsSnapshot: Equatable {
+    let date: Date
+    let duration: TimeInterval
+    let totalDocuments: Int
+    let loadedDocuments: Int
+    let reusedDocuments: Int
+    let skippedFiles: Int
+    let failedRoots: Int
+    let renderCacheEntriesBefore: Int
+    let renderCacheEntriesAfter: Int
+    let renderCacheEntriesPruned: Int
+
+    var formattedReportSection: String {
+        """
+        - Time: \(diagnosticTimestamp(date))
+        - Duration: \(String(format: "%.3fs", duration))
+        - Markdown files: \(totalDocuments)
+        - Loaded/new metadata: \(loadedDocuments)
+        - Reused metadata: \(reusedDocuments)
+        - Skipped files: \(skippedFiles)
+        - Failed roots: \(failedRoots)
+        - Render cache: \(renderCacheEntriesAfter) kept, \(renderCacheEntriesPruned) pruned from \(renderCacheEntriesBefore)
+        """
     }
 }
 

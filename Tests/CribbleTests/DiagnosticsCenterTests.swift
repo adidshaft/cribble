@@ -2,6 +2,30 @@ import XCTest
 @testable import Cribble
 
 final class DiagnosticsCenterTests: XCTestCase {
+    func testRefreshSnapshotFormatsPerformanceCounters() {
+        let snapshot = RefreshDiagnosticsSnapshot(
+            date: Date(timeIntervalSince1970: 100),
+            duration: 0.125,
+            totalDocuments: 42,
+            loadedDocuments: 3,
+            reusedDocuments: 39,
+            skippedFiles: 1,
+            failedRoots: 0,
+            renderCacheEntriesBefore: 8,
+            renderCacheEntriesAfter: 6,
+            renderCacheEntriesPruned: 2
+        )
+
+        let section = snapshot.formattedReportSection
+
+        XCTAssertTrue(section.contains("Duration: 0.125s"))
+        XCTAssertTrue(section.contains("Markdown files: 42"))
+        XCTAssertTrue(section.contains("Loaded/new metadata: 3"))
+        XCTAssertTrue(section.contains("Reused metadata: 39"))
+        XCTAssertTrue(section.contains("Skipped files: 1"))
+        XCTAssertTrue(section.contains("Render cache: 6 kept, 2 pruned from 8"))
+    }
+
     func testCrashReportFinderPrefersNewestCribbleReport() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("CribbleCrashReports-\(UUID().uuidString)", isDirectory: true)

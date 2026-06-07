@@ -65,6 +65,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The GitHub pull request template now includes an extension/plugin review section for read scope, writes, network, secrets, disable behavior, native SwiftUI UI, and focused tests/docs.
 - Copied extension and import-lane review summaries now include the same contributor safety contract, so PRs and team approvals carry read-only-first, least-read/write, Keychain-only secrets, clean-disable, and native SwiftUI expectations without hunting through docs.
 - Extension manifest loading now rejects secret-looking JSON keys and values before decoding, so ignored unknown fields cannot smuggle API keys, bearer tokens, passwords, private keys, authorization headers, or token query strings into `cribble-extension.json`.
+- Extension permission validation now enforces the API v1 least-permission map: quick actions may request only current-note reads, remote runners may request only OpenAI-compatible network, renderer/importer declarations cannot request note/network permissions, `read-project-notes` is reserved until consent/scoping semantics exist, and `propose-file-changes` is blocked until preview/review execution exists.
+- Extension registry contribution getters now defensively re-check manifest validity before exposing quick actions, runner profiles, renderer aliases, or import lanes, keeping least-permission behavior intact even if a future path bypasses scan-time loading.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.
@@ -182,6 +184,8 @@ swift test --filter DiagnosticsCenterTests
 swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
 swift test --filter ExtensionManifestTests
+swift test --filter ExtensionManifestTests
+swift test --filter 'ExtensionManifestTests|ExtensionRegistryTests'
 ```
 
 Latest pass:
@@ -238,6 +242,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after wiring Intelligence diagnostics through report entry points: 16 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after copied extension safety contracts: 10 Swift Testing tests, 0 failures.
 - Latest `swift test --filter ExtensionManifestTests` passed on 2026-06-08 after manifest secret-material rejection: 19 Swift Testing tests, 0 failures.
+- Latest `swift test --filter ExtensionManifestTests` passed on 2026-06-08 after least-permission manifest validation: 25 Swift Testing tests, 0 failures.
+- Latest `swift test --filter 'ExtensionManifestTests|ExtensionRegistryTests'` passed on 2026-06-08 after registry-side permission gating: 36 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

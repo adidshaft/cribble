@@ -146,6 +146,10 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.renderers = renderers
         self.importers = importers
     }
+
+    var isValidForAPIV1Contributions: Bool {
+        (try? ExtensionManifestLoader.validate(self)) != nil
+    }
 }
 
 struct CribbleExtensionTrustDeclaration: Codable, Equatable {
@@ -345,6 +349,7 @@ enum ExtensionManifestLoader {
         if manifest.runtime == .executable {
             throw ExtensionManifestError.invalidContribution("Executable extension runtimes are not supported by API version \(CribbleExtensionManifest.supportedAPIVersion).")
         }
+        try validatePermissions(manifest.permissions, manifest: manifest)
         try validateQuickActions(manifest.quickActions, manifest: manifest)
         try validateIntelligenceProviders(manifest.intelligenceProviders, manifest: manifest)
         try validateRenderers(manifest.renderers, manifest: manifest)
@@ -370,6 +375,49 @@ enum ExtensionManifestLoader {
     private static func isHTTPURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
         return scheme == "http" || scheme == "https"
+    }
+
+    private static func validatePermissions(
+        _ permissions: [CribbleExtensionPermission],
+        manifest: CribbleExtensionManifest
+    ) throws {
+        if permissions.contains(.proposeFileChanges) {
+            throw ExtensionManifestError.invalidContribution("propose-file-changes is not supported by extension API version \(CribbleExtensionManifest.supportedAPIVersion). Use Cribble's preview/review flows instead.")
+        }
+        if permissions.contains(.readProjectNotes) {
+            throw ExtensionManifestError.invalidContribution("read-project-notes is reserved for a future consented project-scope API.")
+        }
+
+        let permissionSet = Set(permissions)
+        switch manifest.kind {
+        case .quickAction:
+            if !manifest.quickActions.isEmpty,
+               !permissionSet.contains(.readCurrentNote) {
+                throw ExtensionManifestError.invalidContribution("Quick action extensions must request read-current-note.")
+            }
+            if permissions.contains(where: { $0 != .readCurrentNote }) {
+                throw ExtensionManifestError.invalidContribution("Quick action extensions may only request read-current-note in API version \(CribbleExtensionManifest.supportedAPIVersion).")
+            }
+            if permissionSet.contains(.networkOpenAICompatible) {
+                throw ExtensionManifestError.invalidContribution("Quick action extensions cannot request network-openai-compatible.")
+            }
+        case .intelligenceProvider:
+            if !manifest.intelligenceProviders.isEmpty,
+               !permissionSet.contains(.networkOpenAICompatible) {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider extensions must request network-openai-compatible.")
+            }
+            if permissionSet.contains(.readCurrentNote) || permissionSet.contains(.readProjectNotes) {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider extensions cannot request note-read permissions in API version \(CribbleExtensionManifest.supportedAPIVersion).")
+            }
+        case .renderer:
+            if !permissions.isEmpty {
+                throw ExtensionManifestError.invalidContribution("Renderer extensions cannot request permissions in API version \(CribbleExtensionManifest.supportedAPIVersion).")
+            }
+        case .importer:
+            if !permissions.isEmpty {
+                throw ExtensionManifestError.invalidContribution("Importer extensions cannot request permissions in API version \(CribbleExtensionManifest.supportedAPIVersion).")
+            }
+        }
     }
 
     private static func validateQuickActions(

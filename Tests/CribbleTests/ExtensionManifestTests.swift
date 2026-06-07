@@ -179,6 +179,7 @@ struct ExtensionManifestTests {
             kind: .quickAction,
             summary: "Declares data-only actions.",
             runtime: .declarative,
+            permissions: [.readCurrentNote],
             quickActions: [
                 CribbleExtensionQuickAction(
                     id: "plain-language",
@@ -192,6 +193,80 @@ struct ExtensionManifestTests {
         try ExtensionManifestLoader.validate(manifest)
 
         #expect(manifest.runtime.summary.contains("does not run extension code"))
+        #expect(manifest.isValidForAPIV1Contributions)
+    }
+
+    @Test
+    func rejectsQuickActionsWithoutCurrentNotePermission() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.actions",
+            name: "Actions",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares actions without read access.",
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "plain-language",
+                    title: "Plain language",
+                    icon: "text.alignleft",
+                    prompt: "Rewrite the current note in plain language."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Quick action extensions must request read-current-note.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func rejectsUnsupportedWritePermission() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.writer",
+            name: "Writer",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Attempts to request file writes.",
+            permissions: [.readCurrentNote, .proposeFileChanges],
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "write-note",
+                    title: "Write note",
+                    icon: "square.and.pencil",
+                    prompt: "Draft a source-note edit."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("propose-file-changes is not supported by extension API version 1. Use Cribble's preview/review flows instead.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+        #expect(!manifest.isValidForAPIV1Contributions)
+    }
+
+    @Test
+    func rejectsReservedProjectReadPermission() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.project-reader",
+            name: "Project Reader",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Attempts to request project-wide note reads.",
+            permissions: [.readCurrentNote, .readProjectNotes],
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "project-summary",
+                    title: "Project summary",
+                    icon: "folder",
+                    prompt: "Summarize the project notes."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("read-project-notes is reserved for a future consented project-scope API.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+        #expect(!manifest.isValidForAPIV1Contributions)
     }
 
     @Test
@@ -341,6 +416,57 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsProviderProfilesWithoutNetworkPermission() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.vps",
+            name: "Team VPS",
+            version: "0.1.0",
+            kind: .intelligenceProvider,
+            summary: "Adds a trusted OpenAI-compatible VPS runner.",
+            intelligenceProviders: [
+                CribbleExtensionIntelligenceProvider(
+                    id: "research-gpu",
+                    title: "Research GPU",
+                    baseURL: URL(string: "https://ai.example.com/v1")!,
+                    modelID: "qwen3-32b",
+                    embeddingModelID: nil,
+                    trustLabel: "Team-controlled VPS"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Intelligence provider extensions must request network-openai-compatible.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func rejectsProviderProfilesWithNoteReadPermission() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.vps",
+            name: "Team VPS",
+            version: "0.1.0",
+            kind: .intelligenceProvider,
+            summary: "Adds a trusted OpenAI-compatible VPS runner.",
+            permissions: [.networkOpenAICompatible, .readProjectNotes],
+            intelligenceProviders: [
+                CribbleExtensionIntelligenceProvider(
+                    id: "research-gpu",
+                    title: "Research GPU",
+                    baseURL: URL(string: "https://ai.example.com/v1")!,
+                    modelID: "qwen3-32b",
+                    embeddingModelID: nil,
+                    trustLabel: "Team-controlled VPS"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("read-project-notes is reserved for a future consented project-scope API.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsProviderProfilesOnWrongKind() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.actions",
@@ -390,6 +516,30 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsRendererPermissions() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.renderer",
+            name: "Diagram aliases",
+            version: "0.1.0",
+            kind: .renderer,
+            summary: "Maps extra diagram fences to built-in renderers.",
+            permissions: [.readCurrentNote],
+            renderers: [
+                CribbleExtensionRenderer(
+                    id: "flowcharts",
+                    title: "Flowcharts",
+                    languages: ["flowchart"],
+                    builtInRenderer: .mermaid
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Renderer extensions cannot request permissions in API version 1.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsRenderersOnWrongKind() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.actions",
@@ -434,6 +584,30 @@ struct ExtensionManifestTests {
 
         #expect(manifest.importers.first?.fileExtensions == ["json", "txt"])
         #expect(manifest.importers.first?.outputFormat == "markdown")
+    }
+
+    @Test
+    func rejectsImporterPermissions() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.importer",
+            name: "Research Importers",
+            version: "0.1.0",
+            kind: .importer,
+            summary: "Declares import lanes for future safe conversion.",
+            permissions: [.readCurrentNote],
+            importers: [
+                CribbleExtensionImporter(
+                    id: "chat-export",
+                    title: "Chat Export",
+                    fileExtensions: ["json"],
+                    outputFormat: "markdown"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Importer extensions cannot request permissions in API version 1.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
     }
 
     @Test

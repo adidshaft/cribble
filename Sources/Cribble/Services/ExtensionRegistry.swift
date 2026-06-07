@@ -54,7 +54,7 @@ final class ExtensionRegistry: ObservableObject {
 
     var quickActions: [QuickAction] {
         installedExtensions
-            .filter { isEnabled($0) && $0.manifest.kind == .quickAction }
+            .filter { isEnabled($0) && $0.manifest.kind == .quickAction && $0.manifest.isValidForAPIV1Contributions }
             .flatMap { installed in
                 installed.manifest.quickActions.map { contribution in
                     QuickAction(
@@ -70,7 +70,7 @@ final class ExtensionRegistry: ObservableObject {
 
     var intelligenceProviderProfiles: [ExtensionIntelligenceProviderProfile] {
         installedExtensions
-            .filter { isEnabled($0) && $0.manifest.kind == .intelligenceProvider }
+            .filter { isEnabled($0) && $0.manifest.kind == .intelligenceProvider && $0.manifest.isValidForAPIV1Contributions }
             .flatMap { installed in
                 installed.manifest.intelligenceProviders.map { provider in
                     ExtensionIntelligenceProviderProfile(
@@ -89,14 +89,14 @@ final class ExtensionRegistry: ObservableObject {
     var rendererResolver: ExtensionRendererResolver {
         ExtensionRendererResolver(
             renderers: installedExtensions
-                .filter { isEnabled($0) && $0.manifest.kind == .renderer }
+                .filter { isEnabled($0) && $0.manifest.kind == .renderer && $0.manifest.isValidForAPIV1Contributions }
                 .flatMap(\.manifest.renderers)
         )
     }
 
     var importerCapabilities: [ExtensionImporterCapability] {
         installedExtensions
-            .filter { isEnabled($0) && $0.manifest.kind == .importer }
+            .filter { isEnabled($0) && $0.manifest.kind == .importer && $0.manifest.isValidForAPIV1Contributions }
             .flatMap { installed in
                 installed.manifest.importers.map { importer in
                     ExtensionImporterCapability(

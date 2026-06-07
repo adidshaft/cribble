@@ -254,6 +254,19 @@ Known permission strings:
 Permissions are shown to users in Settings. They are not a bypass: API v1 still
 routes every contribution through Cribble's existing safe surfaces.
 
+Permission rules are intentionally narrow in API v1:
+
+- quick-action extensions that contribute prompts must request exactly
+  `read-current-note`;
+- intelligence-provider extensions that contribute remote runner profiles must
+  request exactly `network-openai-compatible`;
+- renderer and importer extensions must not request permissions because they
+  are declarative aliases or lanes only;
+- `read-project-notes` is reserved for a future consented project-scope API and
+  is rejected by API v1 manifests;
+- `propose-file-changes` is reserved for a future preview/review capability and
+  is rejected by API v1 manifests.
+
 ## Validation Rules
 
 Cribble rejects manifests that:
@@ -265,6 +278,8 @@ Cribble rejects manifests that:
 - point `entrypoint` outside the extension folder;
 - include secret-looking fields or values such as API keys, bearer tokens,
   passwords, private keys, authorization headers, or token query strings;
+- request permissions that do not match the extension kind or API v1 safety
+  boundary;
 - declare contributions under the wrong `kind`;
 - duplicate contribution ids within a manifest;
 - use unsafe language, importer, or contribution tokens.

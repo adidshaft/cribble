@@ -9,8 +9,16 @@ struct DiffPreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(title)
-                    .font(.title2.weight(.semibold))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.title2.weight(.semibold))
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer()
             }
 
@@ -42,7 +50,7 @@ struct DiffPreviewSheet: View {
             HStack {
                 Button("Cancel", role: .cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                    .help("Discard the suggested AI patch")
+                    .help(cancelHelp)
                 Spacer()
                 Button(applyTitle, action: onApply)
                     .keyboardShortcut(.defaultAction)
@@ -70,6 +78,18 @@ struct DiffPreviewSheet: View {
 
     private var applyHelp: String {
         isNewFileProposal ? "Create the reviewed Markdown note" : "Apply the reviewed Markdown link changes"
+    }
+
+    private var cancelHelp: String {
+        isNewFileProposal ? "Discard the proposed note" : "Discard the suggested AI patch"
+    }
+
+    private var subtitle: String? {
+        if isNewFileProposal, let fileName = diff.files.first?.newPath {
+            return diff.files.count == 1 ? "Creates \(fileName)" : "Creates \(diff.files.count) new notes"
+        }
+        guard diff.files.count > 1 else { return nil }
+        return "Updates \(diff.files.count) files"
     }
 }
 

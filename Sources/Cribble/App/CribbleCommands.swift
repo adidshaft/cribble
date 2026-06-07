@@ -95,6 +95,7 @@ struct CribbleCommands: Commands {
                 .disabled(copySelectedDocumentMarkdown == nil)
 
             Button("Copy Markdown Link", action: { copySelectedDocumentMarkdownLink?() })
+                .keyboardShortcut("k", modifiers: [.command, .option, .shift])
                 .disabled(copySelectedDocumentMarkdownLink == nil)
 
             Button("Copy Wiki Link", action: { copySelectedDocumentWikiLink?() })

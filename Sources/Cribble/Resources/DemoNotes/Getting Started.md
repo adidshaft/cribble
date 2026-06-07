@@ -60,6 +60,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `⌘ O` / `⌘ R` | Open folder · Refresh |
 | `⌘ ⌥ E` | Open current file in your editor |
 | `⌘ ⌥ ⇧ M` | Copy current note as Markdown |
+| `⌘ ⌥ ⇧ K` | Copy current note as a Markdown link |
 | `⌘ ⌥ L` | AI Link Notes |
 | `⌘ ⌥ I` | Project Intelligence |
 | `⌘ J` | Open Cribble AI chat |

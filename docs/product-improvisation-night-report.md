@@ -141,6 +141,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - File and sidebar note menus now include Copy Markdown Link, producing a
   portable `[Title](relative/path.md)` handoff with escaped titles and encoded
   nested paths for GitHub, email, docs, and chat.
+- Copy Markdown Link now has a native shortcut (`Command-Option-Shift-K`) and
+  appears in the in-reader shortcut popover plus DemoNotes shortcut table.
 - The diff preview sheet now labels brand-new file proposals as “Review New Note” with a “Create Note” action, so manual and AI-generated note creation no longer look like link-edit reviews.
 - The Import setup sheet now explains the safe import-lane model as a three-step path: declare file types, review the data-only manifest, and disable the lane cleanly.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
@@ -429,6 +431,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native New Note proposals: 23 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes New Note and Copy Markdown onboarding: 26 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testCopySelectedDocumentMarkdownLinkUsesTitleAndFileName|CribbleUITests/testCopyMarkdownLinkForURLUsesRelativeEncodedPath|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding Copy Markdown Link to File/sidebar handoff surfaces and DemoNotes onboarding: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testCopySelectedDocumentMarkdownLinkUsesTitleAndFileName|CribbleUITests/testCopyMarkdownLinkForURLUsesRelativeEncodedPath|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after assigning `Command-Option-Shift-K` to Copy Markdown Link and updating shortcut onboarding: 3 XCTest tests, 0 failures.
 - Docs-only validation on 2026-06-08 confirmed `SECURITY.md` includes extension manifests, remote runners, Keychain/API-key redaction, diagnostic reports, importer/renderer declarations, and hidden execution guidance.
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after adding visible New Note entry points to the sidebar controls and welcome surface: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after clarifying the review sheet subtitle and cancel help for new-note proposals: 1 XCTest test, 0 failures.

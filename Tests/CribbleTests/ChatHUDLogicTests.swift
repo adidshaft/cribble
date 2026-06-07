@@ -291,6 +291,16 @@ final class ChatHUDLogicTests: XCTestCase {
     }
 
     @MainActor
+    func testEngineChooserShowsWhenVersionMarkerRemainsButChoiceKeysAreDeleted() {
+        withCleanEngineChoiceDefaults {
+            UserDefaults.standard.set(1, forKey: "chatHUD.engineChoiceVersion")
+            let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            XCTAssertTrue(viewModel.needsEngineChoice)
+            XCTAssertEqual(viewModel.selectedModel.id, ModelCatalog.defaultModel.id)
+        }
+    }
+
+    @MainActor
     func testEngineChoicePersistsAcrossViewModelRecreation() {
         withCleanEngineChoiceDefaults {
             let chosen = ModelCatalog.cloudModels.last ?? ModelCatalog.defaultModel

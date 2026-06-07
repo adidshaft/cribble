@@ -99,10 +99,6 @@ final class ChatHUDViewModel: ObservableObject {
     }
 
     private static func hasCompletedEngineChoice(defaults: UserDefaults) -> Bool {
-        if defaults.integer(forKey: ModelDefaultsKey.engineChoiceVersion) >= 1 {
-            return true
-        }
-
         if Bundle.main.bundleIdentifier == "com.cribble.reader" {
             return defaults
                 .persistentDomain(forName: "com.cribble.reader")?[ModelDefaultsKey.hasChosenEngine] as? Bool == true

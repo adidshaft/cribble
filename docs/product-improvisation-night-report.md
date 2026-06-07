@@ -55,6 +55,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Seeded Project Intelligence artifacts for DemoNotes now match the current tour, including Tasks and Intelligence, Workflow Playbook, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
+- File now includes Copy Markdown (`Command-Option-Shift-M`) for the selected note, giving users a native Mac handoff path into chat, email, issue trackers, and other Markdown tools without revealing paths or creating wiki links.
 - The Import setup sheet now explains the safe import-lane model as a three-step path: declare file types, review the data-only manifest, and disable the lane cleanly.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
@@ -294,6 +295,7 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash-command discovery and alias ranking: 36 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after welcome-screen folder shortcuts: 20 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after idea-first extension contribution guidance: 23 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native Copy Markdown command: 21 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

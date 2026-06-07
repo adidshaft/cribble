@@ -52,6 +52,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `⌘ ⇧ F` | Toggle Focus Mode |
 | `⌘ O` / `⌘ R` | Open folder · Refresh |
 | `⌘ ⌥ E` | Open current file in your editor |
+| `⌘ ⌥ ⇧ M` | Copy current note as Markdown |
 | `⌘ ⌥ L` | AI Link Notes |
 | `⌘ ⌥ I` | Project Intelligence |
 | `⌘ J` | Open Cribble AI chat |

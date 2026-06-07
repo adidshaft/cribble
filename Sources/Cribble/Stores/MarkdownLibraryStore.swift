@@ -998,6 +998,13 @@ final class MarkdownLibraryStore: ObservableObject {
         copyActualPath(for: selectedDocument.url)
     }
 
+    func copySelectedDocumentMarkdown() {
+        guard let selectedDocument else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(selectedDocument.rawMarkdown, forType: .string)
+        statusMessage = "Copied Markdown for \(selectedDocument.title)"
+    }
+
     func copySelectedDocumentWikiLink() {
         guard let selectedDocument else { return }
         copyWikiLink(title: selectedDocument.title)
@@ -1781,7 +1788,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.3.8"
+    private static let bundledDemoNotesVersion = "1.3.9"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

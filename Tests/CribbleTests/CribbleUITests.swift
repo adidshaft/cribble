@@ -51,6 +51,23 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, #"Copied [[Team Review \| June]]"#)
     }
 
+    func testCopySelectedDocumentMarkdownUsesRawMarkdown() {
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.selectedDocument = MarkdownDocument(
+            url: URL(fileURLWithPath: "/tmp/brief.md"),
+            title: "Launch Brief",
+            rawMarkdown: "# Launch Brief\n\n- [ ] Ship it\n",
+            headings: [],
+            outboundLinks: []
+        )
+
+        NSPasteboard.general.clearContents()
+        store.copySelectedDocumentMarkdown()
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "# Launch Brief\n\n- [ ] Ship it\n")
+        XCTAssertEqual(store.statusMessage, "Copied Markdown for Launch Brief")
+    }
+
     func testCopyWikiLinkForURLUsesLoadedMetadata() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("SidebarWikiLink-\(UUID().uuidString)", isDirectory: true)

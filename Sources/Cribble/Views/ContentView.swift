@@ -40,6 +40,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.revealSelectedDocumentAction, selectedDocumentAction(library.revealSelectedDocumentInFinder))
             .focusedSceneValue(\.copySelectedDocumentPathAction, selectedDocumentAction(library.copySelectedDocumentPath))
+            .focusedSceneValue(\.copySelectedDocumentMarkdownAction, selectedDocumentAction(library.copySelectedDocumentMarkdown))
             .focusedSceneValue(\.copySelectedDocumentWikiLinkAction, selectedDocumentAction(library.copySelectedDocumentWikiLink))
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })

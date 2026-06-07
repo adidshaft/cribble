@@ -74,15 +74,15 @@ private struct ShortcutReferencePopover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             shortcutSection("App", rows: [
-                ("Left / Right Arrow", "Back / Forward"),
-                ("F", "Open folder"),
-                ("R", "Refresh folder"),
-                ("E", "Open current file in your editor"),
-                ("O", "Toggle outline"),
-                ("Space", "Toggle Focus Mode"),
-                ("L", "AI Link Notes"),
-                ("I", "Project Intelligence"),
-                ("C", "Open Cribble AI chat")
+                ("Command Left / Right", "Back / Forward"),
+                ("Command O", "Open folder"),
+                ("Command R", "Refresh folder"),
+                ("Command Option E", "Open current file in your editor"),
+                ("Command Option O", "Toggle outline"),
+                ("Command Shift F", "Toggle Focus Mode"),
+                ("Command Option L", "AI Link Notes"),
+                ("Command Option I", "Project Intelligence"),
+                ("Command J", "Open Cribble AI chat")
             ])
 
             Divider()

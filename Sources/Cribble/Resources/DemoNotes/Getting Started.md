@@ -33,9 +33,9 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 
 ## Focus, outline & folders
 
-- **Space** toggles Focus Mode (hides the sidebar for distraction-free reading).
-- **O** toggles the headings outline.
-- **F** opens a folder, and **R** refreshes it.
+- **Command Shift F** toggles Focus Mode (hides the sidebar for distraction-free reading).
+- **Command Option O** toggles the headings outline.
+- **Command O** opens a folder, and **Command R** refreshes it.
 - **Right-click a folder** to **Pin** it to the top or **Choose Icon…** — both are sidebar-only; files on disk never move.
 
 ## Keyboard shortcuts
@@ -47,13 +47,14 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `P` | Toggle the Reading Trail panel |
 | `C` | Open Cribble AI chat |
 | `Esc` | Exit highlight mode · close a zoom overlay |
-| `←` / `→` | Back · Forward |
-| `O` | Toggle outline |
-| `Space` | Toggle Focus Mode |
-| `F` / `R` | Open folder · Refresh |
-| `E` | Open current file in your editor |
-| `L` | AI Link Notes |
-| `I` | Project Intelligence |
+| `⌘ ←` / `⌘ →` | Back · Forward |
+| `⌘ ⌥ O` | Toggle outline |
+| `⌘ ⇧ F` | Toggle Focus Mode |
+| `⌘ O` / `⌘ R` | Open folder · Refresh |
+| `⌘ ⌥ E` | Open current file in your editor |
+| `⌘ ⌥ L` | AI Link Notes |
+| `⌘ ⌥ I` | Project Intelligence |
+| `⌘ J` | Open Cribble AI chat |
 | `⌘ ,` | Settings |
 
 ## Mouse & trackpad

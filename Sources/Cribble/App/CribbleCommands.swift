@@ -22,17 +22,17 @@ struct CribbleCommands: Commands {
         // File — folder operations (replaces the default "New" group).
         CommandGroup(replacing: .newItem) {
             Button("Open Folder…", action: { openFolder?() })
-                .keyboardShortcut("f", modifiers: [])
+                .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
 
             Button("Refresh", action: { refreshFolder?() })
-                .keyboardShortcut("r", modifiers: [])
+                .keyboardShortcut("r", modifiers: [.command])
                 .disabled(refreshFolder == nil)
 
             Divider()
 
             Button("Open in Editor", action: { openInEditor?() })
-                .keyboardShortcut("e", modifiers: [])
+                .keyboardShortcut("e", modifiers: [.command, .option])
                 .disabled(openInEditor == nil)
 
             Divider()
@@ -48,45 +48,42 @@ struct CribbleCommands: Commands {
             Divider()
 
             Button("Back", action: { navigateBack?() })
-                .keyboardShortcut(.leftArrow, modifiers: [])
+                .keyboardShortcut(.leftArrow, modifiers: [.command])
                 .disabled(navigateBack == nil)
 
             Button("Forward", action: { navigateForward?() })
-                .keyboardShortcut(.rightArrow, modifiers: [])
+                .keyboardShortcut(.rightArrow, modifiers: [.command])
                 .disabled(navigateForward == nil)
 
             Divider()
 
             Button("Toggle Outline", action: { toggleOutline?() })
-                .keyboardShortcut("o", modifiers: [])
+                .keyboardShortcut("o", modifiers: [.command, .option])
                 .disabled(toggleOutline == nil)
 
             Button("Toggle Focus Mode", action: { toggleFocusMode?() })
-                .keyboardShortcut(" ", modifiers: [])
+                .keyboardShortcut("f", modifiers: [.command, .shift])
                 .disabled(toggleFocusMode == nil)
 
             Divider()
 
             Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
-                .keyboardShortcut("b", modifiers: [])
             Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
-                .keyboardShortcut("h", modifiers: [])
             Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
-                .keyboardShortcut("p", modifiers: [])
         }
 
         // AI — the two LLM entry points.
         CommandMenu("AI") {
             Button("AI Link Notes…", action: { runAILinking?() })
-                .keyboardShortcut("l", modifiers: [])
+                .keyboardShortcut("l", modifiers: [.command, .option])
                 .disabled(runAILinking == nil)
 
             Button("Cribble AI Chat", action: { toggleChatHUD?() })
-                .keyboardShortcut("c", modifiers: [])
+                .keyboardShortcut("j", modifiers: [.command])
                 .disabled(toggleChatHUD == nil)
 
             Button("Project Intelligence", action: { toggleIntelligenceHUD?() })
-                .keyboardShortcut("i", modifiers: [])
+                .keyboardShortcut("i", modifiers: [.command, .option])
                 .disabled(toggleIntelligenceHUD == nil)
         }
 

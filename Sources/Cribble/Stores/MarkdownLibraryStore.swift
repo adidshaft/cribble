@@ -256,6 +256,20 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    func openDemoNote(named fileName: String, sortMode: FileSortMode, reset: Bool = false) {
+        do {
+            let demoURL = try installBundledDemo(reset: reset)
+            openFolder(demoURL, sortMode: sortMode)
+            let noteURL = demoURL.appendingPathComponent(fileName)
+            if FileManager.default.fileExists(atPath: noteURL.path) {
+                select(url: noteURL)
+            }
+            statusMessage = "Opened \(fileName.replacingOccurrences(of: ".md", with: ""))"
+        } catch {
+            errorMessage = "Couldn't open DemoNotes: \(error.localizedDescription)"
+        }
+    }
+
     func isImportedRoot(_ url: URL) -> Bool {
         rootURLs.contains(url.standardizedFileURL)
     }

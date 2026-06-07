@@ -34,6 +34,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
+- Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
 - DemoNotes now include a `Workflow Playbook` that explains practical flows for reading, project brief creation, team extension conventions, and trusted remote intelligence use.
 - DemoNotes now include a `Research Review` workflow for evidence-heavy folders, claim tables, source trails, extension quick actions, and intentional remote-runner use.
 - File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
@@ -98,9 +99,7 @@ swift test
 swift test --filter CribbleUITests
 swift test --filter SemanticSearchIndexTests
 swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'
-swift test --filter CribbleUITests
 swift test --filter Extension
-swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -114,6 +113,7 @@ Latest pass:
 - Latest `swift test --filter Extension` passed on 2026-06-08 after trust declarations: 23 Swift Testing tests, 0 failures.
 - Latest `swift test --filter Extension` passed on 2026-06-08 after the trust-decision store: 27 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after selected-note menu actions: 11 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Workflow Playbook entry points: 11 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

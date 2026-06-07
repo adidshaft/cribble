@@ -2210,6 +2210,13 @@ private struct WelcomeView: View {
                 .controlSize(.large)
                 .cribbleGlassButton()
                 .help("Open the bundled DemoNotes tutorial")
+
+                Button("Workflow Playbook") {
+                    library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode)
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Open practical DemoNotes workflows")
             }
 
             Button("Reset DemoNotes") {

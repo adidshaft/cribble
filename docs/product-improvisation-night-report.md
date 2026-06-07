@@ -17,6 +17,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
 - Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
+- The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
@@ -78,6 +79,6 @@ Latest pass:
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
 2. Add secure credential handling for remote runner profiles without storing secrets in manifests.
-3. Bring the same preflight confirmation to the sidebar brain quick-toggle.
-4. Add an in-demo checklist/progress affordance for the tour notes.
-5. Add first-class renderer/importer contribution models while keeping execution data-only.
+3. Add an in-demo checklist/progress affordance for the tour notes.
+4. Add first-class renderer/importer contribution models while keeping execution data-only.
+5. Update the MLX cache-limit call to the newer API to remove the current deprecation warning.

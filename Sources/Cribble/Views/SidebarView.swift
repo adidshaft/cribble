@@ -6,6 +6,7 @@ struct SidebarView: View {
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     @EnvironmentObject private var intelligence: IntelligenceEngine
     @State private var iconPickerTarget: FolderIconTarget?
+    @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,6 +57,24 @@ struct SidebarView: View {
                 library.setFolderIcon(symbol, for: target.url)
             }
         }
+        .sheet(item: $intelligencePreflightTarget) { target in
+            IntelligencePreflightSheet(
+                scope: .folder,
+                roots: [target.url],
+                usesRemoteRunner: usesRemoteRunner,
+                modelLabel: activeModelLabel,
+                performanceMode: intelligence.settings.performanceMode,
+                onCancel: { intelligencePreflightTarget = nil },
+                onStart: {
+                    let url = target.url.standardizedFileURL
+                    intelligencePreflightTarget = nil
+                    Task {
+                        await intelligence.enable(rootURL: url)
+                        IntelligenceHUDController.shared.show()
+                    }
+                }
+            )
+        }
     }
 
     /// Extracted from the `List` builder to keep the generic row expression
@@ -90,14 +109,7 @@ struct SidebarView: View {
                     Divider()
 
                     Button("Open Project Intelligence", systemImage: "brain") {
-                        Task {
-                            // Switch the engine to this project if it isn't the
-                            // currently-enabled one, then show the HUD.
-                            if intelligence.enabledRootPath != node.url.standardizedFileURL.path {
-                                await intelligence.enable(rootURL: node.url)
-                            }
-                            IntelligenceHUDController.shared.show()
-                        }
+                        openIntelligence(for: node.url)
                     }
 
                     Button("Rename Folder...", systemImage: "pencil") {
@@ -115,6 +127,30 @@ struct SidebarView: View {
                     }
                 }
             }
+    }
+
+    private func openIntelligence(for url: URL) {
+        let standardized = url.standardizedFileURL
+        if intelligence.enabledRootPath == standardized.path {
+            IntelligenceHUDController.shared.show()
+        } else {
+            intelligencePreflightTarget = IntelligencePreflightTarget(url: standardized)
+        }
+    }
+
+    private var usesRemoteRunner: Bool {
+        guard let runnerURL = intelligence.settings.localRunnerBaseURL,
+              let url = URL(string: runnerURL),
+              let host = url.host?.lowercased()
+        else { return false }
+        return !(host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost"))
+    }
+
+    private var activeModelLabel: String {
+        if intelligence.settings.localRunnerBaseURL != nil {
+            return intelligence.settings.modelID
+        }
+        return intelligence.activeModel?.shortName ?? "Model"
     }
 }
 
@@ -207,6 +243,7 @@ private struct SidebarControls: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var intelligence: IntelligenceEngine
+    @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
 
     var body: some View {
         controls
@@ -219,6 +256,24 @@ private struct SidebarControls: View {
             intelligenceButton
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(item: $intelligencePreflightTarget) { target in
+            IntelligencePreflightSheet(
+                scope: .folder,
+                roots: [target.url],
+                usesRemoteRunner: usesRemoteRunner,
+                modelLabel: activeModelLabel,
+                performanceMode: intelligence.settings.performanceMode,
+                onCancel: { intelligencePreflightTarget = nil },
+                onStart: {
+                    let url = target.url.standardizedFileURL
+                    intelligencePreflightTarget = nil
+                    Task {
+                        await intelligence.enable(rootURL: url)
+                        IntelligenceHUDController.shared.show()
+                    }
+                }
+            )
+        }
     }
 
     private var groupedControls: some View {
@@ -321,13 +376,37 @@ private struct SidebarControls: View {
 
     private func toggleIntelligence() {
         guard let activeIntelligenceRoot else { return }
-        Task {
-            if isIntelligenceOn {
+        if isIntelligenceOn {
+            Task {
                 await intelligence.disable()
-            } else {
-                await intelligence.enable(rootURL: activeIntelligenceRoot)
             }
+        } else {
+            intelligencePreflightTarget = IntelligencePreflightTarget(url: activeIntelligenceRoot)
         }
+    }
+
+    private func openIntelligence(for url: URL) {
+        let standardized = url.standardizedFileURL
+        if intelligence.enabledRootPath == standardized.path {
+            IntelligenceHUDController.shared.show()
+        } else {
+            intelligencePreflightTarget = IntelligencePreflightTarget(url: standardized)
+        }
+    }
+
+    private var usesRemoteRunner: Bool {
+        guard let runnerURL = intelligence.settings.localRunnerBaseURL,
+              let url = URL(string: runnerURL),
+              let host = url.host?.lowercased()
+        else { return false }
+        return !(host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost"))
+    }
+
+    private var activeModelLabel: String {
+        if intelligence.settings.localRunnerBaseURL != nil {
+            return intelligence.settings.modelID
+        }
+        return intelligence.activeModel?.shortName ?? "Model"
     }
 
     private var intelligenceHelp: String {
@@ -347,6 +426,11 @@ private struct SidebarControls: View {
         case .driftDetected(let n): "\(n) architecture drift change(s) detected"
         }
     }
+}
+
+private struct IntelligencePreflightTarget: Identifiable {
+    let url: URL
+    var id: String { url.standardizedFileURL.path }
 }
 
 private extension View {

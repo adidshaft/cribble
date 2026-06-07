@@ -40,6 +40,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openResearchReviewAction) private var openResearchReview
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
     @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
+    @FocusedValue(\.openExtensionSettingsAction) private var openExtensionSettings
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
     @FocusedValue(\.highlightSelectionAction) private var highlightSelection
@@ -210,6 +211,9 @@ struct CribbleCommands: Commands {
 
             Button("Open Remote Intelligence Guide", action: { openRemoteIntelligenceGuide?() })
                 .disabled(openRemoteIntelligenceGuide == nil)
+
+            Button("Open Extension Settings", action: { openExtensionSettings?() })
+                .disabled(openExtensionSettings == nil)
 
             Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
                 .disabled(resetDemoNotes == nil)
@@ -391,6 +395,10 @@ private struct OpenTeamExtensionKitActionKey: FocusedValueKey {
 }
 
 private struct OpenRemoteIntelligenceGuideActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenExtensionSettingsActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -604,6 +612,11 @@ extension FocusedValues {
     var openRemoteIntelligenceGuideAction: (() -> Void)? {
         get { self[OpenRemoteIntelligenceGuideActionKey.self] }
         set { self[OpenRemoteIntelligenceGuideActionKey.self] = newValue }
+    }
+
+    var openExtensionSettingsAction: (() -> Void)? {
+        get { self[OpenExtensionSettingsActionKey.self] }
+        set { self[OpenExtensionSettingsActionKey.self] = newValue }
     }
 
     var resetDemoNotesAction: (() -> Void)? {

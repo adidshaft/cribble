@@ -104,6 +104,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openResearchReviewAction, { library.openDemoNote(named: "Research Review.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
     }
 

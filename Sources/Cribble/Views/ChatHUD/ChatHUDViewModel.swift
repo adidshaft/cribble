@@ -80,6 +80,7 @@ final class ChatHUDViewModel: ObservableObject {
     private var loadedModelID: String?
     private var generationTask: Task<Void, Never>?
     private var contextDigestCache: [ContextDigestCacheKey: String] = [:]
+    private var pendingQuickActionSource: QuickAction.Source?
 
     /// If no token (and no completion) arrives within this window after the model
     /// is ready, the generation is treated as wedged and force-stopped, so the
@@ -158,6 +159,7 @@ final class ChatHUDViewModel: ObservableObject {
         isSlashCommandQuery = false
         slashCommands = []
         autocomplete = nil
+        pendingQuickActionSource = action.source
         draft = action.prompt
         send()
     }
@@ -343,6 +345,8 @@ final class ChatHUDViewModel: ObservableObject {
     func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isGenerating else { return }
+        let quickActionSource = pendingQuickActionSource
+        pendingQuickActionSource = nil
 
         messages.append(ChatMessage(role: .user, text: text, attachments: attachments))
         draft = ""
@@ -355,7 +359,7 @@ final class ChatHUDViewModel: ObservableObject {
         isGenerating = true
 
         generationTask = Task { [weak self] in
-            await self?.runGeneration(assistantID: placeholder.id)
+            await self?.runGeneration(assistantID: placeholder.id, quickActionSource: quickActionSource)
         }
     }
 
@@ -394,14 +398,17 @@ final class ChatHUDViewModel: ObservableObject {
 
     // MARK: - Generation
 
-    private func runGeneration(assistantID: UUID) async {
+    private func runGeneration(assistantID: UUID, quickActionSource: QuickAction.Source?) async {
         guard await ensureModelReady() else {
             failGeneration("Couldn't load \(selectedModel.name).", assistantID: assistantID)
             return
         }
 
         let engine = currentEngine()
-        let context = await resolveContext(engine: engine)
+        let context = await resolveContext(
+            engine: engine,
+            includesAmbientContext: Self.includesAmbientContext(for: quickActionSource)
+        )
         let packet = ContextAssembler.contextPacket(
             modelName: selectedModel.name,
             currentNote: context.current,
@@ -561,7 +568,20 @@ final class ChatHUDViewModel: ObservableObject {
     /// Builds the model context: the note currently open in the reader (so "this
     /// note" / "here" works without tagging) plus every file tagged across the
     /// conversation, deduped by URL.
-    private func resolveContext(engine: LocalChatEngine) async -> (current: ResolvedFile?, attachments: [ContextAttachment], related: [ResolvedFile]) {
+    nonisolated static func includesAmbientContext(for quickActionSource: QuickAction.Source?) -> Bool {
+        guard let quickActionSource else { return true }
+        switch quickActionSource {
+        case .builtIn:
+            return true
+        case .extension:
+            return false
+        }
+    }
+
+    private func resolveContext(
+        engine: LocalChatEngine,
+        includesAmbientContext: Bool
+    ) async -> (current: ResolvedFile?, attachments: [ContextAttachment], related: [ResolvedFile]) {
         var seen = Set<URL>()
 
         // Explicit `@`/`+` attachments are the authoritative context for the
@@ -612,6 +632,9 @@ final class ChatHUDViewModel: ObservableObject {
                 current = ResolvedFile(filename: doc.url.lastPathComponent, content: doc.rawMarkdown)
                 seen.insert(doc.url)
             }
+        }
+
+        if includesAmbientContext && !userScopedWithAttachments {
             // Vault-aware: pull a few semantically-related notes for the latest
             // question so the assistant can answer about the whole workspace, not
             // just what's open.
@@ -620,7 +643,7 @@ final class ChatHUDViewModel: ObservableObject {
 
         // Fold in generated project intelligence (project index) when available,
         // so chat answers benefit from the living knowledge base.
-        if let intelligenceContextProvider {
+        if includesAmbientContext, let intelligenceContextProvider {
             related.append(contentsOf: intelligenceContextProvider())
         }
 

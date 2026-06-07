@@ -179,6 +179,12 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
     }
 
+    func testExtensionQuickActionsSuppressAmbientContext() {
+        XCTAssertTrue(ChatHUDViewModel.includesAmbientContext(for: nil))
+        XCTAssertTrue(ChatHUDViewModel.includesAmbientContext(for: .builtIn))
+        XCTAssertFalse(ChatHUDViewModel.includesAmbientContext(for: .extension("Research Actions")))
+    }
+
     @MainActor
     func testSlashCommandNoMatchStateCanBeCleared() {
         let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))

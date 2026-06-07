@@ -257,7 +257,9 @@ routes every contribution through Cribble's existing safe surfaces.
 Permission rules are intentionally narrow in API v1:
 
 - quick-action extensions that contribute prompts must request exactly
-  `read-current-note`;
+  `read-current-note`; when run, they receive the current note plus any
+  user-selected attachments for that send, but not automatic related-note or
+  Project Intelligence context;
 - intelligence-provider extensions that contribute remote runner profiles must
   request exactly `network-openai-compatible`;
 - renderer and importer extensions must not request permissions because they

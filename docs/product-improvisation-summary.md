@@ -61,6 +61,8 @@ Focused validation passed across the newest work:
 - Extension dashboard and proposal summaries.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
+- Diagnostics that distinguish local runners from remote runners before asking
+  for Keychain credential recovery.
 - Diagnostics next actions and visible recovery strip.
 - Intelligence artifact and Ask answer Markdown handoffs.
 

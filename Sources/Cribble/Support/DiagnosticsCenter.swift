@@ -586,7 +586,9 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
     }
 
     private var credentialDescription: String {
-        runnerBaseURL == nil ? "none" : (usesKeychainCredential ? "Keychain" : "none configured")
+        guard runnerBaseURL != nil else { return "none" }
+        if usesKeychainCredential { return "Keychain" }
+        return isRemoteRunner ? "none configured" : "not required for local runner"
     }
 
     private var resourceGateDescription: String {
@@ -604,7 +606,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
         if !isEnabled {
             return "Enable Project Intelligence from the Intelligence HUD when this folder should be indexed."
         }
-        if runnerBaseURL != nil && !usesKeychainCredential {
+        if isRemoteRunner && !usesKeychainCredential {
             return "Store the remote runner credential in Keychain or switch back to an on-device model."
         }
         if pendingJobs > 0 {
@@ -614,6 +616,17 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
             return "Run or refresh Project Intelligence to rebuild stale artifacts."
         }
         return "No intelligence action needed."
+    }
+
+    private var isRemoteRunner: Bool {
+        guard let runnerBaseURL,
+              let components = URLComponents(string: runnerBaseURL),
+              let host = components.host?.lowercased()
+        else { return false }
+        return host != "localhost"
+            && host != "127.0.0.1"
+            && host != "::1"
+            && !host.hasSuffix(".localhost")
     }
 
     nonisolated static func redactedRunnerURL(_ raw: String) -> String {

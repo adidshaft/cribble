@@ -55,6 +55,31 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Next action: Store the remote runner credential in Keychain or switch back to an on-device model."))
     }
 
+    func testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential() {
+        let snapshot = IntelligenceDiagnosticsSnapshot(
+            isEnabled: true,
+            scope: "single folder",
+            statusDescription: "Ready",
+            modelID: "local-model",
+            runnerBaseURL: "http://localhost:11434/v1",
+            usesKeychainCredential: false,
+            performanceMode: "Balanced",
+            pendingJobs: 0,
+            filesIndexed: 10,
+            staleArtifacts: 0,
+            lastActivity: nil,
+            resourceDecisionSummary: nil,
+            allowedTier: nil,
+            modelDownloadFraction: nil
+        )
+
+        let section = snapshot.formattedReportSection
+
+        XCTAssertTrue(section.contains("Credential: not required for local runner"))
+        XCTAssertEqual(snapshot.nextActionSummary, "No intelligence action needed.")
+        XCTAssertFalse(section.contains("Store the remote runner credential in Keychain"))
+    }
+
     @MainActor
     func testDiagnosticReportIncludesIntelligenceQueueAndResourceGate() {
         let snapshot = IntelligenceDiagnosticsSnapshot(

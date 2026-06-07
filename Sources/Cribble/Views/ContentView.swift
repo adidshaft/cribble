@@ -30,6 +30,7 @@ struct ContentView: View {
     private var sceneConfiguredContent: some View {
         alertContent
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.importFileAction, { library.chooseImportFile(capabilities: extensionRegistry.importerCapabilities) })
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })

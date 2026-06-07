@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 final class MarkdownLibraryStore: ObservableObject {
@@ -187,6 +188,40 @@ final class MarkdownLibraryStore: ObservableObject {
 
         if panel.runModal() == .OK, let url = panel.url {
             openFolder(url, sortMode: sortMode)
+        }
+    }
+
+    func chooseImportFile(capabilities: [ExtensionImporterCapability]) {
+        guard !capabilities.isEmpty else {
+            statusMessage = "No import lanes are enabled"
+            return
+        }
+
+        var seenExtensions: Set<String> = []
+        let extensions = capabilities
+            .flatMap(\.fileExtensions)
+            .map { $0.lowercased() }
+            .filter { seenExtensions.insert($0).inserted }
+        let panel = NSOpenPanel()
+        panel.title = "Choose File to Import"
+        panel.prompt = "Choose"
+        panel.message = "Cribble will match this file to an enabled declarative import lane. Converter execution is not enabled yet."
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        let contentTypes = extensions.compactMap { UTType(filenameExtension: $0) }
+        if !contentTypes.isEmpty {
+            panel.allowedContentTypes = contentTypes
+        }
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        let ext = url.pathExtension.lowercased()
+        let matches = capabilities.filter { $0.fileExtensions.contains(ext) }
+        if let match = matches.first {
+            statusMessage = "Matched \(url.lastPathComponent) to \(match.title) (\(match.outputFormat)); converter execution is not enabled yet"
+        } else {
+            statusMessage = "No enabled import lane matches .\(ext)"
         }
     }
 

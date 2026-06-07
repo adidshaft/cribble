@@ -27,6 +27,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
 - Enabled renderer extensions can now map declared fence languages onto existing built-in renderers, so teams can make aliases like `workflow` render through Mermaid without executable plugin code.
 - Enabled importer extensions now surface as Settings import lanes with file-type and output-format summaries, making future conversion workflows discoverable before any converter execution exists.
+- File menu now includes Import, filtered by enabled importer lanes, to match files to declarative import capabilities before converter execution exists.
 - API v1 now makes the extension safety boundary explicit with `"runtime": "declarative"` and rejects executable runtimes until a signed trust model exists.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
 - Full folder refresh now prunes the reader render cache by stable note content hash instead of clearing every rendered note, keeping unchanged notes warm after single-file external edits.

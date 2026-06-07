@@ -167,7 +167,8 @@ Supported built-in renderer ids:
 
 Importer extensions declare file types a future converter intends to turn into
 Markdown. Today they appear as import lanes in Settings so teams can agree on
-formats before converter execution exists.
+formats before converter execution exists. The File > Import command can choose
+a matching file and show which enabled lane it would use.
 
 ```json
 {

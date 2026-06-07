@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CribbleCommands: Commands {
     @FocusedValue(\.openFolderAction) private var openFolder
+    @FocusedValue(\.importFileAction) private var importFile
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
     @FocusedValue(\.openInEditorAction) private var openInEditor
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
@@ -26,6 +27,10 @@ struct CribbleCommands: Commands {
             Button("Open Folder…", action: { openFolder?() })
                 .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
+
+            Button("Import…", action: { importFile?() })
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .disabled(importFile == nil)
 
             Button("Refresh", action: { refreshFolder?() })
                 .keyboardShortcut("r", modifiers: [.command])
@@ -126,6 +131,10 @@ private struct OpenFolderActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct ImportFileActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct RefreshFolderActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -206,6 +215,11 @@ extension FocusedValues {
     var openFolderAction: (() -> Void)? {
         get { self[OpenFolderActionKey.self] }
         set { self[OpenFolderActionKey.self] = newValue }
+    }
+
+    var importFileAction: (() -> Void)? {
+        get { self[ImportFileActionKey.self] }
+        set { self[ImportFileActionKey.self] = newValue }
     }
 
     var refreshFolderAction: (() -> Void)? {

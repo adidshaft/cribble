@@ -186,6 +186,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The AI menu now exposes `Extract Tasks from Current Note`, opening the Chat HUD directly into the reviewed `Tasks.md` proposal flow and disabling when no note is selected.
 - The AI menu now also exposes `Draft Today with AI`, giving daily capture a native menu entry that still routes through the reviewed `Daily/YYYY-MM-DD.md` proposal flow.
 - The AI menu is grouped into linking/chat, reading help, capture/tasks, and project intelligence sections so the expanded native surface stays scannable.
+- The in-reader shortcut popover now includes an AI Menu section that names the
+  native Summarize, Explain, Find Related, Create Index, Draft Today, and
+  Extract Tasks commands.
 - The main `ContentView` controller setup was extracted from the long SwiftUI modifier chain, reducing type-checker pressure as more native commands are added.
 - The main window focused command setup is now split into primary, diagnostics, navigation, and help groups, keeping the expanded Mac command surface easier for Swift to type-check.
 - Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
@@ -425,6 +428,7 @@ Latest pass:
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding the AI Menu section to the in-reader shortcut popover: 1 XCTest test, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

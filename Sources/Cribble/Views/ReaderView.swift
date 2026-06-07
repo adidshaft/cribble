@@ -95,6 +95,13 @@ private struct ShortcutReferencePopover: View {
 
             Divider()
 
+            shortcutSection("AI Menu", rows: [
+                ("AI menu", "Summarize / Explain simply / Find related"),
+                ("AI menu", "Create Index Note / Draft Today / Extract Tasks")
+            ])
+
+            Divider()
+
             shortcutSection("Reading", rows: [
                 ("H", "Highlight selected text"),
                 ("B", "Drop a reading bookmark"),

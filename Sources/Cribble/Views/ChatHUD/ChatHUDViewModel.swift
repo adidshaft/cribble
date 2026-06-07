@@ -303,7 +303,9 @@ final class ChatHUDViewModel: ObservableObject {
     func selectModel(_ model: LocalModel) {
         guard model.id != selectedModel.id else { return }
         selectedModel = model
-        UserDefaults.standard.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
+        let defaults = UserDefaults.standard
+        defaults.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
+        defaults.synchronize()
         // Force a reload on next send; loading is lazy and on-demand.
         modelPhase = .idle
         loadedModelID = nil
@@ -313,13 +315,15 @@ final class ChatHUDViewModel: ObservableObject {
     /// Commits the first-run engine choice: persists the pick and dismisses the
     /// chooser. Selecting the already-current model still records the choice.
     func chooseEngine(_ model: LocalModel) {
+        let defaults = UserDefaults.standard
         if model.id != selectedModel.id {
             selectModel(model)
         } else {
-            UserDefaults.standard.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
+            defaults.set(model.id, forKey: ModelDefaultsKey.selectedModelID)
         }
-        UserDefaults.standard.set(true, forKey: ModelDefaultsKey.hasChosenEngine)
-        UserDefaults.standard.set(1, forKey: ModelDefaultsKey.engineChoiceVersion)
+        defaults.set(true, forKey: ModelDefaultsKey.hasChosenEngine)
+        defaults.set(1, forKey: ModelDefaultsKey.engineChoiceVersion)
+        defaults.synchronize()
         needsEngineChoice = false
     }
 

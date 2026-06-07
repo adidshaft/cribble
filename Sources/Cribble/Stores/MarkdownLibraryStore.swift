@@ -1378,13 +1378,26 @@ final class MarkdownLibraryStore: ObservableObject {
             return
         }
         let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
-        if !FileManager.default.fileExists(atPath: tasksURL.path) {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: tasksURL.path, isDirectory: &isDirectory) {
+            guard !isDirectory.boolValue else {
+                errorMessage = "Couldn't open Tasks.md: a folder already uses that name."
+                return
+            }
+        } else {
             let seed = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n"
-            try? SafeFileWriter.create(seed, at: tasksURL)
-            refresh(keepStatusQuiet: true)
+            do {
+                try SafeFileWriter.create(seed, at: tasksURL)
+                refresh(keepStatusQuiet: true)
+            } catch {
+                errorMessage = "Couldn't create Tasks.md: \(error.localizedDescription)"
+                return
+            }
         }
         select(url: tasksURL)
-        statusMessage = "Opened Tasks"
+        if selectedURL?.standardizedFileURL == tasksURL {
+            statusMessage = "Opened Tasks"
+        }
     }
 
     /// Whether the currently open note has a Cribble backup that can be reverted.

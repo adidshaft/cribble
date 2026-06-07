@@ -637,6 +637,45 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.selectedURL?.standardizedFileURL, tasksURL.standardizedFileURL)
         XCTAssertEqual(store.statusMessage, "Opened Tasks")
     }
+
+    func testOpenTasksCreatesAndSelectsTasksFile() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TasksCreate-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        let tasksURL = rootURL.appendingPathComponent("Tasks.md").standardizedFileURL
+        store.openTasksFile()
+        await store.waitForLoadToComplete()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tasksURL.path))
+        XCTAssertEqual(store.selectedURL?.standardizedFileURL, tasksURL)
+        XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, tasksURL)
+        XCTAssertEqual(store.statusMessage, "Opened Tasks")
+    }
+
+    func testOpenTasksReportsNameCollisionWithDirectory() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TasksDirectoryCollision-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let tasksURL = rootURL.appendingPathComponent("Tasks.md", isDirectory: true)
+        try FileManager.default.createDirectory(at: tasksURL, withIntermediateDirectories: true)
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        store.openTasksFile()
+
+        XCTAssertTrue(store.errorMessage?.contains("folder already uses that name") == true)
+        XCTAssertNotEqual(store.statusMessage, "Opened Tasks")
+    }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {
         // Strip duplicate document title

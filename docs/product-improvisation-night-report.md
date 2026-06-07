@@ -74,6 +74,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
 - Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
 - Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
+- The Intelligence Ask tab now offers starter question chips that adapt to available artifacts, giving new users a faster path from generated context to useful project answers.
+- File > Open Tasks now reports creation/opening failures visibly, including `Tasks.md` directory collisions, instead of showing a false success status.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -156,6 +158,8 @@ swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
 swift test --filter ChatHUDLogicTests
 swift test --filter CribbleUITests
+swift test --filter IntelligenceEngineTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -198,6 +202,8 @@ Latest pass:
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes Tasks instructions: 16 XCTest tests, 0 failures.
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash command no-match recovery: 33 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after reader-focused menu commands: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after Intelligence Ask starter chips: 25 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Open Tasks failure reporting: 16 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

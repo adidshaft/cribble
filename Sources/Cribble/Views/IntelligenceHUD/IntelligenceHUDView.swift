@@ -1218,11 +1218,14 @@ struct IntelligenceHUDView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
             } else {
-                emptyState(
-                    icon: "questionmark.bubble",
-                    title: "Ask about this project",
-                    detail: "Answers use the generated intelligence artifacts as context and cite the artifacts they used."
-                )
+                VStack(spacing: 12) {
+                    emptyState(
+                        icon: "questionmark.bubble",
+                        title: "Ask about this project",
+                        detail: "Answers use the generated intelligence artifacts as context and cite the artifacts they used."
+                    )
+                    askSuggestionChips
+                }
             }
             HStack(spacing: 8) {
                 TextField("Ask about this project…", text: $askText)
@@ -1244,8 +1247,74 @@ struct IntelligenceHUDView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var askSuggestionChips: some View {
+        let questions = suggestedAskQuestions
+        return VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                ForEach(Array(questions.prefix(3)), id: \.self) { question in
+                    askSuggestionChip(question)
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach(Array(questions.dropFirst(3)), id: \.self) { question in
+                    askSuggestionChip(question)
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+    }
+
+    private func askSuggestionChip(_ question: String) -> some View {
+        Button {
+            submitSuggestedAsk(question)
+        } label: {
+            Text(question)
+                .font(.system(size: 10, weight: .semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.08), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.82))
+        .pointingHandOnHover()
+        .disabled(isAsking)
+    }
+
+    private var suggestedAskQuestions: [String] {
+        var questions = [
+            "What changed recently?",
+            "What should I read first?",
+            "Where are the riskiest notes?"
+        ]
+
+        if hasArtifact(.architectureDiagram) || hasArtifact(.dependencyDiagram) || !engine.knowledgeNodes.isEmpty {
+            questions.append("Explain the project map")
+        }
+        if hasArtifact(.glossary) {
+            questions.append("Define the important terms")
+        }
+        if hasArtifact(.timeline) {
+            questions.append("Summarize the timeline")
+        }
+        if !activeResearchInsights.isEmpty || hasArtifact(.contradictionReport) {
+            questions.append("Which claims need follow-up?")
+        }
+
+        return Array(questions.prefix(6))
+    }
+
+    private func submitSuggestedAsk(_ question: String) {
+        askText = question
+        ask(question: question)
+    }
+
     private func ask() {
         let question = askText.trimmingCharacters(in: .whitespacesAndNewlines)
+        ask(question: question)
+    }
+
+    private func ask(question: String) {
         guard !question.isEmpty, !isAsking else { return }
         isAsking = true
         Task {

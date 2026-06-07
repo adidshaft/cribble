@@ -40,6 +40,19 @@ struct EngineChoiceView: View {
                     }
                 }
 
+                if LocalRunnerStore.shared.isConfigured,
+                   let runnerModelID = LocalRunnerStore.shared.defaultModelID {
+                    EngineOptionCard(
+                        title: "Local runner (\(LocalRunnerStore.shared.displayName ?? "OpenAI-compatible"))",
+                        subtitle: "Private — uses \(runnerModelID) served by the runner already configured for Intelligence.",
+                        systemImage: "network",
+                        badge: nil,
+                        isEnabled: true
+                    ) {
+                        viewModel.chooseEngine(.runnerModel(modelID: runnerModelID))
+                    }
+                }
+
                 ForEach(ModelCatalog.cloudModels) { model in
                     EngineOptionCard(
                         title: "\(model.name) (cloud)",

@@ -102,6 +102,15 @@ struct SettingsView: View {
                             }
                         }
                         .help("Write a starter cribble-extension.json manifest")
+                        Menu("Create Project Example") {
+                            ForEach(ExtensionExampleTemplate.allCases) { template in
+                                Button(template.title) {
+                                    createProjectExample(template)
+                                }
+                            }
+                        }
+                        .disabled(library.activeRootURL == nil)
+                        .help("Write a starter manifest into the current folder's .cribble/extensions directory")
                     }
 
                     Text("Cribble discovers extension manifests in Application Support and each opened folder's .cribble/extensions directory. API v1 extensions are declarative: manifests are loaded and validated, but extension code is not executed.")
@@ -202,6 +211,21 @@ struct SettingsView: View {
             let url = try extensionRegistry.writeExampleManifest(template: template)
             extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
             validateExtensions(successPrefix: "Created \(url.deletingLastPathComponent().lastPathComponent)")
+        } catch {
+            extensionStatus = error.localizedDescription
+        }
+    }
+
+    private func createProjectExample(_ template: ExtensionExampleTemplate) {
+        guard let root = library.activeRootURL else {
+            extensionStatus = "Open a folder before creating a project extension example"
+            return
+        }
+        do {
+            let url = try extensionRegistry.writeProjectExampleManifest(template: template, projectRoot: root)
+            let folderName = url.deletingLastPathComponent().lastPathComponent
+            extensionStatus = "Created project example \(folderName)"
+            validateExtensions(successPrefix: "Created project example \(folderName)")
         } catch {
             extensionStatus = error.localizedDescription
         }

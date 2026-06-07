@@ -209,6 +209,24 @@ struct ExtensionRegistryTests {
     }
 
     @Test
+    func writesProjectExampleTemplateIntoOpenedFolder() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        let project = try fixture.projectRoot()
+        let registry = fixture.makeRegistry()
+        let url = try registry.writeProjectExampleManifest(template: .renderer, projectRoot: project)
+
+        #expect(url.path.contains(".cribble/extensions/example-renderer-alias/cribble-extension.json"))
+
+        registry.reload(projectRoots: [project])
+        let installed = try #require(registry.installedExtensions.first)
+        #expect(installed.location.title == project.lastPathComponent)
+        #expect(installed.manifest.kind == .renderer)
+        #expect(installed.manifest.renderers.first?.languages == ["workflow", "flowchart"])
+    }
+
+    @Test
     func reloadPrunesStaleTrustDecisions() throws {
         let fixture = try ExtensionRegistryFixture()
         defer { fixture.cleanUp() }

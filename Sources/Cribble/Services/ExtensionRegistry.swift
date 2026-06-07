@@ -175,6 +175,19 @@ final class ExtensionRegistry: ObservableObject {
 
     func writeExampleManifest(template: ExtensionExampleTemplate = .quickAction) throws -> URL {
         let exampleFolder = userExtensionsFolder.appendingPathComponent(template.folderName, isDirectory: true)
+        let manifestURL = try writeExampleManifest(template: template, to: exampleFolder)
+        reload(projectRoots: [])
+        return manifestURL
+    }
+
+    func writeProjectExampleManifest(template: ExtensionExampleTemplate, projectRoot: URL) throws -> URL {
+        let exampleFolder = projectRoot.standardizedFileURL
+            .appendingPathComponent(".cribble/extensions", isDirectory: true)
+            .appendingPathComponent(template.folderName, isDirectory: true)
+        return try writeExampleManifest(template: template, to: exampleFolder)
+    }
+
+    private func writeExampleManifest(template: ExtensionExampleTemplate, to exampleFolder: URL) throws -> URL {
         try fileManager.createDirectory(at: exampleFolder, withIntermediateDirectories: true)
         let manifestURL = exampleFolder.appendingPathComponent("cribble-extension.json")
         if !fileManager.fileExists(atPath: manifestURL.path) {
@@ -182,7 +195,6 @@ final class ExtensionRegistry: ObservableObject {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(template.manifest).write(to: manifestURL, options: .atomic)
         }
-        reload(projectRoots: [])
         return manifestURL
     }
 

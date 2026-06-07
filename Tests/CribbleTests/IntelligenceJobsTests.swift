@@ -10,6 +10,16 @@ private final class StubProvider: IntelligenceProvider {
     func embed(text: String) async throws -> [Float]? { nil }
 }
 
+private final class SlowStubProvider: IntelligenceProvider {
+    let displayName = "Slow Stub"
+    func checkAvailability() async -> ProviderAvailability { .available }
+    func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String {
+        try await Task.sleep(nanoseconds: 5_000_000_000)
+        return "# Too late"
+    }
+    func embed(text: String) async throws -> [Float]? { nil }
+}
+
 final class IntelligenceJobsTests: XCTestCase {
 
     // MARK: - DependencyGraph
@@ -371,6 +381,48 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(artifacts.content(for: glossary)).contains("Project Atlas"))
         XCTAssertTrue(try XCTUnwrap(artifacts.content(for: timeline)).contains("2026-06-07"))
         let failed = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertTrue(failed.isEmpty)
+    }
+
+    func testGenericInsightCompletesWithFallbackWhenProviderTimesOut() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-insights-timeout-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let alphaHash = ContentHasher.hash("alpha")
+        let betaHash = ContentHasher.hash("beta")
+        _ = await db.upsertFile(projectID: "p", path: "Alpha.md", hash: alphaHash, sizeBytes: 5, language: "markdown")
+        _ = await db.upsertFile(projectID: "p", path: "Beta.md", hash: betaHash, sizeBytes: 4, language: "markdown")
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        _ = try await artifacts.store(type: .fileSummary, relativePath: "summaries/alpha.md", title: "Alpha.md", content: "Alpha mentions Project Atlas.", sourceHashes: [alphaHash])
+        _ = try await artifacts.store(type: .fileSummary, relativePath: "summaries/beta.md", title: "Beta.md", content: "Beta mentions Project Atlas.", sourceHashes: [betaHash])
+
+        let combined = ContentHasher.combine([alphaHash, betaHash].sorted())
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .detectContradictions, inputHash: combined, priority: 200))
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let runner = JobRunner(
+            db: db,
+            scheduler: scheduler,
+            artifacts: artifacts,
+            provider: SlowStubProvider(),
+            projectID: "p",
+            rootURL: root,
+            jobTimeoutSeconds: 0.05
+        )
+
+        await runner.drain(limit: 1)
+
+        let reports = await db.artifacts(projectID: "p", type: .contradictionReport)
+        let report = try XCTUnwrap(reports.first)
+        XCTAssertTrue(try XCTUnwrap(artifacts.content(for: report)).contains("No contradictions found"))
+        let completed = await db.jobs(projectID: "p", status: .completed)
+        let pending = await db.jobs(projectID: "p", status: .pending)
+        let failed = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertEqual(completed.count, 1)
+        XCTAssertTrue(pending.isEmpty)
         XCTAssertTrue(failed.isEmpty)
     }
 

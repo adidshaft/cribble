@@ -98,7 +98,12 @@ actor JobRunner {
             let artifactID = try await executeWithTimeout(job)
             await db.completeJob(id: job.id, artifactID: artifactID)
         } catch {
-            await db.recordFailure(id: job.id, error: error.localizedDescription)
+            do {
+                let artifactID = try await fallbackGenericInsightArtifact(for: job, error: error)
+                await db.completeJob(id: job.id, artifactID: artifactID)
+            } catch {
+                await db.recordFailure(id: job.id, error: error.localizedDescription)
+            }
         }
         return true
     }
@@ -642,6 +647,46 @@ actor JobRunner {
 
     private func deterministicContradictionReport() -> String {
         "# Contradiction Report\n\nNo contradictions found across the current documents."
+    }
+
+    private func fallbackGenericInsightArtifact(for job: IntelligenceJob, error: Error) async throws -> String? {
+        guard shouldUseGenericInsightFallback(error) else { throw error }
+        let summaries = await aggregateSummaryInputs()
+        guard summaries.count >= 2 else { throw error }
+
+        let type: IntelligenceArtifactType
+        let relativePath: String
+        let title: String
+        let body: String
+        switch job.type {
+        case .detectContradictions:
+            type = .contradictionReport
+            relativePath = "insights/contradictions.md"
+            title = "Contradiction Report"
+            body = deterministicContradictionReport()
+        case .buildGlossary:
+            type = .glossary
+            relativePath = "insights/glossary.md"
+            title = "Glossary"
+            body = deterministicGlossary(from: summaries)
+        case .buildTimeline:
+            type = .timeline
+            relativePath = "insights/timeline.md"
+            title = "Timeline"
+            body = deterministicTimeline(from: summaries)
+        default:
+            throw error
+        }
+
+        let artifact = try await artifacts.store(
+            type: type,
+            relativePath: relativePath,
+            title: title,
+            content: body,
+            sourceHashes: [job.inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        return artifact.id
     }
 
     private func deterministicGlossary(from summaries: [(path: String, summary: String)]) -> String {

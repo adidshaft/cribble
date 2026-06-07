@@ -25,6 +25,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
+- The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
@@ -290,6 +291,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Remote Intelligence entry points: 18 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests|CribbleUITests'` passed on 2026-06-08 after Settings Remote Guide entry point: 18 XCTest tests and 11 Swift Testing tests, 0 failures.
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash-command discovery and alias ranking: 36 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after welcome-screen folder shortcuts: 20 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

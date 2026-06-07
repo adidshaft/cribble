@@ -5,6 +5,15 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class MarkdownLibraryStore: ObservableObject {
+    struct RootFolderShortcut: Identifiable, Equatable {
+        let url: URL
+        let title: String
+        let documentCount: Int
+        let icon: String?
+
+        var id: URL { url }
+    }
+
     @Published var rootURLs: [URL] = []
     @Published var nodes: [MarkdownNode] = [] {
         didSet { cachedFilteredNodes = nil }
@@ -103,6 +112,19 @@ final class MarkdownLibraryStore: ObservableObject {
 
     var hasFolders: Bool {
         !rootURLs.isEmpty
+    }
+
+    var rootFolderShortcuts: [RootFolderShortcut] {
+        rootURLs.map { root in
+            let standardized = root.standardizedFileURL
+            let count = documents.filter { $0.url.isSameFileOrDescendant(of: standardized) }.count
+            return RootFolderShortcut(
+                url: standardized,
+                title: displayName(forRoot: standardized),
+                documentCount: count,
+                icon: folderIcon(for: standardized)
+            )
+        }
     }
 
     var activeRootURL: URL? {
@@ -268,6 +290,22 @@ final class MarkdownLibraryStore: ObservableObject {
         } catch {
             errorMessage = "Couldn't open DemoNotes: \(error.localizedDescription)"
         }
+    }
+
+    func openRootLanding(_ rootURL: URL, sortMode: FileSortMode) {
+        let standardized = rootURL.standardizedFileURL
+        if !rootURLs.contains(standardized) {
+            openFolder(standardized, sortMode: sortMode)
+        }
+
+        let rootDocuments = documents.filter { $0.url.isSameFileOrDescendant(of: standardized) }
+        guard let landing = rootDocuments.first(where: \.isReadme) ?? rootDocuments.first else {
+            statusMessage = "No Markdown files in \(displayName(forRoot: standardized))"
+            return
+        }
+
+        select(url: landing.url)
+        statusMessage = "Opened \(displayName(forRoot: standardized))"
     }
 
     func isImportedRoot(_ url: URL) -> Bool {

@@ -372,6 +372,48 @@ final class CribbleUITests: XCTestCase {
         )
     }
 
+    func testRootFolderShortcutsOpenReadmeLanding() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FolderShortcut-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let readmeURL = rootURL.appendingPathComponent("README.md")
+        try "# Home\n".write(to: readmeURL, atomically: true, encoding: .utf8)
+        try "# Other\n".write(to: rootURL.appendingPathComponent("Other.md"), atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+        store.setImportedFolderDisplayName("Client Notes", for: rootURL)
+        await store.waitForLoadToComplete()
+
+        let shortcut = try XCTUnwrap(store.rootFolderShortcuts.first)
+        XCTAssertEqual(shortcut.title, "Client Notes")
+        XCTAssertEqual(shortcut.documentCount, 2)
+
+        store.openRootLanding(rootURL, sortMode: .name)
+
+        XCTAssertEqual(store.selectedURL?.standardizedFileURL, readmeURL.standardizedFileURL)
+        XCTAssertEqual(store.statusMessage, "Opened Client Notes")
+    }
+
+    func testRootFolderLandingReportsEmptyMarkdownFolder() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EmptyShortcut-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        store.openRootLanding(rootURL, sortMode: .name)
+
+        XCTAssertNil(store.selectedURL)
+        XCTAssertEqual(store.statusMessage, "No Markdown files in \(rootURL.lastPathComponent)")
+    }
+
     func testReadmeAIUsesSelectedReadmeFolder() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

@@ -2226,6 +2226,22 @@ private struct WelcomeView: View {
                 .help("Open the bundled DemoNotes tutorial")
             }
 
+            if !library.rootFolderShortcuts.isEmpty {
+                VStack(spacing: 8) {
+                    Text("Open folder")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 164), spacing: 8)], spacing: 8) {
+                        ForEach(library.rootFolderShortcuts.prefix(6)) { shortcut in
+                            rootFolderButton(shortcut)
+                        }
+                    }
+                    .frame(maxWidth: 560)
+                }
+            }
+
             VStack(spacing: 8) {
                 Text("Start with")
                     .font(.caption.weight(.semibold))
@@ -2263,5 +2279,32 @@ private struct WelcomeView: View {
         .controlSize(.regular)
         .cribbleGlassButton()
         .help("Open \(note.replacingOccurrences(of: ".md", with: ""))")
+    }
+
+    private func rootFolderButton(_ shortcut: MarkdownLibraryStore.RootFolderShortcut) -> some View {
+        Button {
+            library.openRootLanding(shortcut.url, sortMode: settings.fileSortMode)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: shortcut.icon ?? "folder")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 16)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(shortcut.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Text("\(shortcut.documentCount) note\(shortcut.documentCount == 1 ? "" : "s")")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .controlSize(.regular)
+        .cribbleGlassButton()
+        .help("Open \(shortcut.title)")
     }
 }

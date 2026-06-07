@@ -69,8 +69,7 @@ struct IntelligenceHUDView: View {
             IntelligencePreflightSheet(
                 scope: scope,
                 roots: roots(for: scope),
-                usesRemoteRunner: usesRemoteRunner,
-                modelLabel: activeModelLabel,
+                runnerSummary: preflightRunnerSummary,
                 performanceMode: engine.settings.performanceMode,
                 onCancel: { pendingPreflightScope = nil },
                 onStart: {
@@ -1545,6 +1544,15 @@ struct IntelligenceHUDView: View {
             return "Runner"
         }
         return engine.activeModel?.shortName ?? "Model"
+    }
+
+    private var preflightRunnerSummary: IntelligencePreflightRunnerSummary {
+        IntelligencePreflightRunnerSummary.current(
+            runnerURL: engine.settings.localRunnerBaseURL,
+            modelID: engine.settings.modelID,
+            onDeviceModelLabel: engine.activeModel?.shortName ?? "Model",
+            extensionProfiles: extensionProviderProfiles()
+        )
     }
 
     private var canUseLocalRunner: Bool {

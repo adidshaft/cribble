@@ -20,6 +20,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
+- The Project Intelligence preflight now names remote runner endpoints, selected models, and extension trust labels before scanning notes, making VPS/team-runner decisions more explicit.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
@@ -110,6 +111,7 @@ swift test --filter ExtensionManifestTests
 swift test --filter 'Extension|RunnerCredentialStoreTests'
 swift test
 swift test --filter CribbleUITests
+swift test --filter 'IntelligencePreflightTests|CribbleUITests'
 swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
@@ -151,6 +153,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after Settings linked the Team Extension Kit: 9 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after toolbar shortcut help cleanup: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Help linked the Team Extension Kit: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligencePreflightTests|CribbleUITests'` passed on 2026-06-08 after remote-runner preflight trust details: 16 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

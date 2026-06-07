@@ -22,8 +22,7 @@ enum IntelligencePreflightScope: Identifiable {
 struct IntelligencePreflightSheet: View {
     let scope: IntelligencePreflightScope
     let roots: [URL]
-    let usesRemoteRunner: Bool
-    let modelLabel: String
+    let runnerSummary: IntelligencePreflightRunnerSummary
     let performanceMode: PerformanceMode
     let onCancel: () -> Void
     let onStart: () -> Void
@@ -50,11 +49,9 @@ struct IntelligencePreflightSheet: View {
                     detail: roots.map(\.lastPathComponent).joined(separator: ", ")
                 )
                 preflightRow(
-                    icon: usesRemoteRunner ? "network.badge.shield.half.filled" : "lock.laptopcomputer",
-                    title: usesRemoteRunner ? "Remote runner selected" : "Local processing",
-                    detail: usesRemoteRunner
-                        ? "Prompts and note context may leave this Mac for \(modelLabel). Use only trusted endpoints."
-                        : "Cribble scans locally and stores its index in its app support cache."
+                    icon: runnerSummary.icon,
+                    title: runnerSummary.title,
+                    detail: runnerSummary.detail
                 )
                 preflightRow(
                     icon: "internaldrive",
@@ -95,5 +92,55 @@ struct IntelligencePreflightSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+}
+
+struct IntelligencePreflightRunnerSummary: Equatable {
+    let isRemote: Bool
+    let icon: String
+    let title: String
+    let detail: String
+
+    static func current(
+        runnerURL: String?,
+        modelID: String,
+        onDeviceModelLabel: String,
+        extensionProfiles: [ExtensionIntelligenceProviderProfile]
+    ) -> IntelligencePreflightRunnerSummary {
+        guard let runnerURL,
+              let url = URL(string: runnerURL),
+              let host = url.host?.lowercased()
+        else {
+            return IntelligencePreflightRunnerSummary(
+                isRemote: false,
+                icon: "lock.laptopcomputer",
+                title: "Local processing",
+                detail: "Cribble scans locally with \(onDeviceModelLabel) and stores its index in its app support cache."
+            )
+        }
+
+        let profile = extensionProfiles.first { $0.baseURL.absoluteString == runnerURL }
+        let isRemote = !Self.isLoopback(host)
+        if isRemote {
+            let trust = profile?.trustLabel ?? profile?.sourceName ?? "Custom runner"
+            return IntelligencePreflightRunnerSummary(
+                isRemote: true,
+                icon: "network.badge.shield.half.filled",
+                title: "Remote runner selected",
+                detail: "Endpoint: \(host). Model: \(modelID). Trust: \(trust). Prompts and note context may leave this Mac."
+            )
+        }
+
+        let label = profile?.title ?? "Local runner"
+        return IntelligencePreflightRunnerSummary(
+            isRemote: false,
+            icon: "lock.laptopcomputer",
+            title: label,
+            detail: "Endpoint: \(host). Model: \(modelID). Cribble keeps processing on this Mac or local network endpoint."
+        )
+    }
+
+    private static func isLoopback(_ host: String) -> Bool {
+        host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
     }
 }

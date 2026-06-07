@@ -5,6 +5,7 @@ struct SidebarView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     @EnvironmentObject private var intelligence: IntelligenceEngine
+    @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var iconPickerTarget: FolderIconTarget?
     @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
 
@@ -61,8 +62,7 @@ struct SidebarView: View {
             IntelligencePreflightSheet(
                 scope: .folder,
                 roots: [target.url],
-                usesRemoteRunner: usesRemoteRunner,
-                modelLabel: activeModelLabel,
+                runnerSummary: preflightRunnerSummary,
                 performanceMode: intelligence.settings.performanceMode,
                 onCancel: { intelligencePreflightTarget = nil },
                 onStart: {
@@ -152,19 +152,13 @@ struct SidebarView: View {
         }
     }
 
-    private var usesRemoteRunner: Bool {
-        guard let runnerURL = intelligence.settings.localRunnerBaseURL,
-              let url = URL(string: runnerURL),
-              let host = url.host?.lowercased()
-        else { return false }
-        return !(host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost"))
-    }
-
-    private var activeModelLabel: String {
-        if intelligence.settings.localRunnerBaseURL != nil {
-            return intelligence.settings.modelID
-        }
-        return intelligence.activeModel?.shortName ?? "Model"
+    private var preflightRunnerSummary: IntelligencePreflightRunnerSummary {
+        IntelligencePreflightRunnerSummary.current(
+            runnerURL: intelligence.settings.localRunnerBaseURL,
+            modelID: intelligence.settings.modelID,
+            onDeviceModelLabel: intelligence.activeModel?.shortName ?? "Model",
+            extensionProfiles: extensionRegistry.intelligenceProviderProfiles
+        )
     }
 }
 
@@ -257,6 +251,7 @@ private struct SidebarControls: View {
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var intelligence: IntelligenceEngine
+    @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
 
     var body: some View {
@@ -274,8 +269,7 @@ private struct SidebarControls: View {
             IntelligencePreflightSheet(
                 scope: .folder,
                 roots: [target.url],
-                usesRemoteRunner: usesRemoteRunner,
-                modelLabel: activeModelLabel,
+                runnerSummary: preflightRunnerSummary,
                 performanceMode: intelligence.settings.performanceMode,
                 onCancel: { intelligencePreflightTarget = nil },
                 onStart: {
@@ -408,19 +402,13 @@ private struct SidebarControls: View {
         }
     }
 
-    private var usesRemoteRunner: Bool {
-        guard let runnerURL = intelligence.settings.localRunnerBaseURL,
-              let url = URL(string: runnerURL),
-              let host = url.host?.lowercased()
-        else { return false }
-        return !(host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost"))
-    }
-
-    private var activeModelLabel: String {
-        if intelligence.settings.localRunnerBaseURL != nil {
-            return intelligence.settings.modelID
-        }
-        return intelligence.activeModel?.shortName ?? "Model"
+    private var preflightRunnerSummary: IntelligencePreflightRunnerSummary {
+        IntelligencePreflightRunnerSummary.current(
+            runnerURL: intelligence.settings.localRunnerBaseURL,
+            modelID: intelligence.settings.modelID,
+            onDeviceModelLabel: intelligence.activeModel?.shortName ?? "Model",
+            extensionProfiles: extensionRegistry.intelligenceProviderProfiles
+        )
     }
 
     private var intelligenceHelp: String {

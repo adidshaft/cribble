@@ -561,10 +561,16 @@ Latest pass:
   attached.
 - The public README now mentions Project Intelligence Markdown/Ask answer
   handoffs, keeping the repo overview aligned with the app and DemoNotes.
+- Contributor-facing extension docs and the Team Extension Kit now point
+  importer authors to File > Import > Copy Review before creating or adapting a
+  manifest, so the pre-install no-execution, selected-file, previewed-write,
+  no-secret, native-SwiftUI, and clean-disable contract is visible in proposal
+  threads.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
 - Latest combined `swift test --filter 'CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after the newest import, DemoNotes, and Intelligence handoff work: 5 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching contributor docs and the Team Extension Kit to use File > Import > Copy Review for importer proposals: 1 XCTest test, 0 failures. A docs search confirmed Copy Review, user-selected files, previewed writes, native SwiftUI, and clean-disable language across the contributor surfaces.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

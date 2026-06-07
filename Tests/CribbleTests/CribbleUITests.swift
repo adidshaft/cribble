@@ -943,6 +943,13 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(extensions.contains("data-only"))
         XCTAssertTrue(extensions.contains("signed/revocable model"))
         XCTAssertTrue(extensions.contains("Chat HUD command surface"))
+        XCTAssertTrue(extensions.contains("File → Import → Copy Review"))
+        XCTAssertTrue(extensions.contains("user-selected files only"))
+        XCTAssertTrue(extensions.contains("previewed writes"))
+
+        let teamKit = try String(contentsOf: demoRoot.appendingPathComponent("Team Extension Kit.md"), encoding: .utf8)
+        XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
+        XCTAssertTrue(teamKit.contains("creating or adapting a manifest"))
 
         let workflow = try String(contentsOf: demoRoot.appendingPathComponent("Workflow Playbook.md"), encoding: .utf8)
         XCTAssertTrue(workflow.contains("import-lane declaration"))

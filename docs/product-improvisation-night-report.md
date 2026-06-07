@@ -583,6 +583,10 @@ Latest pass:
   localhost/local-runner endpoints without credentials, while non-loopback
   remote runners still ask users to store credentials in Keychain or switch back
   to on-device processing.
+- DemoNotes now include a `Decision Log` workflow for lightweight team decision
+  records with status, owner, context, evidence, follow-up tasks, and review
+  boundary prompts; the bundled DemoNotes version was bumped so existing demo
+  installs refresh.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
@@ -594,9 +598,12 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after teaching DemoNotes and the first-run checklist to start VPS/team-runner setup with Help > Copy Remote Runner Setup Review: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotFormatsRunnerWithoutSecrets'` passed on 2026-06-08 after tightening local-vs-remote runner diagnostic next actions: 3 XCTest tests, 0 failures.
 - Latest combined `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract'` passed on 2026-06-08 after the Help command, DemoNotes, and diagnostics polish: 5 XCTest tests and 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding Decision Log to DemoNotes, seeded artifacts, and the bundled refresh version: 3 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
-  DemoNotes, remote-runner, diagnostics, and report work: 235 XCTest tests and
-  43 Swift Testing tests, 0 failures.
+  Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
+  XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the
+  known intermittent CoreData XPC messages from the macOS test environment, but
+  all tests passed.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -46,6 +46,8 @@ Create a one-page project brief from @README @Tasks and Intelligence @Feature To
 ```
 
 For a more evidence-heavy version of this flow, open [[Research Review]].
+When a decision should survive the week, copy the template in [[Decision Log]]
+and link the evidence that changed your mind.
 
 ## 3. Add team conventions without app code
 
@@ -82,8 +84,10 @@ The product should stay boring in the right places:
 - secrets live in Keychain;
 - every generated artifact can be inspected and copied as Markdown;
 - every Project Intelligence answer can be copied with the question attached.
+- important decisions have a plain Markdown rationale, owner, evidence, and
+  follow-up list.
 
 That is the center of Cribble: a native reader that can become a workbench
 without making beginners carry the complexity.
 
-← Back to [[README|Home]] · next: [[Research Review]] · [[Team Extension Kit]] · [[Extensions and Remote Intelligence]]
+← Back to [[README|Home]] · next: [[Research Review]] · [[Decision Log]] · [[Team Extension Kit]] · [[Extensions and Remote Intelligence]]

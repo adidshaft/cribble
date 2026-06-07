@@ -81,4 +81,4 @@ obvious before content leaves your Mac.
 - [ ] Remote runner use is intentional and documented.
 - [ ] The final artifact is plain Markdown.
 
-← Back to [[Workflow Playbook]] · [[Extensions and Remote Intelligence]] · [[README|Home]]
+← Back to [[Workflow Playbook]] · [[Decision Log]] · [[Extensions and Remote Intelligence]] · [[README|Home]]

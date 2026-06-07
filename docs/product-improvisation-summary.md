@@ -14,8 +14,8 @@ now reads more like a local-first Mac knowledge workspace:
 - **Start faster:** Welcome, Help, DemoNotes, shortcuts, and starter checklists
   now point beginners to the right first action.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
-  Link, Copy Wiki Link, and reviewed AI proposals make capture and handoff feel
-  native.
+  Link, Copy Wiki Link, Decision Log, and reviewed AI proposals make capture,
+  rationale, and handoff feel native.
 - **Use intelligence safely:** Project Intelligence has preflight review,
   source-grounded artifacts, Ask answers, copyable Markdown handoffs, diagnostics,
   and clear local-vs-remote boundaries.
@@ -57,6 +57,8 @@ The extension path is intentionally strict:
 Focused validation passed across the newest work:
 
 - DemoNotes copy and seeded intelligence artifacts.
+- Decision Log DemoNotes workflow for rationale, evidence, review boundaries,
+  and follow-up tasks.
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
 - Remote-runner consent and handoff checklists.
@@ -66,9 +68,10 @@ Focused validation passed across the newest work:
 - Diagnostics next actions and visible recovery strip.
 - Intelligence artifact and Ask answer Markdown handoffs.
 
-Full `swift test` passed after the latest Help command, DemoNotes,
+Full `swift test` passed after the latest Help command, Decision Log DemoNotes,
 remote-runner, diagnostics, and report work: 235 XCTest tests and 43 Swift
-Testing tests, 0 failures.
+Testing tests, 0 failures. The run printed known intermittent CoreData XPC noise,
+but no tests failed.
 
 ## Intentionally Not Done
 
@@ -85,8 +88,7 @@ making it slippery or unsafe.
 
 ## Next Best Bets
 
-1. Run a broader full-suite validation before merging.
-2. Keep polishing DemoNotes around real team workflows.
-3. Design signed executable extension support only after the sandbox, trust,
+1. Keep polishing DemoNotes around real team workflows.
+2. Design signed executable extension support only after the sandbox, trust,
    audit, and revocation model is concrete.
-4. Continue reducing build/test warning noise so support reports stay readable.
+3. Continue reducing build/test warning noise so support reports stay readable.

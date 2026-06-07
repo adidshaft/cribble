@@ -82,7 +82,8 @@ final class DiagnosticsCenter: ObservableObject {
     func makeReport(
         library: MarkdownLibraryStore?,
         settings: AppSettings?,
-        intelligence: IntelligenceDiagnosticsSnapshot? = nil
+        intelligence: IntelligenceDiagnosticsSnapshot? = nil,
+        extensions: ExtensionDiagnosticsSnapshot? = nil
     ) -> String {
         latestCrashReport = Self.findLatestCrashReport()
 
@@ -101,6 +102,7 @@ final class DiagnosticsCenter: ObservableObject {
             : events.map { "- \($0.formatted)" }.joined(separator: "\n")
         let refreshSection = latestRefreshSnapshot?.formattedReportSection ?? "No refresh performance snapshot recorded."
         let intelligenceSection = intelligence?.formattedReportSection ?? "No intelligence diagnostics snapshot recorded."
+        let extensionSection = extensions?.formattedReportSection ?? "No extension diagnostics snapshot recorded."
 
         let crashReportSection = latestCrashReportSection()
 
@@ -135,6 +137,9 @@ final class DiagnosticsCenter: ObservableObject {
         ## Intelligence
         \(intelligenceSection)
 
+        ## Extensions
+        \(extensionSection)
+
         ## Recent Events
         \(eventLines)
 
@@ -145,9 +150,10 @@ final class DiagnosticsCenter: ObservableObject {
     func copyReport(
         library: MarkdownLibraryStore?,
         settings: AppSettings?,
-        intelligence: IntelligenceDiagnosticsSnapshot? = nil
+        intelligence: IntelligenceDiagnosticsSnapshot? = nil,
+        extensions: ExtensionDiagnosticsSnapshot? = nil
     ) {
-        let report = makeReport(library: library, settings: settings, intelligence: intelligence)
+        let report = makeReport(library: library, settings: settings, intelligence: intelligence, extensions: extensions)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
         record(level: .info, message: "Diagnostic report copied to clipboard.")
@@ -312,6 +318,102 @@ struct DiagnosticEvent: Identifiable, Equatable {
 
     var formatted: String {
         "\(diagnosticTimestamp(date)) [\(level.rawValue.uppercased())] \(message)"
+    }
+}
+
+struct ExtensionDiagnosticsSnapshot: Equatable {
+    struct Entry: Equatable {
+        let name: String
+        let id: String
+        let kind: String
+        let location: String
+        let enabled: Bool
+        let permissions: [String]
+        let contributionSummary: String
+    }
+
+    let installedCount: Int
+    let enabledCount: Int
+    let warningCount: Int
+    let quickActionCount: Int
+    let remoteRunnerCount: Int
+    let rendererCount: Int
+    let importerCount: Int
+    let warnings: [String]
+    let entries: [Entry]
+
+    init(
+        installed: [InstalledCribbleExtension],
+        disabledIDs: Set<String>,
+        warnings: [String]
+    ) {
+        installedCount = installed.count
+        enabledCount = installed.filter { !disabledIDs.contains($0.manifest.id) }.count
+        warningCount = warnings.count
+        quickActionCount = installed.reduce(0) { $0 + $1.manifest.quickActions.count }
+        remoteRunnerCount = installed.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
+        rendererCount = installed.reduce(0) { $0 + $1.manifest.renderers.count }
+        importerCount = installed.reduce(0) { $0 + $1.manifest.importers.count }
+        self.warnings = warnings
+        entries = installed.map { installed in
+            let manifest = installed.manifest
+            return Entry(
+                name: manifest.name,
+                id: manifest.id,
+                kind: manifest.kind.title,
+                location: installed.location.title,
+                enabled: !disabledIDs.contains(manifest.id),
+                permissions: manifest.permissions.map(\.title),
+                contributionSummary: Self.contributionSummary(for: manifest)
+            )
+        }
+    }
+
+    var formattedReportSection: String {
+        var lines = [
+            "- Installed: \(installedCount)",
+            "- Enabled: \(enabledCount)",
+            "- Warnings: \(warningCount)",
+            "- Contributions: \(quickActionCount) quick actions, \(remoteRunnerCount) remote runners, \(rendererCount) renderers, \(importerCount) importers"
+        ]
+
+        if !warnings.isEmpty {
+            lines.append("")
+            lines.append("Warnings:")
+            lines.append(contentsOf: warnings.map { "- \($0)" })
+        }
+
+        if entries.isEmpty {
+            lines.append("")
+            lines.append("No extension manifests are installed.")
+        } else {
+            lines.append("")
+            lines.append("Installed manifests:")
+            for entry in entries {
+                lines.append("- \(entry.name) (\(entry.id)): \(entry.kind), \(entry.location), \(entry.enabled ? "enabled" : "disabled")")
+                if !entry.permissions.isEmpty {
+                    lines.append("  Permissions: \(entry.permissions.joined(separator: ", "))")
+                }
+                if !entry.contributionSummary.isEmpty {
+                    lines.append("  Contributions: \(entry.contributionSummary)")
+                }
+            }
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    private static func contributionSummary(for manifest: CribbleExtensionManifest) -> String {
+        switch manifest.kind {
+        case .quickAction:
+            return manifest.quickActions.map(\.title).joined(separator: ", ")
+        case .intelligenceProvider:
+            return manifest.intelligenceProviders.map { "\($0.title) (\($0.modelID))" }.joined(separator: ", ")
+        case .renderer:
+            return manifest.renderers.map { "\($0.title) [\($0.languages.joined(separator: ", "))]" }.joined(separator: ", ")
+        case .importer:
+            return manifest.importers.map { "\($0.title) [\($0.fileExtensions.joined(separator: ", "))]" }.joined(separator: ", ")
+        }
     }
 }
 

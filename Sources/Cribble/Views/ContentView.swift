@@ -68,7 +68,12 @@ struct ContentView: View {
             }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, {
-                diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+                diagnostics.copyReport(
+                    library: library,
+                    settings: settings,
+                    intelligence: intelligenceDiagnostics,
+                    extensions: extensionDiagnostics
+                )
             })
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
             .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
@@ -134,7 +139,12 @@ struct ContentView: View {
                     library.errorMessage = nil
                 }
                 Button("Copy Report") {
-                    diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+                    diagnostics.copyReport(
+                        library: library,
+                        settings: settings,
+                        intelligence: intelligenceDiagnostics,
+                        extensions: extensionDiagnostics
+                    )
                     library.errorMessage = nil
                 }
                 Button("OK", role: .cancel) {}
@@ -147,7 +157,12 @@ struct ContentView: View {
                     diagnostics.acknowledgePreviousSessionIssue()
                 }
                 Button("Copy Report") {
-                    diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+                    diagnostics.copyReport(
+                        library: library,
+                        settings: settings,
+                        intelligence: intelligenceDiagnostics,
+                        extensions: extensionDiagnostics
+                    )
                     diagnostics.acknowledgePreviousSessionIssue()
                 }
                 Button("Not Now", role: .cancel) {
@@ -168,10 +183,22 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingDiagnosticsReport) {
                 DiagnosticsReportSheet(
-                    report: diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics),
+                    report: diagnostics.makeReport(
+                        library: library,
+                        settings: settings,
+                        intelligence: intelligenceDiagnostics,
+                        extensions: extensionDiagnostics
+                    ),
                     crashReport: diagnostics.latestCrashReport,
                     latestRefreshSnapshot: diagnostics.latestRefreshSnapshot,
-                    onCopy: { diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics) },
+                    onCopy: {
+                        diagnostics.copyReport(
+                            library: library,
+                            settings: settings,
+                            intelligence: intelligenceDiagnostics,
+                            extensions: extensionDiagnostics
+                        )
+                    },
                     onCopyCrashReport: { diagnostics.copyLatestCrashReport() },
                     onRevealCrashReport: { diagnostics.revealLatestCrashReportInFinder() },
                     onReportIssue: { reportIssueOnGitHub() },
@@ -436,19 +463,37 @@ struct ContentView: View {
     }
 
     private func reportIssueOnGitHub() {
-        let report = diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+        let report = diagnostics.makeReport(
+            library: library,
+            settings: settings,
+            intelligence: intelligenceDiagnostics,
+            extensions: extensionDiagnostics
+        )
         GitHubReport.openIssue(report: report)
         diagnostics.record(level: .info, message: "Opened GitHub issue flow.")
     }
 
     private func openPullRequestOnGitHub() {
-        let report = diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+        let report = diagnostics.makeReport(
+            library: library,
+            settings: settings,
+            intelligence: intelligenceDiagnostics,
+            extensions: extensionDiagnostics
+        )
         GitHubReport.openPullRequest(report: report)
         diagnostics.record(level: .info, message: "Opened GitHub pull request flow.")
     }
 
     private var intelligenceDiagnostics: IntelligenceDiagnosticsSnapshot {
         intelligence.diagnosticsSnapshot()
+    }
+
+    private var extensionDiagnostics: ExtensionDiagnosticsSnapshot {
+        ExtensionDiagnosticsSnapshot(
+            installed: extensionRegistry.installedExtensions,
+            disabledIDs: extensionRegistry.disabledExtensionIDs,
+            warnings: extensionRegistry.loadWarnings
+        )
     }
 
     private func restoreIntelligenceAfterConsent(root: URL) {

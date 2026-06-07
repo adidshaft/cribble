@@ -86,6 +86,86 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertEqual(snapshot.cacheSummary, "6 render cache entries kept, 2 pruned")
     }
 
+    func testExtensionSnapshotFormatsInstalledLanesAndWarnings() {
+        let root = URL(fileURLWithPath: "/tmp/CribbleDiagnosticsExtensions")
+        let installed = [
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.quick",
+                    name: "Quick Review",
+                    version: "1.0.0",
+                    kind: .quickAction,
+                    summary: "Review action.",
+                    permissions: [.readCurrentNote],
+                    quickActions: [
+                        CribbleExtensionQuickAction(
+                            id: "summarize",
+                            title: "Summarize",
+                            icon: "bolt",
+                            prompt: "Summarize."
+                        )
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("quick/cribble-extension.json"),
+                location: .user
+            ),
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.runner",
+                    name: "Team Runner",
+                    version: "1.0.0",
+                    kind: .intelligenceProvider,
+                    summary: "Remote runner.",
+                    permissions: [.networkOpenAICompatible],
+                    intelligenceProviders: [
+                        CribbleExtensionIntelligenceProvider(
+                            id: "gpu",
+                            title: "GPU Runner",
+                            baseURL: URL(string: "https://runner.example.com/v1")!,
+                            modelID: "team-large",
+                            embeddingModelID: nil,
+                            trustLabel: "Team"
+                        )
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("runner/cribble-extension.json"),
+                location: .project(root)
+            )
+        ]
+
+        let snapshot = ExtensionDiagnosticsSnapshot(
+            installed: installed,
+            disabledIDs: ["com.example.runner"],
+            warnings: ["bad-extension: The manifest is not valid JSON."]
+        )
+        let section = snapshot.formattedReportSection
+
+        XCTAssertTrue(section.contains("Installed: 2"))
+        XCTAssertTrue(section.contains("Enabled: 1"))
+        XCTAssertTrue(section.contains("Warnings: 1"))
+        XCTAssertTrue(section.contains("1 quick actions, 1 remote runners, 0 renderers, 0 importers"))
+        XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))
+        XCTAssertTrue(section.contains("Quick Review (com.example.quick): Quick Action, User, enabled"))
+        XCTAssertTrue(section.contains("Permissions: Read Current Note"))
+        XCTAssertTrue(section.contains("Contributions: Summarize"))
+        XCTAssertTrue(section.contains("Team Runner (com.example.runner): Intelligence Provider, CribbleDiagnosticsExtensions, disabled"))
+        XCTAssertTrue(section.contains("Contributions: GPU Runner (team-large)"))
+    }
+
+    @MainActor
+    func testDiagnosticReportIncludesExtensionSnapshot() {
+        let snapshot = ExtensionDiagnosticsSnapshot(installed: [], disabledIDs: [], warnings: [])
+        let report = DiagnosticsCenter.shared.makeReport(
+            library: nil,
+            settings: nil,
+            extensions: snapshot
+        )
+
+        XCTAssertTrue(report.contains("## Extensions"))
+        XCTAssertTrue(report.contains("Installed: 0"))
+        XCTAssertTrue(report.contains("No extension manifests are installed."))
+    }
+
     func testCrashReportFinderPrefersNewestCribbleReport() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("CribbleCrashReports-\(UUID().uuidString)", isDirectory: true)

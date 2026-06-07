@@ -5,6 +5,7 @@ struct DiagnosticsReportSheet: View {
     let report: String
     let crashReport: CrashReportFile?
     let latestRefreshSnapshot: RefreshDiagnosticsSnapshot?
+    let nextActions: [String]
     let onCopy: () -> Void
     let onCopyCrashReport: () -> Bool
     let onRevealCrashReport: () -> Bool
@@ -26,6 +27,8 @@ struct DiagnosticsReportSheet: View {
 
                 Spacer()
             }
+
+            nextActionSummary
 
             refreshSummary
 
@@ -111,6 +114,29 @@ struct DiagnosticsReportSheet: View {
         }
 
         return "Latest crash file found: \(crashReport.url.lastPathComponent). Reveal it and send it with the report."
+    }
+
+    @ViewBuilder
+    private var nextActionSummary: some View {
+        let actionable = nextActions.filter { !$0.lowercased().hasPrefix("no ") }
+        if !actionable.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Next Actions", systemImage: "checklist")
+                    .font(.caption.weight(.semibold))
+
+                ForEach(actionable, id: \.self) { action in
+                    Text(action)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
+            .help("Most useful next steps from the copied diagnostic report")
+        }
     }
 
     @ViewBuilder

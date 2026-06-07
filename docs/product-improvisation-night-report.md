@@ -537,6 +537,9 @@ Latest pass:
   and extensions, including missing remote-runner Keychain credentials,
   extension manifest warnings, empty extension setups, queued jobs, and stale
   artifacts.
+- The Diagnostic Report sheet now surfaces those intelligence/extension next
+  actions in a native summary strip above the full report, so recovery steps are
+  visible before users copy or file an issue.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

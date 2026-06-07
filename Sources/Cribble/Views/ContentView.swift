@@ -274,6 +274,10 @@ struct ContentView: View {
                     ),
                     crashReport: diagnostics.latestCrashReport,
                     latestRefreshSnapshot: diagnostics.latestRefreshSnapshot,
+                    nextActions: [
+                        intelligenceDiagnostics.nextActionSummary,
+                        extensionDiagnostics.nextActionSummary
+                    ],
                     onCopy: {
                         diagnostics.copyReport(
                             library: library,

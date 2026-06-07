@@ -51,6 +51,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         let section = snapshot.formattedReportSection
 
         XCTAssertTrue(section.contains("Credential: none configured"))
+        XCTAssertEqual(snapshot.nextActionSummary, "Store the remote runner credential in Keychain or switch back to an on-device model.")
         XCTAssertTrue(section.contains("Next action: Store the remote runner credential in Keychain or switch back to an on-device model."))
     }
 
@@ -230,6 +231,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         )
         let section = snapshot.formattedReportSection
 
+        XCTAssertEqual(snapshot.nextActionSummary, "Open Settings > Extensions, fix manifest warnings, then run Check Again.")
         XCTAssertTrue(section.contains("Installed: 2"))
         XCTAssertTrue(section.contains("Enabled: 1"))
         XCTAssertTrue(section.contains("Warnings: 1"))

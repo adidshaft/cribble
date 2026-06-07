@@ -450,7 +450,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
             "- Warnings: \(warningCount)",
             "- Installed contributions: \(quickActionCount) quick actions, \(remoteRunnerCount) remote runners, \(rendererCount) renderers, \(importerCount) importers",
             "- Active contributions: \(activeQuickActionCount) quick actions, \(activeRemoteRunnerCount) remote runners, \(activeRendererCount) renderers, \(activeImporterCount) importers",
-            "- Next action: \(nextAction)"
+            "- Next action: \(nextActionSummary)"
         ]
 
         if !warnings.isEmpty {
@@ -492,7 +492,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
         }
     }
 
-    private var nextAction: String {
+    var nextActionSummary: String {
         if warningCount > 0 {
             return "Open Settings > Extensions, fix manifest warnings, then run Check Again."
         }
@@ -574,7 +574,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
         - Last activity: \(lastActivity ?? "none")
         - Resource gate: \(resourceGateDescription)
         - Model download: \(modelDownloadDescription)
-        - Next action: \(nextAction)
+        - Next action: \(nextActionSummary)
         """
     }
 
@@ -600,7 +600,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
         return "\(Int((modelDownloadFraction * 100).rounded()))%"
     }
 
-    private var nextAction: String {
+    var nextActionSummary: String {
         if !isEnabled {
             return "Enable Project Intelligence from the Intelligence HUD when this folder should be indexed."
         }

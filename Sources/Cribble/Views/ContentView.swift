@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     @EnvironmentObject private var llmEntitlement: LLMEntitlementStore
     @EnvironmentObject private var intelligence: IntelligenceEngine
+    @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var showingAIProviderSheet = false
     @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
@@ -41,6 +42,7 @@ struct ContentView: View {
                     semanticIndex: semanticIndex,
                     entitlement: llmEntitlement,
                     intelligence: intelligence,
+                    extensionRegistry: extensionRegistry,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
                 IntelligenceHUDController.shared.configure(

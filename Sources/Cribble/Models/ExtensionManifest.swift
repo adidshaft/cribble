@@ -48,6 +48,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let entrypoint: String?
     let homepage: URL?
     let permissions: [CribbleExtensionPermission]
+    let quickActions: [CribbleExtensionQuickAction]
 
     enum CodingKeys: String, CodingKey {
         case apiVersion
@@ -59,6 +60,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case entrypoint
         case homepage
         case permissions
+        case quickActions
     }
 
     init(from decoder: Decoder) throws {
@@ -72,6 +74,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         entrypoint = try container.decodeIfPresent(String.self, forKey: .entrypoint)
         homepage = try container.decodeIfPresent(URL.self, forKey: .homepage)
         permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
+        quickActions = try container.decodeIfPresent([CribbleExtensionQuickAction].self, forKey: .quickActions) ?? []
     }
 
     init(
@@ -83,7 +86,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         summary: String,
         entrypoint: String? = nil,
         homepage: URL? = nil,
-        permissions: [CribbleExtensionPermission] = []
+        permissions: [CribbleExtensionPermission] = [],
+        quickActions: [CribbleExtensionQuickAction] = []
     ) {
         self.apiVersion = apiVersion
         self.id = id
@@ -94,7 +98,15 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.entrypoint = entrypoint
         self.homepage = homepage
         self.permissions = permissions
+        self.quickActions = quickActions
     }
+}
+
+struct CribbleExtensionQuickAction: Codable, Identifiable, Equatable {
+    let id: String
+    let title: String
+    let icon: String
+    let prompt: String
 }
 
 struct InstalledCribbleExtension: Identifiable, Equatable {
@@ -124,6 +136,7 @@ enum ExtensionManifestError: LocalizedError, Equatable {
     case invalidID(String)
     case invalidEntrypoint(String)
     case invalidHomepage(String)
+    case invalidContribution(String)
 
     var errorDescription: String? {
         switch self {
@@ -139,6 +152,8 @@ enum ExtensionManifestError: LocalizedError, Equatable {
             return "\(entrypoint) must be a relative path inside the extension folder."
         case .invalidHomepage(let url):
             return "\(url) must be an http or https URL."
+        case .invalidContribution(let message):
+            return message
         }
     }
 }
@@ -176,6 +191,7 @@ enum ExtensionManifestLoader {
         if let homepage = manifest.homepage, !isHTTPURL(homepage) {
             throw ExtensionManifestError.invalidHomepage(homepage.absoluteString)
         }
+        try validateQuickActions(manifest.quickActions, manifest: manifest)
     }
 
     private static func isReverseDNS(_ id: String) -> Bool {
@@ -197,5 +213,30 @@ enum ExtensionManifestLoader {
     private static func isHTTPURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
         return scheme == "http" || scheme == "https"
+    }
+
+    private static func validateQuickActions(
+        _ actions: [CribbleExtensionQuickAction],
+        manifest: CribbleExtensionManifest
+    ) throws {
+        guard actions.isEmpty || manifest.kind == .quickAction else {
+            throw ExtensionManifestError.invalidContribution("Only quick-action extensions may declare quickActions.")
+        }
+
+        var seen: Set<String> = []
+        for action in actions {
+            if action.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Quick action id is required.")
+            }
+            if action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Quick action title is required.")
+            }
+            if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Quick action prompt is required.")
+            }
+            if !seen.insert(action.id).inserted {
+                throw ExtensionManifestError.invalidContribution("Quick action id \(action.id) is duplicated.")
+            }
+        }
     }
 }

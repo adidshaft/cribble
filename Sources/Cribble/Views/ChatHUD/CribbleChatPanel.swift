@@ -59,6 +59,7 @@ final class ChatHUDController {
     private weak var semanticIndex: SemanticSearchIndex?
     private weak var entitlement: LLMEntitlementStore?
     private weak var intelligence: IntelligenceEngine?
+    private weak var extensionRegistry: ExtensionRegistry?
     private var onLocked: (() -> Void)?
     private weak var statusButton: NSStatusBarButton?
 
@@ -71,12 +72,14 @@ final class ChatHUDController {
         semanticIndex: SemanticSearchIndex,
         entitlement: LLMEntitlementStore,
         intelligence: IntelligenceEngine? = nil,
+        extensionRegistry: ExtensionRegistry? = nil,
         onLocked: @escaping () -> Void
     ) {
         self.library = library
         self.semanticIndex = semanticIndex
         self.entitlement = entitlement
         self.intelligence = intelligence
+        self.extensionRegistry = extensionRegistry
         self.onLocked = onLocked
     }
 
@@ -163,10 +166,12 @@ final class ChatHUDController {
     private func ensureViewModel() -> ChatHUDViewModel? {
         if let viewModel {
             viewModel.syncEngineChoiceFromDefaults()
+            viewModel.updateExtensionQuickActions(extensionRegistry?.quickActions ?? [])
             return viewModel
         }
         guard let library else { return nil }
         let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
+        vm.updateExtensionQuickActions(extensionRegistry?.quickActions ?? [])
         vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }
         vm.useProjectIntelligence = intelligence?.settings.useInChat ?? false
         vm.onIntelligenceToggle = { [weak intelligence] on in intelligence?.settings.useInChat = on }

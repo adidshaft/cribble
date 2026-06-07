@@ -167,7 +167,7 @@ struct ChatEmptyState: View {
 
     private var quickActions: some View {
         VStack(spacing: 6) {
-            ForEach(QuickActions.all.prefix(4)) { action in
+            ForEach((QuickActions.all + viewModel.extensionQuickActions).prefix(4)) { action in
                 Button {
                     viewModel.runQuickAction(action)
                 } label: {

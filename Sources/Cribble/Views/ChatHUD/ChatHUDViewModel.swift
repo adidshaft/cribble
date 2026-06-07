@@ -40,6 +40,7 @@ final class ChatHUDViewModel: ObservableObject {
     @Published private(set) var autocomplete: FileAutocompleteState?
     /// Slash-command palette suggestions (non-empty when the draft starts "/").
     @Published private(set) var slashCommands: [QuickAction] = []
+    @Published private(set) var extensionQuickActions: [QuickAction] = []
 
     // MARK: Model
     @Published var selectedModel: LocalModel
@@ -132,7 +133,7 @@ final class ChatHUDViewModel: ObservableObject {
 
         // `/` at the very start opens the command palette.
         if text.hasPrefix("/") {
-            slashCommands = QuickActions.matching(String(text.dropFirst()))
+            slashCommands = QuickActions.matching(String(text.dropFirst()), extensions: extensionQuickActions)
             autocomplete = nil
             return
         }
@@ -155,6 +156,13 @@ final class ChatHUDViewModel: ObservableObject {
         autocomplete = nil
         draft = action.prompt
         send()
+    }
+
+    func updateExtensionQuickActions(_ actions: [QuickAction]) {
+        extensionQuickActions = actions
+        if draft.hasPrefix("/") {
+            slashCommands = QuickActions.matching(String(draft.dropFirst()), extensions: extensionQuickActions)
+        }
     }
 
     /// Commits an autocomplete pick: strips the in-progress `@query` and pins

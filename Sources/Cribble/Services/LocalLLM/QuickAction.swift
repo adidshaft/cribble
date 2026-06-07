@@ -3,10 +3,16 @@ import Foundation
 /// A one-tap prompt for the chat HUD — surfaced as empty-state chips and via the
 /// `/` command palette in the input.
 struct QuickAction: Identifiable, Hashable {
+    enum Source: Hashable {
+        case builtIn
+        case `extension`(String)
+    }
+
     let id: String
     let title: String
     let icon: String
     let prompt: String
+    var source: Source = .builtIn
 }
 
 enum QuickActions {
@@ -43,9 +49,14 @@ enum QuickActions {
         )
     ]
 
-    static func matching(_ query: String) -> [QuickAction] {
+    static func matching(_ query: String, extensions: [QuickAction] = []) -> [QuickAction] {
         let q = query.lowercased()
-        guard !q.isEmpty else { return all }
-        return all.filter { $0.title.lowercased().contains(q) || $0.id.contains(q) }
+        let actions = all + extensions
+        guard !q.isEmpty else { return actions }
+        return actions.filter {
+            $0.title.lowercased().contains(q)
+                || $0.id.lowercased().contains(q)
+                || $0.prompt.lowercased().contains(q)
+        }
     }
 }

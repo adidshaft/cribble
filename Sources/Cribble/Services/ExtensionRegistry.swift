@@ -29,6 +29,22 @@ final class ExtensionRegistry: ObservableObject {
         }
     }
 
+    var quickActions: [QuickAction] {
+        installedExtensions
+            .filter { isEnabled($0) && $0.manifest.kind == .quickAction }
+            .flatMap { installed in
+                installed.manifest.quickActions.map { contribution in
+                    QuickAction(
+                        id: "\(installed.manifest.id).\(contribution.id)",
+                        title: contribution.title,
+                        icon: contribution.icon,
+                        prompt: contribution.prompt,
+                        source: .extension(installed.manifest.name)
+                    )
+                }
+            }
+    }
+
     func reload(projectRoots: [URL]) {
         var loaded: [InstalledCribbleExtension] = []
         var warnings: [String] = []
@@ -94,7 +110,15 @@ final class ExtensionRegistry: ObservableObject {
                 summary: "Adds a user-authored action to Cribble's future extension command surface.",
                 entrypoint: "main.js",
                 homepage: URL(string: "https://example.com/cribble-extension"),
-                permissions: [.readCurrentNote]
+                permissions: [.readCurrentNote],
+                quickActions: [
+                    CribbleExtensionQuickAction(
+                        id: "explain-jargon",
+                        title: "Explain jargon",
+                        icon: "text.magnifyingglass",
+                        prompt: "Explain the specialized terms in the current note in plain language."
+                    )
+                ]
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

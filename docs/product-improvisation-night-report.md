@@ -14,6 +14,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Discovery from each opened folder's `.cribble/extensions` directory.
 - Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation.
 - Duplicate id handling, with project-local extensions taking precedence over user-level extensions.
+- Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -62,12 +63,12 @@ Ran:
 swift test --filter ExtensionManifestTests
 ```
 
-Latest pass: 5 tests passed.
+Latest pass: 7 tests passed.
 
 ## Next best sections
 
-1. Add data-only quick-action contributions from enabled manifests into the Chat HUD slash palette.
-2. Add intelligence-provider manifest profiles to the Intelligence HUD, with an explicit warning when the base URL is not loopback.
-3. Add a Project Intelligence preflight sheet before enabling scans on a folder.
-4. Improve first-launch empty state with “Continue Demo Tour” and “Reset Demo Library.”
-5. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
+1. Add intelligence-provider manifest profiles to the Intelligence HUD, with an explicit warning when the base URL is not loopback.
+2. Add a Project Intelligence preflight sheet before enabling scans on a folder.
+3. Improve first-launch empty state with “Continue Demo Tour” and “Reset Demo Library.”
+4. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
+5. Add registry scan tests with duplicate precedence and enable/disable persistence coverage.

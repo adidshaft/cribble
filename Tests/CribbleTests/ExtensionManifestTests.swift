@@ -64,6 +64,65 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func loadsQuickActionContributions() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CribbleQuickActionManifestTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let url = folder.appendingPathComponent("cribble-extension.json")
+        let json = """
+        {
+          "apiVersion": 1,
+          "id": "com.example.cribble.actions",
+          "name": "Research Actions",
+          "version": "0.1.0",
+          "kind": "quick-action",
+          "summary": "Adds research-oriented chat prompts.",
+          "permissions": ["read-current-note"],
+          "quickActions": [
+            {
+              "id": "extract-claims",
+              "title": "Extract claims",
+              "icon": "checklist",
+              "prompt": "Extract the factual claims from the current note."
+            }
+          ]
+        }
+        """
+        try json.data(using: .utf8)?.write(to: url)
+
+        let manifest = try ExtensionManifestLoader.load(from: url)
+
+        #expect(manifest.quickActions.count == 1)
+        #expect(manifest.quickActions.first?.id == "extract-claims")
+        #expect(manifest.quickActions.first?.prompt.contains("factual claims") == true)
+    }
+
+    @Test
+    func rejectsQuickActionsOnWrongKind() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.renderer",
+            name: "Renderer",
+            version: "1.0.0",
+            kind: .renderer,
+            summary: "Tries to declare chat actions from a renderer.",
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "wrong-place",
+                    title: "Wrong place",
+                    icon: "xmark",
+                    prompt: "This should not be allowed."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Only quick-action extensions may declare quickActions.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsUnsupportedAPIVersion() throws {
         let manifest = CribbleExtensionManifest(
             apiVersion: 99,

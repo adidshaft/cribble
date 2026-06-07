@@ -86,6 +86,12 @@ respectful of the user's files.
   resolve wiki links, and make cross-file reading feel natural.
 - **Connect notes safely:** use local Codex or Claude CLIs to suggest links, then
   show a native patch preview before any file is changed.
+- **Use AI from native menus:** summarize, explain, find related notes, create
+  an index, draft today, extract tasks, and run Project Intelligence without
+  memorizing prompts.
+- **Extend safely:** start from declarative extension manifests, project-local
+  examples, read-only-first contribution guides, and trusted remote runner
+  profiles before executable plugins exist.
 - **Stay native:** use macOS sidebars, toolbars, menus, Settings, system theme,
   and Liquid Glass-era materials instead of custom heavy chrome.
 
@@ -122,6 +128,16 @@ respectful of the user's files.
   eligible apps, the default app, and Finder reveal.
 - Offers preview-first AI linking with local Codex or Claude, using the lowest
   configured model for each provider.
+- Adds native AI menu commands for summaries, plain-language explanations,
+  related-note discovery, reviewed `index.md` proposals, daily notes, and task
+  extraction.
+- Provides a safe extension foundation with validated `cribble-extension.json`
+  manifests, Settings visibility, project-local examples, renderer aliases,
+  import lanes, quick actions, remote runner profiles, and copyable proposal /
+  review summaries.
+- Supports trusted local, VPS, or team OpenAI-compatible intelligence runners
+  with visible data-boundary copy, Keychain-backed secrets, consent, and
+  revocation paths.
 - Provides a Diagnostic Report sheet with copy, GitHub issue, and GitHub pull
   request actions for quick user reports.
 - Ships as a signed, notarized macOS DMG with a drag-to-install Finder layout.
@@ -176,6 +192,21 @@ diff output only. Cribble parses that diff into a native preview sheet. Applying
 the patch verifies source lines before writing; canceling writes nothing.
 
 No AI command is allowed to directly mutate files in v1.
+
+## Native AI Menu
+
+The AI menu exposes common workflows without prompt memorization:
+
+- **Summarize Current Note**
+- **Explain Current Note Simply**
+- **Find Related Notes**
+- **Create Index Note**
+- **Draft Today with AI**
+- **Extract Tasks from Current Note**
+- **Project Intelligence**
+
+Generated notes and task/index proposals still use the same review-first
+preview flow before writing.
 
 ## Design Direction
 

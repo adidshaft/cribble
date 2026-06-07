@@ -91,6 +91,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - README and DemoNotes now teach that missing wiki links become review-first
   new-note proposals, so users can safely link before writing without surprise
   file creation.
+- The public README now advertises the current native AI menu, extension
+  framework, remote runner consent/Keychain posture, and review-first generated
+  note proposals instead of only the earlier AI-linking path.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
 - Built-in Chat HUD quick actions now carry short descriptions in the empty
   state chips and slash-command palette, helping beginners understand what each
@@ -447,6 +450,9 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Cribble AI to the welcome Start With grid: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after the Settings proposal, DemoNotes handoff, and Welcome AI entry work: 2 XCTest tests and 13 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding the Help > Open Cribble AI Guide entry: 1 XCTest test, 0 failures.
+- Docs-only validation on 2026-06-08 confirmed `README.md` mentions the native
+  AI menu commands, `cribble-extension.json`, trusted local/VPS/team runners,
+  and review-first generated note proposals.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

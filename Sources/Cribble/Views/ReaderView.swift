@@ -229,6 +229,9 @@ private struct ReaderDocumentView: View {
                             EmptyReadmePanel(
                                 folderName: document.url.deletingLastPathComponent().lastPathComponent,
                                 isRunningAI: isRunningAI,
+                                onNewNote: { library.proposeBlankNote() },
+                                onToday: { library.openTodayNote() },
+                                onOpenTasksGuide: { library.openDemoNote(named: "Tasks and Intelligence.md", sortMode: settings.fileSortMode) },
                                 onFillReadme: onFillReadme
                             )
                         } else if rendered.isEmpty {
@@ -2024,6 +2027,9 @@ private extension String {
 private struct EmptyReadmePanel: View {
     let folderName: String
     let isRunningAI: Bool
+    let onNewNote: () -> Void
+    let onToday: () -> Void
+    let onOpenTasksGuide: () -> Void
     let onFillReadme: (AIProvider) -> Void
 
     var body: some View {
@@ -2044,6 +2050,35 @@ private struct EmptyReadmePanel: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    onNewNote()
+                } label: {
+                    Label("New Note", systemImage: "doc.badge.plus")
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Create a Markdown note through the review flow")
+
+                Button {
+                    onToday()
+                } label: {
+                    Label("Today", systemImage: "calendar.badge.plus")
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Open or create today's Markdown note")
+
+                Button {
+                    onOpenTasksGuide()
+                } label: {
+                    Label("Tasks Guide", systemImage: "checklist")
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Open the DemoNotes guide for Tasks and Intelligence")
             }
 
             HStack(spacing: 10) {

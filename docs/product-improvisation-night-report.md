@@ -96,6 +96,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 - DemoNotes home now also guides beginners through the new review-first New Note flow and Copy Markdown handoff, making ordinary note creation/export part of the first-minute tour.
+- Empty README panels now offer native starter actions for New Note, Today, and the Tasks Guide beside the AI README-fill action, so a sparse folder gives users multiple useful next steps.
 - DemoNotes AI onboarding now consistently uses the native `Command J` chat shortcut and the bundled demo version was bumped so installed DemoNotes refresh.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
@@ -385,6 +386,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after adding copied Extension Dashboard summaries for contributor/support handoff: 12 Swift Testing tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after splitting remote-runner Data Boundary details into a visible preflight row: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after unifying Intelligence HUD runner warnings and copied handoffs around the same precise Data Boundary language: 6 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding native New Note, Today, and Tasks Guide actions to the empty README panel: 27 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

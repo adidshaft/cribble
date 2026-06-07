@@ -315,7 +315,7 @@ struct ContentView: View {
                 Label("Focus Mode", systemImage: settings.isFocusMode ? "eye.slash.fill" : "eye.slash")
             }
             .cribbleToolbarIcon()
-            .help("Toggle Focus Mode (Space)")
+            .help("Toggle Focus Mode (Command-Shift-F)")
 
             Button {
                 settings.showOutline.toggle()
@@ -324,7 +324,7 @@ struct ContentView: View {
             }
             .disabled(library.selectedDocument == nil || settings.isFocusMode)
             .cribbleToolbarIcon()
-            .help("Toggle Headings Outline (O)")
+            .help("Toggle Headings Outline (Command-Option-O)")
 
             Button {
                 showingAIProviderSheet = true
@@ -333,7 +333,7 @@ struct ContentView: View {
             }
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleToolbarIcon()
-            .help("Ask a local AI tool to suggest wiki links with a patch preview (L)")
+            .help("Ask a local AI tool to suggest wiki links with a patch preview (Command-Option-L)")
 
             Button {
                 openChatHUD()
@@ -341,7 +341,7 @@ struct ContentView: View {
                 Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
             }
             .cribbleToolbarIcon()
-            .help("Open the on-device AI chat (C)")
+            .help("Open the on-device AI chat (Command-J)")
         }
     }
 

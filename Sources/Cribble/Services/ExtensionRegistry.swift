@@ -153,6 +153,10 @@ final class ExtensionRegistry: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([userExtensionsFolder])
     }
 
+    func reveal(_ installed: InstalledCribbleExtension) {
+        NSWorkspace.shared.activateFileViewerSelecting([installed.manifestURL])
+    }
+
     func writeExampleManifest() throws -> URL {
         let exampleFolder = userExtensionsFolder.appendingPathComponent("example-quick-action", isDirectory: true)
         try fileManager.createDirectory(at: exampleFolder, withIntermediateDirectories: true)

@@ -122,6 +122,9 @@ struct SettingsView: View {
                                     isEnabled: extensionRegistry.isEnabled(installed),
                                     onEnabledChange: { enabled in
                                         extensionRegistry.setEnabled(enabled, for: installed)
+                                    },
+                                    onReveal: {
+                                        extensionRegistry.reveal(installed)
                                     }
                                 )
                             }
@@ -187,6 +190,7 @@ private struct ExtensionManifestRow: View {
     let `extension`: InstalledCribbleExtension
     let isEnabled: Bool
     let onEnabledChange: (Bool) -> Void
+    let onReveal: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -226,12 +230,21 @@ private struct ExtensionManifestRow: View {
 
             Spacer()
 
-            Toggle("Enabled", isOn: Binding(
-                get: { isEnabled },
-                set: { enabled in onEnabledChange(enabled) }
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
+            VStack(alignment: .trailing, spacing: 8) {
+                Button(action: onReveal) {
+                    Image(systemName: "folder")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Reveal extension manifest in Finder")
+
+                Toggle("Enabled", isOn: Binding(
+                    get: { isEnabled },
+                    set: { enabled in onEnabledChange(enabled) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+            }
         }
         .padding(8)
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))

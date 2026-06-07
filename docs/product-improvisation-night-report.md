@@ -13,6 +13,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Discovery from the user's Application Support extension folder.
 - Discovery from each opened folder's `.cribble/extensions` directory.
 - Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation.
+- Installed extension rows can reveal their manifest in Finder, making the declarative system easier to inspect and debug.
 - Duplicate id handling, with project-local extensions taking precedence over user-level extensions.
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
 - Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.

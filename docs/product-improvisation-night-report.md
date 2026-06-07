@@ -36,6 +36,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 - File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
+- Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -87,6 +88,7 @@ swift test --filter ExtensionManifestTests
 swift test --filter 'Extension|RunnerCredentialStoreTests'
 swift test
 swift test --filter CribbleUITests
+swift test --filter SemanticSearchIndexTests
 ```
 
 Latest pass:
@@ -94,11 +96,12 @@ Latest pass:
 - `swift test` passed on 2026-06-08: 177 XCTest tests, 0 failures.
 - The Swift Testing extension/credential suites also passed: 22 tests across manifest, registry, and runner credential coverage.
 - `swift test --filter CribbleUITests` passed on 2026-06-08: 11 XCTest tests, 0 failures.
+- `swift test --filter SemanticSearchIndexTests` passed on 2026-06-08: 9 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
-1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
+1. Add refresh-local metadata reuse keyed by standardized path plus file attributes, so unchanged files can reuse prior `MarkdownDocumentMeta` without full document parsing.
 2. Turn the documented executable-plugin trust model into enforced signed bundle verification before enabling any code execution.
 3. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 

@@ -44,6 +44,34 @@ final class SemanticSearchIndexTests: XCTestCase {
         XCTAssertLessThanOrEqual(meta.embeddingPrefix.count, 1500)
     }
 
+    func testDocumentSignatureIgnoresLoadOrder() {
+        let first = MarkdownDocumentMeta(document(title: "A", body: "Alpha"))
+        let second = MarkdownDocumentMeta(document(title: "B", body: "Beta"))
+
+        XCTAssertEqual(
+            SemanticSearchIndex.documentSignature([first, second]),
+            SemanticSearchIndex.documentSignature([second, first])
+        )
+    }
+
+    func testDocumentSignatureChangesWithPathOrContent() {
+        let original = MarkdownDocumentMeta(document(title: "A", body: "Alpha"))
+        let edited = MarkdownDocumentMeta(document(title: "A", body: "Alpha edited"))
+        let moved = MarkdownDocumentMeta(
+            url: URL(fileURLWithPath: "/tmp/Subfolder/A.md"),
+            title: original.title,
+            headings: original.headings,
+            outboundLinks: original.outboundLinks,
+            contentHash: original.contentHash,
+            embeddingPrefix: original.embeddingPrefix
+        )
+
+        let originalSignature = SemanticSearchIndex.documentSignature([original])
+
+        XCTAssertNotEqual(originalSignature, SemanticSearchIndex.documentSignature([edited]))
+        XCTAssertNotEqual(originalSignature, SemanticSearchIndex.documentSignature([moved]))
+    }
+
     func testCosineOfIdenticalNormalizedVectorsIsOne() {
         let vector: [Float] = normalize([0.2, 0.5, -0.1, 0.84])
         XCTAssertEqual(SemanticSearchIndex.cosine(vector, vector), 1, accuracy: 0.0001)

@@ -126,6 +126,7 @@ final class SemanticSearchIndex: ObservableObject {
     private let engine = EmbeddingEngine()
     private let fileURL: URL
     private var entries: [String: Entry] = [:]
+    private var indexedDocumentSignature: UInt64?
     private var indexTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
 
@@ -138,6 +139,11 @@ final class SemanticSearchIndex: ObservableObject {
     /// Re-embeds any new or changed documents in the background and drops
     /// entries for files that no longer exist. Cheap when nothing changed.
     func reindex(documents: [MarkdownDocumentMeta]) {
+        let documentSignature = Self.documentSignature(documents)
+        if indexedDocumentSignature == documentSignature {
+            return
+        }
+
         indexTask?.cancel()
         let documents = documents
         indexTask = Task { @MainActor in
@@ -175,6 +181,7 @@ final class SemanticSearchIndex: ObservableObject {
 
             entries = updated
             indexedCount = entries.count
+            indexedDocumentSignature = documentSignature
             if changed { persist() }
         }
     }
@@ -332,6 +339,26 @@ final class SemanticSearchIndex: ObservableObject {
         hash = (hash ^ 0x2f) &* prime
         for byte in body.utf8 {
             hash = (hash ^ UInt64(byte)) &* prime
+        }
+        return hash
+    }
+
+    /// Stable fingerprint for the set of indexed documents. Used to skip repeat
+    /// refreshes that produce the same paths and content hashes in a new order.
+    nonisolated static func documentSignature(_ documents: [MarkdownDocumentMeta]) -> UInt64 {
+        var hash: UInt64 = 0xcbf29ce484222325
+        let prime: UInt64 = 0x100000001b3
+        for meta in documents.sorted(by: { $0.url.standardizedFileURL.path < $1.url.standardizedFileURL.path }) {
+            for byte in meta.url.standardizedFileURL.path.utf8 {
+                hash = (hash ^ UInt64(byte)) &* prime
+            }
+            hash = (hash ^ 0x1f) &* prime
+            var contentHash = meta.contentHash
+            for _ in 0..<8 {
+                hash = (hash ^ (contentHash & 0xff)) &* prime
+                contentHash >>= 8
+            }
+            hash = (hash ^ 0x2f) &* prime
         }
         return hash
     }

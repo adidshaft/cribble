@@ -33,6 +33,8 @@ struct ContentView: View {
             .focusedSceneValue(\.importFileAction, importFileAction)
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
+            .focusedSceneValue(\.revealSelectedDocumentAction, selectedDocumentAction(library.revealSelectedDocumentInFinder))
+            .focusedSceneValue(\.copySelectedDocumentPathAction, selectedDocumentAction(library.copySelectedDocumentPath))
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
@@ -74,6 +76,11 @@ struct ContentView: View {
         let capabilities = extensionRegistry.importerCapabilities
         guard !capabilities.isEmpty else { return nil }
         return { library.chooseImportFile(capabilities: capabilities) }
+    }
+
+    private func selectedDocumentAction(_ action: @escaping () -> Void) -> (() -> Void)? {
+        guard library.selectedDocument != nil else { return nil }
+        return action
     }
 
     private var alertContent: some View {

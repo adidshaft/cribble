@@ -5,6 +5,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.importFileAction) private var importFile
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
     @FocusedValue(\.openInEditorAction) private var openInEditor
+    @FocusedValue(\.revealSelectedDocumentAction) private var revealSelectedDocument
+    @FocusedValue(\.copySelectedDocumentPathAction) private var copySelectedDocumentPath
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
@@ -41,6 +43,14 @@ struct CribbleCommands: Commands {
             Button("Open in Editor", action: { openInEditor?() })
                 .keyboardShortcut("e", modifiers: [.command, .option])
                 .disabled(openInEditor == nil)
+
+            Button("Reveal in Finder", action: { revealSelectedDocument?() })
+                .keyboardShortcut("r", modifiers: [.command, .option])
+                .disabled(revealSelectedDocument == nil)
+
+            Button("Copy File Path", action: { copySelectedDocumentPath?() })
+                .keyboardShortcut("c", modifiers: [.command, .option, .shift])
+                .disabled(copySelectedDocumentPath == nil)
 
             Divider()
 
@@ -143,6 +153,14 @@ private struct OpenInEditorActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct RevealSelectedDocumentActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopySelectedDocumentPathActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct UndoNoteChangeActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -230,6 +248,16 @@ extension FocusedValues {
     var openInEditorAction: (() -> Void)? {
         get { self[OpenInEditorActionKey.self] }
         set { self[OpenInEditorActionKey.self] = newValue }
+    }
+
+    var revealSelectedDocumentAction: (() -> Void)? {
+        get { self[RevealSelectedDocumentActionKey.self] }
+        set { self[RevealSelectedDocumentActionKey.self] = newValue }
+    }
+
+    var copySelectedDocumentPathAction: (() -> Void)? {
+        get { self[CopySelectedDocumentPathActionKey.self] }
+        set { self[CopySelectedDocumentPathActionKey.self] = newValue }
     }
 
     var undoNoteChangeAction: (() -> Void)? {

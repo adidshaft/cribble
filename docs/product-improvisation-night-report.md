@@ -44,6 +44,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
 - Diagnostics now record refresh reuse counts when unchanged note metadata is reused, making performance wins visible in copied reports without changing normal status text.
+- File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -99,6 +100,7 @@ swift test --filter SemanticSearchIndexTests
 swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'
 swift test --filter CribbleUITests
 swift test --filter Extension
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -111,6 +113,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after refresh instrumentation: 11 XCTest tests, 0 failures.
 - Latest `swift test --filter Extension` passed on 2026-06-08 after trust declarations: 23 Swift Testing tests, 0 failures.
 - Latest `swift test --filter Extension` passed on 2026-06-08 after the trust-decision store: 27 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after selected-note menu actions: 11 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

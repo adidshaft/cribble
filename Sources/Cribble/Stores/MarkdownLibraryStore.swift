@@ -921,6 +921,11 @@ final class MarkdownLibraryStore: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([selectedDocument.url])
     }
 
+    func copySelectedDocumentPath() {
+        guard let selectedDocument else { return }
+        copyActualPath(for: selectedDocument.url)
+    }
+
     func runAILinking(provider: AIProvider, mode: AIMode) {
         guard let folderURL = folderURLForAI(mode: mode) else { return }
         isRunningAI = true

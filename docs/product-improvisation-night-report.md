@@ -19,6 +19,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
+- Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -71,6 +72,7 @@ Latest pass:
 
 - `swift test --filter Extension`
 - 12 tests passed across manifest and registry suites.
+- Latest run built without the previous SQLite vector-binding warning.
 
 ## Next best sections
 

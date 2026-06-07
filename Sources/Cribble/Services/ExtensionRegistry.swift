@@ -6,14 +6,22 @@ final class ExtensionRegistry: ObservableObject {
     @Published private(set) var installedExtensions: [InstalledCribbleExtension] = []
     @Published private(set) var loadWarnings: [String] = []
     @Published var disabledExtensionIDs: Set<String> {
-        didSet { UserDefaults.standard.set(Array(disabledExtensionIDs), forKey: Keys.disabledExtensionIDs) }
+        didSet { defaults.set(Array(disabledExtensionIDs), forKey: Keys.disabledExtensionIDs) }
     }
 
     private let fileManager: FileManager
+    private let defaults: UserDefaults
+    private let userExtensionsFolder: URL
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        defaults: UserDefaults = .standard,
+        userExtensionsFolder: URL = ExtensionRegistry.defaultUserExtensionsFolder
+    ) {
         self.fileManager = fileManager
-        disabledExtensionIDs = Set(UserDefaults.standard.stringArray(forKey: Keys.disabledExtensionIDs) ?? [])
+        self.defaults = defaults
+        self.userExtensionsFolder = userExtensionsFolder
+        disabledExtensionIDs = Set(defaults.stringArray(forKey: Keys.disabledExtensionIDs) ?? [])
         reload(projectRoots: [])
     }
 
@@ -67,7 +75,7 @@ final class ExtensionRegistry: ObservableObject {
         var loaded: [InstalledCribbleExtension] = []
         var warnings: [String] = []
 
-        scan(folder: Self.userExtensionsFolder, location: .user, into: &loaded, warnings: &warnings)
+        scan(folder: userExtensionsFolder, location: .user, into: &loaded, warnings: &warnings)
         for root in projectRoots {
             let folder = root.appendingPathComponent(".cribble/extensions", isDirectory: true)
             scan(folder: folder, location: .project(root), into: &loaded, warnings: &warnings)
@@ -111,12 +119,12 @@ final class ExtensionRegistry: ObservableObject {
     }
 
     func revealUserExtensionsFolder() {
-        try? fileManager.createDirectory(at: Self.userExtensionsFolder, withIntermediateDirectories: true)
-        NSWorkspace.shared.activateFileViewerSelecting([Self.userExtensionsFolder])
+        try? fileManager.createDirectory(at: userExtensionsFolder, withIntermediateDirectories: true)
+        NSWorkspace.shared.activateFileViewerSelecting([userExtensionsFolder])
     }
 
     func writeExampleManifest() throws -> URL {
-        let exampleFolder = Self.userExtensionsFolder.appendingPathComponent("example-quick-action", isDirectory: true)
+        let exampleFolder = userExtensionsFolder.appendingPathComponent("example-quick-action", isDirectory: true)
         try fileManager.createDirectory(at: exampleFolder, withIntermediateDirectories: true)
         let manifestURL = exampleFolder.appendingPathComponent("cribble-extension.json")
         if !fileManager.fileExists(atPath: manifestURL.path) {
@@ -170,11 +178,13 @@ final class ExtensionRegistry: ObservableObject {
         }
     }
 
-    static var userExtensionsFolder: URL {
+    static var defaultUserExtensionsFolder: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
         return base.appendingPathComponent("Cribble/Extensions", isDirectory: true)
     }
+
+    static var userExtensionsFolder: URL { defaultUserExtensionsFolder }
 
     private enum Keys {
         static let disabledExtensionIDs = "extensions.disabledIDs"

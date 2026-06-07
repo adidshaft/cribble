@@ -18,6 +18,8 @@ struct IntelligenceHUDView: View {
     /// Optional bridge from the Chat HUD so this panel can audit exactly what was
     /// sent as context during the latest chat turn.
     var latestContextReceipt: () -> ContextReceipt? = { nil }
+    /// OpenAI-compatible runner profiles contributed by enabled extensions.
+    var extensionProviderProfiles: () -> [ExtensionIntelligenceProviderProfile] = { [] }
 
     @State private var selectedTab: IntelligenceHUDTab = .feed
     @State private var selectedArtifactID: String?
@@ -36,6 +38,7 @@ struct IntelligenceHUDView: View {
     @State private var localRunnerModelIDs: [String] = []
     @State private var localRunnerStatus: LocalRunnerProbeStatus?
     @State private var isProbingLocalRunner = false
+    @State private var localRunnerRequiresProbe = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -190,6 +193,13 @@ struct IntelligenceHUDView: View {
             ForEach(OpenAICompatibleProvider.knownLocalEndpoints, id: \.name) { endpoint in
                 localRunnerRow(name: endpoint.name, url: endpoint.url)
             }
+            let profiles = extensionProviderProfiles()
+            if !profiles.isEmpty {
+                Text("EXTENSIONS").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8).padding(.top, 4)
+                ForEach(profiles) { profile in
+                    extensionProviderRow(profile)
+                }
+            }
             Button {
                 configureLocalRunner(name: "Custom", baseURL: localRunnerBaseURL.isEmpty ? "http://127.0.0.1:11434/v1" : localRunnerBaseURL)
             } label: {
@@ -291,6 +301,34 @@ struct IntelligenceHUDView: View {
         .foregroundStyle(.white.opacity(0.85))
     }
 
+    private func extensionProviderRow(_ profile: ExtensionIntelligenceProviderProfile) -> some View {
+        Button {
+            configureExtensionProvider(profile)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isSelectedRunner(profile.baseURL.absoluteString) ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 9))
+                    .foregroundStyle(isSelectedRunner(profile.baseURL.absoluteString) ? Color.accentColor : .white.opacity(0.4))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(profile.title).font(.system(size: 11))
+                    Text("\(profile.modelID) · \(profile.privacyLabel)")
+                        .font(.system(size: 9))
+                        .foregroundStyle(profile.isLoopback ? .white.opacity(0.45) : Color.orange.opacity(0.85))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 6)
+                Image(systemName: profile.isLoopback ? "network" : "exclamationmark.triangle")
+                    .font(.system(size: 9))
+                    .foregroundStyle(profile.isLoopback ? .white.opacity(0.45) : Color.orange.opacity(0.85))
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.85))
+        .help(profile.isLoopback ? "Uses \(profile.trustLabel)" : "Remote runner: note content may leave this Mac")
+    }
+
     private var localRunnerConfig: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -337,6 +375,12 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(localRunnerStatus.isError ? Color.red.opacity(0.85) : Color.green.opacity(0.85))
                     .lineLimit(2)
             }
+            if let warning = localRunnerPrivacyWarning {
+                Label(warning, systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 9))
+                    .foregroundStyle(Color.orange.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 8) {
                 Button("Test") {
                     Task { _ = await probeLocalRunner() }
@@ -362,10 +406,22 @@ struct IntelligenceHUDView: View {
     private func configureLocalRunner(name: String, baseURL: String) {
         localRunnerName = name
         localRunnerBaseURL = baseURL
+        localRunnerModelID = ""
         localRunnerStatus = nil
         localRunnerModelIDs = []
+        localRunnerRequiresProbe = true
         showLocalRunnerConfig = true
         Task { _ = await probeLocalRunner() }
+    }
+
+    private func configureExtensionProvider(_ profile: ExtensionIntelligenceProviderProfile) {
+        localRunnerName = profile.title
+        localRunnerBaseURL = profile.baseURL.absoluteString
+        localRunnerModelID = profile.modelID
+        localRunnerModelIDs = [profile.modelID]
+        localRunnerStatus = .ready(profile.isLoopback ? "Extension profile from \(profile.sourceName)." : "Remote profile from \(profile.sourceName).")
+        localRunnerRequiresProbe = false
+        showLocalRunnerConfig = true
     }
 
     @MainActor
@@ -399,7 +455,9 @@ struct IntelligenceHUDView: View {
 
     @MainActor
     private func useLocalRunner() async {
-        guard await probeLocalRunner() else { return }
+        if localRunnerRequiresProbe {
+            guard await probeLocalRunner() else { return }
+        }
         let modelID = localRunnerModelID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !modelID.isEmpty else {
             localRunnerStatus = .failed("Enter a model ID.")
@@ -1433,6 +1491,14 @@ struct IntelligenceHUDView: View {
     private var canUseLocalRunner: Bool {
         URL(string: localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
             && !localRunnerModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var localRunnerPrivacyWarning: String? {
+        guard let url = URL(string: localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let host = url.host?.lowercased()
+        else { return nil }
+        let isLoopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
+        return isLoopback ? nil : "Remote runner: prompts and note context may leave this Mac."
     }
 
     private var isCustomLocalRunnerSelected: Bool {

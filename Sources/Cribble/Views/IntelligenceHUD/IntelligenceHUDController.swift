@@ -51,6 +51,7 @@ final class IntelligenceHUDController {
     private weak var engine: IntelligenceEngine?
     private weak var library: MarkdownLibraryStore?
     private weak var entitlement: LLMEntitlementStore?
+    private weak var extensionRegistry: ExtensionRegistry?
     private var onLocked: (() -> Void)?
 
     private init() {}
@@ -59,11 +60,13 @@ final class IntelligenceHUDController {
         engine: IntelligenceEngine,
         library: MarkdownLibraryStore,
         entitlement: LLMEntitlementStore,
+        extensionRegistry: ExtensionRegistry? = nil,
         onLocked: @escaping () -> Void
     ) {
         self.engine = engine
         self.library = library
         self.entitlement = entitlement
+        self.extensionRegistry = extensionRegistry
         self.onLocked = onLocked
     }
 
@@ -124,7 +127,8 @@ final class IntelligenceHUDController {
                 }
             },
             allRoots: { [weak library] in library?.rootURLs ?? [] },
-            latestContextReceipt: { ChatHUDController.shared.latestContextReceipt }
+            latestContextReceipt: { ChatHUDController.shared.latestContextReceipt },
+            extensionProviderProfiles: { [weak self] in self?.extensionRegistry?.intelligenceProviderProfiles ?? [] }
         )
 
         let hosting = FirstMouseHostingView(rootView: root)

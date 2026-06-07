@@ -153,4 +153,67 @@ struct ExtensionManifestTests {
             try ExtensionManifestLoader.validate(manifest)
         }
     }
+
+    @Test
+    func loadsIntelligenceProviderProfiles() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CribbleProviderManifestTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let url = folder.appendingPathComponent("cribble-extension.json")
+        let json = """
+        {
+          "apiVersion": 1,
+          "id": "com.example.cribble.vps",
+          "name": "Team VPS",
+          "version": "0.1.0",
+          "kind": "intelligence-provider",
+          "summary": "Adds a trusted OpenAI-compatible VPS runner.",
+          "permissions": ["network-openai-compatible"],
+          "intelligenceProviders": [
+            {
+              "id": "research-gpu",
+              "title": "Research GPU",
+              "baseURL": "https://ai.example.com/v1",
+              "modelID": "qwen3-32b",
+              "embeddingModelID": "text-embedding-3-small",
+              "trustLabel": "Team-controlled VPS"
+            }
+          ]
+        }
+        """
+        try json.data(using: .utf8)?.write(to: url)
+
+        let manifest = try ExtensionManifestLoader.load(from: url)
+
+        #expect(manifest.intelligenceProviders.count == 1)
+        #expect(manifest.intelligenceProviders.first?.baseURL.absoluteString == "https://ai.example.com/v1")
+        #expect(manifest.intelligenceProviders.first?.modelID == "qwen3-32b")
+    }
+
+    @Test
+    func rejectsProviderProfilesOnWrongKind() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.actions",
+            name: "Actions",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Tries to declare providers from a quick-action extension.",
+            intelligenceProviders: [
+                CribbleExtensionIntelligenceProvider(
+                    id: "wrong-place",
+                    title: "Wrong place",
+                    baseURL: URL(string: "https://ai.example.com/v1")!,
+                    modelID: "qwen3",
+                    embeddingModelID: nil,
+                    trustLabel: nil
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Only intelligence-provider extensions may declare intelligenceProviders.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
 }

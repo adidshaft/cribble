@@ -49,6 +49,7 @@ struct ContentView: View {
                     engine: intelligence,
                     library: library,
                     entitlement: llmEntitlement,
+                    extensionRegistry: extensionRegistry,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
                 if let root = library.activeRootURL {

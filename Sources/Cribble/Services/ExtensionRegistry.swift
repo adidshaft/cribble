@@ -45,6 +45,24 @@ final class ExtensionRegistry: ObservableObject {
             }
     }
 
+    var intelligenceProviderProfiles: [ExtensionIntelligenceProviderProfile] {
+        installedExtensions
+            .filter { isEnabled($0) && $0.manifest.kind == .intelligenceProvider }
+            .flatMap { installed in
+                installed.manifest.intelligenceProviders.map { provider in
+                    ExtensionIntelligenceProviderProfile(
+                        id: "\(installed.manifest.id).\(provider.id)",
+                        title: provider.title,
+                        baseURL: provider.baseURL,
+                        modelID: provider.modelID,
+                        embeddingModelID: provider.embeddingModelID,
+                        trustLabel: provider.trustLabel ?? installed.manifest.name,
+                        sourceName: installed.manifest.name
+                    )
+                }
+            }
+    }
+
     func reload(projectRoots: [URL]) {
         var loaded: [InstalledCribbleExtension] = []
         var warnings: [String] = []

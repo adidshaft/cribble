@@ -15,6 +15,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation.
 - Duplicate id handling, with project-local extensions taking precedence over user-level extensions.
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
+- Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -63,12 +64,12 @@ Ran:
 swift test --filter ExtensionManifestTests
 ```
 
-Latest pass: 7 tests passed.
+Latest pass: 9 tests passed.
 
 ## Next best sections
 
-1. Add intelligence-provider manifest profiles to the Intelligence HUD, with an explicit warning when the base URL is not loopback.
-2. Add a Project Intelligence preflight sheet before enabling scans on a folder.
-3. Improve first-launch empty state with “Continue Demo Tour” and “Reset Demo Library.”
-4. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-5. Add registry scan tests with duplicate precedence and enable/disable persistence coverage.
+1. Add a Project Intelligence preflight sheet before enabling scans on a folder.
+2. Improve first-launch empty state with “Continue Demo Tour” and “Reset Demo Library.”
+3. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
+4. Add registry scan tests with duplicate precedence and enable/disable persistence coverage.
+5. Add secure credential handling for remote runner profiles without storing secrets in manifests.

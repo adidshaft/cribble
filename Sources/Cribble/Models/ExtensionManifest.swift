@@ -49,6 +49,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let homepage: URL?
     let permissions: [CribbleExtensionPermission]
     let quickActions: [CribbleExtensionQuickAction]
+    let intelligenceProviders: [CribbleExtensionIntelligenceProvider]
 
     enum CodingKeys: String, CodingKey {
         case apiVersion
@@ -61,6 +62,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case homepage
         case permissions
         case quickActions
+        case intelligenceProviders
     }
 
     init(from decoder: Decoder) throws {
@@ -75,6 +77,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         homepage = try container.decodeIfPresent(URL.self, forKey: .homepage)
         permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
         quickActions = try container.decodeIfPresent([CribbleExtensionQuickAction].self, forKey: .quickActions) ?? []
+        intelligenceProviders = try container.decodeIfPresent([CribbleExtensionIntelligenceProvider].self, forKey: .intelligenceProviders) ?? []
     }
 
     init(
@@ -87,7 +90,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         entrypoint: String? = nil,
         homepage: URL? = nil,
         permissions: [CribbleExtensionPermission] = [],
-        quickActions: [CribbleExtensionQuickAction] = []
+        quickActions: [CribbleExtensionQuickAction] = [],
+        intelligenceProviders: [CribbleExtensionIntelligenceProvider] = []
     ) {
         self.apiVersion = apiVersion
         self.id = id
@@ -99,6 +103,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.homepage = homepage
         self.permissions = permissions
         self.quickActions = quickActions
+        self.intelligenceProviders = intelligenceProviders
     }
 }
 
@@ -107,6 +112,15 @@ struct CribbleExtensionQuickAction: Codable, Identifiable, Equatable {
     let title: String
     let icon: String
     let prompt: String
+}
+
+struct CribbleExtensionIntelligenceProvider: Codable, Identifiable, Equatable {
+    let id: String
+    let title: String
+    let baseURL: URL
+    let modelID: String
+    let embeddingModelID: String?
+    let trustLabel: String?
 }
 
 struct InstalledCribbleExtension: Identifiable, Equatable {
@@ -192,6 +206,7 @@ enum ExtensionManifestLoader {
             throw ExtensionManifestError.invalidHomepage(homepage.absoluteString)
         }
         try validateQuickActions(manifest.quickActions, manifest: manifest)
+        try validateIntelligenceProviders(manifest.intelligenceProviders, manifest: manifest)
     }
 
     private static func isReverseDNS(_ id: String) -> Bool {
@@ -236,6 +251,34 @@ enum ExtensionManifestLoader {
             }
             if !seen.insert(action.id).inserted {
                 throw ExtensionManifestError.invalidContribution("Quick action id \(action.id) is duplicated.")
+            }
+        }
+    }
+
+    private static func validateIntelligenceProviders(
+        _ providers: [CribbleExtensionIntelligenceProvider],
+        manifest: CribbleExtensionManifest
+    ) throws {
+        guard providers.isEmpty || manifest.kind == .intelligenceProvider else {
+            throw ExtensionManifestError.invalidContribution("Only intelligence-provider extensions may declare intelligenceProviders.")
+        }
+
+        var seen: Set<String> = []
+        for provider in providers {
+            if provider.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider id is required.")
+            }
+            if provider.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider title is required.")
+            }
+            if !isHTTPURL(provider.baseURL) {
+                throw ExtensionManifestError.invalidContribution("\(provider.baseURL.absoluteString) must be an http or https provider URL.")
+            }
+            if provider.modelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider modelID is required.")
+            }
+            if !seen.insert(provider.id).inserted {
+                throw ExtensionManifestError.invalidContribution("Intelligence provider id \(provider.id) is duplicated.")
             }
         }
     }

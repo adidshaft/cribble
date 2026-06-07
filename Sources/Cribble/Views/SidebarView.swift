@@ -506,15 +506,6 @@ private struct IntelligencePreflightTarget: Identifiable {
     var id: String { url.standardizedFileURL.path }
 }
 
-private struct ExtensionRunnerConsentRequest: Identifiable {
-    let url: URL
-    let profile: ExtensionIntelligenceProviderProfile
-
-    var id: String {
-        "\(url.standardizedFileURL.path)|\(profile.consentKey)"
-    }
-}
-
 private extension View {
     func sidebarControlIcon(disabled: Bool = false, selected: Bool = false) -> some View {
         self

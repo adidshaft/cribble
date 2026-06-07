@@ -70,7 +70,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Extension quick actions now run without ambient related-note or Project Intelligence expansion, so a `read-current-note` manifest cannot silently receive broader project context; built-in actions and ordinary chat sends keep the richer workspace-aware behavior.
 - Extension-provided non-loopback remote runner profiles now require a one-time native review before the HUD applies them, with endpoint, model, trust label, extension source, Keychain state, context-leaves-Mac warning, and disable path shown before approval.
 - Remote runner trust matching now uses endpoint plus model id, and approval keys include profile id, source, endpoint, and model, preventing one extension profile from borrowing another profile's trust or approval.
-- Sidebar Project Intelligence starts now reuse the same extension remote-runner approval sheet before enabling a folder, and app restore skips unapproved extension remote runners until the user approves them from a visible flow.
+- Sidebar Project Intelligence starts now reuse the same extension remote-runner approval sheet before enabling a folder, and app restore reloads project extension profiles, presents the same consent sheet when needed, then resumes restore after approval.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.

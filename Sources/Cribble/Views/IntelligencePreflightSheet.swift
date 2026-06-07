@@ -232,3 +232,12 @@ struct ExtensionRunnerConsentSheet: View {
         }
     }
 }
+
+struct ExtensionRunnerConsentRequest: Identifiable {
+    let url: URL
+    let profile: ExtensionIntelligenceProviderProfile
+
+    var id: String {
+        "\(url.standardizedFileURL.path)|\(profile.consentKey)"
+    }
+}

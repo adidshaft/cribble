@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var showingImportGuidance = false
     @State private var importGuidanceStatus: String?
     @State private var showingPreviousSessionIssue = false
+    @State private var pendingRestoreRunnerConsent: ExtensionRunnerConsentRequest?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @FocusState private var isSearchFocused: Bool
     /// True when the window is too narrow for a side-by-side sidebar; the
@@ -60,8 +61,9 @@ struct ContentView: View {
                     extensionRegistry: extensionRegistry,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
-                if let root = library.activeRootURL, canRestoreIntelligenceWithoutRunnerConsent {
-                    Task { await intelligence.restoreIfEnabled(rootURL: root) }
+                extensionRegistry.reload(projectRoots: library.rootURLs)
+                if let root = library.activeRootURL {
+                    restoreIntelligenceAfterConsent(root: root)
                 }
             }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
@@ -201,6 +203,18 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingLLMUnlockSheet) {
                 LLMUnlockSheet(entitlement: llmEntitlement)
+            }
+            .sheet(item: $pendingRestoreRunnerConsent) { request in
+                ExtensionRunnerConsentSheet(
+                    profile: request.profile,
+                    usesKeychain: intelligence.settings.runnerUsesKeychain(baseURL: request.profile.baseURL.absoluteString),
+                    onCancel: { pendingRestoreRunnerConsent = nil },
+                    onApprove: {
+                        ExtensionRunnerConsentStore().approve(request.profile)
+                        pendingRestoreRunnerConsent = nil
+                        restoreIntelligenceAfterConsent(root: request.url)
+                    }
+                )
             }
     }
 
@@ -437,12 +451,18 @@ struct ContentView: View {
         intelligence.diagnosticsSnapshot()
     }
 
-    private var canRestoreIntelligenceWithoutRunnerConsent: Bool {
-        ExtensionRunnerConsentStore().requiredApprovalProfile(
+    private func restoreIntelligenceAfterConsent(root: URL) {
+        let standardized = root.standardizedFileURL
+        extensionRegistry.reload(projectRoots: library.rootURLs)
+        if let profile = ExtensionRunnerConsentStore().requiredApprovalProfile(
             runnerURL: intelligence.settings.localRunnerBaseURL,
             modelID: intelligence.settings.modelID,
             profiles: extensionRegistry.intelligenceProviderProfiles
-        ) == nil
+        ) {
+            pendingRestoreRunnerConsent = ExtensionRunnerConsentRequest(url: standardized, profile: profile)
+            return
+        }
+        Task { await intelligence.restoreIfEnabled(rootURL: standardized) }
     }
 
     private func createProjectImportLane() {

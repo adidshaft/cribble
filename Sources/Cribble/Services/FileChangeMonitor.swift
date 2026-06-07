@@ -16,8 +16,9 @@ final class FileChangeMonitor: @unchecked Sendable {
     private var stream: FSEventStreamRef?
     private var userCallback: (@MainActor @Sendable () -> Void)?
     private var debounceTask: Task<Void, Never>?
-    private static let debounceInterval: Duration = .milliseconds(250)
-    private static let latencySeconds: CFTimeInterval = 0.5
+    private var streamGeneration = 0
+    nonisolated private static let debounceInterval: Duration = .milliseconds(250)
+    nonisolated private static let latencySeconds: CFTimeInterval = 0.5
 
     func start(rootURL: URL, onChange: @escaping @MainActor @Sendable () -> Void) {
         start(rootURLs: [rootURL], onChange: onChange)
@@ -25,12 +26,32 @@ final class FileChangeMonitor: @unchecked Sendable {
 
     func start(rootURLs: [URL], onChange: @escaping @MainActor @Sendable () -> Void) {
         stop()
-        guard !rootURLs.isEmpty else { return }
+        let paths = rootURLs.map(\.path)
+        guard !paths.isEmpty else { return }
 
         userCallback = onChange
+        streamGeneration += 1
+        let generation = streamGeneration
 
-        let paths = rootURLs.map(\.path) as CFArray
+        let monitor = self
+        DispatchQueue.global(qos: .utility).async {
+            let stream = Self.createStream(paths: paths, monitor: monitor)
+            guard let stream else { return }
+            FSEventStreamSetDispatchQueue(stream, DispatchQueue.global(qos: .utility))
+            FSEventStreamStart(stream)
+            Task { @MainActor in
+                guard monitor.streamGeneration == generation else {
+                    FSEventStreamStop(stream)
+                    FSEventStreamInvalidate(stream)
+                    FSEventStreamRelease(stream)
+                    return
+                }
+                monitor.stream = stream
+            }
+        }
+    }
 
+    nonisolated private static func createStream(paths: [String], monitor: FileChangeMonitor) -> FSEventStreamRef? {
         // We pass `self` to the FSEventStream via its `info` pointer. The
         // stream may deliver events after our owning object thinks it's done
         // (tests routinely drop the store without calling stop), so we wire
@@ -49,7 +70,7 @@ final class FileChangeMonitor: @unchecked Sendable {
 
         var context = FSEventStreamContext(
             version: 0,
-            info: Unmanaged.passUnretained(self).toOpaque(),
+            info: Unmanaged.passUnretained(monitor).toOpaque(),
             retain: retainCallback,
             release: releaseCallback,
             copyDescription: nil
@@ -74,24 +95,19 @@ final class FileChangeMonitor: @unchecked Sendable {
                 | kFSEventStreamCreateFlagWatchRoot
         )
 
-        guard let stream = FSEventStreamCreate(
+        return FSEventStreamCreate(
             kCFAllocatorDefault,
             callback,
             &context,
-            paths,
+            paths as CFArray,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             Self.latencySeconds,
             flags
-        ) else {
-            return
-        }
-
-        FSEventStreamSetDispatchQueue(stream, DispatchQueue.global(qos: .utility))
-        FSEventStreamStart(stream)
-        self.stream = stream
+        )
     }
 
     func stop() {
+        streamGeneration += 1
         debounceTask?.cancel()
         debounceTask = nil
         userCallback = nil

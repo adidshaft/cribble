@@ -118,6 +118,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
 - DemoNotes now include a remote-runner handoff checklist for endpoint ownership, model id, trust label, note context, Keychain entry, and revocation.
 - DemoNotes now teach the stricter API v1 extension permission map, extension quick-action context limits, and the native remote-runner approval sheet before non-loopback extension profiles are used.
+- DemoNotes now point extension authors to Settings > Extensions > Copy Proposal
+  so idea-first extension review starts from the same template used by GitHub
+  issues and contributor docs.
 - DemoNotes and the public extension guide now explain that copied diagnostic reports include extension install/enabled state, validation warnings, permissions, and contribution titles for support or PR handoffs without copying Keychain secrets.
 - Seeded Project Intelligence artifacts for DemoNotes now match the current tour, including Tasks and Intelligence, Workflow Playbook, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
@@ -435,6 +438,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08
   after adding the Settings Copy Proposal extension template: 13 Swift Testing
   tests, 0 failures.
+- Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after teaching DemoNotes about Settings > Extensions > Copy Proposal: 1 XCTest test, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

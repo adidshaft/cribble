@@ -88,6 +88,10 @@ When proposing a new plugin or extension, start with the idea rather than code:
 Good ideas can be ambitious. The first version should still be small enough to
 disable cleanly, inspect in Settings, and explain to a non-technical reader.
 
+In **Settings → Extensions**, use **Copy Proposal** to copy this shape into a
+GitHub issue, Discussion, or team thread before anyone writes implementation
+code.
+
 Use this proposal shape before writing code:
 
 ```markdown

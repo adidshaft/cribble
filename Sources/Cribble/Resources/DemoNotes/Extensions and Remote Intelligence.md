@@ -41,7 +41,8 @@ The Quick Action template looks like this:
 Cribble validates the manifest and lists it in Settings. Use **Check Again** to
 reload manifests after editing them, and use the copy-details button on an
 installed extension row when you want to paste a review summary into a team
-handoff. API v1 extensions use `"runtime": "declarative"` and Cribble rejects
+handoff. Use **Copy Proposal** when the idea still needs review before a
+manifest exists. API v1 extensions use `"runtime": "declarative"` and Cribble rejects
 executable runtimes for now. That boundary keeps the system safe while the
 design matures.
 

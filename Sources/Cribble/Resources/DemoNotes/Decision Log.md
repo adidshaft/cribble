@@ -11,10 +11,11 @@ team, or an open-source contributor reading the folder later.
 
 ## Decision entry template
 
-Copy this block into your own notes:
+Use **Help → Copy Decision Entry Template** to copy this block into your own
+notes:
 
 ```markdown
-## YYYY-MM-DD — Decision title
+## YYYY-MM-DD - Decision title
 
 Status: proposed | accepted | reversed
 Owner:
@@ -72,6 +73,8 @@ Follow-up:
 ## How Cribble helps
 
 - Use **File → Copy Markdown Link** to cite the decision in a PR, issue, or chat.
+- Use **Help → Copy Decision Entry Template** when a decision should survive the
+  week.
 - Use **AI → Extract Tasks from Current Note** to turn follow-up bullets into a
   reviewed `Tasks.md` proposal.
 - Use **Project Intelligence** later to ask whether newer notes contradict this

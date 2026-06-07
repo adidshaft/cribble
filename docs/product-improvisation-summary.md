@@ -13,7 +13,7 @@ now reads more like a local-first Mac knowledge workspace:
 
 - **Start faster:** Welcome, Help, DemoNotes, shortcuts, and starter checklists
   now point beginners to the right first action, including direct decision-log
-  and team workflow routes.
+  templates and team workflow routes.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
   Link, Copy Wiki Link, Decision Log, and reviewed AI proposals make capture,
   rationale, and handoff feel native.
@@ -63,6 +63,7 @@ Focused validation passed across the newest work:
 - DemoNotes copy and seeded intelligence artifacts.
 - Decision Log DemoNotes workflow for rationale, evidence, review boundaries,
   and follow-up tasks.
+- Help-copy template for new Decision Log entries.
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
 - Remote-runner consent and handoff checklists.
@@ -72,10 +73,10 @@ Focused validation passed across the newest work:
 - Diagnostics next actions and visible recovery strip.
 - Intelligence artifact and Ask answer Markdown handoffs.
 
-Full `swift test` passed after the latest Help command, Decision Log DemoNotes,
-remote-runner, diagnostics, and report work: 235 XCTest tests and 43 Swift
-Testing tests, 0 failures. The run printed known intermittent CoreData XPC noise,
-but no tests failed.
+Full `swift test` passed after the latest broad Help command, Decision Log
+DemoNotes, remote-runner, diagnostics, and report work: 235 XCTest tests and 43
+Swift Testing tests, 0 failures. The newest Decision Log template command was
+then covered by focused tests.
 
 ## Intentionally Not Done
 

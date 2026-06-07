@@ -91,7 +91,7 @@ changes in this demo copy only.
 - [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Open [[Research Review]] and inspect the evidence-review quick action.
-- [ ] Open [[Decision Log]] and copy the decision entry template.
+- [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.

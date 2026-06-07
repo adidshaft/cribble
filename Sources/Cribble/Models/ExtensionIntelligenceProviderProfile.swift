@@ -32,6 +32,32 @@ enum RemoteRunnerSetupReview {
     """
 }
 
+enum DecisionLogTemplate {
+    static let markdown = """
+    ## YYYY-MM-DD - Decision title
+
+    Status: proposed | accepted | reversed
+    Owner:
+
+    Context:
+
+    Decision:
+
+    Evidence:
+    - [[Research Review]]
+    - [[Tasks and Intelligence]]
+
+    Follow-up:
+    - [ ] Add task
+    - [ ] Review in Project Intelligence
+
+    Review boundary:
+    - What did Cribble read?
+    - What may leave this Mac?
+    - What can be disabled or reverted?
+    """
+}
+
 struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
     let id: String
     let title: String

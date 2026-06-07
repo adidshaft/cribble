@@ -2453,6 +2453,7 @@ enum WelcomeStarterChecklist {
     - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
     - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
     - [ ] Review [[Workflow Playbook]] for a real team workflow.
+    - [ ] Use **Help -> Copy Decision Entry Template** when a decision should survive the week.
     - [ ] Open [[Team Extension Kit]] before designing an extension.
     - [ ] Use **Help -> Copy Extension Proposal** or **Settings -> Extensions -> Copy Proposal** for new extension ideas.
     - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.

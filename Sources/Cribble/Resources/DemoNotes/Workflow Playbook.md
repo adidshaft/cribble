@@ -46,8 +46,9 @@ Create a one-page project brief from @README @Tasks and Intelligence @Feature To
 ```
 
 For a more evidence-heavy version of this flow, open [[Research Review]].
-When a decision should survive the week, copy the template in [[Decision Log]]
-and link the evidence that changed your mind.
+When a decision should survive the week, use **Help → Copy Decision Entry
+Template** or copy the template in [[Decision Log]] and link the evidence that
+changed your mind.
 
 ## 3. Add team conventions without app code
 

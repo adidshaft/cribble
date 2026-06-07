@@ -921,6 +921,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("extension profiles get a review sheet"))
         XCTAssertTrue(home.contains("Copy a generated Intelligence artifact as Markdown"))
         XCTAssertTrue(home.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(home.contains("Help → Copy Decision Entry Template"))
         XCTAssertTrue(home.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(home.contains("[[Decision Log]]"))
         XCTAssertFalse(home.contains("No cloud, no account"))
@@ -965,10 +966,13 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(workflow.contains("import-lane declaration"))
         XCTAssertTrue(workflow.contains("generated artifact can be inspected and copied as Markdown"))
         XCTAssertTrue(workflow.contains("answer can be copied with the question attached"))
+        XCTAssertTrue(workflow.contains("Help → Copy Decision Entry"))
         XCTAssertTrue(workflow.contains("[[Decision Log]]"))
 
         let decisionLog = try String(contentsOf: demoRoot.appendingPathComponent("Decision Log.md"), encoding: .utf8)
         XCTAssertTrue(decisionLog.contains("Decision entry template"))
+        XCTAssertTrue(decisionLog.contains("Help → Copy Decision Entry Template"))
+        XCTAssertTrue(decisionLog.contains("YYYY-MM-DD - Decision title"))
         XCTAssertTrue(decisionLog.contains("Status: proposed | accepted | reversed"))
         XCTAssertTrue(decisionLog.contains("Review boundary"))
         XCTAssertTrue(decisionLog.contains("Help → Copy Extension Proposal"))
@@ -985,12 +989,24 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("model boundary"))
         XCTAssertTrue(checklist.contains("Tasks.md"))
         XCTAssertTrue(checklist.contains("[[Workflow Playbook]]"))
+        XCTAssertTrue(checklist.contains("Help -> Copy Decision Entry Template"))
         XCTAssertTrue(checklist.contains("[[Team Extension Kit]]"))
         XCTAssertTrue(checklist.contains("Help -> Copy Extension Proposal"))
         XCTAssertTrue(checklist.contains("Copy Proposal"))
         XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))
         XCTAssertTrue(checklist.contains("Help -> Copy Remote Runner Setup Review"))
         XCTAssertTrue(checklist.contains("VPS or remote runner"))
+    }
+
+    func testDecisionLogTemplateNamesReviewBoundary() {
+        let template = DecisionLogTemplate.markdown
+
+        XCTAssertTrue(template.contains("YYYY-MM-DD - Decision title"))
+        XCTAssertTrue(template.contains("Status: proposed | accepted | reversed"))
+        XCTAssertTrue(template.contains("[[Research Review]]"))
+        XCTAssertTrue(template.contains("Review boundary"))
+        XCTAssertTrue(template.contains("What may leave this Mac?"))
+        XCTAssertTrue(template.contains("What can be disabled or reverted?"))
     }
 
     func testImportLaneSetupReviewKeepsExecutionBoundariesClear() {

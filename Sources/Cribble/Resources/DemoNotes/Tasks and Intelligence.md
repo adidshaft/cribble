@@ -52,6 +52,15 @@ for research notes, contracts, case files, or a manuscript, not just code:
 The **Project Pulse** card at the top shows analysis progress and whether any
 contradictions were found — at a glance.
 
+Open an artifact and use **Copy Markdown** when you want to paste a generated
+index, report, summary, or diagram into an issue, PR, email, or note. The copy
+includes the artifact type, cached path, and whether it has been saved to the
+project folder.
+
+In the **Ask** tab, ask a question about the generated context, then use
+**Copy Answer** to keep the original question and answer together for a team
+thread or decision log.
+
 ## Reading stays private
 
 Remote images don't load automatically (that would leak your IP). This one shows

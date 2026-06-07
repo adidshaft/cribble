@@ -80,7 +80,8 @@ The product should stay boring in the right places:
 - refreshes keep unchanged note metadata warm;
 - extension manifests are readable before they do anything;
 - secrets live in Keychain;
-- every generated artifact can be inspected as Markdown.
+- every generated artifact can be inspected and copied as Markdown;
+- every Project Intelligence answer can be copied with the question attached.
 
 That is the center of Cribble: a native reader that can become a workbench
 without making beginners carry the complexity.

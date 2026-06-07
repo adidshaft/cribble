@@ -918,6 +918,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("keep notes on this Mac"))
         XCTAssertTrue(home.contains("renderer aliases, import-lane"))
         XCTAssertTrue(home.contains("extension profiles get a review sheet"))
+        XCTAssertTrue(home.contains("Copy a generated Intelligence artifact as Markdown"))
         XCTAssertFalse(home.contains("No cloud, no account"))
 
         let gettingStarted = try String(contentsOf: demoRoot.appendingPathComponent("Getting Started.md"), encoding: .utf8)
@@ -926,6 +927,10 @@ final class CribbleUITests: XCTestCase {
         let tasks = try String(contentsOf: demoRoot.appendingPathComponent("Tasks and Intelligence.md"), encoding: .utf8)
         XCTAssertTrue(tasks.contains("trusted remote runners are opt-in"))
         XCTAssertTrue(tasks.contains("reviewed before note context"))
+        XCTAssertTrue(tasks.contains("Copy Markdown"))
+        XCTAssertTrue(tasks.contains("artifact type, cached path"))
+        XCTAssertTrue(tasks.contains("Copy Answer"))
+        XCTAssertTrue(tasks.contains("original question and answer"))
 
         let featureTour = try String(contentsOf: demoRoot.appendingPathComponent("Feature Tour.md"), encoding: .utf8)
         XCTAssertTrue(featureTour.contains("pick the model boundary you trust"))
@@ -941,6 +946,8 @@ final class CribbleUITests: XCTestCase {
 
         let workflow = try String(contentsOf: demoRoot.appendingPathComponent("Workflow Playbook.md"), encoding: .utf8)
         XCTAssertTrue(workflow.contains("import-lane declaration"))
+        XCTAssertTrue(workflow.contains("generated artifact can be inspected and copied as Markdown"))
+        XCTAssertTrue(workflow.contains("answer can be copied with the question attached"))
     }
 
     func testWelcomeStarterChecklistGuidesCoreProductTour() {

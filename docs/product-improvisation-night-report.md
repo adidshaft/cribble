@@ -554,6 +554,9 @@ Latest pass:
   notes with type/path/saved-status metadata attached.
 - Intelligence Ask answers now include Copy Answer, preserving the original
   question plus answer text for notes, issues, PRs, and team review threads.
+- DemoNotes now teach the new Project Intelligence handoffs: Copy Markdown for
+  generated artifacts and Copy Answer for Ask responses with the question
+  attached.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.

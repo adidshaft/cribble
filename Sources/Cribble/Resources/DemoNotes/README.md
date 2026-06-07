@@ -87,6 +87,7 @@ changes in this demo copy only.
 - [ ] Press **P** after visiting a few notes and inspect the Reading Trail.
 - [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
+- [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Open [[Team Extension Kit]] and skim the manifest review checklist.

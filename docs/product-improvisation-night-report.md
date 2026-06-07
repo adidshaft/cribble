@@ -369,6 +369,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding direct Help menu entries for Tasks & Intelligence and Research Review onboarding guides: 28 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding a first-screen Tasks onboarding tile to the Welcome Start With grid: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding New Note/Today/Open Folder actions to the sidebar empty-folder state: 27 XCTest tests, 0 failures.
+- Full `swift test` passed on 2026-06-08 after the recent Daily Chat, extension-authoring, diagnostics, help-menu, welcome, and sidebar-empty-state work: 218 XCTest tests and 42 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

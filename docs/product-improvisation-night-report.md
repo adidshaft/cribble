@@ -594,6 +594,9 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after teaching DemoNotes and the first-run checklist to start VPS/team-runner setup with Help > Copy Remote Runner Setup Review: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotFormatsRunnerWithoutSecrets'` passed on 2026-06-08 after tightening local-vs-remote runner diagnostic next actions: 3 XCTest tests, 0 failures.
 - Latest combined `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract'` passed on 2026-06-08 after the Help command, DemoNotes, and diagnostics polish: 5 XCTest tests and 1 Swift Testing test, 0 failures.
+- Full `swift test` passed on 2026-06-08 after the latest Help command,
+  DemoNotes, remote-runner, diagnostics, and report work: 235 XCTest tests and
+  43 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -66,9 +66,9 @@ Focused validation passed across the newest work:
 - Diagnostics next actions and visible recovery strip.
 - Intelligence artifact and Ask answer Markdown handoffs.
 
-Earlier in the branch, full `swift test` passed after the broader native note,
-tasks, AI menu, onboarding, diagnostics, and extension work. Later changes used
-focused tests matched to the touched surface.
+Full `swift test` passed after the latest Help command, DemoNotes,
+remote-runner, diagnostics, and report work: 235 XCTest tests and 43 Swift
+Testing tests, 0 failures.
 
 ## Intentionally Not Done
 

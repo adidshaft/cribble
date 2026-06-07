@@ -720,7 +720,7 @@ actor IntelligenceDatabase {
             bindText(stmt, 2, projectID)
             sqlite3_bind_int(stmt, 3, Int32(vector.count))
             data.withUnsafeBytes { raw in
-                sqlite3_bind_blob(stmt, 4, raw.baseAddress, Int32(raw.count), SQLITE_TRANSIENT)
+                _ = sqlite3_bind_blob(stmt, 4, raw.baseAddress, Int32(raw.count), SQLITE_TRANSIENT)
             }
         }
     }

@@ -82,6 +82,8 @@ Focused validation passed across the newest work:
 - Welcome Contribute tile for the extension contribution guide.
 - Product readiness checkpoint with keep, stop, defer, and verification sections.
 - Help-copy template for product readiness checkpoints and maintainer handoffs.
+- Grouped Help menu sections for DemoNotes, guides, extension settings,
+  copyable templates, diagnostics, and GitHub actions.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics that distinguish local runners from remote runners before asking

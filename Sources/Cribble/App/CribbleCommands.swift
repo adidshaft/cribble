@@ -207,6 +207,11 @@ struct CribbleCommands: Commands {
             Button("Open DemoNotes Tour", action: { openDemoNotes?() })
                 .disabled(openDemoNotes == nil)
 
+            Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
+                .disabled(resetDemoNotes == nil)
+
+            Divider()
+
             Button("Open Cribble AI Guide", action: { openCribbleAIGuide?() })
                 .disabled(openCribbleAIGuide == nil)
 
@@ -231,8 +236,12 @@ struct CribbleCommands: Commands {
             Button("Open Remote Intelligence Guide", action: { openRemoteIntelligenceGuide?() })
                 .disabled(openRemoteIntelligenceGuide == nil)
 
+            Divider()
+
             Button("Open Extension Settings", action: { openExtensionSettings?() })
                 .disabled(openExtensionSettings == nil)
+
+            Divider()
 
             Button("Copy Extension Proposal", action: { copyExtensionProposal?() })
                 .disabled(copyExtensionProposal == nil)
@@ -251,9 +260,6 @@ struct CribbleCommands: Commands {
 
             Button("Copy Starter Checklist", action: { copyStarterChecklist?() })
                 .disabled(copyStarterChecklist == nil)
-
-            Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
-                .disabled(resetDemoNotes == nil)
 
             Divider()
 

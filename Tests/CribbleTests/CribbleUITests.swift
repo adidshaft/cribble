@@ -904,6 +904,31 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("person.crop.circle.badge.plus"))
     }
 
+    func testHelpMenuGroupsGuidesTemplatesAndDiagnostics() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let commandsURL = projectRoot.appendingPathComponent("Sources/Cribble/App/CribbleCommands.swift")
+        let commands = try String(contentsOf: commandsURL, encoding: .utf8)
+
+        XCTAssertLessThan(index(of: "Button(\"Open DemoNotes Tour\"", in: commands), index(of: "Button(\"Reset DemoNotes Tour\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Reset DemoNotes Tour\"", in: commands), index(of: "Button(\"Open Cribble AI Guide\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Open Remote Intelligence Guide\"", in: commands), index(of: "Button(\"Open Extension Settings\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Open Extension Settings\"", in: commands), index(of: "Button(\"Copy Extension Proposal\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Copy Starter Checklist\"", in: commands), index(of: "Button(\"Show Diagnostic Report\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Reveal Latest Crash Report\"", in: commands), index(of: "Button(\"Report Issue on GitHub\"", in: commands))
+    }
+
+    private func index(of needle: String, in haystack: String) -> String.Index {
+        guard let index = haystack.range(of: needle)?.lowerBound else {
+            XCTFail("Expected to find \(needle)")
+            return haystack.endIndex
+        }
+        return index
+    }
+
     func testCribbleAIGuideNamesModelDataBoundaries() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

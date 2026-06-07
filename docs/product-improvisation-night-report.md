@@ -616,6 +616,9 @@ Latest pass:
 - Help now includes Copy Product Readiness Checkpoint, backed by a reusable
   `ProductReadinessCheckpointTemplate.markdown`, so the keep/stop/defer framing
   can move into PRs, releases, and maintainer handoffs.
+- Help menu actions are now grouped into clearer native sections for DemoNotes,
+  guides, extension settings, copyable templates, diagnostics, and GitHub
+  actions, reducing menu scan cost as the onboarding surface grows.
 - `docs/extensions.md` now defines executable-plugin readiness gates: signed
   bundle identity, process isolation, Cribble-mediated permissions, native
   consent, previewed writes, Keychain-only secrets, revocation, audit trails, and
@@ -642,6 +645,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testWelcomeStartGridIncludesContributorPath|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the welcome Contribute tile: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions` passed on 2026-06-08 after adding the branch readiness checkpoint: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testProductReadinessCheckpointTemplateNamesStopConditions|ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions'` passed on 2026-06-08 after adding Help > Copy Product Readiness Checkpoint: 1 XCTest test and 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics` passed on 2026-06-08 after grouping the Help menu into native sections: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

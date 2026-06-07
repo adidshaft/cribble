@@ -42,6 +42,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
 - Cribble now has a local extension trust-decision store for future executable plugin consent/revocation, with Settings controls to revoke or clear remembered trust decisions while API v1 remains data-only.
+- Settings now lets extension authors copy a concise manifest review summary for any installed extension, making support threads, PR reviews, and team approval flows easier.
+- Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
@@ -106,6 +108,7 @@ swift test --filter Extension
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
 swift test --filter CribbleUITests
+swift test --filter ExtensionRegistryTests
 ```
 
 Latest pass:
@@ -123,6 +126,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Copy Wiki Link: 12 XCTest tests, 0 failures.
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after Team Extension Kit DemoNotes work: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar note context menu actions: 13 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after extension review summaries and Settings validation loop: 8 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

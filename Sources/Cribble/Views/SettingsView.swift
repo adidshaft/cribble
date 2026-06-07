@@ -90,6 +90,10 @@ struct SettingsView: View {
                         Spacer()
                         Button("Reveal", action: extensionRegistry.revealUserExtensionsFolder)
                             .help("Open Cribble's user extension folder in Finder")
+                        Button("Check Again") {
+                            validateExtensions()
+                        }
+                        .help("Reload extension manifests and surface validation warnings")
                         Menu("Create Example") {
                             ForEach(ExtensionExampleTemplate.allCases) { template in
                                 Button(template.title) {
@@ -124,6 +128,9 @@ struct SettingsView: View {
                                     },
                                     onReveal: {
                                         extensionRegistry.reveal(installed)
+                                    },
+                                    onCopyReviewSummary: {
+                                        copyReviewSummary(for: installed)
                                     },
                                     onRevokeTrust: {
                                         extensionRegistry.revokeTrust(for: installed)
@@ -194,10 +201,30 @@ struct SettingsView: View {
         do {
             let url = try extensionRegistry.writeExampleManifest(template: template)
             extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
-            extensionRegistry.reload(projectRoots: library.rootURLs)
+            validateExtensions(successPrefix: "Created \(url.deletingLastPathComponent().lastPathComponent)")
         } catch {
             extensionStatus = error.localizedDescription
         }
+    }
+
+    private func validateExtensions(successPrefix: String? = nil) {
+        extensionRegistry.reload(projectRoots: library.rootURLs)
+        let count = extensionRegistry.installedExtensions.count
+        let warningCount = extensionRegistry.loadWarnings.count
+        let result = warningCount == 0
+            ? "validated \(count) extension\(count == 1 ? "" : "s")"
+            : "found \(warningCount) warning\(warningCount == 1 ? "" : "s") across \(count) extension\(count == 1 ? "" : "s")"
+        if let successPrefix {
+            extensionStatus = "\(successPrefix); \(result)"
+        } else {
+            extensionStatus = "Extension check \(result)"
+        }
+    }
+
+    private func copyReviewSummary(for installed: InstalledCribbleExtension) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(installed.reviewSummary, forType: .string)
+        extensionStatus = "Copied \(installed.manifest.name) extension details"
     }
 }
 
@@ -207,6 +234,7 @@ private struct ExtensionManifestRow: View {
     let trustDecision: ExtensionTrustDecision?
     let onEnabledChange: (Bool) -> Void
     let onReveal: () -> Void
+    let onCopyReviewSummary: () -> Void
     let onRevokeTrust: () -> Void
     let onClearTrust: () -> Void
 
@@ -263,6 +291,13 @@ private struct ExtensionManifestRow: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .help("Reveal extension manifest in Finder")
+
+                Button(action: onCopyReviewSummary) {
+                    Image(systemName: "doc.on.doc")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Copy extension details for review")
 
                 Toggle("Enabled", isOn: Binding(
                     get: { isEnabled },

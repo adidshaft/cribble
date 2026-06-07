@@ -218,6 +218,46 @@ struct InstalledCribbleExtension: Identifiable, Equatable {
     let location: Location
 
     var id: String { "\(manifest.id)|\(manifestURL.path)" }
+
+    var reviewSummary: String {
+        var lines = [
+            "Cribble Extension",
+            "Name: \(manifest.name)",
+            "ID: \(manifest.id)",
+            "Version: \(manifest.version)",
+            "Kind: \(manifest.kind.title)",
+            "Runtime: \(manifest.runtime.title)",
+            "Location: \(location.title)",
+            "Manifest: \(manifestURL.path)",
+            "Summary: \(manifest.summary)"
+        ]
+
+        if !manifest.permissions.isEmpty {
+            lines.append("Permissions: \(manifest.permissions.map(\.title).joined(separator: ", "))")
+        }
+
+        if let trust = manifest.trust {
+            lines.append("Trust: \(trust.summary)")
+            if let sourceURL = trust.sourceURL {
+                lines.append("Source: \(sourceURL.absoluteString)")
+            }
+        }
+
+        if !manifest.quickActions.isEmpty {
+            lines.append("Quick actions: \(manifest.quickActions.map(\.title).joined(separator: ", "))")
+        }
+        if !manifest.intelligenceProviders.isEmpty {
+            lines.append("Providers: \(manifest.intelligenceProviders.map { "\($0.title) (\($0.modelID))" }.joined(separator: ", "))")
+        }
+        if !manifest.renderers.isEmpty {
+            lines.append("Renderers: \(manifest.renderers.map { "\($0.title) [\($0.languages.joined(separator: ", "))]" }.joined(separator: ", "))")
+        }
+        if !manifest.importers.isEmpty {
+            lines.append("Importers: \(manifest.importers.map { "\($0.title) [\($0.fileExtensions.joined(separator: ", "))]" }.joined(separator: ", "))")
+        }
+
+        return lines.joined(separator: "\n")
+    }
 }
 
 enum ExtensionManifestError: LocalizedError, Equatable {

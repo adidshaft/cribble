@@ -39,6 +39,35 @@ struct ExtensionRegistryTests {
     }
 
     @Test
+    func installedExtensionReviewSummaryIncludesManifestDetails() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        try fixture.writeQuickAction(
+            folder: fixture.userExtensions.appendingPathComponent("review-action", isDirectory: true),
+            id: "com.example.cribble.review",
+            name: "Review Action",
+            actionID: "risk-questions",
+            actionTitle: "Risk questions"
+        )
+
+        let registry = fixture.makeRegistry()
+        guard let installed = registry.installedExtensions.first else {
+            Issue.record("Expected installed extension")
+            return
+        }
+
+        let summary = installed.reviewSummary
+        #expect(summary.contains("Name: Review Action"))
+        #expect(summary.contains("ID: com.example.cribble.review"))
+        #expect(summary.contains("Kind: Quick Action"))
+        #expect(summary.contains("Runtime: Declarative"))
+        #expect(summary.contains("Permissions: Read Current Note"))
+        #expect(summary.contains("Quick actions: Risk questions"))
+        #expect(summary.contains("Manifest: \(installed.manifestURL.path)"))
+    }
+
+    @Test
     func projectExtensionWinsDuplicateID() throws {
         let fixture = try ExtensionRegistryFixture()
         defer { fixture.cleanUp() }

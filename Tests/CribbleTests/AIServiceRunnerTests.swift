@@ -56,7 +56,7 @@ final class AIServiceRunnerTests: XCTestCase {
 
     @MainActor
     func testRunnerProviderWithoutConfigThrowsActionableError() async {
-        let service = AIService(runnerConfigOverride: .some(nil))
+        let service = AIService(runnerEndpointSource: .fixed(nil))
         do {
             _ = try await service.generateLinkPatch(
                 provider: .localRunner,
@@ -90,7 +90,7 @@ final class AIServiceRunnerTests: XCTestCase {
         StubURLProtocol.handler = { _ in (200, ["Content-Type": "application/json"], body) }
 
         let service = AIService(
-            runnerConfigOverride: .some(AIService.RunnerConfig(
+            runnerEndpointSource: .fixed(RunnerEndpoint(
                 baseURL: URL(string: "http://stub.local/v1")!,
                 modelID: "qwen2.5:7b"
             )),
@@ -117,7 +117,7 @@ final class AIServiceRunnerTests: XCTestCase {
             return (200, ["Content-Type": "application/json"], body)
         }
         let service = AIService(
-            runnerConfigOverride: .some(AIService.RunnerConfig(
+            runnerEndpointSource: .fixed(RunnerEndpoint(
                 baseURL: URL(string: "http://stub.local/v1")!,
                 modelID: "m"
             )),

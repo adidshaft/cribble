@@ -50,29 +50,28 @@ enum AIMode: String, CaseIterable, Identifiable {
 }
 
 struct AIService {
-    /// Resolved runner endpoint + model for the `.localRunner` provider.
-    struct RunnerConfig: Sendable {
-        let baseURL: URL
-        let modelID: String
+    /// Where `runViaLocalRunner` gets its endpoint.
+    enum RunnerEndpointSource {
+        /// Production: read the live LocalRunnerStore.
+        case liveStore
+        /// Tests: use exactly this endpoint (nil = behave as unconfigured).
+        case fixed(RunnerEndpoint?)
     }
 
-    /// Test hook: `.some(config)` / `.some(nil)` bypasses LocalRunnerStore.
-    private let runnerConfigOverride: RunnerConfig??
+    private let runnerEndpointSource: RunnerEndpointSource
     private let session: URLSession
 
-    init(runnerConfigOverride: RunnerConfig?? = nil, session: URLSession = .shared) {
-        self.runnerConfigOverride = runnerConfigOverride
+    init(runnerEndpointSource: RunnerEndpointSource = .liveStore, session: URLSession = .shared) {
+        self.runnerEndpointSource = runnerEndpointSource
         self.session = session
     }
 
     @MainActor
-    private func resolveRunnerConfig() -> RunnerConfig? {
-        if let runnerConfigOverride { return runnerConfigOverride }
-        let store = LocalRunnerStore.shared
-        guard let baseURL = store.baseURL,
-              let modelID = store.defaultModelID ?? store.cachedModelIDs.first
-        else { return nil }
-        return RunnerConfig(baseURL: baseURL, modelID: modelID)
+    private func resolveRunnerEndpoint() -> RunnerEndpoint? {
+        switch runnerEndpointSource {
+        case .liveStore: return LocalRunnerStore.shared.endpoint
+        case .fixed(let endpoint): return endpoint
+        }
     }
 
     /// Concatenates the folder's Markdown files (smallest first) into a
@@ -132,15 +131,15 @@ struct AIService {
     /// read the folder like the CLIs do) to the configured local runner via
     /// the same OpenAI-compatible client Intelligence uses.
     private func runViaLocalRunner(prompt: String, folderURL: URL) async throws -> String {
-        guard let config = await resolveRunnerConfig() else {
+        guard let endpoint = await resolveRunnerEndpoint() else {
             throw AIServiceError.commandFailed(
                 "No local runner is configured. Set one up from the Intelligence HUD's model menu, then try again."
             )
         }
         let context = Self.vaultContext(folderURL: folderURL, maxCharacters: 32_000)
         let provider = OpenAICompatibleProvider(
-            baseURL: config.baseURL,
-            model: config.modelID,
+            baseURL: endpoint.baseURL,
+            model: endpoint.modelID,
             session: session
         )
         // The shared prompts assume CLI filesystem access; adapt them for the

@@ -13,18 +13,33 @@ import Foundation
 /// `@unchecked Sendable`: mutable state (`config`, `cancelRequested`) is
 /// guarded by `lock`, mirroring the other engines.
 final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
-    private struct Config {
-        let baseURL: URL
-        let modelID: String
-    }
-
     private let session: URLSession
     /// Reads the configured base URL; injectable for tests. The default reads
     /// `LocalRunnerStore` on the main actor.
     private let baseURLProvider: @Sendable () async -> URL?
     private let lock = NSLock()
-    private var config: Config?
+    private var config: RunnerEndpoint?
     private var cancelRequested = false
+
+    /// OpenAI-compatible chat-completions request. Encodable (not Codable):
+    /// responses stay dynamically parsed because runner dialects vary.
+    private struct ChatCompletionRequest: Encodable {
+        struct Message: Encodable {
+            let role: String
+            let content: String
+        }
+        let model: String
+        let maxTokens: Int
+        let temperature: Double
+        let stream: Bool
+        let messages: [Message]
+
+        enum CodingKeys: String, CodingKey {
+            case model
+            case maxTokens = "max_tokens"
+            case temperature, stream, messages
+        }
+    }
 
     init(
         session: URLSession = .shared,
@@ -37,16 +52,15 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
     // MARK: - LocalChatEngine
 
     /// Unlike the on-device engines, `prepare` re-probes the runner each call
-    /// (cheap on localhost) so base-URL changes are picked up immediately;
-    /// the view model already avoids per-send calls via its ready check.
+    /// (cheap on localhost) so base-URL changes are picked up immediately.
+    /// Callers that cache readiness (like the chat HUD) avoid per-send calls.
     func prepare(
         model: LocalModel,
         onProgress: @escaping @Sendable (ModelLoadProgress) -> Void
     ) async throws {
-        guard model.id.hasPrefix(LocalModel.runnerIDPrefix) else {
+        guard let modelID = LocalModel.parseRunnerModelID(from: model.id) else {
             throw LocalChatEngineError.modelLoadFailed("\(model.name) is not a local runner model.")
         }
-        let modelID = String(model.id.dropFirst(LocalModel.runnerIDPrefix.count))
         guard let baseURL = await baseURLProvider() else {
             throw LocalChatEngineError.modelLoadFailed(
                 "No local runner is configured. Set one up from the Intelligence HUD's model menu."
@@ -72,7 +86,7 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
             )
         }
 
-        lock.withLock { config = Config(baseURL: baseURL, modelID: modelID) }
+        lock.withLock { config = RunnerEndpoint(baseURL: baseURL, modelID: modelID) }
         onProgress(ModelLoadProgress(fraction: 1))
     }
 
@@ -86,19 +100,18 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
         }
         lock.withLock { cancelRequested = false }
 
-        let body: [String: Any] = [
-            "model": config.modelID,
-            "max_tokens": maxTokens,
-            "temperature": 0.7,
-            "stream": true,
-            "messages": messages.map { ["role": $0.role.rawValue, "content": $0.content] }
-        ]
         var request = URLRequest(url: config.baseURL.appendingPathComponent("chat/completions"))
         request.httpMethod = "POST"
         request.timeoutInterval = 300
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONEncoder().encode(ChatCompletionRequest(
+            model: config.modelID,
+            maxTokens: maxTokens,
+            temperature: 0.7,
+            stream: true,
+            messages: messages.map { .init(role: $0.role.rawValue, content: $0.content) }
+        ))
 
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else {
@@ -124,10 +137,11 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
             for try await line in bytes.lines {
                 if lock.withLock({ cancelRequested }) { throw CancellationError() }
                 try Task.checkCancellation()
-                if let delta = Self.deltaText(fromSSELine: line) {
+                guard let payload = Self.ssePayload(fromLine: line) else { continue }
+                if let delta = Self.deltaText(fromPayload: payload) {
                     full += delta
                     onToken(delta)
-                } else if Self.isReasoningDelta(fromSSELine: line) {
+                } else if Self.isReasoningDelta(fromPayload: payload) {
                     // Liveness only: keeps the chat HUD's stall watchdog from
                     // killing a reasoning model that is still thinking.
                     onToken("")
@@ -155,34 +169,46 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
 
     // MARK: - Parsing (static & pure, unit-tested directly)
 
-    /// Extracts the text delta from one SSE line. Returns nil for keepalives,
-    /// `[DONE]`, role-only chunks, and finish chunks.
-    static func deltaText(fromSSELine line: String) -> String? {
+    /// Parses one SSE line's `data:` payload into JSON. Returns nil for
+    /// non-data lines, keepalive comments, `[DONE]`, and malformed JSON.
+    private static func ssePayload(fromLine line: String) -> [String: Any]? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard trimmed.hasPrefix("data:") else { return nil }
         let payload = trimmed.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
         guard payload != "[DONE]", !payload.isEmpty else { return nil }
+        return try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any]
+    }
+
+    /// Extracts the text delta from one SSE line. Returns nil for keepalives,
+    /// `[DONE]`, role-only chunks, and finish chunks.
+    static func deltaText(fromSSELine line: String) -> String? {
+        ssePayload(fromLine: line).flatMap(deltaText(fromPayload:))
+    }
+
+    /// `deltaText(fromSSELine:)` over an already-parsed payload, so the SSE
+    /// loop parses each line exactly once.
+    private static func deltaText(fromPayload json: [String: Any]) -> String? {
         guard
-            let json = try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
             let choices = json["choices"] as? [[String: Any]],
-            let choice = choices.first
+            let choice = choices.first,
+            let delta = choice["delta"] as? [String: Any],
+            let text = delta["content"] as? String,
+            !text.isEmpty
         else { return nil }
-        if let delta = choice["delta"] as? [String: Any], let text = delta["content"] as? String, !text.isEmpty {
-            return text
-        }
-        return nil
+        return text
     }
 
     /// True when the SSE line carries a reasoning delta (`reasoning_content`).
     /// Reasoning models think before they answer; these chunks carry no user-
     /// visible text but do prove the runner is alive and working.
     static func isReasoningDelta(fromSSELine line: String) -> Bool {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard trimmed.hasPrefix("data:") else { return false }
-        let payload = trimmed.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
-        guard payload != "[DONE]", !payload.isEmpty else { return false }
+        ssePayload(fromLine: line).map(isReasoningDelta(fromPayload:)) ?? false
+    }
+
+    /// `isReasoningDelta(fromSSELine:)` over an already-parsed payload, so the
+    /// SSE loop parses each line exactly once.
+    private static func isReasoningDelta(fromPayload json: [String: Any]) -> Bool {
         guard
-            let json = try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
             let choices = json["choices"] as? [[String: Any]],
             let delta = choices.first?["delta"] as? [String: Any],
             let reasoning = delta["reasoning_content"] as? String

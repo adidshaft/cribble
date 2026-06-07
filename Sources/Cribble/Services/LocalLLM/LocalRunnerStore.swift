@@ -1,5 +1,12 @@
 import Foundation
 
+/// A resolved runner endpoint: where to call and which model to ask for.
+/// The canonical value type for "the configured local runner" across features.
+struct RunnerEndpoint: Sendable, Equatable {
+    let baseURL: URL
+    let modelID: String
+}
+
 /// App-wide source of truth for the OpenAI-compatible local runner (Ollama,
 /// llama.cpp, LM Studio, …). Intelligence, the Chat HUD, Pathfinder, and AI
 /// Link Notes all read the same configuration from here, so there is exactly
@@ -57,6 +64,13 @@ final class LocalRunnerStore: ObservableObject {
 
     var baseURL: URL? { baseURLString.flatMap(URL.init(string:)) }
     var isConfigured: Bool { baseURL != nil }
+
+    /// The configured runner as a `RunnerEndpoint`, falling back to the first
+    /// cached model when no default was chosen; nil when unconfigured.
+    var endpoint: RunnerEndpoint? {
+        guard let baseURL, let modelID = defaultModelID ?? cachedModelIDs.first else { return nil }
+        return RunnerEndpoint(baseURL: baseURL, modelID: modelID)
+    }
 
     func configure(baseURLString: String, displayName: String?, modelIDs: [String], defaultModelID: String?) {
         self.baseURLString = baseURLString

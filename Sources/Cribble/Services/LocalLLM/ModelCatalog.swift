@@ -52,6 +52,14 @@ struct LocalModel: Identifiable, Hashable {
     /// restarts without needing the runner to be reachable.
     static let runnerIDPrefix = "runner:"
 
+    /// Extracts the runner-side model id from a `runner:`-prefixed catalog id;
+    /// nil when `id` isn't a runner id (or the suffix is empty).
+    static func parseRunnerModelID(from id: String) -> String? {
+        guard id.hasPrefix(runnerIDPrefix) else { return nil }
+        let modelID = String(id.dropFirst(runnerIDPrefix.count))
+        return modelID.isEmpty ? nil : modelID
+    }
+
     /// A dynamic catalog entry for a model served by the configured runner.
     static func runnerModel(modelID: String) -> LocalModel {
         LocalModel(
@@ -180,9 +188,7 @@ enum ModelCatalog {
     }
 
     static func model(withID id: String) -> LocalModel? {
-        if id.hasPrefix(LocalModel.runnerIDPrefix) {
-            let modelID = String(id.dropFirst(LocalModel.runnerIDPrefix.count))
-            guard !modelID.isEmpty else { return nil }
+        if let modelID = LocalModel.parseRunnerModelID(from: id) {
             return .runnerModel(modelID: modelID)
         }
         return all.first { $0.id == id }

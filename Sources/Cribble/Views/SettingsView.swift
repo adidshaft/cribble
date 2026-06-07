@@ -3,6 +3,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var library: MarkdownLibraryStore
+    @EnvironmentObject private var extensionRegistry: ExtensionRegistry
+    @State private var extensionStatus: String?
 
     var body: some View {
         Form {
@@ -79,10 +82,114 @@ struct SettingsView: View {
                         .help("Clear the configured external editor")
                 }
             }
+
+            Section("Extensions") {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Extension folders", systemImage: "puzzlepiece.extension")
+                        Spacer()
+                        Button("Reveal", action: extensionRegistry.revealUserExtensionsFolder)
+                            .help("Open Cribble's user extension folder in Finder")
+                        Button("Create Example") {
+                            do {
+                                let url = try extensionRegistry.writeExampleManifest()
+                                extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
+                                extensionRegistry.reload(projectRoots: library.rootURLs)
+                            } catch {
+                                extensionStatus = error.localizedDescription
+                            }
+                        }
+                        .help("Write a starter cribble-extension.json manifest")
+                    }
+
+                    Text("Cribble discovers extension manifests in Application Support and each opened folder's .cribble/extensions directory. Manifests are loaded and validated, but extension code is not executed yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if extensionRegistry.installedExtensions.isEmpty {
+                        ContentUnavailableView(
+                            "No Extensions Installed",
+                            systemImage: "puzzlepiece.extension",
+                            description: Text("Create an example manifest to start designing one.")
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    } else {
+                        VStack(spacing: 8) {
+                            ForEach(extensionRegistry.installedExtensions) { installed in
+                                ExtensionManifestRow(extension: installed)
+                            }
+                        }
+                    }
+
+                    if !extensionRegistry.loadWarnings.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(extensionRegistry.loadWarnings, id: \.self) { warning in
+                                Label(warning, systemImage: "exclamationmark.triangle")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+
+                    if let extensionStatus {
+                        Text(extensionStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .padding(20)
-        .frame(width: 540)
+        .frame(width: 620)
+        .onAppear {
+            extensionRegistry.reload(projectRoots: library.rootURLs)
+        }
+        .onChange(of: library.rootURLs) { _, roots in
+            extensionRegistry.reload(projectRoots: roots)
+        }
+    }
+}
+
+private struct ExtensionManifestRow: View {
+    let `extension`: InstalledCribbleExtension
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: iconName)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(`extension`.manifest.name)
+                        .font(.body.weight(.medium))
+                    Text(`extension`.manifest.version)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Text(`extension`.manifest.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\(`extension`.manifest.kind.title) • \(`extension`.location.title)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+        }
+        .padding(8)
+        .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var iconName: String {
+        switch `extension`.manifest.kind {
+        case .quickAction: "bolt"
+        case .intelligenceProvider: "brain.head.profile"
+        case .renderer: "doc.richtext"
+        case .importer: "square.and.arrow.down"
+        }
     }
 }
 

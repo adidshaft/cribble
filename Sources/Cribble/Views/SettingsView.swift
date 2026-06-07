@@ -122,13 +122,14 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
 
                     if extensionRegistry.installedExtensions.isEmpty {
-                        ContentUnavailableView(
-                            "No Extensions Installed",
-                            systemImage: "puzzlepiece.extension",
-                            description: Text("Create an example manifest to start designing one.")
+                        ExtensionEmptyState(
+                            canCreateProjectExample: library.activeRootURL != nil,
+                            onCreateQuickAction: { createExample(.quickAction) },
+                            onCreateProjectQuickAction: { createProjectExample(.quickAction) },
+                            onOpenKit: {
+                                library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+                            }
                         )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
                     } else {
                         VStack(spacing: 8) {
                             ForEach(extensionRegistry.installedExtensions) { installed in
@@ -253,6 +254,49 @@ struct SettingsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(installed.reviewSummary, forType: .string)
         extensionStatus = "Copied \(installed.manifest.name) extension details"
+    }
+}
+
+private struct ExtensionEmptyState: View {
+    let canCreateProjectExample: Bool
+    let onCreateQuickAction: () -> Void
+    let onCreateProjectQuickAction: () -> Void
+    let onOpenKit: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ContentUnavailableView(
+                "No Extensions Installed",
+                systemImage: "puzzlepiece.extension",
+                description: Text("Start with a read-only quick action, or create a project-local example that travels with the open folder.")
+            )
+
+            HStack(spacing: 8) {
+                Button {
+                    onCreateQuickAction()
+                } label: {
+                    Label("Create Quick Action", systemImage: "text.badge.plus")
+                }
+
+                Button {
+                    onCreateProjectQuickAction()
+                } label: {
+                    Label("Create Project Example", systemImage: "folder.badge.plus")
+                }
+                .disabled(!canCreateProjectExample)
+                .help(canCreateProjectExample ? "Write a starter quick action into the open folder" : "Open a folder before creating a project-local extension")
+
+                Button {
+                    onOpenKit()
+                } label: {
+                    Label("Open Kit", systemImage: "book.pages")
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
     }
 }
 

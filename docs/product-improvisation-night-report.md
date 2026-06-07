@@ -54,6 +54,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Settings can now create starter extension manifests directly in the active folder's `.cribble/extensions` directory, making the project-local team workflow actionable from the app.
 - Settings now links directly to the Team Extension Kit from the Extensions section, so users can move from manifest controls to the practical guide without hunting through DemoNotes.
+- Settings now turns the no-extension empty state into direct actions for creating a read-only quick action, creating a project-local example, or opening the Team Extension Kit.
 - The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
@@ -146,6 +147,8 @@ swift test --filter 'NavigationHistoryTests|CribbleUITests'
 swift test --filter IntelligencePreflightTests
 swift test --filter CribbleUITests
 swift test --filter CribbleUITests
+swift test --filter ExtensionRegistryTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -182,6 +185,8 @@ Latest pass:
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after extension runner handoff details: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after extension runner handoff UI wiring: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after search empty-state and shortcut-reference polish: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after actionable extension Settings empty state: 10 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after actionable extension Settings empty state: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

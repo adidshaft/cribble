@@ -88,8 +88,8 @@ swift test
 
 Latest pass:
 
-- `swift test` passed: 177 XCTest tests, 0 failures.
-- The Swift Testing extension suites also passed: 21 tests across manifest and registry coverage.
+- `swift test` passed on 2026-06-08: 177 XCTest tests, 0 failures.
+- The Swift Testing extension/credential suites also passed: 22 tests across manifest, registry, and runner credential coverage.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

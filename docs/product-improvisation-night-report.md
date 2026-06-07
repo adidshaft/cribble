@@ -23,6 +23,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
+- Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -85,3 +86,5 @@ Latest pass:
 3. Add an in-demo checklist/progress affordance for the tour notes.
 4. Add an in-demo checklist/progress affordance for the tour notes.
 5. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
+
+Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

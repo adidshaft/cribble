@@ -95,6 +95,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(secondSnapshot?.totalDocuments, 2)
         XCTAssertEqual(secondSnapshot?.reusedDocuments, 2)
         XCTAssertEqual(secondSnapshot?.loadedDocuments, 0)
+        XCTAssertTrue(store.statusMessage?.contains("2 reused") == true)
+        XCTAssertTrue(store.statusMessage?.contains("0 loaded") == false)
     }
 
     func testLibraryStoreSearchFiltering() throws {

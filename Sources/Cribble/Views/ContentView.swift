@@ -68,17 +68,14 @@ struct ContentView: View {
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
             .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
             .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
-            .focusedSceneValue(\.navigateBackAction, { library.navigateBack() })
-            .focusedSceneValue(\.navigateForwardAction, { library.navigateForward() })
+            .focusedSceneValue(\.navigateBackAction, navigateBackAction)
+            .focusedSceneValue(\.navigateForwardAction, navigateForwardAction)
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
             .focusedSceneValue(\.focusSearchAction, {
                 isSearchFocused = true
             })
-            .focusedSceneValue(\.clearSearchAction, {
-                library.searchText = ""
-                isSearchFocused = false
-            })
+            .focusedSceneValue(\.clearSearchAction, clearSearchAction)
             .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openWorkflowPlaybookAction, { library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
@@ -102,6 +99,22 @@ struct ContentView: View {
     private func selectedDocumentAction(_ action: @escaping () -> Void) -> (() -> Void)? {
         guard library.selectedDocument != nil else { return nil }
         return action
+    }
+
+    private var navigateBackAction: (() -> Void)? {
+        library.canNavigateBack ? { library.navigateBack() } : nil
+    }
+
+    private var navigateForwardAction: (() -> Void)? {
+        library.canNavigateForward ? { library.navigateForward() } : nil
+    }
+
+    private var clearSearchAction: (() -> Void)? {
+        guard !library.searchText.isEmpty else { return nil }
+        return {
+            library.searchText = ""
+            isSearchFocused = false
+        }
     }
 
     private var alertContent: some View {
@@ -148,6 +161,7 @@ struct ContentView: View {
                 DiagnosticsReportSheet(
                     report: diagnostics.makeReport(library: library, settings: settings),
                     crashReport: diagnostics.latestCrashReport,
+                    latestRefreshSnapshot: diagnostics.latestRefreshSnapshot,
                     onCopy: { diagnostics.copyReport(library: library, settings: settings) },
                     onCopyCrashReport: { diagnostics.copyLatestCrashReport() },
                     onRevealCrashReport: { diagnostics.revealLatestCrashReportInFinder() },
@@ -322,7 +336,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateBack)
             .cribbleToolbarIcon()
-            .help("Navigate back (Left Arrow)")
+            .help("Navigate back (Command-Left)")
 
             Button {
                 library.navigateForward()
@@ -331,7 +345,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateForward)
             .cribbleToolbarIcon()
-            .help("Navigate forward (Right Arrow)")
+            .help("Navigate forward (Command-Right)")
         }
     }
 

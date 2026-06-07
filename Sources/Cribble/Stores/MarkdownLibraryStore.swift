@@ -514,7 +514,7 @@ final class MarkdownLibraryStore: ObservableObject {
                         message: "Refresh reused \(result.reusedCount) unchanged note metadata record(s); loaded \(result.loadedCount) changed/new note(s)."
                     )
                 }
-                DiagnosticsCenter.shared.recordRefreshSnapshot(RefreshDiagnosticsSnapshot(
+                let refreshSnapshot = RefreshDiagnosticsSnapshot(
                     date: refreshStartedAt,
                     duration: Date().timeIntervalSince(refreshStartedAt),
                     totalDocuments: result.documents.count,
@@ -525,12 +525,15 @@ final class MarkdownLibraryStore: ObservableObject {
                     renderCacheEntriesBefore: renderCacheEntriesBefore,
                     renderCacheEntriesAfter: self.renderCache.count,
                     renderCacheEntriesPruned: prunedRenderCacheEntries
-                ))
+                )
+                DiagnosticsCenter.shared.recordRefreshSnapshot(refreshSnapshot)
 
                 if !keepStatusQuiet {
                     let skippedCount = result.skippedFiles.count
                     let skippedSuffix = skippedCount > 0 ? " · \(skippedCount) skipped" : ""
-                    self.statusMessage = "Loaded \(result.documents.count) Markdown files\(skippedSuffix)"
+                    let reusedSuffix = result.reusedCount > 0 ? " · \(result.reusedCount) reused" : ""
+                    let durationText = String(format: "%.2fs", refreshSnapshot.duration)
+                    self.statusMessage = "Loaded \(result.documents.count) Markdown files in \(durationText)\(reusedSuffix)\(skippedSuffix)"
                 }
         }
     }

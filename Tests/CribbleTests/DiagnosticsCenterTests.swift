@@ -24,6 +24,8 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Reused metadata: 39"))
         XCTAssertTrue(section.contains("Skipped files: 1"))
         XCTAssertTrue(section.contains("Render cache: 6 kept, 2 pruned from 8"))
+        XCTAssertEqual(snapshot.compactSummary, "Refreshed 42 files in 0.12s · 39 reused · 3 loaded · 1 skipped")
+        XCTAssertEqual(snapshot.cacheSummary, "6 render cache entries kept, 2 pruned")
     }
 
     func testCrashReportFinderPrefersNewestCribbleReport() throws {

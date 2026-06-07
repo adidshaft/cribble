@@ -327,6 +327,17 @@ struct RefreshDiagnosticsSnapshot: Equatable {
         - Render cache: \(renderCacheEntriesAfter) kept, \(renderCacheEntriesPruned) pruned from \(renderCacheEntriesBefore)
         """
     }
+
+    var compactSummary: String {
+        let durationText = String(format: "%.2fs", duration)
+        let skippedSuffix = skippedFiles > 0 ? " · \(skippedFiles) skipped" : ""
+        let failedSuffix = failedRoots > 0 ? " · \(failedRoots) root\(failedRoots == 1 ? "" : "s") failed" : ""
+        return "Refreshed \(totalDocuments) files in \(durationText) · \(reusedDocuments) reused · \(loadedDocuments) loaded\(skippedSuffix)\(failedSuffix)"
+    }
+
+    var cacheSummary: String {
+        "\(renderCacheEntriesAfter) render cache entries kept, \(renderCacheEntriesPruned) pruned"
+    }
 }
 
 private struct DiagnosticEventPayload: Codable {

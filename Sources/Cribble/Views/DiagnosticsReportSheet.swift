@@ -4,6 +4,7 @@ import SwiftUI
 struct DiagnosticsReportSheet: View {
     let report: String
     let crashReport: CrashReportFile?
+    let latestRefreshSnapshot: RefreshDiagnosticsSnapshot?
     let onCopy: () -> Void
     let onCopyCrashReport: () -> Bool
     let onRevealCrashReport: () -> Bool
@@ -25,6 +26,8 @@ struct DiagnosticsReportSheet: View {
 
                 Spacer()
             }
+
+            refreshSummary
 
             ScrollView {
                 Text(report)
@@ -108,5 +111,32 @@ struct DiagnosticsReportSheet: View {
         }
 
         return "Latest crash file found: \(crashReport.url.lastPathComponent). Reveal it and send it with the report."
+    }
+
+    @ViewBuilder
+    private var refreshSummary: some View {
+        if let latestRefreshSnapshot {
+            HStack(spacing: 10) {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(latestRefreshSnapshot.compactSummary)
+                            .font(.caption.weight(.semibold))
+                        Text(latestRefreshSnapshot.cacheSummary)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "speedometer")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.green)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
+            .help("Latest folder refresh performance")
+        }
     }
 }

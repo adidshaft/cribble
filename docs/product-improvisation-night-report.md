@@ -56,11 +56,13 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
+- Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
 - Diagnostics now record refresh reuse counts when unchanged note metadata is reused, making performance wins visible in copied reports without changing normal status text.
 - Diagnostic reports now include a Latest Refresh section with duration, total Markdown files, loaded vs reused metadata, skipped/failed counts, and render-cache pruning, so large-folder smoothness is measurable in support reports.
+- The Diagnostics sheet now shows the latest refresh performance as a scannable summary above the full report, and refresh status text includes duration plus reused metadata counts.
 - File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
 - Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
@@ -136,6 +138,8 @@ swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
 swift test --filter ChatHUDLogicTests
 swift test --filter CribbleUITests
+swift test --filter DiagnosticsCenterTests
+swift test --filter 'NavigationHistoryTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -167,6 +171,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after guided Import setup: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after visible chat context receipts: 32 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native Find in Files commands: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after visible refresh performance summaries: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'NavigationHistoryTests|CribbleUITests'` passed on 2026-06-08 after stateful Mac menu actions: 15 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

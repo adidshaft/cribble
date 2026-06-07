@@ -4,6 +4,7 @@ enum JobRunnerError: LocalizedError {
     case providerUnavailable(String)
     case missingInput
     case emptyOutput
+    case timedOut(TimeInterval)
     case validationFailed([String])
     case unsupportedJobType(IntelligenceJobType)
 
@@ -12,6 +13,7 @@ enum JobRunnerError: LocalizedError {
         case .providerUnavailable(let r): "Intelligence provider unavailable: \(r)"
         case .missingInput: "Job had no usable input."
         case .emptyOutput: "Model returned empty output."
+        case .timedOut(let seconds): "Intelligence job timed out after \(Int(seconds)) seconds."
         case .validationFailed(let issues): "Output failed validation: \(issues.joined(separator: "; "))"
         case .unsupportedJobType(let t): "No executor for job type \(t.rawValue)."
         }
@@ -42,6 +44,7 @@ actor JobRunner {
     private let projectName: String
     private let rootURL: URL
     private let maxInputChars: Int
+    private let jobTimeoutSeconds: TimeInterval
     private let maxAggregateSummaryChars = 24_000
     private let graphDirectory: URL
     /// Optional headless Mermaid validator (best-effort; see MermaidRenderValidator).
@@ -55,6 +58,7 @@ actor JobRunner {
         projectID: String,
         rootURL: URL,
         maxInputChars: Int = 12_000,
+        jobTimeoutSeconds: TimeInterval = 120,
         mermaidValidator: (@Sendable (String) async -> Bool)? = nil
     ) {
         self.mermaidValidator = mermaidValidator
@@ -67,6 +71,7 @@ actor JobRunner {
         self.projectName = rootURL.lastPathComponent
         self.rootURL = rootURL
         self.maxInputChars = maxInputChars
+        self.jobTimeoutSeconds = jobTimeoutSeconds
         self.graphDirectory = artifacts.cacheDirectory.deletingLastPathComponent().appendingPathComponent("graph")
     }
 
@@ -90,12 +95,29 @@ actor JobRunner {
         }
 
         do {
-            let artifactID = try await execute(job)
+            let artifactID = try await executeWithTimeout(job)
             await db.completeJob(id: job.id, artifactID: artifactID)
         } catch {
             await db.recordFailure(id: job.id, error: error.localizedDescription)
         }
         return true
+    }
+
+    private func executeWithTimeout(_ job: IntelligenceJob) async throws -> String? {
+        let timeout = max(0.001, jobTimeoutSeconds)
+        let nanoseconds = UInt64((timeout * 1_000_000_000).rounded())
+        return try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask { try await self.execute(job) }
+            group.addTask {
+                try await Task.sleep(nanoseconds: nanoseconds)
+                throw JobRunnerError.timedOut(timeout)
+            }
+            guard let result = try await group.next() else {
+                throw JobRunnerError.timedOut(timeout)
+            }
+            group.cancelAll()
+            return result
+        }
     }
 
     private func isProviderUsable() async -> Bool {

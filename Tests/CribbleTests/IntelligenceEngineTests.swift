@@ -26,6 +26,16 @@ private final class MockIntelligenceProvider: IntelligenceProvider, @unchecked S
     func embed(text: String) async throws -> [Float]? { nil }
 }
 
+private final class HangingIntelligenceProvider: IntelligenceProvider, @unchecked Sendable {
+    let displayName = "Hanging"
+    func checkAvailability() async -> ProviderAvailability { .available }
+    func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String {
+        try await Task.sleep(nanoseconds: 5_000_000_000)
+        return "# Too late"
+    }
+    func embed(text: String) async throws -> [Float]? { nil }
+}
+
 final class IntelligenceEngineTests: XCTestCase {
 
     // MARK: - ContentHasher
@@ -544,6 +554,39 @@ final class IntelligenceEngineTests: XCTestCase {
         let pending = await db.jobs(projectID: "p", status: .pending)
         XCTAssertEqual(pending.count, 1)
         XCTAssertEqual(pending.first?.attemptCount, 0)
+    }
+
+    func testRunnerTimesOutStalledProviderAndRequeues() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-timeout-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "struct Engine {}".write(to: root.appendingPathComponent("Engine.swift"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let runner = JobRunner(
+            db: db,
+            scheduler: scheduler,
+            artifacts: artifacts,
+            provider: HangingIntelligenceProvider(),
+            projectID: "p",
+            rootURL: root,
+            jobTimeoutSeconds: 0.05
+        )
+
+        let ran = await runner.runNext()
+
+        XCTAssertTrue(ran)
+        let pending = await db.jobs(projectID: "p", status: .pending)
+        XCTAssertEqual(pending.count, 1)
+        XCTAssertEqual(pending.first?.attemptCount, 1)
+        XCTAssertTrue(pending.first?.errorMessage?.contains("timed out") == true)
+        let running = await db.jobs(projectID: "p", status: .running)
+        XCTAssertTrue(running.isEmpty)
     }
 
     func testDrainSkipsProviderProbeWhenPolicyAllowsOnlyTierOne() async throws {

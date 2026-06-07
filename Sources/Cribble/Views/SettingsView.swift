@@ -223,6 +223,11 @@ private struct ExtensionManifestRow: View {
                 Text(`extension`.manifest.runtime.summary)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                if let trust = `extension`.manifest.trust {
+                    Text("Trust: \(trust.summary)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
                 if !`extension`.manifest.permissions.isEmpty {
                     Text(`extension`.manifest.permissions.map(\.title).joined(separator: ", "))
                         .font(.caption2)

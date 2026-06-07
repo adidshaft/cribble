@@ -263,6 +263,12 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
                 summary: "Adds a trusted OpenAI-compatible runner preset.",
                 runtime: .declarative,
                 homepage: URL(string: "https://example.com/cribble-runner"),
+                trust: CribbleExtensionTrustDeclaration(
+                    developerName: "Example Team",
+                    signingIdentifier: "com.example.cribble.team-runner",
+                    teamIdentifier: "ABCDE12345",
+                    sourceURL: URL(string: "https://example.com/cribble-runner/source")
+                ),
                 permissions: [.networkOpenAICompatible],
                 intelligenceProviders: [
                     CribbleExtensionIntelligenceProvider(

@@ -51,6 +51,12 @@ Every extension folder needs a `cribble-extension.json` file:
   "kind": "quick-action",
   "summary": "Adds research-oriented prompts.",
   "runtime": "declarative",
+  "trust": {
+    "developerName": "Example Team",
+    "signingIdentifier": "com.example.cribble.research-actions",
+    "teamIdentifier": "ABCDE12345",
+    "sourceURL": "https://example.com/cribble-extension/source"
+  },
   "permissions": ["read-current-note"],
   "quickActions": [
     {
@@ -76,6 +82,8 @@ Required fields:
 Optional fields:
 
 - `homepage`: `http` or `https` URL.
+- `trust`: developer identity metadata Cribble can show now and compare against
+  future signed executable bundles.
 - `permissions`: typed permission strings.
 
 `entrypoint` is intentionally unused for API v1. Manifests that request
@@ -102,7 +110,13 @@ require:
 - a visible audit log for file edits, remote calls, and generated artifacts.
 
 API v1 validates the shape of `entrypoint` paths so manifests can evolve without
-breaking compatibility, but executable entrypoints are not launched.
+breaking compatibility, but executable entrypoints are not launched. It also
+validates optional `trust` declarations:
+
+- `developerName`: human-readable developer or team name.
+- `signingIdentifier`: reverse-DNS bundle identifier expected for future signed code.
+- `teamIdentifier`: optional 10-character Apple Team ID.
+- `sourceURL`: optional `http` or `https` URL for the extension source or release page.
 
 ## Kinds
 

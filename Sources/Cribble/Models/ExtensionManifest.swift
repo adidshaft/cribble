@@ -69,6 +69,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let runtime: CribbleExtensionRuntime
     let entrypoint: String?
     let homepage: URL?
+    let trust: CribbleExtensionTrustDeclaration?
     let permissions: [CribbleExtensionPermission]
     let quickActions: [CribbleExtensionQuickAction]
     let intelligenceProviders: [CribbleExtensionIntelligenceProvider]
@@ -85,6 +86,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case runtime
         case entrypoint
         case homepage
+        case trust
         case permissions
         case quickActions
         case intelligenceProviders
@@ -103,6 +105,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         runtime = try container.decodeIfPresent(CribbleExtensionRuntime.self, forKey: .runtime) ?? .declarative
         entrypoint = try container.decodeIfPresent(String.self, forKey: .entrypoint)
         homepage = try container.decodeIfPresent(URL.self, forKey: .homepage)
+        trust = try container.decodeIfPresent(CribbleExtensionTrustDeclaration.self, forKey: .trust)
         permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
         quickActions = try container.decodeIfPresent([CribbleExtensionQuickAction].self, forKey: .quickActions) ?? []
         intelligenceProviders = try container.decodeIfPresent([CribbleExtensionIntelligenceProvider].self, forKey: .intelligenceProviders) ?? []
@@ -120,6 +123,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         runtime: CribbleExtensionRuntime = .declarative,
         entrypoint: String? = nil,
         homepage: URL? = nil,
+        trust: CribbleExtensionTrustDeclaration? = nil,
         permissions: [CribbleExtensionPermission] = [],
         quickActions: [CribbleExtensionQuickAction] = [],
         intelligenceProviders: [CribbleExtensionIntelligenceProvider] = [],
@@ -135,11 +139,26 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.runtime = runtime
         self.entrypoint = entrypoint
         self.homepage = homepage
+        self.trust = trust
         self.permissions = permissions
         self.quickActions = quickActions
         self.intelligenceProviders = intelligenceProviders
         self.renderers = renderers
         self.importers = importers
+    }
+}
+
+struct CribbleExtensionTrustDeclaration: Codable, Equatable {
+    let developerName: String
+    let signingIdentifier: String
+    let teamIdentifier: String?
+    let sourceURL: URL?
+
+    var summary: String {
+        if let teamIdentifier, !teamIdentifier.isEmpty {
+            return "\(developerName) • \(signingIdentifier) • Team \(teamIdentifier)"
+        }
+        return "\(developerName) • \(signingIdentifier)"
     }
 }
 
@@ -263,6 +282,7 @@ enum ExtensionManifestLoader {
         if let homepage = manifest.homepage, !isHTTPURL(homepage) {
             throw ExtensionManifestError.invalidHomepage(homepage.absoluteString)
         }
+        try validateTrust(manifest.trust)
         if manifest.runtime == .executable {
             throw ExtensionManifestError.invalidContribution("Executable extension runtimes are not supported by API version \(CribbleExtensionManifest.supportedAPIVersion).")
         }
@@ -392,6 +412,23 @@ enum ExtensionManifestLoader {
             if importer.outputFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Importer outputFormat is required.")
             }
+        }
+    }
+
+    private static func validateTrust(_ trust: CribbleExtensionTrustDeclaration?) throws {
+        guard let trust else { return }
+        if trust.developerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw ExtensionManifestError.invalidContribution("Trust developerName is required.")
+        }
+        if !isReverseDNS(trust.signingIdentifier) {
+            throw ExtensionManifestError.invalidContribution("Trust signingIdentifier must be a reverse-DNS bundle id.")
+        }
+        if let teamIdentifier = trust.teamIdentifier,
+           teamIdentifier.range(of: #"^[A-Z0-9]{10}$"#, options: .regularExpression) == nil {
+            throw ExtensionManifestError.invalidContribution("Trust teamIdentifier must be a 10-character Apple Team ID.")
+        }
+        if let sourceURL = trust.sourceURL, !isHTTPURL(sourceURL) {
+            throw ExtensionManifestError.invalidContribution("\(sourceURL.absoluteString) must be an http or https trust sourceURL.")
         }
     }
 

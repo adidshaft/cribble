@@ -51,6 +51,12 @@ struct ExtensionManifestTests {
           "kind": "intelligence-provider",
           "summary": "Connects Cribble to an OpenAI-compatible runner on a trusted host.",
           "entrypoint": "runner.json",
+          "trust": {
+            "developerName": "Example Team",
+            "signingIdentifier": "com.example.cribble.remote-runner",
+            "teamIdentifier": "ABCDE12345",
+            "sourceURL": "https://example.com/runner/source"
+          },
           "permissions": ["network-openai-compatible"]
         }
         """
@@ -61,7 +67,52 @@ struct ExtensionManifestTests {
         #expect(manifest.id == "com.example.cribble.remote-runner")
         #expect(manifest.kind == .intelligenceProvider)
         #expect(manifest.runtime == .declarative)
+        #expect(manifest.trust?.developerName == "Example Team")
+        #expect(manifest.trust?.signingIdentifier == "com.example.cribble.remote-runner")
+        #expect(manifest.trust?.teamIdentifier == "ABCDE12345")
         #expect(manifest.permissions == [.networkOpenAICompatible])
+    }
+
+    @Test
+    func validatesTrustDeclarations() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.trusted",
+            name: "Trusted",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares future executable trust metadata.",
+            trust: CribbleExtensionTrustDeclaration(
+                developerName: "Example Team",
+                signingIdentifier: "com.example.cribble.trusted",
+                teamIdentifier: "ABCDE12345",
+                sourceURL: URL(string: "https://example.com/source")!
+            )
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+
+        #expect(manifest.trust?.summary == "Example Team • com.example.cribble.trusted • Team ABCDE12345")
+    }
+
+    @Test
+    func rejectsInvalidTrustDeclarations() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.trust",
+            name: "Trust",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares invalid trust metadata.",
+            trust: CribbleExtensionTrustDeclaration(
+                developerName: "Example Team",
+                signingIdentifier: "trusted",
+                teamIdentifier: "bad-team",
+                sourceURL: URL(string: "file:///tmp/source")!
+            )
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Trust signingIdentifier must be a reverse-DNS bundle id.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
     }
 
     @Test

@@ -21,10 +21,12 @@ now reads more like a local-first Mac knowledge workspace:
   and clear local-vs-remote boundaries.
 - **Bring stronger compute when needed:** local/VPS/team OpenAI-compatible
   runners can be configured with Keychain secrets, data-boundary warnings,
-  consent review, and copied approval checklists.
+  consent review, and copied approval checklists from Help or the Intelligence
+  HUD.
 - **Start an extension ecosystem:** `cribble-extension.json` manifests now cover
   quick actions, remote runner profiles, renderer aliases, and import-lane
-  declarations without executing extension code.
+  declarations without executing extension code, with Help/Settings proposal
+  templates for contributors.
 
 ## Strongest Product Signal
 
@@ -58,6 +60,7 @@ Focused validation passed across the newest work:
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
 - Remote-runner consent and handoff checklists.
+- Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics next actions and visible recovery strip.
 - Intelligence artifact and Ask answer Markdown handoffs.
 

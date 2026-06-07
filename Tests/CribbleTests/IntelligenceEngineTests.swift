@@ -53,6 +53,50 @@ final class IntelligenceEngineTests: XCTestCase {
         )
     }
 
+    func testAskSuggestionsIncludeRemoteRunnerPrivacyPrompt() {
+        let questions = IntelligenceAskSuggestionBuilder.questions(
+            hasProjectMap: true,
+            hasGlossary: true,
+            hasTimeline: false,
+            hasResearchFollowups: false,
+            usesRemoteRunner: true
+        )
+
+        XCTAssertTrue(questions.contains("What context leaves my Mac?"))
+        XCTAssertTrue(questions.contains("Explain the project map"))
+        XCTAssertTrue(questions.contains("Define the important terms"))
+        XCTAssertLessThanOrEqual(questions.count, 6)
+    }
+
+    func testAskSuggestionsStayGeneralWithoutRemoteRunner() {
+        let questions = IntelligenceAskSuggestionBuilder.questions(
+            hasProjectMap: false,
+            hasGlossary: false,
+            hasTimeline: false,
+            hasResearchFollowups: false,
+            usesRemoteRunner: false
+        )
+
+        XCTAssertEqual(questions, [
+            "What changed recently?",
+            "What should I read first?",
+            "Where are the riskiest notes?"
+        ])
+    }
+
+    func testAskSuggestionsCapAtSix() {
+        let questions = IntelligenceAskSuggestionBuilder.questions(
+            hasProjectMap: true,
+            hasGlossary: true,
+            hasTimeline: true,
+            hasResearchFollowups: true,
+            usesRemoteRunner: true
+        )
+
+        XCTAssertEqual(questions.count, 6)
+        XCTAssertTrue(questions.contains("What context leaves my Mac?"))
+    }
+
     // MARK: - SwiftSymbolExtractor
 
     func testSymbolExtractionFindsTypesFunctionsImports() {

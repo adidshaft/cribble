@@ -1318,26 +1318,13 @@ struct IntelligenceHUDView: View {
     }
 
     private var suggestedAskQuestions: [String] {
-        var questions = [
-            "What changed recently?",
-            "What should I read first?",
-            "Where are the riskiest notes?"
-        ]
-
-        if hasArtifact(.architectureDiagram) || hasArtifact(.dependencyDiagram) || !engine.knowledgeNodes.isEmpty {
-            questions.append("Explain the project map")
-        }
-        if hasArtifact(.glossary) {
-            questions.append("Define the important terms")
-        }
-        if hasArtifact(.timeline) {
-            questions.append("Summarize the timeline")
-        }
-        if !activeResearchInsights.isEmpty || hasArtifact(.contradictionReport) {
-            questions.append("Which claims need follow-up?")
-        }
-
-        return Array(questions.prefix(6))
+        IntelligenceAskSuggestionBuilder.questions(
+            hasProjectMap: hasArtifact(.architectureDiagram) || hasArtifact(.dependencyDiagram) || !engine.knowledgeNodes.isEmpty,
+            hasGlossary: hasArtifact(.glossary),
+            hasTimeline: hasArtifact(.timeline),
+            hasResearchFollowups: !activeResearchInsights.isEmpty || hasArtifact(.contradictionReport),
+            usesRemoteRunner: usesRemoteRunner
+        )
     }
 
     private func submitSuggestedAsk(_ question: String) {
@@ -1984,6 +1971,40 @@ private struct ExtensionRunnerHandoffStrip: View {
         .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Runner handoff: \(profile.trustLabel), \(profile.sourceName)")
+    }
+}
+
+enum IntelligenceAskSuggestionBuilder {
+    static func questions(
+        hasProjectMap: Bool,
+        hasGlossary: Bool,
+        hasTimeline: Bool,
+        hasResearchFollowups: Bool,
+        usesRemoteRunner: Bool
+    ) -> [String] {
+        var questions = [
+            "What changed recently?",
+            "What should I read first?",
+            "Where are the riskiest notes?"
+        ]
+
+        if usesRemoteRunner {
+            questions.append("What context leaves my Mac?")
+        }
+        if hasProjectMap {
+            questions.append("Explain the project map")
+        }
+        if hasGlossary {
+            questions.append("Define the important terms")
+        }
+        if hasTimeline {
+            questions.append("Summarize the timeline")
+        }
+        if hasResearchFollowups {
+            questions.append("Which claims need follow-up?")
+        }
+
+        return Array(questions.prefix(6))
     }
 }
 

@@ -587,6 +587,8 @@ Latest pass:
   records with status, owner, context, evidence, follow-up tasks, and review
   boundary prompts; the bundled DemoNotes version was bumped so existing demo
   installs refresh.
+- Help and the welcome screen now expose Decision Log directly, giving users a
+  native route into decision/rationale capture without hunting through DemoNotes.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
@@ -599,6 +601,7 @@ Latest pass:
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotFormatsRunnerWithoutSecrets'` passed on 2026-06-08 after tightening local-vs-remote runner diagnostic next actions: 3 XCTest tests, 0 failures.
 - Latest combined `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract'` passed on 2026-06-08 after the Help command, DemoNotes, and diagnostics polish: 5 XCTest tests and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding Decision Log to DemoNotes, seeded artifacts, and the bundled refresh version: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding the Help > Open Decision Log Guide command and welcome Decisions tile: 2 XCTest tests, 0 failures. A source search confirmed the focused command, ContentView handler, and tile route to `Decision Log.md`.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

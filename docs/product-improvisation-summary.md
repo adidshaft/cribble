@@ -12,7 +12,8 @@ Cribble is no longer just a native Markdown reader with isolated AI features. It
 now reads more like a local-first Mac knowledge workspace:
 
 - **Start faster:** Welcome, Help, DemoNotes, shortcuts, and starter checklists
-  now point beginners to the right first action.
+  now point beginners to the right first action, including direct decision-log
+  and team workflow routes.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
   Link, Copy Wiki Link, Decision Log, and reviewed AI proposals make capture,
   rationale, and handoff feel native.

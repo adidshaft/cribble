@@ -2337,6 +2337,7 @@ private struct WelcomeView: View {
                     demoStartButton("Tasks", systemImage: "checklist.checked", note: "Tasks and Intelligence.md")
                     demoStartButton("Workflows", systemImage: "point.3.connected.trianglepath.dotted", note: "Workflow Playbook.md")
                     demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")
+                    demoStartButton("Decisions", systemImage: "checkmark.seal", note: "Decision Log.md")
                     demoStartButton("Extensions", systemImage: "puzzlepiece.extension", note: "Team Extension Kit.md")
                     demoStartButton("Remote AI", systemImage: "network", note: "Extensions and Remote Intelligence.md")
                 }

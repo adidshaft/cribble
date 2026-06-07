@@ -103,6 +103,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openWorkflowPlaybookAction, { library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTasksGuideAction, { library.openDemoNote(named: "Tasks and Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openResearchReviewAction, { library.openDemoNote(named: "Research Review.md", sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.openDecisionLogGuideAction, { library.openDemoNote(named: "Decision Log.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)

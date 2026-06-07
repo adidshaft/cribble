@@ -51,9 +51,19 @@ final class LocalRunnerStoreTests: XCTestCase {
         XCTAssertEqual(store.cachedModelIDs, ["qwen2.5:7b"])
     }
 
+    func testConfigureSeedsCacheWithDefaultModelWhenListEmpty() {
+        // A manually-typed model ID (runner reachable but /v1/models empty)
+        // must still surface in pickers.
+        let store = LocalRunnerStore(defaults: defaults)
+        store.configure(baseURLString: "http://127.0.0.1:11434/v1", displayName: nil, modelIDs: [], defaultModelID: "typed-model")
+        XCTAssertEqual(store.cachedModelIDs, ["typed-model"])
+    }
+
     func testConfigureNormalizesEmptyDisplayName() {
         let store = LocalRunnerStore(defaults: defaults)
         store.configure(baseURLString: "http://127.0.0.1:11434/v1", displayName: "", modelIDs: ["m"], defaultModelID: "m")
+        XCTAssertNil(store.displayName)
+        store.configure(baseURLString: "http://127.0.0.1:11434/v1", displayName: "  ", modelIDs: ["m"], defaultModelID: "m")
         XCTAssertNil(store.displayName)
     }
 

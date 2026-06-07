@@ -61,8 +61,13 @@ final class LocalRunnerStore: ObservableObject {
     func configure(baseURLString: String, displayName: String?, modelIDs: [String], defaultModelID: String?) {
         self.baseURLString = baseURLString
         // Normalize "" to nil so the UI never renders "Local runner ()".
-        self.displayName = displayName.flatMap { $0.isEmpty ? nil : $0 }
-        self.cachedModelIDs = modelIDs
+        self.displayName = displayName.flatMap { name in
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        // Never leave the cache empty when a default model exists — pickers are
+        // gated on a non-empty cache (same invariant as the legacy migration).
+        self.cachedModelIDs = modelIDs.isEmpty ? (defaultModelID.map { [$0] } ?? []) : modelIDs
         self.defaultModelID = defaultModelID
         persist()
     }

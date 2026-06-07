@@ -20,6 +20,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Feature Tour]] | Zoom overlays, reading trails, semantic search, pathfinder | 3 min |
 | [[Tasks and Intelligence]] | Send checkboxes to Reminders/Calendar, folder-wide insights | 3 min |
 | [[Workflow Playbook]] | Practical flows for readers, researchers, teams, and remote runners | 4 min |
+| [[Research Review]] | Evidence-first workflow for claims, decisions, and source trails | 4 min |
 | [[Extensions and Remote Intelligence]] | Plugin manifests, trusted runners, and future automation hooks | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
 
@@ -66,6 +67,7 @@ changes in this demo copy only.
 - [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
+- [ ] Open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
 

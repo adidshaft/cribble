@@ -45,6 +45,8 @@ What decisions are repeated across these notes?
 Create a one-page project brief from @README @Tasks and Intelligence @Feature Tour.
 ```
 
+For a more evidence-heavy version of this flow, open [[Research Review]].
+
 ## 3. Add team conventions without app code
 
 Use this flow when a folder should carry its own tools.
@@ -82,4 +84,4 @@ The product should stay boring in the right places:
 That is the center of Cribble: a native reader that can become a workbench
 without making beginners carry the complexity.
 
-← Back to [[README|Home]] · next: [[Extensions and Remote Intelligence]]
+← Back to [[README|Home]] · next: [[Research Review]] · [[Extensions and Remote Intelligence]]

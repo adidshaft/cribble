@@ -2237,6 +2237,7 @@ private struct WelcomeView: View {
                     demoStartButton("Workflows", systemImage: "point.3.connected.trianglepath.dotted", note: "Workflow Playbook.md")
                     demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")
                     demoStartButton("Extensions", systemImage: "puzzlepiece.extension", note: "Team Extension Kit.md")
+                    demoStartButton("Remote AI", systemImage: "network", note: "Extensions and Remote Intelligence.md")
                 }
                 .frame(maxWidth: 560)
             }

@@ -27,6 +27,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
+    @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
     @FocusedValue(\.highlightSelectionAction) private var highlightSelection
@@ -147,6 +148,9 @@ struct CribbleCommands: Commands {
 
             Button("Open Team Extension Kit", action: { openTeamExtensionKit?() })
                 .disabled(openTeamExtensionKit == nil)
+
+            Button("Open Remote Intelligence Guide", action: { openRemoteIntelligenceGuide?() })
+                .disabled(openRemoteIntelligenceGuide == nil)
 
             Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
                 .disabled(resetDemoNotes == nil)
@@ -276,6 +280,10 @@ private struct OpenWorkflowPlaybookActionKey: FocusedValueKey {
 }
 
 private struct OpenTeamExtensionKitActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenRemoteIntelligenceGuideActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -424,6 +432,11 @@ extension FocusedValues {
     var openTeamExtensionKitAction: (() -> Void)? {
         get { self[OpenTeamExtensionKitActionKey.self] }
         set { self[OpenTeamExtensionKitActionKey.self] = newValue }
+    }
+
+    var openRemoteIntelligenceGuideAction: (() -> Void)? {
+        get { self[OpenRemoteIntelligenceGuideActionKey.self] }
+        set { self[OpenRemoteIntelligenceGuideActionKey.self] = newValue }
     }
 
     var resetDemoNotesAction: (() -> Void)? {

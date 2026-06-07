@@ -43,6 +43,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
 - Help now exposes the Team Extension Kit directly, making the extension/plugin design guide recoverable outside Settings.
+- Help and the welcome screen now expose the Remote Intelligence guide directly, making VPS/team-runner setup discoverable as a first-class onboarding path.
 - DemoNotes now include a `Workflow Playbook` that explains practical flows for reading, project brief creation, team extension conventions, and trusted remote intelligence use.
 - DemoNotes now include a `Research Review` workflow for evidence-heavy folders, claim tables, source trails, extension quick actions, and intentional remote-runner use.
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
@@ -212,6 +213,7 @@ swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|L
 swift test --filter ExtensionRegistryTests
 swift test --filter IntelligenceEngineTests
 swift test --filter DiagnosticsCenterTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -283,6 +285,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after active-lane extension dashboard counts: 11 Swift Testing tests, 0 failures.
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after remote-runner Ask starter questions: 28 XCTest tests, 0 failures.
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after installed-vs-active extension diagnostics: 6 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Remote Intelligence entry points: 18 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

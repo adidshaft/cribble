@@ -2,6 +2,64 @@ import XCTest
 @testable import Cribble
 
 final class DiagnosticsCenterTests: XCTestCase {
+    func testIntelligenceSnapshotFormatsRunnerWithoutSecrets() {
+        let snapshot = IntelligenceDiagnosticsSnapshot(
+            isEnabled: true,
+            scope: "all folders",
+            statusDescription: "Working (Waiting for idle)",
+            modelID: "llama3.2",
+            runnerBaseURL: "http://127.0.0.1:11434/v1?token=secret",
+            usesKeychainCredential: true,
+            performanceMode: "Balanced",
+            pendingJobs: 42,
+            filesIndexed: 1_200,
+            staleArtifacts: 8,
+            lastActivity: "Changes queued; waiting for idle",
+            resourceDecisionSummary: "Waiting for idle",
+            allowedTier: "tier1",
+            modelDownloadFraction: nil
+        )
+
+        let section = snapshot.formattedReportSection
+
+        XCTAssertTrue(section.contains("OpenAI-compatible runner at http://127.0.0.1:11434"))
+        XCTAssertTrue(section.contains("Credential: Keychain"))
+        XCTAssertFalse(section.contains("/v1"))
+        XCTAssertFalse(section.contains("token"))
+        XCTAssertFalse(section.contains("secret"))
+    }
+
+    @MainActor
+    func testDiagnosticReportIncludesIntelligenceQueueAndResourceGate() {
+        let snapshot = IntelligenceDiagnosticsSnapshot(
+            isEnabled: true,
+            scope: "single folder",
+            statusDescription: "Working (Processing)",
+            modelID: "gemma-4-flash",
+            runnerBaseURL: nil,
+            usesKeychainCredential: false,
+            performanceMode: "Power",
+            pendingJobs: 7,
+            filesIndexed: 300,
+            staleArtifacts: 2,
+            lastActivity: "Indexed 4 file(s)",
+            resourceDecisionSummary: "Idle window - full intelligence",
+            allowedTier: "tier3",
+            modelDownloadFraction: 0.42
+        )
+
+        let report = DiagnosticsCenter.shared.makeReport(library: nil, settings: nil, intelligence: snapshot)
+
+        XCTAssertTrue(report.contains("## Intelligence"))
+        XCTAssertTrue(report.contains("Provider: On-device model"))
+        XCTAssertTrue(report.contains("Performance mode: Power"))
+        XCTAssertTrue(report.contains("Pending jobs: 7"))
+        XCTAssertTrue(report.contains("Files indexed: 300"))
+        XCTAssertTrue(report.contains("Stale artifacts: 2"))
+        XCTAssertTrue(report.contains("Resource gate: Idle window - full intelligence, tier3"))
+        XCTAssertTrue(report.contains("Model download: 42%"))
+    }
+
     func testRefreshSnapshotFormatsPerformanceCounters() {
         let snapshot = RefreshDiagnosticsSnapshot(
             date: Date(timeIntervalSince1970: 100),

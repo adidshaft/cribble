@@ -65,7 +65,9 @@ struct ContentView: View {
                 }
             }
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
-            .focusedSceneValue(\.copyDiagnosticsAction, { diagnostics.copyReport(library: library, settings: settings) })
+            .focusedSceneValue(\.copyDiagnosticsAction, {
+                diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
+            })
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
             .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
             .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
@@ -130,7 +132,7 @@ struct ContentView: View {
                     library.errorMessage = nil
                 }
                 Button("Copy Report") {
-                    diagnostics.copyReport(library: library, settings: settings)
+                    diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
                     library.errorMessage = nil
                 }
                 Button("OK", role: .cancel) {}
@@ -143,7 +145,7 @@ struct ContentView: View {
                     diagnostics.acknowledgePreviousSessionIssue()
                 }
                 Button("Copy Report") {
-                    diagnostics.copyReport(library: library, settings: settings)
+                    diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
                     diagnostics.acknowledgePreviousSessionIssue()
                 }
                 Button("Not Now", role: .cancel) {
@@ -164,10 +166,10 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingDiagnosticsReport) {
                 DiagnosticsReportSheet(
-                    report: diagnostics.makeReport(library: library, settings: settings),
+                    report: diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics),
                     crashReport: diagnostics.latestCrashReport,
                     latestRefreshSnapshot: diagnostics.latestRefreshSnapshot,
-                    onCopy: { diagnostics.copyReport(library: library, settings: settings) },
+                    onCopy: { diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics) },
                     onCopyCrashReport: { diagnostics.copyLatestCrashReport() },
                     onRevealCrashReport: { diagnostics.revealLatestCrashReportInFinder() },
                     onReportIssue: { reportIssueOnGitHub() },
@@ -420,15 +422,19 @@ struct ContentView: View {
     }
 
     private func reportIssueOnGitHub() {
-        let report = diagnostics.makeReport(library: library, settings: settings)
+        let report = diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
         GitHubReport.openIssue(report: report)
         diagnostics.record(level: .info, message: "Opened GitHub issue flow.")
     }
 
     private func openPullRequestOnGitHub() {
-        let report = diagnostics.makeReport(library: library, settings: settings)
+        let report = diagnostics.makeReport(library: library, settings: settings, intelligence: intelligenceDiagnostics)
         GitHubReport.openPullRequest(report: report)
         diagnostics.record(level: .info, message: "Opened GitHub pull request flow.")
+    }
+
+    private var intelligenceDiagnostics: IntelligenceDiagnosticsSnapshot {
+        intelligence.diagnosticsSnapshot()
     }
 
     private func createProjectImportLane() {

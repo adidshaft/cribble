@@ -662,6 +662,26 @@ final class IntelligenceEngine: ObservableObject {
         artifactStore?.content(for: artifact)
     }
 
+    func diagnosticsSnapshot() -> IntelligenceDiagnosticsSnapshot {
+        let runnerURL = settings.localRunnerBaseURL?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return IntelligenceDiagnosticsSnapshot(
+            isEnabled: isEnabled,
+            scope: isEnabled ? (isAllFolders ? "all folders" : "single folder") : "off",
+            statusDescription: status.diagnosticDescription,
+            modelID: settings.modelID,
+            runnerBaseURL: runnerURL?.isEmpty == false ? runnerURL : nil,
+            usesKeychainCredential: runnerURL.map { settings.runnerUsesKeychain(baseURL: $0) } ?? false,
+            performanceMode: performanceMode.title,
+            pendingJobs: pendingJobs,
+            filesIndexed: filesIndexed,
+            staleArtifacts: staleCount,
+            lastActivity: lastActivity,
+            resourceDecisionSummary: resourceDecision?.userFacingSummary,
+            allowedTier: resourceDecision.map { "tier\($0.allowedTier.rawValue)" },
+            modelDownloadFraction: modelDownloadFraction
+        )
+    }
+
     nonisolated private static func containsCodeFiles(_ files: [IntelligenceFile]) -> Bool {
         files.contains { file in
             guard let raw = file.language else { return false }
@@ -947,6 +967,19 @@ final class IntelligenceEngine: ObservableObject {
         #else
         return 0
         #endif
+    }
+}
+
+private extension IntelligenceEngine.Status {
+    var diagnosticDescription: String {
+        switch self {
+        case .off: "Off"
+        case .ready: "Ready"
+        case .scanning(let done, let total): "Scanning \(done)/\(total)"
+        case .working(let detail): "Working (\(detail))"
+        case .idle: "Idle"
+        case .driftDetected(let count): "Drift detected (\(count))"
+        }
     }
 }
 

@@ -79,7 +79,11 @@ final class DiagnosticsCenter: ObservableObject {
         latestRefreshSnapshot = snapshot
     }
 
-    func makeReport(library: MarkdownLibraryStore?, settings: AppSettings?) -> String {
+    func makeReport(
+        library: MarkdownLibraryStore?,
+        settings: AppSettings?,
+        intelligence: IntelligenceDiagnosticsSnapshot? = nil
+    ) -> String {
         latestCrashReport = Self.findLatestCrashReport()
 
         let bundle = Bundle.main
@@ -96,6 +100,7 @@ final class DiagnosticsCenter: ObservableObject {
             ? "No recorded diagnostic events."
             : events.map { "- \($0.formatted)" }.joined(separator: "\n")
         let refreshSection = latestRefreshSnapshot?.formattedReportSection ?? "No refresh performance snapshot recorded."
+        let intelligenceSection = intelligence?.formattedReportSection ?? "No intelligence diagnostics snapshot recorded."
 
         let crashReportSection = latestCrashReportSection()
 
@@ -127,6 +132,9 @@ final class DiagnosticsCenter: ObservableObject {
         ## Latest Refresh
         \(refreshSection)
 
+        ## Intelligence
+        \(intelligenceSection)
+
         ## Recent Events
         \(eventLines)
 
@@ -134,8 +142,12 @@ final class DiagnosticsCenter: ObservableObject {
         """
     }
 
-    func copyReport(library: MarkdownLibraryStore?, settings: AppSettings?) {
-        let report = makeReport(library: library, settings: settings)
+    func copyReport(
+        library: MarkdownLibraryStore?,
+        settings: AppSettings?,
+        intelligence: IntelligenceDiagnosticsSnapshot? = nil
+    ) {
+        let report = makeReport(library: library, settings: settings, intelligence: intelligence)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
         record(level: .info, message: "Diagnostic report copied to clipboard.")
@@ -337,6 +349,77 @@ struct RefreshDiagnosticsSnapshot: Equatable {
 
     var cacheSummary: String {
         "\(renderCacheEntriesAfter) render cache entries kept, \(renderCacheEntriesPruned) pruned"
+    }
+}
+
+struct IntelligenceDiagnosticsSnapshot: Equatable {
+    let isEnabled: Bool
+    let scope: String
+    let statusDescription: String
+    let modelID: String
+    let runnerBaseURL: String?
+    let usesKeychainCredential: Bool
+    let performanceMode: String
+    let pendingJobs: Int
+    let filesIndexed: Int
+    let staleArtifacts: Int
+    let lastActivity: String?
+    let resourceDecisionSummary: String?
+    let allowedTier: String?
+    let modelDownloadFraction: Double?
+
+    var formattedReportSection: String {
+        """
+        - Enabled: \(isEnabled ? "true" : "false")
+        - Scope: \(scope)
+        - Provider: \(providerDescription)
+        - Credential: \(credentialDescription)
+        - Model: \(modelID)
+        - Performance mode: \(performanceMode)
+        - Status: \(statusDescription)
+        - Pending jobs: \(pendingJobs)
+        - Files indexed: \(filesIndexed)
+        - Stale artifacts: \(staleArtifacts)
+        - Last activity: \(lastActivity ?? "none")
+        - Resource gate: \(resourceGateDescription)
+        - Model download: \(modelDownloadDescription)
+        """
+    }
+
+    private var providerDescription: String {
+        guard let runnerBaseURL, !runnerBaseURL.isEmpty else {
+            return "On-device model"
+        }
+        return "OpenAI-compatible runner at \(Self.redactedRunnerURL(runnerBaseURL))"
+    }
+
+    private var credentialDescription: String {
+        runnerBaseURL == nil ? "none" : (usesKeychainCredential ? "Keychain" : "none configured")
+    }
+
+    private var resourceGateDescription: String {
+        let summary = resourceDecisionSummary ?? "No scheduler decision"
+        guard let allowedTier else { return summary }
+        return "\(summary), \(allowedTier)"
+    }
+
+    private var modelDownloadDescription: String {
+        guard let modelDownloadFraction else { return "none" }
+        return "\(Int((modelDownloadFraction * 100).rounded()))%"
+    }
+
+    nonisolated static func redactedRunnerURL(_ raw: String) -> String {
+        guard let components = URLComponents(string: raw),
+              let scheme = components.scheme,
+              let host = components.host
+        else {
+            return "invalid-url"
+        }
+        var redacted = "\(scheme)://\(host)"
+        if let port = components.port {
+            redacted += ":\(port)"
+        }
+        return redacted
     }
 }
 

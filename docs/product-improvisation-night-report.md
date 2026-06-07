@@ -72,6 +72,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Diagnostics now record refresh reuse counts when unchanged note metadata is reused, making performance wins visible in copied reports without changing normal status text.
 - Diagnostic reports now include a Latest Refresh section with duration, total Markdown files, loaded vs reused metadata, skipped/failed counts, and render-cache pruning, so large-folder smoothness is measurable in support reports.
 - The Diagnostics sheet now shows the latest refresh performance as a scannable summary above the full report, and refresh status text includes duration plus reused metadata counts.
+- Diagnostic reports now include Project Intelligence state: scope, provider, redacted runner URL, Keychain credential marker, model, performance mode, queue depth, indexed files, stale artifacts, last activity, resource gate, and model download progress.
 - File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
 - Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
@@ -175,6 +176,8 @@ swift test --filter TaskExporterTests
 swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
+swift test --filter DiagnosticsCenterTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -227,6 +230,8 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after import-lane review summaries: 10 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after the Settings import-lane copy action: 16 XCTest tests, 0 failures.
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes chat shortcut cleanup: 18 XCTest tests, 0 failures.
+- Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after Intelligence diagnostics snapshots: 4 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after wiring Intelligence diagnostics through report entry points: 16 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

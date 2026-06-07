@@ -1,7 +1,7 @@
 ---
 aliases: [home, welcome, start here, index]
 keywords: [cribble, reader, welcome, guide, index, ai, markdown, extensions, plugins, remote runner]
-tags: [demo, home]
+tags: [demo, home, workflow]
 ---
 # Welcome to Cribble 👋
 
@@ -19,6 +19,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Cribble AI]] | The on-device AI chat — ask, link, and summarize your notes | 3 min |
 | [[Feature Tour]] | Zoom overlays, reading trails, semantic search, pathfinder | 3 min |
 | [[Tasks and Intelligence]] | Send checkboxes to Reminders/Calendar, folder-wide insights | 3 min |
+| [[Workflow Playbook]] | Practical flows for readers, researchers, teams, and remote runners | 4 min |
 | [[Extensions and Remote Intelligence]] | Plugin manifests, trusted runners, and future automation hooks | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
 
@@ -29,6 +30,13 @@ Cribble now has the first native extension foundation: a validated
 extension discovery from `.cribble/extensions`. It also points toward trusted
 OpenAI-compatible runners, including your own VPS when you want heavier
 intelligence than a laptop should run. → [[Extensions and Remote Intelligence]]
+
+## New workflow playbook
+
+If you want the shortest path from "what is this app?" to "how would I actually
+use this every week?", open [[Workflow Playbook]]. It connects reading,
+highlights, search, Project Intelligence, tasks, extensions, and remote runners
+into three practical flows.
 
 ## New in 1.3.1 — Tasks & generic intelligence
 
@@ -57,6 +65,7 @@ changes in this demo copy only.
 - [ ] Press **P** after visiting a few notes and inspect the Reading Trail.
 - [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
+- [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
 

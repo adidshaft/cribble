@@ -5,10 +5,24 @@ All notable changes to Cribble are documented here. The format follows
 [Semantic Versioning](https://semver.org/) (see the versioning guidance in
 [MAINTAINER_HANDBOOK.md](MAINTAINER_HANDBOOK.md#release-model)).
 
-## Unreleased
+## Unreleased — Reliability & scale (1.4, in progress)
 
-_Nothing yet. Land user-visible changes here, then move them under a version
-heading when you cut a release._
+### Performance
+- **Lower memory on big vaults** — Cribble no longer keeps every note's full
+  text in memory; bodies load on demand, so large libraries stay light.
+- **Adaptive performance modes** — Light / Balanced / Power, auto-selected from
+  your Mac's memory and core count and adjustable in the intelligence model
+  menu. Light keeps background analysis idle until you ask for it.
+
+### Safety
+- **Recoverable edits** — every change Cribble makes to a note (AI diffs, task
+  exports, checkbox toggles, new notes) is now backed up first, can't silently
+  overwrite an existing file, and never hard-deletes. A new **File → Undo Last
+  Note Change** (⇧⌘Z) reverts the open note to its previous version.
+
+### Quality of life
+- **Reopens where you left off** — launching restores the note you were last
+  reading instead of jumping to the first file.
 
 ## 1.3.1 — Generic intelligence & tasks (experimental)
 

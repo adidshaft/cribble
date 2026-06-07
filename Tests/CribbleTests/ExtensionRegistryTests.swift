@@ -378,6 +378,13 @@ struct ExtensionRegistryTests {
         #expect(summary.importerCount == 1)
         #expect(summary.statusTitle == "2 warnings need review")
         #expect(summary.statusDetail.contains("Check Again reloads manifests"))
+        #expect(summary.reviewSummary.contains("Cribble Extension Dashboard"))
+        #expect(summary.reviewSummary.contains("Active quick actions: 2"))
+        #expect(summary.reviewSummary.contains("Active remote runners: 0"))
+        #expect(summary.reviewSummary.contains("Active importers: 1"))
+        #expect(summary.reviewSummary.contains("read-only first"))
+        #expect(summary.reviewSummary.contains("native SwiftUI"))
+        #expect(summary.reviewSummary.contains("docs/extensions.md"))
     }
 
     @Test

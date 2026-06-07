@@ -104,6 +104,10 @@ struct SettingsView: View {
                             validateExtensions()
                         }
                         .help("Reload extension manifests and surface validation warnings")
+                        Button("Copy Summary") {
+                            copyExtensionDashboardSummary()
+                        }
+                        .help("Copy installed/enabled extension counts and active contribution lanes")
                         Button("Open Kit") {
                             library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
                         }
@@ -279,6 +283,17 @@ struct SettingsView: View {
         NSPasteboard.general.setString(installed.reviewSummary, forType: .string)
         extensionStatus = "Copied \(installed.manifest.name) extension details"
     }
+
+    private func copyExtensionDashboardSummary() {
+        let summary = ExtensionDashboardSummary(
+            installed: extensionRegistry.installedExtensions,
+            disabledIDs: extensionRegistry.disabledExtensionIDs,
+            warningCount: extensionRegistry.loadWarnings.count
+        )
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(summary.reviewSummary, forType: .string)
+        extensionStatus = "Copied extension dashboard summary"
+    }
 }
 
 struct ExtensionStarterRule: Identifiable, Equatable {
@@ -385,6 +400,23 @@ struct ExtensionDashboardSummary: Equatable {
             return "Create a read-only quick action or project-local example to start safely."
         }
         return "\(installedCount) installed; API v1 remains declarative and data-only."
+    }
+
+    var reviewSummary: String {
+        """
+        Cribble Extension Dashboard
+        Status: \(statusTitle)
+        Detail: \(statusDetail)
+        Installed: \(installedCount)
+        Enabled: \(enabledCount)
+        Warnings: \(warningCount)
+        Active quick actions: \(quickActionCount)
+        Active remote runners: \(remoteRunnerCount)
+        Active renderers: \(rendererCount)
+        Active importers: \(importerCount)
+        Safety contract: API v1 is declarative, read-only first, least-access, and native SwiftUI for user-facing UI.
+        Contributor guide: docs/extensions.md
+        """
     }
 }
 

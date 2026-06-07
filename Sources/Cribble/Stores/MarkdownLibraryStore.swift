@@ -1215,7 +1215,7 @@ final class MarkdownLibraryStore: ObservableObject {
             .map { URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL }
 
         rootURLs = (bookmarkedURLs + pathURLs)
-            .filter { FileManager.default.fileExists(atPath: $0.path) }
+            .filter(Self.isExistingDirectory)
             .uniqued()
 
         if includeBundledDemo {
@@ -1434,6 +1434,11 @@ final class MarkdownLibraryStore: ObservableObject {
     nonisolated private static func existingReadmeURL(in folderURL: URL) -> URL? {
         let readmeURL = folderURL.appendingPathComponent("README.md")
         return FileManager.default.fileExists(atPath: readmeURL.path) ? readmeURL : nil
+    }
+
+    nonisolated private static func isExistingDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
     private func collectMarkdownURLs(_ nodes: [MarkdownNode]) -> [URL] {

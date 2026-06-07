@@ -141,6 +141,55 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(defaults.dictionary(forKey: "folderDisplayNames")?.isEmpty ?? true)
     }
 
+    func testRestoreIgnoresSavedFilePaths() async throws {
+        let defaults = UserDefaults.standard
+        let oldBookmarks = defaults.array(forKey: "folderBookmarks")
+        let oldFolderPaths = defaults.stringArray(forKey: "folderPaths")
+        let oldLegacyPath = defaults.string(forKey: "lastFolderPath")
+        defaults.removeObject(forKey: "folderBookmarks")
+        defaults.removeObject(forKey: "lastFolderPath")
+        defer {
+            if let oldBookmarks {
+                defaults.set(oldBookmarks, forKey: "folderBookmarks")
+            } else {
+                defaults.removeObject(forKey: "folderBookmarks")
+            }
+
+            if let oldFolderPaths {
+                defaults.set(oldFolderPaths, forKey: "folderPaths")
+            } else {
+                defaults.removeObject(forKey: "folderPaths")
+            }
+
+            if let oldLegacyPath {
+                defaults.set(oldLegacyPath, forKey: "lastFolderPath")
+            } else {
+                defaults.removeObject(forKey: "lastFolderPath")
+            }
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = rootURL.appendingPathComponent("Note.md")
+        try "# Note\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("not-a-folder-\(UUID().uuidString).png")
+        try Data([0x89, 0x50, 0x4e, 0x47]).write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        defaults.set([rootURL.path, fileURL.path], forKey: "folderPaths")
+
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        await store.waitForLoadToComplete()
+
+        XCTAssertEqual(store.rootURLs, [rootURL.standardizedFileURL])
+        XCTAssertEqual(defaults.stringArray(forKey: "folderPaths"), [rootURL.standardizedFileURL.path])
+    }
+
     func testImportedFolderDisplayNameDoesNotRenameFolderOnDisk() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

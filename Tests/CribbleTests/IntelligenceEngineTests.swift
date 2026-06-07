@@ -37,6 +37,30 @@ private final class HangingIntelligenceProvider: IntelligenceProvider, @unchecke
 }
 
 final class IntelligenceEngineTests: XCTestCase {
+    func testArtifactHandoffMarkdownIncludesReviewMetadataAndBody() {
+        let artifact = IntelligenceArtifact(
+            id: "artifact-1",
+            projectID: "project",
+            type: .projectIndex,
+            relativePath: "project-index.md",
+            title: "Project Index",
+            contentHash: "hash",
+            sourceHashes: ["source"],
+            isPublished: false
+        )
+
+        let markdown = IntelligenceArtifactHandoff.markdown(
+            for: artifact,
+            body: "\n## Summary\n\nUseful project signal.\n"
+        )
+
+        XCTAssertTrue(markdown.contains("# Project Index"))
+        XCTAssertTrue(markdown.contains("- Type: project index"))
+        XCTAssertTrue(markdown.contains("- Path: project-index.md"))
+        XCTAssertTrue(markdown.contains("- Status: not saved to project folder"))
+        XCTAssertTrue(markdown.contains("## Summary\n\nUseful project signal."))
+        XCTAssertFalse(markdown.hasSuffix("\n\n"))
+    }
 
     // MARK: - ContentHasher
 

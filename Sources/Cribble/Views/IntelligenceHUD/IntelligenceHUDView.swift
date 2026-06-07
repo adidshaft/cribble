@@ -1131,6 +1131,15 @@ struct IntelligenceHUDView: View {
                         Text(artifact.title ?? artifact.relativePath)
                             .font(.system(size: 14, weight: .semibold))
                         Spacer()
+                        Button {
+                            copyArtifactMarkdown(artifact, body: body)
+                        } label: {
+                            Label("Copy Markdown", systemImage: "doc.on.doc")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .cribbleGlassCapsuleButton()
+                        .help("Copy this generated artifact as Markdown for issues, PRs, or notes.")
+
                         if !artifact.isPublished {
                             Button {
                                 Task { await engine.publish(artifact) }
@@ -1485,6 +1494,11 @@ struct IntelligenceHUDView: View {
             .foregroundStyle(.white.opacity(0.38))
     }
 
+    private func copyArtifactMarkdown(_ artifact: IntelligenceArtifact, body: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(IntelligenceArtifactHandoff.markdown(for: artifact, body: body), forType: .string)
+    }
+
     private func emptyState(icon: String, title: String, detail: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
@@ -1835,6 +1849,25 @@ private extension ContextReceiptStatus {
         case .omitted: .orange.opacity(0.8)
         case .blockedNeedsSummary, .unavailable: .red.opacity(0.78)
         }
+    }
+}
+
+enum IntelligenceArtifactHandoff {
+    static func markdown(for artifact: IntelligenceArtifact, body: String) -> String {
+        let title = artifact.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let heading = title?.isEmpty == false ? title! : artifact.relativePath
+        let type = artifact.type.rawValue.replacingOccurrences(of: "_", with: " ")
+        let saved = artifact.isPublished ? "saved to .cribble/intelligence" : "not saved to project folder"
+
+        return """
+        # \(heading)
+
+        - Type: \(type)
+        - Path: \(artifact.relativePath)
+        - Status: \(saved)
+
+        \(body.trimmingCharacters(in: .whitespacesAndNewlines))
+        """
     }
 }
 

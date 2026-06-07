@@ -549,6 +549,9 @@ Latest pass:
 - DemoNotes now describe the current extension surface as data-only lanes:
   quick actions, remote runner profiles, renderer aliases, and import-lane
   declarations, replacing vaguer "future automation" language.
+- Intelligence artifact readers now include Copy Markdown, letting generated
+  project indexes, reports, summaries, and diagrams move into issues, PRs, or
+  notes with type/path/saved-status metadata attached.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

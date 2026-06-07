@@ -3,6 +3,8 @@
 Date: 2026-06-08
 Branch: `codex/product-improvisation-night`
 
+Short version: [`product-improvisation-summary.md`](product-improvisation-summary.md).
+
 ## Executive summary
 
 This branch turned Cribble from a fast Markdown reader with AI experiments into

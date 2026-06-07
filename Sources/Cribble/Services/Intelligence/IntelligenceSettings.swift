@@ -27,6 +27,12 @@ final class IntelligenceSettings: ObservableObject {
         didSet { UserDefaults.standard.set(pauseOnBattery, forKey: Keys.pauseOnBattery) }
     }
 
+    /// How aggressively background intelligence may use the machine. Defaults to
+    /// the mode recommended for this Mac's specs on first run; user-overridable.
+    @Published var performanceMode: PerformanceMode {
+        didSet { UserDefaults.standard.set(performanceMode.rawValue, forKey: Keys.performanceMode) }
+    }
+
     /// When true, generated artifacts are written to `.cribble/intelligence/`
     /// without a diff-preview confirmation. Off by default (preview-first).
     @Published var autoPublish: Bool {
@@ -70,6 +76,12 @@ final class IntelligenceSettings: ObservableObject {
         }
         localRunnerBaseURL = storedRunnerURL
         pauseOnBattery = UserDefaults.standard.object(forKey: Keys.pauseOnBattery) as? Bool ?? true
+        if let storedMode = UserDefaults.standard.string(forKey: Keys.performanceMode),
+           let mode = PerformanceMode(rawValue: storedMode) {
+            performanceMode = mode
+        } else {
+            performanceMode = PerformanceMode.recommended()
+        }
         autoPublish = UserDefaults.standard.object(forKey: Keys.autoPublish) as? Bool ?? false
         diskBudgetMB = UserDefaults.standard.object(forKey: Keys.diskBudgetMB) as? Int ?? 500
         useInChat = UserDefaults.standard.object(forKey: Keys.useInChat) as? Bool ?? false
@@ -87,6 +99,7 @@ final class IntelligenceSettings: ObservableObject {
         static let modelID = "intelligence.modelID"
         static let runnerURL = "intelligence.runnerURL"
         static let pauseOnBattery = "intelligence.pauseOnBattery"
+        static let performanceMode = "intelligence.performanceMode"
         static let autoPublish = "intelligence.autoPublish"
         static let diskBudgetMB = "intelligence.diskBudgetMB"
         static let useInChat = "intelligence.useInChat"

@@ -36,6 +36,8 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var lastActivity: String?
     @Published private(set) var isEnabled = false
     @Published private(set) var resourceDecision: BackgroundScheduler.Decision?
+    /// The active performance mode for this run (snapshot of the setting at start).
+    @Published private(set) var performanceMode: PerformanceMode = .balanced
     /// Download progress (0...1) while fetching the on-device model, else nil.
     @Published private(set) var modelDownloadFraction: Double?
 
@@ -148,7 +150,13 @@ final class IntelligenceEngine: ObservableObject {
         await database.resetRunningJobs()
         appActivity.start()
 
-        let scheduler = BackgroundScheduler(conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryFlag = memoryMonitor.flag, appActivity] in
+        let mode = settings.performanceMode
+        self.performanceMode = mode
+        let scheduler = BackgroundScheduler(
+            idleThreshold: mode.idleThreshold,
+            pauseLoadRatio: mode.pauseLoadRatio,
+            lightLoadRatio: mode.lightLoadRatio,
+            conditionsProvider: { [pauseOnBattery = settings.pauseOnBattery, memoryFlag = memoryMonitor.flag, appActivity] in
             let app = appActivity.snapshot
             return BackgroundScheduler.Conditions(
                 userIdleSeconds: Self.systemIdleSeconds(),
@@ -344,6 +352,11 @@ final class IntelligenceEngine: ObservableObject {
         if forceFullRun, decision.allowedTier != .none {
             decision.allowedTier = .tier3
         }
+        // Light mode keeps background work deterministic-only; model/aggregate
+        // jobs run only when the user explicitly triggers a run.
+        if !forceFullRun, !performanceMode.allowsBackgroundModelWork, decision.allowedTier > .tier1 {
+            decision.allowedTier = .tier1
+        }
         resourceDecision = decision
 
         // Honor hard resource stops immediately; don't even scan under pressure.
@@ -385,7 +398,7 @@ final class IntelligenceEngine: ObservableObject {
         }
 
         status = .working(decision.allowedTier >= .tier2 ? "Processing" : decision.userFacingSummary)
-        let drain = await runner.drain(limit: 6, allowedTier: decision.allowedTier)   // bounded per tick so the loop stays responsive
+        let drain = await runner.drain(limit: performanceMode.drainLimit, allowedTier: decision.allowedTier)   // bounded per tick so the loop stays responsive
         if drain.ranJobs > 0 {
             await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
         }
@@ -829,6 +842,14 @@ final class IntelligenceEngine: ObservableObject {
         settings.modelID = model.id
         await rebuildRunner()
         await runNow()
+    }
+
+    /// Switches the performance mode. The drain batch size and Light-mode gating
+    /// take effect immediately; the scheduler's idle/load thresholds apply on the
+    /// next time intelligence starts for a project.
+    func setPerformanceMode(_ mode: PerformanceMode) {
+        settings.performanceMode = mode
+        performanceMode = mode
     }
 
     /// Points intelligence at an OpenAI-compatible local runner (Ollama, llama.cpp…).

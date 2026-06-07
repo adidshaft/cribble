@@ -213,11 +213,39 @@ struct IntelligenceHUDView: View {
             ForEach(ModelCatalog.cloudModels) { model in
                 modelRow(model, detail: "CLI")
             }
+            Divider().padding(.vertical, 3)
+            Text("PERFORMANCE").font(.system(size: 8, weight: .bold)).foregroundStyle(.white.opacity(0.4)).padding(.horizontal, 8)
+            ForEach(PerformanceMode.allCases) { mode in
+                performanceModeRow(mode)
+            }
         }
         .padding(.bottom, 6)
         .frame(width: 320)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 14), strokeOpacity: 0.10)
         .padding(.top, 44).padding(.trailing, 70)
+    }
+
+    private func performanceModeRow(_ mode: PerformanceMode) -> some View {
+        Button {
+            engine.setPerformanceMode(mode)
+        } label: {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: engine.settings.performanceMode == mode ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 9))
+                    .foregroundStyle(engine.settings.performanceMode == mode ? Color.accentColor : .white.opacity(0.4))
+                    .padding(.top, 1)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(mode.title).font(.system(size: 11))
+                    Text(mode.subtitle).font(.system(size: 9)).foregroundStyle(.white.opacity(0.45))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.85))
     }
 
     private func modelRow(_ model: LocalModel, detail: String) -> some View {

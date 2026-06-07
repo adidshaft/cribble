@@ -516,6 +516,10 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testOpenTasksCreatesAndSelectsTasksFile|CribbleUITests/testAddToTasksAnchorsSourceAndDeduplicatesBacklink'` passed on 2026-06-08 after clarifying first-time Tasks creation status and tightening isolated store setup in the focused UI tests: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after expanding the Help-menu bundle guard to every direct guide entry: Cribble AI, Workflow Playbook, Tasks and Intelligence, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Help > Open Extension Settings and rebuilding the native command surface: 1 XCTest test, 0 failures.
+- Product-copy sweep on 2026-06-08 aligned the App Store unlock sheet,
+  first-run engine chooser, toolbar help, and Intelligence preview release note
+  around local-first AI with explicit data boundaries instead of absolute
+  no-cloud claims.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

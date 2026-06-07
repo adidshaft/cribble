@@ -30,7 +30,7 @@ struct EngineChoiceView: View {
                     EngineOptionCard(
                         title: "On your Mac",
                         subtitle: ModelCatalog.isOnDeviceAvailable
-                            ? "Private — nothing leaves your device. Downloads \(onDevice.name) (\(onDevice.approximateSize)) the first time."
+                            ? "Private by default. Downloads \(onDevice.name) (\(onDevice.approximateSize)) the first time."
                             : "Not available in this build of Cribble.",
                         boundary: onDevice.dataBoundaryLabel,
                         systemImage: "desktopcomputer",

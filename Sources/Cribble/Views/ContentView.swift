@@ -519,7 +519,7 @@ struct ContentView: View {
                 Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
             }
             .cribbleToolbarIcon()
-            .help("Open the on-device AI chat (Command-J)")
+            .help("Open the local-first AI chat (Command-J)")
         }
     }
 

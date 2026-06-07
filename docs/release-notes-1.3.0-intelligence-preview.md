@@ -7,7 +7,7 @@
 
 ---
 
-Project Intelligence turns Cribble into a local, private "second brain" for your code and notes. It runs quietly in the background while you work — summarizing files, mapping dependencies, tracking architecture drift, explaining commits, detecting fallback logic and I/O behavior, and building an Obsidian-style connections graph across your Markdown vault. No cloud, no subscriptions, no data leaving your machine. Everything is computed on-device using your choice of local MLX model or any OpenAI-compatible runner, stored in a per-project SQLite database, and surfaced through a dedicated HUD panel.
+Project Intelligence turns Cribble into a local-first, private "second brain" for your code and notes. It runs quietly in the background while you work — summarizing files, mapping dependencies, tracking architecture drift, explaining commits, detecting fallback logic and I/O behavior, and building an Obsidian-style connections graph across your Markdown vault. On-device MLX is the default path; OpenAI-compatible runners are explicit choices with reviewable data boundaries before note context leaves your machine. Results are stored in a per-project SQLite database and surfaced through a dedicated HUD panel.
 
 This is an **experimental preview**. It works, the guardrails are solid, and 18+ hours of continuous uptime back that up — but rough edges remain. Read the notes below before diving in.
 

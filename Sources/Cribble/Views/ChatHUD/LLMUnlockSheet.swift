@@ -20,7 +20,7 @@ struct LLMUnlockSheet: View {
                     Text("Unlock Local AI")
                         .font(.system(size: 22, weight: .bold))
 
-                    Text("Run a private AI assistant fully on your Mac — no cloud, no account. Tag notes with @, ask questions, and get safe, reviewable edits.")
+                    Text("Run a local-first AI assistant with on-device models, clear data boundaries, and safe, reviewable edits.")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -31,7 +31,7 @@ struct LLMUnlockSheet: View {
             .padding(.top, 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                FeatureRow(icon: "lock.shield", text: "100% on-device — your notes never leave your Mac")
+                FeatureRow(icon: "lock.shield", text: "On-device by default; cloud CLI choices are clearly labeled when enabled")
                 FeatureRow(icon: "at", text: "Tag notes with @ to give the model context")
                 FeatureRow(icon: "checkmark.seal", text: "Every change is previewed as a diff before it's written")
             }

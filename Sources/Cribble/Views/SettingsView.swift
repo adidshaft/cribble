@@ -116,6 +116,10 @@ struct SettingsView: View {
                             library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
                         }
                         .help("Open the DemoNotes guide for team extension design")
+                        Button("Contribution Guide") {
+                            library.openDemoNote(named: "Extension Contribution Guide.md", sortMode: settings.fileSortMode)
+                        }
+                        .help("Open the read-only-first contribution guide for extension authors")
                         Button("Remote Guide") {
                             library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode)
                         }

@@ -923,6 +923,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertLessThan(index(of: "Button(\"Reveal Latest Crash Report\"", in: commands), index(of: "Button(\"Report Issue on GitHub\"", in: commands))
     }
 
+    func testExtensionSettingsLinksToContributionGuide() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let settingsURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SettingsView.swift")
+        let settings = try String(contentsOf: settingsURL, encoding: .utf8)
+
+        XCTAssertLessThan(index(of: "Button(\"Open Kit\"", in: settings), index(of: "Button(\"Contribution Guide\"", in: settings))
+        XCTAssertLessThan(index(of: "Button(\"Contribution Guide\"", in: settings), index(of: "Button(\"Remote Guide\"", in: settings))
+        XCTAssertTrue(settings.contains("Extension Contribution Guide.md"))
+        XCTAssertTrue(settings.contains("read-only-first contribution guide"))
+    }
+
     private func index(of needle: String, in haystack: String) -> String.Index {
         guard let index = haystack.range(of: needle)?.lowerBound else {
             XCTFail("Expected to find \(needle)")

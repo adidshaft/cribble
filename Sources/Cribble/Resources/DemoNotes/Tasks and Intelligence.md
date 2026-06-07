@@ -21,8 +21,9 @@ Hover any checkbox below — an **⋯** menu appears on the right. Send the item
 
 > **Try it**
 > 1. Hover the first checkbox, open **⋯ → Add to Tasks**.
-> 2. Click the **Tasks** button in the sidebar (the checklist icon) to open
->    `Tasks.md` — the living index of everything you've flagged.
+> 2. Open **File → Open Tasks**, press `⌘⌥T`, or click the **Tasks** button in
+>    the sidebar (the checklist icon) to open `Tasks.md` — the living index of
+>    everything you've flagged.
 > 3. Each collected task links back to the exact line it came from. Following
 >    that link scrolls you right to this section.
 

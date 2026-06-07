@@ -79,6 +79,7 @@ private struct ShortcutReferencePopover: View {
                 ("Command O", "Open folder"),
                 ("Command Shift I", "Import"),
                 ("Command R", "Refresh folder"),
+                ("Command Option T", "Open Tasks"),
                 ("Command Option E", "Open current file in your editor"),
                 ("Command Option Shift L", "Copy current note wiki link"),
                 ("Command Option O", "Toggle outline"),

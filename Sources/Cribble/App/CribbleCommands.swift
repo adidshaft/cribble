@@ -4,6 +4,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openFolderAction) private var openFolder
     @FocusedValue(\.importFileAction) private var importFile
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
+    @FocusedValue(\.openTasksAction) private var openTasks
     @FocusedValue(\.openInEditorAction) private var openInEditor
     @FocusedValue(\.revealSelectedDocumentAction) private var revealSelectedDocument
     @FocusedValue(\.copySelectedDocumentPathAction) private var copySelectedDocumentPath
@@ -42,6 +43,10 @@ struct CribbleCommands: Commands {
             Button("Refresh", action: { refreshFolder?() })
                 .keyboardShortcut("r", modifiers: [.command])
                 .disabled(refreshFolder == nil)
+
+            Button("Open Tasks", action: { openTasks?() })
+                .keyboardShortcut("t", modifiers: [.command, .option])
+                .disabled(openTasks == nil)
 
             Divider()
 
@@ -174,6 +179,10 @@ private struct RefreshFolderActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct OpenTasksActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct OpenInEditorActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -288,6 +297,11 @@ extension FocusedValues {
     var refreshFolderAction: (() -> Void)? {
         get { self[RefreshFolderActionKey.self] }
         set { self[RefreshFolderActionKey.self] = newValue }
+    }
+
+    var openTasksAction: (() -> Void)? {
+        get { self[OpenTasksActionKey.self] }
+        set { self[OpenTasksActionKey.self] = newValue }
     }
 
     var openInEditorAction: (() -> Void)? {

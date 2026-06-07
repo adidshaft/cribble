@@ -632,6 +632,10 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(tasks.contains("- [ ] Send release notes — \(backlink)"), tasks)
         XCTAssertEqual(tasks.components(separatedBy: backlink).count - 1, 1, tasks)
         XCTAssertEqual(store.statusMessage, "Already in Tasks")
+
+        store.openTasksFile()
+        XCTAssertEqual(store.selectedURL?.standardizedFileURL, tasksURL.standardizedFileURL)
+        XCTAssertEqual(store.statusMessage, "Opened Tasks")
     }
     
     func testMarkdownDisplayPreprocessorTitleAndTaskHandling() {

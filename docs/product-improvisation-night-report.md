@@ -71,6 +71,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
 - The in-reader shortcut popover now includes Find in Files, Import, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
+- The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -149,6 +150,8 @@ swift test --filter CribbleUITests
 swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
+swift test --filter CribbleUITests
+swift test --filter 'LinkIndexTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -187,6 +190,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after search empty-state and shortcut-reference polish: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after actionable extension Settings empty state: 10 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after actionable extension Settings empty state: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after the native Open Tasks command: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes Tasks instructions: 16 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

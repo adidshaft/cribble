@@ -35,6 +35,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.importFileAction, importFileAction)
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.openTasksAction, openTasksAction)
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.revealSelectedDocumentAction, selectedDocumentAction(library.revealSelectedDocumentInFinder))
             .focusedSceneValue(\.copySelectedDocumentPathAction, selectedDocumentAction(library.copySelectedDocumentPath))
@@ -115,6 +116,10 @@ struct ContentView: View {
             library.searchText = ""
             isSearchFocused = false
         }
+    }
+
+    private var openTasksAction: (() -> Void)? {
+        library.hasFolders ? { library.openTasksFile() } : nil
     }
 
     private var alertContent: some View {

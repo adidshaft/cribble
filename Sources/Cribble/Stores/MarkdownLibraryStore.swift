@@ -1384,6 +1384,7 @@ final class MarkdownLibraryStore: ObservableObject {
             refresh(keepStatusQuiet: true)
         }
         select(url: tasksURL)
+        statusMessage = "Opened Tasks"
     }
 
     /// Whether the currently open note has a Cribble backup that can be reverted.
@@ -1729,7 +1730,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.3.3"
+    private static let bundledDemoNotesVersion = "1.3.4"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

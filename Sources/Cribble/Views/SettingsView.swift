@@ -102,7 +102,7 @@ struct SettingsView: View {
                         .help("Write a starter cribble-extension.json manifest")
                     }
 
-                    Text("Cribble discovers extension manifests in Application Support and each opened folder's .cribble/extensions directory. Manifests are loaded and validated, but extension code is not executed yet.")
+                    Text("Cribble discovers extension manifests in Application Support and each opened folder's .cribble/extensions directory. API v1 extensions are declarative: manifests are loaded and validated, but extension code is not executed.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -180,7 +180,10 @@ private struct ExtensionManifestRow: View {
                 Text(`extension`.manifest.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("\(`extension`.manifest.kind.title) • \(`extension`.location.title)")
+                Text("\(`extension`.manifest.kind.title) • \(`extension`.manifest.runtime.title) • \(`extension`.location.title)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text(`extension`.manifest.runtime.summary)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 if !`extension`.manifest.permissions.isEmpty {

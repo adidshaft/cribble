@@ -134,7 +134,7 @@ final class ExtensionRegistry: ObservableObject {
                 version: "0.1.0",
                 kind: .quickAction,
                 summary: "Adds a user-authored action to Cribble's future extension command surface.",
-                entrypoint: "main.js",
+                runtime: .declarative,
                 homepage: URL(string: "https://example.com/cribble-extension"),
                 permissions: [.readCurrentNote],
                 quickActions: [

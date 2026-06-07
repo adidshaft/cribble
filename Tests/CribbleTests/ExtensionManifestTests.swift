@@ -60,7 +60,49 @@ struct ExtensionManifestTests {
 
         #expect(manifest.id == "com.example.cribble.remote-runner")
         #expect(manifest.kind == .intelligenceProvider)
+        #expect(manifest.runtime == .declarative)
         #expect(manifest.permissions == [.networkOpenAICompatible])
+    }
+
+    @Test
+    func loadsExplicitDeclarativeRuntime() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.declarative",
+            name: "Declarative",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares data-only actions.",
+            runtime: .declarative,
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "plain-language",
+                    title: "Plain language",
+                    icon: "text.alignleft",
+                    prompt: "Rewrite the current note in plain language."
+                )
+            ]
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+
+        #expect(manifest.runtime.summary.contains("does not run extension code"))
+    }
+
+    @Test
+    func rejectsExecutableRuntimeForCurrentAPI() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.executable",
+            name: "Executable",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Attempts to run extension code.",
+            runtime: .executable,
+            entrypoint: "dist/main.js"
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Executable extension runtimes are not supported by API version 1.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
     }
 
     @Test

@@ -36,6 +36,27 @@ enum CribbleExtensionPermission: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum CribbleExtensionRuntime: String, Codable, CaseIterable, Identifiable {
+    case declarative
+    case executable
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .declarative: "Declarative"
+        case .executable: "Executable"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .declarative: "Manifest data only; Cribble does not run extension code."
+        case .executable: "Would require explicit trust before Cribble can run extension code."
+        }
+    }
+}
+
 struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     static let supportedAPIVersion = 1
 
@@ -45,6 +66,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let version: String
     let kind: CribbleExtensionKind
     let summary: String
+    let runtime: CribbleExtensionRuntime
     let entrypoint: String?
     let homepage: URL?
     let permissions: [CribbleExtensionPermission]
@@ -60,6 +82,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case version
         case kind
         case summary
+        case runtime
         case entrypoint
         case homepage
         case permissions
@@ -77,6 +100,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         version = try container.decode(String.self, forKey: .version)
         kind = try container.decode(CribbleExtensionKind.self, forKey: .kind)
         summary = try container.decode(String.self, forKey: .summary)
+        runtime = try container.decodeIfPresent(CribbleExtensionRuntime.self, forKey: .runtime) ?? .declarative
         entrypoint = try container.decodeIfPresent(String.self, forKey: .entrypoint)
         homepage = try container.decodeIfPresent(URL.self, forKey: .homepage)
         permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
@@ -93,6 +117,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         version: String,
         kind: CribbleExtensionKind,
         summary: String,
+        runtime: CribbleExtensionRuntime = .declarative,
         entrypoint: String? = nil,
         homepage: URL? = nil,
         permissions: [CribbleExtensionPermission] = [],
@@ -107,6 +132,7 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.version = version
         self.kind = kind
         self.summary = summary
+        self.runtime = runtime
         self.entrypoint = entrypoint
         self.homepage = homepage
         self.permissions = permissions
@@ -236,6 +262,9 @@ enum ExtensionManifestLoader {
         }
         if let homepage = manifest.homepage, !isHTTPURL(homepage) {
             throw ExtensionManifestError.invalidHomepage(homepage.absoluteString)
+        }
+        if manifest.runtime == .executable {
+            throw ExtensionManifestError.invalidContribution("Executable extension runtimes are not supported by API version \(CribbleExtensionManifest.supportedAPIVersion).")
         }
         try validateQuickActions(manifest.quickActions, manifest: manifest)
         try validateIntelligenceProviders(manifest.intelligenceProviders, manifest: manifest)

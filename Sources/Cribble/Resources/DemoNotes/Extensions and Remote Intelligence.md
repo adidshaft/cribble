@@ -21,6 +21,7 @@ starter folder in Application Support with a `cribble-extension.json` file:
   "kind": "quick-action",
   "name": "Example Quick Action",
   "permissions": ["read-current-note"],
+  "runtime": "declarative",
   "quickActions": [
     {
       "id": "explain-jargon",
@@ -34,8 +35,9 @@ starter folder in Application Support with a `cribble-extension.json` file:
 }
 ```
 
-Cribble validates the manifest and lists it in Settings. It does **not** execute
-extension code yet. That boundary keeps the system safe while the design matures.
+Cribble validates the manifest and lists it in Settings. API v1 extensions use
+`"runtime": "declarative"` and Cribble rejects executable runtimes for now. That
+boundary keeps the system safe while the design matures.
 
 ## 2. Project-local plugins
 
@@ -101,6 +103,7 @@ Adds a prompt to the Chat HUD empty state and `/` command palette.
   "kind": "quick-action",
   "summary": "Adds research-oriented prompts.",
   "permissions": ["read-current-note"],
+  "runtime": "declarative",
   "quickActions": [
     {
       "id": "extract-claims",
@@ -130,6 +133,7 @@ runner.
   "kind": "intelligence-provider",
   "summary": "Adds a team-controlled OpenAI-compatible runner.",
   "permissions": ["network-openai-compatible"],
+  "runtime": "declarative",
   "intelligenceProviders": [
     {
       "id": "research-gpu",
@@ -156,6 +160,7 @@ the future. Today this is inspectable metadata only.
   "version": "0.1.0",
   "kind": "renderer",
   "summary": "Declares diagram fence aliases.",
+  "runtime": "declarative",
   "renderers": [
     {
       "id": "workflow-diagrams",
@@ -180,6 +185,7 @@ is inspectable metadata only.
   "version": "0.1.0",
   "kind": "importer",
   "summary": "Declares future chat export import lanes.",
+  "runtime": "declarative",
   "importers": [
     {
       "id": "chat-export",

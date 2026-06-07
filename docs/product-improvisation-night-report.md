@@ -9,7 +9,7 @@ Branch: `codex/product-improvisation-night`
 
 Cribble now has a concrete, safe foundation for plugins/extensions:
 
-- `cribble-extension.json` manifests with `apiVersion`, reverse-DNS ids, typed extension kinds, typed permissions, optional homepage, and safe relative entrypoints.
+- `cribble-extension.json` manifests with `apiVersion`, reverse-DNS ids, typed extension kinds, typed permissions, optional homepage, explicit runtime mode, and safe relative entrypoints.
 - Discovery from the user's Application Support extension folder.
 - Discovery from each opened folder's `.cribble/extensions` directory.
 - Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation.
@@ -23,6 +23,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
+- API v1 now makes the extension safety boundary explicit with `"runtime": "declarative"` and rejects executable runtimes until a signed trust model exists.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.

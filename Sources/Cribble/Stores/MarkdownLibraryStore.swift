@@ -63,12 +63,12 @@ final class MarkdownLibraryStore: ObservableObject {
     private var selfWriteSuppressionDeadline: Date?
 
     // LRU render cache. Keyed by document URL; entries are invalidated when
-    // the underlying file content changes (we compare a hash of rawMarkdown).
+    // the underlying file content or remote-image policy changes.
     // Bounded so a long browsing session can't pin all rendered HTML in RAM.
     private struct RenderCacheEntry {
-        let sourceHash: Int
+        let contentHash: UInt64
+        let loadRemoteImages: Bool
         let rendered: String
-        let linkedFiles: [LinkedFileSummary]
     }
     private var renderCache: [URL: RenderCacheEntry] = [:]
     private var renderCacheOrder: [URL] = []
@@ -403,12 +403,12 @@ final class MarkdownLibraryStore: ObservableObject {
                 self.nodes = result.nodes
                 self.documents = result.documents
                 self.linkIndex = result.linkIndex
-                // Render cache keys by URL but the file content may have
-                // changed under us (e.g. user edited externally and the
-                // FSEvents monitor triggered this refresh). Drop everything
-                // — the next selection will re-render and re-cache.
-                self.renderCache.removeAll()
-                self.renderCacheOrder.removeAll()
+                // Render cache keys by URL, so prune entries whose file changed
+                // or disappeared while preserving unchanged notes across a full
+                // folder refresh. This keeps back/forward navigation warm after
+                // a single external edit without depending on fragile changed
+                // path delivery from FSEvents.
+                self.pruneRenderCache(using: result.documents)
                 self.filterHistory()
 
                 if let selectedURL = self.selectedURL {
@@ -508,17 +508,18 @@ final class MarkdownLibraryStore: ObservableObject {
         // Fast path: if we already rendered this exact body recently
         // (back/forward navigation, or re-select), publish the cached
         // version synchronously and skip the detached pipeline entirely.
-        // The remote-image preference is folded into the hash so toggling it
-        // busts stale renders.
         let loadRemoteImages = UserDefaults.standard.bool(forKey: "loadRemoteImages")
         let documentRoot = rootURL(for: document.url)
-        var hasher = Hasher()
-        hasher.combine(document.rawMarkdown)
-        hasher.combine(loadRemoteImages)
-        let sourceHash = hasher.finalize()
-        if let cached = renderCache[document.url], cached.sourceHash == sourceHash {
+        let contentHash = SemanticSearchIndex.stableHash(title: document.title, body: document.rawMarkdown)
+        if let cached = renderCache[document.url],
+           cached.contentHash == contentHash,
+           cached.loadRemoteImages == loadRemoteImages {
             selectedRenderedMarkdown = cached.rendered
-            selectedLinkedFiles = cached.linkedFiles
+            selectedLinkedFiles = Self.linkedFiles(
+                for: document,
+                index: linkIndex,
+                allDocuments: documents
+            )
             touchRenderCacheEntry(for: document.url)
             return
         }
@@ -526,7 +527,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let index = linkIndex
         let documentsSnapshot = documents
         let documentURL = document.url
-        renderTask = Task { [document, index, documentsSnapshot, documentURL, sourceHash, documentRoot, loadRemoteImages] in
+        renderTask = Task { [document, index, documentsSnapshot, documentURL, contentHash, documentRoot, loadRemoteImages] in
             let result = await Task.detached(priority: .userInitiated) { () -> (rendered: String, linkedFiles: [LinkedFileSummary]) in
                 let preprocessed = MarkdownDisplayPreprocessor.prepare(
                     document.rawMarkdown,
@@ -556,9 +557,9 @@ final class MarkdownLibraryStore: ObservableObject {
             storeRenderCacheEntry(
                 url: documentURL,
                 entry: RenderCacheEntry(
-                    sourceHash: sourceHash,
-                    rendered: result.rendered,
-                    linkedFiles: result.linkedFiles
+                    contentHash: contentHash,
+                    loadRemoteImages: loadRemoteImages,
+                    rendered: result.rendered
                 )
             )
         }
@@ -583,6 +584,17 @@ final class MarkdownLibraryStore: ObservableObject {
         guard renderCache[url] != nil else { return }
         renderCacheOrder.removeAll { $0 == url }
         renderCacheOrder.append(url)
+    }
+
+    private func pruneRenderCache(using documents: [MarkdownDocumentMeta]) {
+        let hashesByPath = Dictionary(uniqueKeysWithValues: documents.map { meta in
+            (meta.url.standardizedFileURL.path, meta.contentHash)
+        })
+
+        renderCache = renderCache.filter { url, entry in
+            hashesByPath[url.standardizedFileURL.path] == entry.contentHash
+        }
+        renderCacheOrder.removeAll { renderCache[$0] == nil }
     }
 
     nonisolated private static func linkedFiles(

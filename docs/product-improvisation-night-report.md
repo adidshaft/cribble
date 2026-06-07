@@ -27,6 +27,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Enabled importer extensions now surface as Settings import lanes with file-type and output-format summaries, making future conversion workflows discoverable before any converter execution exists.
 - API v1 now makes the extension safety boundary explicit with `"runtime": "declarative"` and rejects executable runtimes until a signed trust model exists.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
+- Full folder refresh now prunes the reader render cache by stable note content hash instead of clearing every rendered note, keeping unchanged notes warm after single-file external edits.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 

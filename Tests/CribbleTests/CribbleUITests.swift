@@ -870,6 +870,41 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Created Untitled 2.md")
     }
 
+    func testUnresolvedCreateUsesReviewFlowAndOpensExistingFile() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MissingNote-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        store.proposeDocument(named: "Missing Idea", in: rootURL)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: rootURL.appendingPathComponent("Missing Idea.md").path))
+        let pending = try XCTUnwrap(store.pendingDiff)
+        XCTAssertEqual(pending.files.first?.oldPath, "/dev/null")
+        XCTAssertEqual(pending.files.first?.newPath, "Missing Idea.md")
+        XCTAssertEqual(store.statusMessage, "Review Missing Idea.md")
+
+        store.applyPendingDiff()
+        await store.waitForLoadToComplete()
+
+        let createdURL = rootURL.appendingPathComponent("Missing Idea.md")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: createdURL.path))
+        XCTAssertEqual(try String(contentsOf: createdURL, encoding: .utf8), "# Missing Idea\n")
+        XCTAssertEqual(store.statusMessage, "Created Missing Idea.md")
+
+        store.selectedUnresolvedTarget = UnresolvedTarget(targetName: "Missing Idea", folderURL: rootURL)
+        store.proposeDocument(named: "Missing Idea", in: rootURL)
+
+        XCTAssertNil(store.pendingDiff)
+        XCTAssertNil(store.selectedUnresolvedTarget)
+        XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, createdURL.standardizedFileURL)
+        XCTAssertEqual(store.statusMessage, "Missing Idea.md already exists — opening it")
+    }
+
     func testTodayNoteProposalUsesReviewFlowAndNestedDailyFolder() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("TodayNote-\(UUID().uuidString)", isDirectory: true)

@@ -30,13 +30,13 @@ struct UnresolvedTargetView: View {
 
                 HStack(spacing: 14) {
                     Button {
-                        library.createDocument(named: target.targetName, in: target.folderURL)
+                        library.proposeDocument(named: target.targetName, in: target.folderURL)
                     } label: {
                         Label("Create Note", systemImage: "plus.circle")
                     }
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)
-                    .help("Create \(target.targetName).md in \(target.folderURL.lastPathComponent)")
+                    .help("Review a new \(target.targetName).md proposal before writing it")
 
                     Button {
                         library.selectedUnresolvedTarget = nil

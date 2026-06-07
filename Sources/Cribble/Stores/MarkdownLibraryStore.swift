@@ -322,6 +322,28 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    func proposeDocument(named filename: String, in folderURL: URL) {
+        let fileName = filename.hasSuffix(".md") ? filename : "\(filename).md"
+        let fileURL = folderURL.appendingPathComponent(fileName).standardizedFileURL
+        let title = fileURL.deletingPathExtension().lastPathComponent
+
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            statusMessage = "\(fileURL.lastPathComponent) already exists — opening it"
+            selectedUnresolvedTarget = nil
+            select(url: fileURL)
+            return
+        }
+
+        presentNewNoteProposal(
+            fileName: fileName,
+            content: "# \(title)",
+            rootURL: folderURL
+        )
+        if pendingDiff != nil {
+            statusMessage = "Review \(fileName)"
+        }
+    }
+
     func openTodayNote(date: Date = Date(), calendar: Calendar = .current) {
         guard let root = activeRootURL else {
             errorMessage = "Open a folder before opening today's note."

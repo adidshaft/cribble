@@ -81,6 +81,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
+- Missing wiki-link recovery now creates notes through the same review/apply sheet instead of writing directly, while existing targets still open immediately.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
@@ -387,6 +388,7 @@ Latest pass:
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after splitting remote-runner Data Boundary details into a visible preflight row: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after unifying Intelligence HUD runner warnings and copied handoffs around the same precise Data Boundary language: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding native New Note, Today, and Tasks Guide actions to the empty README panel: 27 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after routing missing wiki-link note creation through the review/apply sheet: 28 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

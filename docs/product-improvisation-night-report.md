@@ -97,6 +97,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
   on-device models are private by default, while Claude/Codex CLI choices are
   opt-in and clearly described as sending note context through the signed-in
   command-line tool.
+- DemoNotes Home, Getting Started, and Tasks & Intelligence now use local-first
+  AI language instead of absolute on-device/no-cloud claims, while still making
+  remote runners opt-in and reviewed before note context leaves the Mac.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
 - Missing wiki-link recovery now creates notes through the same review/apply sheet instead of writing directly, while existing targets still open immediately.
@@ -489,6 +492,7 @@ Latest pass:
   carrying the same data-boundary copy into the regular Chat HUD model picker:
   40 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testCribbleAIGuideNamesModelDataBoundaries|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after correcting the Cribble AI DemoNotes guide to describe on-device versus Claude/Codex CLI data boundaries: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testCribbleAIGuideNamesModelDataBoundaries|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after aligning DemoNotes Home, Getting Started, and Tasks & Intelligence with local-first/opt-in remote AI copy: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.

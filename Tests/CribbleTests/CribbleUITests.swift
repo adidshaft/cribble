@@ -904,6 +904,26 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(guide.contains("signed-in command-line tool"))
     }
 
+    func testDemoNotesUseLocalFirstAICopy() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let demoRoot = projectRoot.appendingPathComponent("Sources/Cribble/Resources/DemoNotes", isDirectory: true)
+
+        let home = try String(contentsOf: demoRoot.appendingPathComponent("README.md"), encoding: .utf8)
+        XCTAssertTrue(home.contains("local-first AI"))
+        XCTAssertFalse(home.contains("No cloud, no account"))
+
+        let gettingStarted = try String(contentsOf: demoRoot.appendingPathComponent("Getting Started.md"), encoding: .utf8)
+        XCTAssertTrue(gettingStarted.contains("local-first chat"))
+
+        let tasks = try String(contentsOf: demoRoot.appendingPathComponent("Tasks and Intelligence.md"), encoding: .utf8)
+        XCTAssertTrue(tasks.contains("trusted remote runners are opt-in"))
+        XCTAssertTrue(tasks.contains("reviewed before note context"))
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

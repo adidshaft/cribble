@@ -5,7 +5,7 @@ tags: [demo, home, workflow]
 ---
 # Welcome to Cribble 👋
 
-Cribble is a fast, native Markdown reader for your notes — with highlights, reading bookmarks, wiki links, on-device AI, and local semantic search. **This library is a living tutorial: open a note and learn each feature by actually using it.**
+Cribble is a fast, native Markdown reader for your notes — with highlights, reading bookmarks, wiki links, local-first AI, and local semantic search. **This library is a living tutorial: open a note and learn each feature by actually using it.**
 
 > **Tip:**
 > Nothing here is permanent. Highlight, bookmark, link, and chat freely — it's a sandbox.
@@ -16,7 +16,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | Note | What you'll learn | Time |
 | --- | --- | :---: |
 | [[Getting Started]] | Highlights, bookmarks, wiki links, search, shortcuts | 2 min |
-| [[Cribble AI]] | The on-device AI chat — ask, link, and summarize your notes | 3 min |
+| [[Cribble AI]] | Local-first AI chat — ask, link, and summarize your notes | 3 min |
 | [[Feature Tour]] | Zoom overlays, reading trails, semantic search, pathfinder | 3 min |
 | [[Tasks and Intelligence]] | Send checkboxes to Reminders/Calendar, folder-wide insights | 3 min |
 | [[Workflow Playbook]] | Practical flows for readers, researchers, teams, and remote runners | 4 min |

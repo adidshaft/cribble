@@ -6,8 +6,9 @@ tags: [demo, tasks, intelligence, new]
 # Tasks & Intelligence
 
 New in **1.3.1** — turn the notes you're reading into things you can act on, and
-let on-device intelligence make sense of a whole folder. Everything here runs
-locally; nothing leaves your Mac.
+let local-first intelligence make sense of a whole folder. By default this runs
+locally; trusted remote runners are opt-in and reviewed before note context
+leaves your Mac.
 
 ## Tasks you can send anywhere
 

@@ -22,7 +22,7 @@ Press **B** anywhere to drop a bookmark at your scroll position. Reopen the note
 
 Type `[[Note Name]]` to connect notes. Click to follow:
 
-- [[Cribble AI]] — the on-device assistant.
+- [[Cribble AI]] — local-first chat with on-device and clearly labeled CLI choices.
 - [[Feature Tour]] — zoom, trails, search, pathfinder.
 
 Linking a note that doesn't exist yet — like [[A Note I Haven't Written]] —

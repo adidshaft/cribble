@@ -2174,17 +2174,46 @@ private struct WelcomeView: View {
     @EnvironmentObject private var settings: AppSettings
 
     var body: some View {
-        ContentUnavailableView {
-            Label("Open a Markdown Folder", systemImage: "text.book.closed")
-        } description: {
-            Text("Cribble reads folders in place and keeps Markdown editing in your editor.")
-        } actions: {
-            Button("Open Folder") {
-                library.chooseFolder(sortMode: settings.fileSortMode)
+        VStack(spacing: 18) {
+            Image(systemName: "text.book.closed")
+                .font(.system(size: 42))
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 6) {
+                Text("Open a Markdown Folder")
+                    .font(.system(size: 22, weight: .semibold))
+                Text("Cribble reads folders in place, keeps editing in your editor, and gives you a guided demo when you want a quick tour.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
             }
-            .controlSize(.large)
-            .cribbleGlassButton(prominent: true)
-            .help("Open a Markdown folder and keep it in the sidebar")
+
+            HStack(spacing: 10) {
+                Button("Open Folder") {
+                    library.chooseFolder(sortMode: settings.fileSortMode)
+                }
+                .controlSize(.large)
+                .cribbleGlassButton(prominent: true)
+                .help("Open a Markdown folder and keep it in the sidebar")
+
+                Button("Open Demo Tour") {
+                    library.openDemoLibrary(sortMode: settings.fileSortMode)
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Open the bundled DemoNotes tutorial")
+            }
+
+            Button("Reset DemoNotes") {
+                library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true)
+            }
+            .buttonStyle(.plain)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .help("Restore the bundled demo library to a clean copy")
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(32)
     }
 }

@@ -17,6 +17,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
 - Data-only intelligence provider profiles that add OpenAI-compatible runner presets to the Intelligence HUD, including remote-runner warnings.
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
+- A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -69,8 +70,8 @@ Latest pass: 9 tests passed.
 
 ## Next best sections
 
-1. Improve first-launch empty state with “Continue Demo Tour” and “Reset Demo Library.”
-2. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-3. Add registry scan tests with duplicate precedence and enable/disable persistence coverage.
-4. Add secure credential handling for remote runner profiles without storing secrets in manifests.
-5. Bring the same preflight confirmation to the sidebar brain quick-toggle.
+1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
+2. Add registry scan tests with duplicate precedence and enable/disable persistence coverage.
+3. Add secure credential handling for remote runner profiles without storing secrets in manifests.
+4. Bring the same preflight confirmation to the sidebar brain quick-toggle.
+5. Add an in-demo checklist/progress affordance for the tour notes.

@@ -202,6 +202,20 @@ final class MarkdownLibraryStore: ObservableObject {
         startMonitoring()
     }
 
+    func openDemoLibrary(sortMode: FileSortMode, reset: Bool = false) {
+        do {
+            let demoURL = try installBundledDemo(reset: reset)
+            openFolder(demoURL, sortMode: sortMode)
+            let readmeURL = demoURL.appendingPathComponent("README.md")
+            if FileManager.default.fileExists(atPath: readmeURL.path) {
+                select(url: readmeURL)
+            }
+            statusMessage = reset ? "Reset and opened DemoNotes" : "Opened DemoNotes"
+        } catch {
+            errorMessage = "Couldn't open DemoNotes: \(error.localizedDescription)"
+        }
+    }
+
     func isImportedRoot(_ url: URL) -> Bool {
         rootURLs.contains(url.standardizedFileURL)
     }
@@ -1279,37 +1293,46 @@ final class MarkdownLibraryStore: ObservableObject {
     private func seedBundledDemoIfNeeded() {
         let defaults = UserDefaults.standard
         let alreadySeeded = defaults.string(forKey: Keys.bundledDemoNotesVersion) == Self.bundledDemoNotesVersion
-        let installedDemoURL = Self.applicationSupportDirectory()
-            .appendingPathComponent("DemoNotes", isDirectory: true)
-            .standardizedFileURL
+        let installedDemoURL = Self.installedDemoNotesURL()
         let shouldInstallDemo = rootURLs.isEmpty || rootURLs.contains(installedDemoURL)
-        guard shouldInstallDemo,
-              let bundledDemoURL = Self.bundledResourceURL(forResource: "DemoNotes", withExtension: nil)
-        else { return }
+        guard shouldInstallDemo else { return }
 
         do {
-            let fileManager = FileManager.default
-            try fileManager.createDirectory(
-                at: installedDemoURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            if fileManager.fileExists(atPath: installedDemoURL.path) {
-                if alreadySeeded {
-                    try Self.copyMissingDemoItems(from: bundledDemoURL, to: installedDemoURL)
-                } else {
-                    try fileManager.removeItem(at: installedDemoURL)
-                    try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
-                }
-            } else {
-                try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
-            }
-            if !rootURLs.contains(installedDemoURL) {
-                rootURLs.append(installedDemoURL)
+            let demoURL = try installBundledDemo(reset: !alreadySeeded)
+            if !rootURLs.contains(demoURL) {
+                rootURLs.append(demoURL)
             }
             defaults.set(Self.bundledDemoNotesVersion, forKey: Keys.bundledDemoNotesVersion)
         } catch {
             DiagnosticsCenter.shared.record(level: .error, message: "Failed to install DemoNotes: \(error.localizedDescription)")
         }
+    }
+
+    private func installBundledDemo(reset: Bool) throws -> URL {
+        let installedDemoURL = Self.applicationSupportDirectory()
+            .appendingPathComponent("DemoNotes", isDirectory: true)
+            .standardizedFileURL
+        guard let bundledDemoURL = Self.bundledResourceURL(forResource: "DemoNotes", withExtension: nil) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(
+            at: installedDemoURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        if fileManager.fileExists(atPath: installedDemoURL.path) {
+            if reset {
+                try fileManager.removeItem(at: installedDemoURL)
+                try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
+            } else {
+                try Self.copyMissingDemoItems(from: bundledDemoURL, to: installedDemoURL)
+            }
+        } else {
+            try fileManager.copyItem(at: bundledDemoURL, to: installedDemoURL)
+        }
+        UserDefaults.standard.set(Self.bundledDemoNotesVersion, forKey: Keys.bundledDemoNotesVersion)
+        return installedDemoURL
     }
 
     nonisolated private static func copyMissingDemoItems(from sourceURL: URL, to destinationURL: URL) throws {
@@ -1555,6 +1578,12 @@ final class MarkdownLibraryStore: ObservableObject {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
         return base.appendingPathComponent("Cribble", isDirectory: true)
+    }
+
+    private static func installedDemoNotesURL() -> URL {
+        applicationSupportDirectory()
+            .appendingPathComponent("DemoNotes", isDirectory: true)
+            .standardizedFileURL
     }
 
     private enum Keys {

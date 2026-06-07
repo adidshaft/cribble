@@ -14,6 +14,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copySelectedDocumentWikiLinkAction) private var copySelectedDocumentWikiLink
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
+    @FocusedValue(\.extractTasksWithAIAction) private var extractTasksWithAI
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
     @FocusedValue(\.toggleIntelligenceHUDAction) private var toggleIntelligenceHUD
     @FocusedValue(\.showDiagnosticsAction) private var showDiagnostics
@@ -151,6 +152,9 @@ struct CribbleCommands: Commands {
                 .keyboardShortcut("j", modifiers: [.command])
                 .disabled(toggleChatHUD == nil)
 
+            Button("Extract Tasks from Current Note", action: { extractTasksWithAI?() })
+                .disabled(extractTasksWithAI == nil)
+
             Button("Project Intelligence", action: { toggleIntelligenceHUD?() })
                 .keyboardShortcut("i", modifiers: [.command, .option])
                 .disabled(toggleIntelligenceHUD == nil)
@@ -253,6 +257,10 @@ private struct UndoNoteChangeActionKey: FocusedValueKey {
 }
 
 private struct RunAILinkingActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ExtractTasksWithAIActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -412,6 +420,11 @@ extension FocusedValues {
     var runAILinkingAction: (() -> Void)? {
         get { self[RunAILinkingActionKey.self] }
         set { self[RunAILinkingActionKey.self] = newValue }
+    }
+
+    var extractTasksWithAIAction: (() -> Void)? {
+        get { self[ExtractTasksWithAIActionKey.self] }
+        set { self[ExtractTasksWithAIActionKey.self] = newValue }
     }
 
     var toggleChatHUDAction: (() -> Void)? {

@@ -46,6 +46,7 @@ struct ContentView: View {
             .focusedSceneValue(\.copySelectedDocumentWikiLinkAction, selectedDocumentAction(library.copySelectedDocumentWikiLink))
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.extractTasksWithAIAction, extractTasksWithAIAction)
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
             .focusedSceneValue(\.toggleIntelligenceHUDAction, { openIntelligenceHUD() })
             .onAppear {
@@ -143,6 +144,13 @@ struct ContentView: View {
 
     private var openTodayNoteAction: (() -> Void)? {
         library.hasFolders ? { library.openTodayNote() } : nil
+    }
+
+    private var extractTasksWithAIAction: (() -> Void)? {
+        guard library.selectedDocument != nil else { return nil }
+        return {
+            ChatHUDController.shared.runBuiltInQuickAction(id: "extract-tasks")
+        }
     }
 
     private var alertContent: some View {

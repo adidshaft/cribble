@@ -32,10 +32,11 @@ the backlink is precise — your Markdown stays clean in the reader.
 
 ## Tasks hiding in prose
 
-Not every action item starts life as a checkbox. Open **Cribble AI** with
-`Command J`, choose **Extract tasks**, and Cribble will ask the model to propose
-a reviewed `Tasks.md` update from the current note. You still get the preview
-sheet first, so nothing is written until you approve it.
+Not every action item starts life as a checkbox. Choose **AI → Extract Tasks
+from Current Note**, or open **Cribble AI** with `Command J` and choose
+**Extract tasks**. Cribble will ask the model to propose a reviewed `Tasks.md`
+update from the current note. You still get the preview sheet first, so nothing
+is written until you approve it.
 
 ## Insights across a whole folder
 

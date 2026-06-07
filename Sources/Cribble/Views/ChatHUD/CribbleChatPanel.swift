@@ -100,6 +100,15 @@ final class ChatHUDController {
         }
     }
 
+    /// Opens the floating HUD and immediately runs a built-in prompt command.
+    func runBuiltInQuickAction(id: String) {
+        guard gatePassed(),
+              let action = QuickActions.all.first(where: { $0.id == id })
+        else { return }
+        presentFloating()
+        viewModel?.runQuickAction(action)
+    }
+
     /// Menu-bar item click: toggle the popover.
     func handleStatusItemClick() {
         guard gatePassed() else { return }

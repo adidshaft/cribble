@@ -1,6 +1,6 @@
 # ChatHUD
 
-The Cribble AI chat panel — a floating HUD (press **C**) for asking questions
+The Cribble AI chat panel — a floating HUD (press **Command J**) for asking questions
 about the notes you're reading. Backed by [`Services/LocalLLM`](../../Services/LocalLLM).
 
 | File | Responsibility |

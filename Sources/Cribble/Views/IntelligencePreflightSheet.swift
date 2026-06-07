@@ -156,7 +156,7 @@ struct IntelligencePreflightRunnerSummary: Equatable {
         )
     }
 
-    static let remoteDataBoundaryDetail = "Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner."
+    static let remoteDataBoundaryDetail = RemoteRunnerDataBoundary.detail
 
     private static func isLoopback(_ host: String) -> Bool {
         host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")

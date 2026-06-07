@@ -79,7 +79,7 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(handoff.contains("Model: qwen3-32b"))
         XCTAssertTrue(handoff.contains("Embeddings: text-embedding-3-small"))
         XCTAssertTrue(handoff.contains("Trust label: Team-controlled VPS"))
-        XCTAssertTrue(handoff.contains("note context may leave this Mac"))
+        XCTAssertTrue(handoff.contains(RemoteRunnerDataBoundary.detail))
         XCTAssertTrue(handoff.contains("store in Keychain"))
         XCTAssertTrue(handoff.contains("Disable/revoke"))
     }

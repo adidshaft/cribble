@@ -1,5 +1,9 @@
 import Foundation
 
+enum RemoteRunnerDataBoundary {
+    static let detail = "Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner."
+}
+
 struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
     let id: String
     let title: String
@@ -39,7 +43,7 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
             "Model: \(modelID)",
             "Trust label: \(trustLabel)",
             "Source extension: \(sourceName)",
-            "Context boundary: \(isLoopback ? "stays on this Mac/local network endpoint" : "note context may leave this Mac")",
+            "Context boundary: \(isLoopback ? "stays on this Mac/local network endpoint" : RemoteRunnerDataBoundary.detail)",
             "API key: enter in the Intelligence HUD; store in Keychain when needed",
             "Disable/revoke: disable the extension in Settings or choose a different runner"
         ]

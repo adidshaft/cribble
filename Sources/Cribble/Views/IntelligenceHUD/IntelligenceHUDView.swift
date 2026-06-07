@@ -357,7 +357,7 @@ struct IntelligenceHUDView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white.opacity(0.85))
-        .help(profile.isLoopback ? "Uses \(profile.trustLabel)" : "Remote runner: note content may leave this Mac")
+        .help(profile.isLoopback ? "Uses \(profile.trustLabel)" : RemoteRunnerDataBoundary.detail)
     }
 
     private var localRunnerConfig: some View {
@@ -1672,7 +1672,7 @@ struct IntelligenceHUDView: View {
               let host = url.host?.lowercased()
         else { return nil }
         let isLoopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
-        return isLoopback ? nil : "Remote runner: prompts and note context may leave this Mac."
+        return isLoopback ? nil : RemoteRunnerDataBoundary.detail
     }
 
     private var remoteRunnerHandoff: CustomRunnerHandoff? {
@@ -1886,7 +1886,7 @@ private struct CustomRunnerHandoff: Equatable {
             "Endpoint: \(baseURL.absoluteString)",
             "Model: \(modelID.isEmpty ? "enter before use" : modelID)",
             "Trust label: Custom remote runner",
-            "Context boundary: note context may leave this Mac",
+            "Context boundary: \(RemoteRunnerDataBoundary.detail)",
             "API key: enter in the Intelligence HUD; store in Keychain when needed",
             "Review: confirm endpoint ownership, retention policy, logs, and revocation path",
             "Disable/revoke: choose a different runner, clear the API key, or remove the endpoint"

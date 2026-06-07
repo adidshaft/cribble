@@ -74,6 +74,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - The Project Intelligence preflight now names remote runner endpoints, selected models, and extension trust labels before scanning notes, making VPS/team-runner decisions more explicit.
 - Remote Project Intelligence preflight now separates the runner details from a visible orange Data Boundary row, explicitly naming prompts, note excerpts, generated summaries, and embedding requests that may leave the Mac.
+- Intelligence HUD runner tooltips, inline warnings, and copied handoff checklists now reuse the same precise remote Data Boundary language as preflight and consent.
 - Extension-provided remote runner profiles now show a compact handoff strip in the Intelligence HUD with trust/source details and a copyable endpoint/model/API-key/revocation checklist.
 - Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
@@ -383,6 +384,7 @@ Latest pass:
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Draft Today to the native AI menu and extracting controller setup from the main SwiftUI modifier chain: 39 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after adding copied Extension Dashboard summaries for contributor/support handoff: 12 Swift Testing tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after splitting remote-runner Data Boundary details into a visible preflight row: 6 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after unifying Intelligence HUD runner warnings and copied handoffs around the same precise Data Boundary language: 6 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

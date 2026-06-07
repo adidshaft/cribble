@@ -22,6 +22,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
+- Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -73,7 +74,7 @@ swift test --filter ExtensionManifestTests
 Latest pass:
 
 - `swift test --filter Extension`
-- 12 tests passed across manifest and registry suites.
+- 16 tests passed across manifest and registry suites.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
@@ -81,5 +82,5 @@ Latest pass:
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
 2. Add secure credential handling for remote runner profiles without storing secrets in manifests.
 3. Add an in-demo checklist/progress affordance for the tour notes.
-4. Add first-class renderer/importer contribution models while keeping execution data-only.
+4. Add contribution docs/templates for renderer/importer manifests in DemoNotes.
 5. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.

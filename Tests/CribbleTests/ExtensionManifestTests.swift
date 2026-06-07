@@ -216,4 +216,98 @@ struct ExtensionManifestTests {
             try ExtensionManifestLoader.validate(manifest)
         }
     }
+
+    @Test
+    func loadsRendererContributions() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.renderer",
+            name: "Diagram aliases",
+            version: "0.1.0",
+            kind: .renderer,
+            summary: "Maps extra diagram fences to built-in renderers.",
+            renderers: [
+                CribbleExtensionRenderer(
+                    id: "flowcharts",
+                    title: "Flowcharts",
+                    languages: ["flowchart", "workflow"],
+                    builtInRenderer: .mermaid
+                )
+            ]
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+
+        #expect(manifest.renderers.first?.builtInRenderer == .mermaid)
+        #expect(manifest.renderers.first?.languages == ["flowchart", "workflow"])
+    }
+
+    @Test
+    func rejectsRenderersOnWrongKind() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.actions",
+            name: "Actions",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Tries to declare renderers from a quick-action extension.",
+            renderers: [
+                CribbleExtensionRenderer(
+                    id: "wrong-place",
+                    title: "Wrong place",
+                    languages: ["diagram"],
+                    builtInRenderer: .mermaid
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Only renderer extensions may declare renderers.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func loadsImporterContributions() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.importer",
+            name: "Research Importers",
+            version: "0.1.0",
+            kind: .importer,
+            summary: "Declares import lanes for future safe conversion.",
+            importers: [
+                CribbleExtensionImporter(
+                    id: "chat-export",
+                    title: "Chat Export",
+                    fileExtensions: ["json", "txt"],
+                    outputFormat: "markdown"
+                )
+            ]
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+
+        #expect(manifest.importers.first?.fileExtensions == ["json", "txt"])
+        #expect(manifest.importers.first?.outputFormat == "markdown")
+    }
+
+    @Test
+    func rejectsImportersOnWrongKind() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.renderer",
+            name: "Renderer",
+            version: "1.0.0",
+            kind: .renderer,
+            summary: "Tries to declare importers from a renderer extension.",
+            importers: [
+                CribbleExtensionImporter(
+                    id: "wrong-place",
+                    title: "Wrong place",
+                    fileExtensions: ["json"],
+                    outputFormat: "markdown"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Only importer extensions may declare importers.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
 }

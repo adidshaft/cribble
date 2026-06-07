@@ -50,6 +50,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
     let permissions: [CribbleExtensionPermission]
     let quickActions: [CribbleExtensionQuickAction]
     let intelligenceProviders: [CribbleExtensionIntelligenceProvider]
+    let renderers: [CribbleExtensionRenderer]
+    let importers: [CribbleExtensionImporter]
 
     enum CodingKeys: String, CodingKey {
         case apiVersion
@@ -63,6 +65,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         case permissions
         case quickActions
         case intelligenceProviders
+        case renderers
+        case importers
     }
 
     init(from decoder: Decoder) throws {
@@ -78,6 +82,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         permissions = try container.decodeIfPresent([CribbleExtensionPermission].self, forKey: .permissions) ?? []
         quickActions = try container.decodeIfPresent([CribbleExtensionQuickAction].self, forKey: .quickActions) ?? []
         intelligenceProviders = try container.decodeIfPresent([CribbleExtensionIntelligenceProvider].self, forKey: .intelligenceProviders) ?? []
+        renderers = try container.decodeIfPresent([CribbleExtensionRenderer].self, forKey: .renderers) ?? []
+        importers = try container.decodeIfPresent([CribbleExtensionImporter].self, forKey: .importers) ?? []
     }
 
     init(
@@ -91,7 +97,9 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         homepage: URL? = nil,
         permissions: [CribbleExtensionPermission] = [],
         quickActions: [CribbleExtensionQuickAction] = [],
-        intelligenceProviders: [CribbleExtensionIntelligenceProvider] = []
+        intelligenceProviders: [CribbleExtensionIntelligenceProvider] = [],
+        renderers: [CribbleExtensionRenderer] = [],
+        importers: [CribbleExtensionImporter] = []
     ) {
         self.apiVersion = apiVersion
         self.id = id
@@ -104,6 +112,8 @@ struct CribbleExtensionManifest: Codable, Identifiable, Equatable {
         self.permissions = permissions
         self.quickActions = quickActions
         self.intelligenceProviders = intelligenceProviders
+        self.renderers = renderers
+        self.importers = importers
     }
 }
 
@@ -121,6 +131,28 @@ struct CribbleExtensionIntelligenceProvider: Codable, Identifiable, Equatable {
     let modelID: String
     let embeddingModelID: String?
     let trustLabel: String?
+}
+
+struct CribbleExtensionRenderer: Codable, Identifiable, Equatable {
+    enum BuiltInRenderer: String, Codable {
+        case mermaid
+        case graphviz
+        case chart
+        case math
+        case markdown
+    }
+
+    let id: String
+    let title: String
+    let languages: [String]
+    let builtInRenderer: BuiltInRenderer
+}
+
+struct CribbleExtensionImporter: Codable, Identifiable, Equatable {
+    let id: String
+    let title: String
+    let fileExtensions: [String]
+    let outputFormat: String
 }
 
 struct InstalledCribbleExtension: Identifiable, Equatable {
@@ -207,6 +239,8 @@ enum ExtensionManifestLoader {
         }
         try validateQuickActions(manifest.quickActions, manifest: manifest)
         try validateIntelligenceProviders(manifest.intelligenceProviders, manifest: manifest)
+        try validateRenderers(manifest.renderers, manifest: manifest)
+        try validateImporters(manifest.importers, manifest: manifest)
     }
 
     private static func isReverseDNS(_ id: String) -> Bool {
@@ -281,5 +315,70 @@ enum ExtensionManifestLoader {
                 throw ExtensionManifestError.invalidContribution("Intelligence provider id \(provider.id) is duplicated.")
             }
         }
+    }
+
+    private static func validateRenderers(
+        _ renderers: [CribbleExtensionRenderer],
+        manifest: CribbleExtensionManifest
+    ) throws {
+        guard renderers.isEmpty || manifest.kind == .renderer else {
+            throw ExtensionManifestError.invalidContribution("Only renderer extensions may declare renderers.")
+        }
+
+        var seen: Set<String> = []
+        for renderer in renderers {
+            try validateContributionID(renderer.id, label: "Renderer", seen: &seen)
+            if renderer.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Renderer title is required.")
+            }
+            if renderer.languages.isEmpty {
+                throw ExtensionManifestError.invalidContribution("Renderer languages are required.")
+            }
+            for language in renderer.languages where !isSafeToken(language) {
+                throw ExtensionManifestError.invalidContribution("Renderer language \(language) is not valid.")
+            }
+        }
+    }
+
+    private static func validateImporters(
+        _ importers: [CribbleExtensionImporter],
+        manifest: CribbleExtensionManifest
+    ) throws {
+        guard importers.isEmpty || manifest.kind == .importer else {
+            throw ExtensionManifestError.invalidContribution("Only importer extensions may declare importers.")
+        }
+
+        var seen: Set<String> = []
+        for importer in importers {
+            try validateContributionID(importer.id, label: "Importer", seen: &seen)
+            if importer.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Importer title is required.")
+            }
+            if importer.fileExtensions.isEmpty {
+                throw ExtensionManifestError.invalidContribution("Importer fileExtensions are required.")
+            }
+            for ext in importer.fileExtensions where !isSafeToken(ext) {
+                throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) is not valid.")
+            }
+            if importer.outputFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Importer outputFormat is required.")
+            }
+        }
+    }
+
+    private static func validateContributionID(_ id: String, label: String, seen: inout Set<String>) throws {
+        if id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw ExtensionManifestError.invalidContribution("\(label) id is required.")
+        }
+        if !isSafeToken(id) {
+            throw ExtensionManifestError.invalidContribution("\(label) id \(id) is not valid.")
+        }
+        if !seen.insert(id).inserted {
+            throw ExtensionManifestError.invalidContribution("\(label) id \(id) is duplicated.")
+        }
+    }
+
+    private static func isSafeToken(_ token: String) -> Bool {
+        token.range(of: #"^[A-Za-z0-9][A-Za-z0-9._-]*$"#, options: .regularExpression) != nil
     }
 }

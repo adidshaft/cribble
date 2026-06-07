@@ -188,6 +188,12 @@ private struct ExtensionManifestRow: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                if let contributionSummary {
+                    Text(contributionSummary)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(2)
+                }
             }
 
             Spacer()
@@ -210,6 +216,23 @@ private struct ExtensionManifestRow: View {
         case .renderer: "doc.richtext"
         case .importer: "square.and.arrow.down"
         }
+    }
+
+    private var contributionSummary: String? {
+        let manifest = `extension`.manifest
+        if !manifest.quickActions.isEmpty {
+            return "Actions: " + manifest.quickActions.map(\.title).joined(separator: ", ")
+        }
+        if !manifest.intelligenceProviders.isEmpty {
+            return "Providers: " + manifest.intelligenceProviders.map { "\($0.title) (\($0.modelID))" }.joined(separator: ", ")
+        }
+        if !manifest.renderers.isEmpty {
+            return "Renderers: " + manifest.renderers.map { "\($0.title) [" + $0.languages.joined(separator: ", ") + "]" }.joined(separator: ", ")
+        }
+        if !manifest.importers.isEmpty {
+            return "Importers: " + manifest.importers.map { "\($0.title) [" + $0.fileExtensions.joined(separator: ", ") + "]" }.joined(separator: ", ")
+        }
+        return nil
     }
 }
 

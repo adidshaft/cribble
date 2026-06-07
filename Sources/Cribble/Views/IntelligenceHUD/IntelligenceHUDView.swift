@@ -1255,13 +1255,30 @@ struct IntelligenceHUDView: View {
     private var askTab: some View {
         VStack(spacing: 10) {
             if let answer = askAnswer {
-                ScrollView {
-                    StructuredText(markdown: answer)
-                        .textSelection(.enabled)
-                        .padding(10)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Project Answer")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.55))
+                        Spacer()
+                        Button {
+                            copyAskAnswer(answer)
+                        } label: {
+                            Label("Copy Answer", systemImage: "doc.on.doc")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .cribbleGlassCapsuleButton()
+                        .help("Copy this answer with the question for notes, issues, or team review.")
+                    }
+
+                    ScrollView {
+                        StructuredText(markdown: answer)
+                            .textSelection(.enabled)
+                            .padding(10)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
             } else {
                 VStack(spacing: 12) {
                     emptyState(
@@ -1290,6 +1307,11 @@ struct IntelligenceHUDView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func copyAskAnswer(_ answer: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(IntelligenceAskHandoff.markdown(question: askText, answer: answer), forType: .string)
     }
 
     private var askSuggestionChips: some View {
@@ -1867,6 +1889,21 @@ enum IntelligenceArtifactHandoff {
         - Status: \(saved)
 
         \(body.trimmingCharacters(in: .whitespacesAndNewlines))
+        """
+    }
+}
+
+enum IntelligenceAskHandoff {
+    static func markdown(question: String, answer: String) -> String {
+        let trimmedQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        let questionLine = trimmedQuestion.isEmpty ? "Project Intelligence question" : trimmedQuestion
+
+        return """
+        # Project Intelligence Answer
+
+        **Question:** \(questionLine)
+
+        \(answer.trimmingCharacters(in: .whitespacesAndNewlines))
         """
     }
 }

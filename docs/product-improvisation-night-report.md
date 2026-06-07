@@ -552,6 +552,8 @@ Latest pass:
 - Intelligence artifact readers now include Copy Markdown, letting generated
   project indexes, reports, summaries, and diagrams move into issues, PRs, or
   notes with type/path/saved-status metadata attached.
+- Intelligence Ask answers now include Copy Answer, preserving the original
+  question plus answer text for notes, issues, PRs, and team review threads.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

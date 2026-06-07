@@ -62,6 +62,18 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertFalse(markdown.hasSuffix("\n\n"))
     }
 
+    func testAskHandoffMarkdownIncludesQuestionAndAnswer() {
+        let markdown = IntelligenceAskHandoff.markdown(
+            question: "  What changed this week?  ",
+            answer: "\n- Added extension guardrails.\n"
+        )
+
+        XCTAssertTrue(markdown.contains("# Project Intelligence Answer"))
+        XCTAssertTrue(markdown.contains("**Question:** What changed this week?"))
+        XCTAssertTrue(markdown.contains("- Added extension guardrails."))
+        XCTAssertFalse(markdown.hasSuffix("\n\n"))
+    }
+
     // MARK: - ContentHasher
 
     func testHasherIsDeterministicAndSensitive() {

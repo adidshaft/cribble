@@ -106,6 +106,10 @@ struct SettingsView: View {
                             library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
                         }
                         .help("Open the DemoNotes guide for team extension design")
+                        Button("Remote Guide") {
+                            library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode)
+                        }
+                        .help("Open the guide for remote runners and trusted VPS intelligence")
                         Menu("Create Example") {
                             ForEach(ExtensionExampleTemplate.allCases) { template in
                                 Button(template.title) {

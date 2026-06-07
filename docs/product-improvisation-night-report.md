@@ -62,6 +62,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Settings can now create starter extension manifests directly in the active folder's `.cribble/extensions` directory, making the project-local team workflow actionable from the app.
 - Settings now links directly to the Team Extension Kit from the Extensions section, so users can move from manifest controls to the practical guide without hunting through DemoNotes.
+- Settings now also links directly to the Remote Intelligence guide from the Extensions section, keeping remote-runner setup guidance beside runner/importer manifest controls.
 - Settings now turns the no-extension empty state into direct actions for creating a read-only quick action, creating a project-local example, or opening the Team Extension Kit.
 - The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
@@ -214,6 +215,7 @@ swift test --filter ExtensionRegistryTests
 swift test --filter IntelligenceEngineTests
 swift test --filter DiagnosticsCenterTests
 swift test --filter CribbleUITests
+swift test --filter 'ExtensionRegistryTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -286,6 +288,7 @@ Latest pass:
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after remote-runner Ask starter questions: 28 XCTest tests, 0 failures.
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after installed-vs-active extension diagnostics: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Remote Intelligence entry points: 18 XCTest tests, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests|CribbleUITests'` passed on 2026-06-08 after Settings Remote Guide entry point: 18 XCTest tests and 11 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -542,6 +542,10 @@ Latest pass:
   visible before users copy or file an issue.
 - Help now includes Copy Starter Checklist, making the first-run tour order
   available as a native command even after users have opened real folders.
+- The File > Import setup sheet now includes Copy Review for pre-install import
+  lane proposals, making the no-execution, user-selected-files, previewed-writes,
+  no-secrets, native-SwiftUI, and clean-disable boundaries shareable before a
+  manifest is created or adapted.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

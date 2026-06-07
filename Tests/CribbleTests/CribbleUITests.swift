@@ -948,6 +948,20 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("VPS or remote runner"))
     }
 
+    func testImportLaneSetupReviewKeepsExecutionBoundariesClear() {
+        let review = ImportLaneSetupReview.markdown
+
+        XCTAssertTrue(review.contains("Import lane setup review"))
+        XCTAssertTrue(review.contains("declarative manifest data only"))
+        XCTAssertTrue(review.contains("no scripts, binaries, network calls, or converters run"))
+        XCTAssertTrue(review.contains("only user-selected files"))
+        XCTAssertTrue(review.contains("preview/review/cancel"))
+        XCTAssertTrue(review.contains("never place tokens"))
+        XCTAssertTrue(review.contains("native SwiftUI"))
+        XCTAssertTrue(review.contains("disabling the extension removes its import lane"))
+        XCTAssertTrue(review.contains("Copy Proposal"))
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

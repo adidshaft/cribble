@@ -65,6 +65,8 @@ struct ContentView: View {
             .focusedSceneValue(\.navigateForwardAction, { library.navigateForward() })
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
+            .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
     }
 
     private var alertContent: some View {

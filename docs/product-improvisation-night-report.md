@@ -32,6 +32,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Full folder refresh now prunes the reader render cache by stable note content hash instead of clearing every rendered note, keeping unchanged notes warm after single-file external edits.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
+- Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 

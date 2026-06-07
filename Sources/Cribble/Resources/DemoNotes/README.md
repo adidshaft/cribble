@@ -9,6 +9,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 
 > **Tip:**
 > Nothing here is permanent. Highlight, bookmark, link, and chat freely — it's a sandbox.
+> You can return here anytime from **Help → Open DemoNotes Tour**.
 
 ## Start here
 

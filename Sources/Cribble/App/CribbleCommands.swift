@@ -17,6 +17,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.navigateForwardAction) private var navigateForward
     @FocusedValue(\.toggleOutlineAction) private var toggleOutline
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
+    @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
+    @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
 
     var body: some Commands {
         // File — folder operations (replaces the default "New" group).
@@ -90,6 +92,14 @@ struct CribbleCommands: Commands {
         // Help — diagnostics live here instead of a top-level menu. (Check for
         // Updates is in the Cribble app menu, added by AppDelegate.)
         CommandGroup(replacing: .help) {
+            Button("Open DemoNotes Tour", action: { openDemoNotes?() })
+                .disabled(openDemoNotes == nil)
+
+            Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
+                .disabled(resetDemoNotes == nil)
+
+            Divider()
+
             Button("Show Diagnostic Report", action: { showDiagnostics?() })
                 .keyboardShortcut("d", modifiers: [.command, .shift])
                 .disabled(showDiagnostics == nil)
@@ -173,6 +183,14 @@ private struct ToggleOutlineActionKey: FocusedValueKey {
 }
 
 private struct ToggleFocusModeActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenDemoNotesActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ResetDemoNotesActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -263,6 +281,16 @@ extension FocusedValues {
     var toggleFocusModeAction: (() -> Void)? {
         get { self[ToggleFocusModeActionKey.self] }
         set { self[ToggleFocusModeActionKey.self] = newValue }
+    }
+
+    var openDemoNotesAction: (() -> Void)? {
+        get { self[OpenDemoNotesActionKey.self] }
+        set { self[OpenDemoNotesActionKey.self] = newValue }
+    }
+
+    var resetDemoNotesAction: (() -> Void)? {
+        get { self[ResetDemoNotesActionKey.self] }
+        set { self[ResetDemoNotesActionKey.self] = newValue }
     }
 
     var dropReadingBookmarkAction: (() -> Void)? {

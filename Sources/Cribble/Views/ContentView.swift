@@ -106,7 +106,14 @@ struct ContentView: View {
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)
+            .focusedSceneValue(\.copyStarterChecklistAction, copyStarterChecklist)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
+    }
+
+    private func copyStarterChecklist() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(WelcomeStarterChecklist.markdown, forType: .string)
+        library.statusMessage = "Copied starter checklist"
     }
 
     private func configureControllers() {

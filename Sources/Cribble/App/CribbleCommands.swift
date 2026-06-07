@@ -42,6 +42,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
     @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
     @FocusedValue(\.openExtensionSettingsAction) private var openExtensionSettings
+    @FocusedValue(\.copyStarterChecklistAction) private var copyStarterChecklist
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
     @FocusedValue(\.highlightSelectionAction) private var highlightSelection
@@ -219,6 +220,9 @@ struct CribbleCommands: Commands {
 
             Button("Open Extension Settings", action: { openExtensionSettings?() })
                 .disabled(openExtensionSettings == nil)
+
+            Button("Copy Starter Checklist", action: { copyStarterChecklist?() })
+                .disabled(copyStarterChecklist == nil)
 
             Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
                 .disabled(resetDemoNotes == nil)
@@ -408,6 +412,10 @@ private struct OpenRemoteIntelligenceGuideActionKey: FocusedValueKey {
 }
 
 private struct OpenExtensionSettingsActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopyStarterChecklistActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -631,6 +639,11 @@ extension FocusedValues {
     var openExtensionSettingsAction: (() -> Void)? {
         get { self[OpenExtensionSettingsActionKey.self] }
         set { self[OpenExtensionSettingsActionKey.self] = newValue }
+    }
+
+    var copyStarterChecklistAction: (() -> Void)? {
+        get { self[CopyStarterChecklistActionKey.self] }
+        set { self[CopyStarterChecklistActionKey.self] = newValue }
     }
 
     var resetDemoNotesAction: (() -> Void)? {

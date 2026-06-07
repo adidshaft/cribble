@@ -178,6 +178,7 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(QuickActions.matching("sum").contains { $0.id == "summarize" })
         XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
         XCTAssertTrue(QuickActions.matching("daily").contains { $0.id == "today-note" })
+        XCTAssertTrue(QuickActions.matching("tasks").contains { $0.id == "extract-tasks" })
     }
 
     func testSlashCommandsMatchAliasesAndRankStrongMatchesFirst() {
@@ -193,6 +194,17 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(action?.title, "Draft today")
         XCTAssertEqual(action?.icon, "calendar.badge.plus")
         XCTAssertTrue(action?.prompt.contains("CREATE: Daily/2026-06-08.md") == true)
+        XCTAssertTrue(action?.prompt.contains("block only") == true)
+    }
+
+    func testExtractTasksQuickActionCreatesReviewedTasksBlock() {
+        let action = QuickActions.builtIns(todayTitle: "2026-06-08")
+            .first { $0.id == "extract-tasks" }
+
+        XCTAssertEqual(action?.title, "Extract tasks")
+        XCTAssertEqual(action?.icon, "checklist")
+        XCTAssertTrue(action?.prompt.contains("CREATE: Tasks.md") == true)
+        XCTAssertTrue(action?.prompt.contains("Markdown checkboxes") == true)
         XCTAssertTrue(action?.prompt.contains("block only") == true)
     }
 

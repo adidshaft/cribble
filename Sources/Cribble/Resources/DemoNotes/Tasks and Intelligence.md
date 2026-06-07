@@ -30,6 +30,13 @@ Hover any checkbox below — an **⋯** menu appears on the right. Send the item
 Behind the scenes Cribble adds a tiny, invisible anchor to the source line so
 the backlink is precise — your Markdown stays clean in the reader.
 
+## Tasks hiding in prose
+
+Not every action item starts life as a checkbox. Open **Cribble AI** with
+`Command J`, choose **Extract tasks**, and Cribble will ask the model to propose
+a reviewed `Tasks.md` update from the current note. You still get the preview
+sheet first, so nothing is written until you approve it.
+
 ## Insights across a whole folder
 
 Open **Project Intelligence** (the brain icon, or `I`). As the on-device

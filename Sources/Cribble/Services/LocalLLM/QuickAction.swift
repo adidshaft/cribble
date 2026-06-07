@@ -38,6 +38,13 @@ enum QuickActions {
                 aliases: ["daily", "journal", "capture", "log", "standup"]
             ),
             QuickAction(
+                id: "extract-tasks",
+                title: "Extract tasks",
+                icon: "checklist",
+                prompt: "Extract concrete next actions from the current note. Reply with a CREATE: Tasks.md block only, using Markdown checkboxes and short source notes for each task.",
+                aliases: ["tasks", "todo", "todos", "actions", "next steps"]
+            ),
+            QuickAction(
                 id: "related",
                 title: "Find related",
                 icon: "doc.text.magnifyingglass",

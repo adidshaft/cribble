@@ -158,6 +158,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Task export status now says when a task was collected in `Tasks.md` and sent to Reminders or Calendar, so the in-app tracker and external handoff do not feel like separate invisible actions.
 - Reminders/Calendar export permission errors now name the exact System Settings privacy pane to fix, instead of giving a generic access-denied message.
 - Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
+- Chat HUD now includes a visible `Extract tasks` quick action and `/tasks` slash command that turns prose into a reviewed `Tasks.md` proposal instead of writing directly, connecting AI help to the native Tasks workflow.
 - Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
 - The Intelligence Ask tab now offers starter question chips that adapt to available artifacts, giving new users a faster path from generated context to useful project answers.
 - The Intelligence Ask tab now adds a remote-runner privacy starter question when a non-loopback runner is selected, helping users ask what context may leave the Mac before leaning on VPS or team GPU intelligence.
@@ -370,6 +371,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding a first-screen Tasks onboarding tile to the Welcome Start With grid: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding New Note/Today/Open Folder actions to the sidebar empty-folder state: 27 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the recent Daily Chat, extension-authoring, diagnostics, help-menu, welcome, and sidebar-empty-state work: 218 XCTest tests and 42 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
+- Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the reviewed `Extract tasks` Chat HUD quick action and DemoNotes onboarding: 39 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

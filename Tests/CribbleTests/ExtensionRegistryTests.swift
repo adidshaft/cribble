@@ -379,6 +379,20 @@ struct ExtensionRegistryTests {
         #expect(summary.statusTitle == "2 warnings need review")
         #expect(summary.statusDetail.contains("Check Again reloads manifests"))
     }
+
+    @Test
+    func extensionStarterRulesSurfaceContributionConstraints() {
+        let rules = ExtensionStarterRule.defaults
+        let combined = rules.map { "\($0.title) \($0.detail)" }.joined(separator: "\n")
+
+        #expect(rules.map(\.id) == ["read-only", "least-access", "native-mac"])
+        #expect(combined.contains("declarative manifests"))
+        #expect(combined.contains("current-note reads"))
+        #expect(combined.contains("previewed writes"))
+        #expect(combined.contains("Keychain-backed secrets"))
+        #expect(combined.contains("SwiftUI settings"))
+        #expect(combined.contains("SF Symbols"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

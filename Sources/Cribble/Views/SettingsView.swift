@@ -93,6 +93,8 @@ struct SettingsView: View {
                         )
                     )
 
+                    ExtensionStarterRulesStrip()
+
                     HStack {
                         Label("Extension folders", systemImage: "puzzlepiece.extension")
                         Spacer()
@@ -276,6 +278,65 @@ struct SettingsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(installed.reviewSummary, forType: .string)
         extensionStatus = "Copied \(installed.manifest.name) extension details"
+    }
+}
+
+struct ExtensionStarterRule: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let detail: String
+    let systemImage: String
+
+    static let defaults: [ExtensionStarterRule] = [
+        ExtensionStarterRule(
+            id: "read-only",
+            title: "Read-only first",
+            detail: "API v1 loads declarative manifests; extension code is not executed.",
+            systemImage: "checkmark.shield"
+        ),
+        ExtensionStarterRule(
+            id: "least-access",
+            title: "Least access",
+            detail: "Prefer current-note reads, previewed writes, and Keychain-backed secrets.",
+            systemImage: "lock"
+        ),
+        ExtensionStarterRule(
+            id: "native-mac",
+            title: "Native Mac UI",
+            detail: "Use SwiftUI settings, sheets, commands, system controls, and SF Symbols.",
+            systemImage: "macwindow"
+        )
+    ]
+}
+
+private struct ExtensionStarterRulesStrip: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(ExtensionStarterRule.defaults) { rule in
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: rule.systemImage)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 14)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rule.title)
+                            .font(.caption.weight(.semibold))
+                        Text(rule.detail)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
+                .background(.background.opacity(0.45), in: RoundedRectangle(cornerRadius: 6))
+            }
+        }
+        .padding(8)
+        .background(.quaternary.opacity(0.28), in: RoundedRectangle(cornerRadius: 8))
+        .help("Starter extension rules: read-only first, least access, and native Mac UI")
     }
 }
 

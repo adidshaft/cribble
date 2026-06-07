@@ -312,6 +312,7 @@ Latest pass:
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the date-aware Draft today chat quick action and DemoNotes onboarding: 38 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after adding the open-source extension idea proposal template to `docs/extensions.md` and DemoNotes Team Extension Kit: 1 XCTest test, 0 failures. A docs search also confirmed read-only, first read-only version, native Mac surface, and later-not-first-PR checklist language across contributor surfaces.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding welcome-screen Continue shortcuts from recent note history, including stale-entry filtering and duplicate suppression: 26 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after adding the native Settings starter-rules strip for extension authors: 12 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

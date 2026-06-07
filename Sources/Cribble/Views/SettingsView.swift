@@ -476,7 +476,8 @@ struct ExtensionDashboardSummary: Equatable {
         - Start with Create Project Example for a folder-local, reviewable manifest.
         - Keep the first version read-only; writes should use preview/review/cancel.
         - Remote runners need explicit data-boundary review and Keychain-only secrets.
-        Contributor guide: docs/extensions.md
+        Contributor guide: docs/extension-contributions.md
+        Manifest reference: docs/extensions.md
         """
     }
 }

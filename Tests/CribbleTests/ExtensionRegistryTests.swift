@@ -71,7 +71,8 @@ struct ExtensionRegistryTests {
         #expect(summary.contains("Least writing: source-note edits must go through explicit preview/review"))
         #expect(summary.contains("Secrets: never put keys or tokens in manifests"))
         #expect(summary.contains("UI: contribution UI must use native SwiftUI"))
-        #expect(summary.contains("Contributor guide: docs/extensions.md"))
+        #expect(summary.contains("Contributor guide: docs/extension-contributions.md"))
+        #expect(summary.contains("Manifest reference: docs/extensions.md"))
     }
 
     @Test
@@ -389,7 +390,8 @@ struct ExtensionRegistryTests {
         #expect(summary.reviewSummary.contains("Create Project Example"))
         #expect(summary.reviewSummary.contains("preview/review/cancel"))
         #expect(summary.reviewSummary.contains("Keychain-only secrets"))
-        #expect(summary.reviewSummary.contains("docs/extensions.md"))
+        #expect(summary.reviewSummary.contains("Contributor guide: docs/extension-contributions.md"))
+        #expect(summary.reviewSummary.contains("Manifest reference: docs/extensions.md"))
     }
 
     @Test

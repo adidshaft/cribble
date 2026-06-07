@@ -267,7 +267,8 @@ struct InstalledCribbleExtension: Identifiable, Equatable {
 }
 
 enum ExtensionReviewChecklist {
-    static let guidePath = "docs/extensions.md"
+    static let contributionGuidePath = "docs/extension-contributions.md"
+    static let manifestReferencePath = "docs/extensions.md"
 
     static let manifestSummaryLines = [
         "Safety contract:",
@@ -278,7 +279,8 @@ enum ExtensionReviewChecklist {
         "- Secrets: never put keys or tokens in manifests, fixtures, docs, or extension folders; use Keychain-backed app flows.",
         "- Disable behavior: turning the extension off must remove its commands, renderers, import lanes, or provider profiles.",
         "- UI: contribution UI must use native SwiftUI, Settings, sheets, menus, commands, toolbars, and system symbols.",
-        "Contributor guide: \(guidePath)"
+        "Contributor guide: \(contributionGuidePath)",
+        "Manifest reference: \(manifestReferencePath)"
     ]
 }
 

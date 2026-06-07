@@ -32,6 +32,7 @@ struct EngineChoiceView: View {
                         subtitle: ModelCatalog.isOnDeviceAvailable
                             ? "Private — nothing leaves your device. Downloads \(onDevice.name) (\(onDevice.approximateSize)) the first time."
                             : "Not available in this build of Cribble.",
+                        boundary: onDevice.dataBoundaryLabel,
                         systemImage: "desktopcomputer",
                         badge: "Recommended",
                         isEnabled: ModelCatalog.isOnDeviceAvailable
@@ -44,6 +45,7 @@ struct EngineChoiceView: View {
                     EngineOptionCard(
                         title: "\(model.name) (cloud)",
                         subtitle: model.blurb,
+                        boundary: model.dataBoundaryLabel,
                         systemImage: "cloud",
                         badge: nil,
                         isEnabled: true
@@ -61,6 +63,7 @@ struct EngineChoiceView: View {
 private struct EngineOptionCard: View {
     let title: String
     let subtitle: String
+    let boundary: String
     let systemImage: String
     let badge: String?
     let isEnabled: Bool
@@ -88,6 +91,11 @@ private struct EngineOptionCard: View {
                     Text(subtitle)
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.6))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Label(boundary, systemImage: "lock")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.48))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }

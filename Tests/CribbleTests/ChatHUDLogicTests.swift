@@ -377,6 +377,19 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(ModelCatalog.defaultModel.kind.isCloud)
     }
 
+    func testModelDataBoundaryLabelsDistinguishLocalAndCloudChoices() {
+        let local = ModelCatalog.localModels.first!
+        XCTAssertTrue(local.dataBoundaryLabel.contains("stay on this Mac"))
+
+        let claude = ModelCatalog.all.first { $0.kind == .claudeCLI }!
+        XCTAssertTrue(claude.dataBoundaryLabel.contains("Claude CLI"))
+        XCTAssertTrue(claude.dataBoundaryLabel.contains("note context is sent"))
+
+        let codex = ModelCatalog.all.first { $0.kind == .codexCLI }!
+        XCTAssertTrue(codex.dataBoundaryLabel.contains("Codex CLI"))
+        XCTAssertTrue(codex.dataBoundaryLabel.contains("note context is sent"))
+    }
+
     @MainActor
     func testEngineChooserShowsForFreshDefaults() {
         withCleanEngineChoiceDefaults {

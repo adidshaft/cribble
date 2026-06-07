@@ -40,6 +40,17 @@ struct LocalModel: Identifiable, Hashable {
         if speedLabel == "Flash" { return "Flash" }
         return name.split(separator: " ").first.map(String.init) ?? name
     }
+
+    var dataBoundaryLabel: String {
+        switch kind {
+        case .localMLX:
+            return "Data boundary: notes stay on this Mac."
+        case .claudeCLI:
+            return "Data boundary: note context is sent through your signed-in Claude CLI."
+        case .codexCLI:
+            return "Data boundary: note context is sent through your signed-in Codex CLI."
+        }
+    }
 }
 
 /// The curated set of models offered in the HUD. Ordering is the menu order.

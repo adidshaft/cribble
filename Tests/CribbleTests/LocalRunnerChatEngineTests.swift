@@ -3,6 +3,10 @@ import XCTest
 
 final class LocalRunnerChatEngineTests: XCTestCase {
 
+    override func tearDown() {
+        StubURLProtocol.handler = nil
+    }
+
     // MARK: - SSE line parsing (pure)
 
     func testParsesDeltaContentFromSSELine() {
@@ -20,6 +24,13 @@ final class LocalRunnerChatEngineTests: XCTestCase {
         // Role-only first chunk and finish chunk both carry no text.
         XCTAssertNil(LocalRunnerChatEngine.deltaText(fromSSELine: #"data: {"choices":[{"delta":{"role":"assistant"}}]}"#))
         XCTAssertNil(LocalRunnerChatEngine.deltaText(fromSSELine: #"data: {"choices":[{"delta":{},"finish_reason":"stop"}]}"#))
+    }
+
+    func testMessageTextHandlesContentPartArrays() throws {
+        // Some runners answer with content-part arrays instead of a string.
+        let body = #"{"choices":[{"message":{"role":"assistant","content":[{"type":"text","text":"Part one."},{"type":"text","text":" Part two."}]}}]}"#
+        let text = try LocalRunnerChatEngine.messageText(fromResponseBody: Data(body.utf8))
+        XCTAssertEqual(text, "Part one. Part two.")
     }
 
     // MARK: - End-to-end with stubbed HTTP

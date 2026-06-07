@@ -144,7 +144,11 @@ final class OpenAICompatibleProvider: IntelligenceProvider, @unchecked Sendable 
         return components.url ?? url
     }
 
-    private static func extractText(from choice: [String: Any]) -> String? {
+    /// Extracts the assistant text from one chat-completions `choice`, tolerating
+    /// plain-string content, content-part arrays, and the legacy `text` field.
+    /// Shared with `LocalRunnerChatEngine`'s non-streaming fallback so both
+    /// runner clients accept the same response dialects.
+    static func extractText(from choice: [String: Any]) -> String? {
         if let message = choice["message"] as? [String: Any] {
             if let text = message["content"] as? String, !text.isEmpty {
                 return text

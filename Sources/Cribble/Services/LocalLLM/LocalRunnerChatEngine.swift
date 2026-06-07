@@ -36,6 +36,9 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
 
     // MARK: - LocalChatEngine
 
+    /// Unlike the on-device engines, `prepare` re-probes the runner each call
+    /// (cheap on localhost) so base-URL changes are picked up immediately;
+    /// the view model already avoids per-send calls via its ready check.
     func prepare(
         model: LocalModel,
         onProgress: @escaping @Sendable (ModelLoadProgress) -> Void
@@ -105,7 +108,10 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
             // Drain the (small) error body so the message names the real cause,
             // e.g. Ollama's "model 'x' not found".
             var data = Data()
-            for try await byte in bytes { data.append(byte) }
+            for try await byte in bytes {
+                data.append(byte)
+                if data.count >= 4_096 { break } // cap the diagnostic drain
+            }
             let detail = String(data: data, encoding: .utf8)?.prefix(300) ?? ""
             throw LocalChatEngineError.generationFailed("Local runner error (HTTP \(http.statusCode)): \(detail)")
         }
@@ -157,14 +163,15 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
         return nil
     }
 
-    /// Parses a complete (non-streaming) chat-completions body.
+    /// Parses a complete (non-streaming) chat-completions body. Delegates the
+    /// message-shape handling to `OpenAICompatibleProvider.extractText` so both
+    /// runner clients tolerate the same response dialects.
     static func messageText(fromResponseBody data: Data) throws -> String {
         guard
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let choices = json["choices"] as? [[String: Any]],
             let choice = choices.first,
-            let message = choice["message"] as? [String: Any],
-            let text = message["content"] as? String
+            let text = OpenAICompatibleProvider.extractText(from: choice)
         else {
             throw LocalChatEngineError.generationFailed("Unexpected response shape from the local runner.")
         }

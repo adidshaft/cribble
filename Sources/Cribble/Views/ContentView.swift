@@ -58,6 +58,8 @@ struct ContentView: View {
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.summarizeWithAIAction, summarizeWithAIAction)
+            .focusedSceneValue(\.explainSimplyWithAIAction, explainSimplyWithAIAction)
+            .focusedSceneValue(\.findRelatedWithAIAction, findRelatedWithAIAction)
             .focusedSceneValue(\.draftTodayWithAIAction, draftTodayWithAIAction)
             .focusedSceneValue(\.extractTasksWithAIAction, extractTasksWithAIAction)
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
@@ -180,6 +182,20 @@ struct ContentView: View {
         guard library.selectedDocument != nil else { return nil }
         return {
             ChatHUDController.shared.runBuiltInQuickAction(id: "summarize")
+        }
+    }
+
+    private var explainSimplyWithAIAction: (() -> Void)? {
+        guard library.selectedDocument != nil else { return nil }
+        return {
+            ChatHUDController.shared.runBuiltInQuickAction(id: "simplify")
+        }
+    }
+
+    private var findRelatedWithAIAction: (() -> Void)? {
+        guard library.selectedDocument != nil else { return nil }
+        return {
+            ChatHUDController.shared.runBuiltInQuickAction(id: "related")
         }
     }
 

@@ -20,6 +20,8 @@ A private assistant that reads your notes and runs **on your Mac** — no cloud,
 Open any note, then press **Command J** and ask. The model automatically sees the note you have open.
 For the most common case, choose **AI → Summarize Current Note** and Cribble
 opens the chat with the reviewed summary prompt ready to run.
+Choose **AI → Explain Current Note Simply** when you want a beginner-friendly
+version without thinking about prompt wording.
 
 > **Try it**
 > Stay on this note, open the chat, and ask: *"summarize this note in three bullets"* or *"what are the four things Cribble AI does?"*
@@ -42,6 +44,12 @@ This is **Pathfinder** — drag one note onto another in the sidebar, then choos
 ## Tag notes with @
 
 Inside the chat, type **@** and start a note's name. Pick from the list to attach it as context — its contents are sent to the model so answers are grounded in *your* notes, never invented.
+
+## Find the next thing to read
+
+Choose **AI → Find Related Notes** to open Cribble AI with a prompt that looks
+for useful connections from the note in front of you. It is handy when you are
+new to a folder and do not know the local vocabulary yet.
 
 ## Move it out of the way
 

@@ -15,6 +15,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.summarizeWithAIAction) private var summarizeWithAI
+    @FocusedValue(\.explainSimplyWithAIAction) private var explainSimplyWithAI
+    @FocusedValue(\.findRelatedWithAIAction) private var findRelatedWithAI
     @FocusedValue(\.draftTodayWithAIAction) private var draftTodayWithAI
     @FocusedValue(\.extractTasksWithAIAction) private var extractTasksWithAI
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
@@ -157,6 +159,12 @@ struct CribbleCommands: Commands {
             Button("Summarize Current Note", action: { summarizeWithAI?() })
                 .disabled(summarizeWithAI == nil)
 
+            Button("Explain Current Note Simply", action: { explainSimplyWithAI?() })
+                .disabled(explainSimplyWithAI == nil)
+
+            Button("Find Related Notes", action: { findRelatedWithAI?() })
+                .disabled(findRelatedWithAI == nil)
+
             Button("Draft Today with AI", action: { draftTodayWithAI?() })
                 .disabled(draftTodayWithAI == nil)
 
@@ -269,6 +277,14 @@ private struct RunAILinkingActionKey: FocusedValueKey {
 }
 
 private struct SummarizeWithAIActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ExplainSimplyWithAIActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct FindRelatedWithAIActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -441,6 +457,16 @@ extension FocusedValues {
     var summarizeWithAIAction: (() -> Void)? {
         get { self[SummarizeWithAIActionKey.self] }
         set { self[SummarizeWithAIActionKey.self] = newValue }
+    }
+
+    var explainSimplyWithAIAction: (() -> Void)? {
+        get { self[ExplainSimplyWithAIActionKey.self] }
+        set { self[ExplainSimplyWithAIActionKey.self] = newValue }
+    }
+
+    var findRelatedWithAIAction: (() -> Void)? {
+        get { self[FindRelatedWithAIActionKey.self] }
+        set { self[FindRelatedWithAIActionKey.self] = newValue }
     }
 
     var draftTodayWithAIAction: (() -> Void)? {

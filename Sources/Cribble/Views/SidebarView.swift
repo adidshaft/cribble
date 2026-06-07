@@ -23,13 +23,7 @@ struct SidebarView: View {
 
             if library.filteredNodes.isEmpty {
                 if semanticIndex.results.isEmpty {
-                    VStack {
-                        Spacer()
-                        ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
-                            .padding(.vertical, 24)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    emptyState
                 } else {
                     // No literal filename matches, but semantic matches exist —
                     // let the Related section above carry the result.
@@ -75,6 +69,31 @@ struct SidebarView: View {
                 }
             )
         }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack {
+            Spacer()
+            if library.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
+                    .padding(.vertical, 24)
+            } else {
+                ContentUnavailableView {
+                    Label("No Matches", systemImage: "magnifyingglass")
+                } description: {
+                    Text("No file names matched this search.")
+                } actions: {
+                    Button("Clear Search") {
+                        library.searchText = ""
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.vertical, 24)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Extracted from the `List` builder to keep the generic row expression

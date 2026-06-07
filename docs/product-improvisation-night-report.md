@@ -58,6 +58,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
+- Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
@@ -68,6 +69,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
 - Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
+- The in-reader shortcut popover now includes Find in Files, Import, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -143,6 +145,7 @@ swift test --filter DiagnosticsCenterTests
 swift test --filter 'NavigationHistoryTests|CribbleUITests'
 swift test --filter IntelligencePreflightTests
 swift test --filter CribbleUITests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -178,6 +181,7 @@ Latest pass:
 - Latest `swift test --filter 'NavigationHistoryTests|CribbleUITests'` passed on 2026-06-08 after stateful Mac menu actions: 15 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after extension runner handoff details: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after extension runner handoff UI wiring: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after search empty-state and shortcut-reference polish: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -75,14 +75,18 @@ private struct ShortcutReferencePopover: View {
         VStack(alignment: .leading, spacing: 12) {
             shortcutSection("App", rows: [
                 ("Command Left / Right", "Back / Forward"),
+                ("Command F", "Find in files"),
                 ("Command O", "Open folder"),
+                ("Command Shift I", "Import"),
                 ("Command R", "Refresh folder"),
                 ("Command Option E", "Open current file in your editor"),
+                ("Command Option Shift L", "Copy current note wiki link"),
                 ("Command Option O", "Toggle outline"),
                 ("Command Shift F", "Toggle Focus Mode"),
                 ("Command Option L", "AI Link Notes"),
                 ("Command Option I", "Project Intelligence"),
-                ("Command J", "Open Cribble AI chat")
+                ("Command J", "Open Cribble AI chat"),
+                ("Command Shift D", "Show diagnostics")
             ])
 
             Divider()
@@ -101,7 +105,7 @@ private struct ShortcutReferencePopover: View {
             ])
         }
         .padding(14)
-        .frame(width: 330)
+        .frame(width: 380)
     }
 
     private func shortcutSection(_ title: String, rows: [(String, String)]) -> some View {
@@ -115,7 +119,7 @@ private struct ShortcutReferencePopover: View {
                     Text(row.0)
                         .font(.caption.monospaced().weight(.semibold))
                         .foregroundStyle(.primary)
-                        .frame(width: 116, alignment: .leading)
+                        .frame(width: 148, alignment: .leading)
 
                     Text(row.1)
                         .font(.caption)

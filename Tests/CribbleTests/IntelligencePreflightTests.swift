@@ -28,6 +28,37 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(summary.detail.contains("may leave this Mac"))
     }
 
+    func testRemoteRunnerSummaryMatchesExtensionProfileByURLAndModel() {
+        let wrongModel = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.small",
+            title: "Small GPU",
+            baseURL: URL(string: "https://ai.example.com/v1")!,
+            modelID: "qwen3-14b",
+            embeddingModelID: nil,
+            trustLabel: "Wrong trust label",
+            sourceName: "Small Runner"
+        )
+        let rightModel = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.large",
+            title: "Large GPU",
+            baseURL: URL(string: "https://ai.example.com/v1")!,
+            modelID: "qwen3-32b",
+            embeddingModelID: nil,
+            trustLabel: "Approved large runner",
+            sourceName: "Large Runner"
+        )
+
+        let summary = IntelligencePreflightRunnerSummary.current(
+            runnerURL: "https://ai.example.com/v1",
+            modelID: "qwen3-32b",
+            onDeviceModelLabel: "Local",
+            extensionProfiles: [wrongModel, rightModel]
+        )
+
+        XCTAssertTrue(summary.detail.contains("Trust: Approved large runner"))
+        XCTAssertFalse(summary.detail.contains("Wrong trust label"))
+    }
+
     func testExtensionRunnerHandoffNamesTrustAndRevocationPath() {
         let profile = ExtensionIntelligenceProviderProfile(
             id: "com.example.runner.research-gpu",
@@ -62,5 +93,68 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertEqual(summary.title, "Local processing")
         XCTAssertTrue(summary.detail.contains("Qwen 3"))
         XCTAssertTrue(summary.detail.contains("app support cache"))
+    }
+
+    func testExtensionRunnerConsentStoreRequiresApprovalForRemoteProfiles() {
+        let suiteName = "ExtensionRunnerConsentStoreTests-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return XCTFail("Expected defaults suite")
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let profile = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.research-gpu",
+            title: "Research GPU",
+            baseURL: URL(string: "https://ai.example.com/v1")!,
+            modelID: "qwen3-32b",
+            embeddingModelID: nil,
+            trustLabel: "Team-controlled VPS",
+            sourceName: "Team Runner"
+        )
+        let changedModel = ExtensionIntelligenceProviderProfile(
+            id: profile.id,
+            title: profile.title,
+            baseURL: profile.baseURL,
+            modelID: "qwen3-14b",
+            embeddingModelID: nil,
+            trustLabel: profile.trustLabel,
+            sourceName: profile.sourceName
+        )
+        let store = ExtensionRunnerConsentStore(defaults: defaults)
+
+        XCTAssertFalse(store.hasApproved(profile))
+        store.approve(profile)
+        XCTAssertTrue(store.hasApproved(profile))
+        XCTAssertFalse(store.hasApproved(changedModel))
+        XCTAssertNil(store.requiredApprovalProfile(
+            runnerURL: profile.baseURL.absoluteString,
+            modelID: profile.modelID,
+            profiles: [profile]
+        ))
+        XCTAssertEqual(store.requiredApprovalProfile(
+            runnerURL: changedModel.baseURL.absoluteString,
+            modelID: changedModel.modelID,
+            profiles: [changedModel]
+        ), changedModel)
+    }
+
+    func testExtensionRunnerConsentStoreApprovesLoopbackProfiles() {
+        let suiteName = "ExtensionRunnerLoopbackConsentStoreTests-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return XCTFail("Expected defaults suite")
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let profile = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.local",
+            title: "Local Runner",
+            baseURL: URL(string: "http://127.0.0.1:11434/v1")!,
+            modelID: "llama3.2",
+            embeddingModelID: nil,
+            trustLabel: "Local runner",
+            sourceName: "Local Runner Extension"
+        )
+
+        XCTAssertTrue(ExtensionRunnerConsentStore(defaults: defaults).hasApproved(profile))
     }
 }

@@ -119,7 +119,11 @@ struct IntelligencePreflightRunnerSummary: Equatable {
             )
         }
 
-        let profile = extensionProfiles.first { $0.baseURL.absoluteString == runnerURL }
+        let profile = ExtensionIntelligenceProviderProfile.matching(
+            runnerURL: runnerURL,
+            modelID: modelID,
+            profiles: extensionProfiles
+        )
         let isRemote = !Self.isLoopback(host)
         if isRemote {
             let trust = profile?.trustLabel ?? profile?.sourceName ?? "Custom runner"

@@ -21,6 +21,17 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
         isLoopback ? "Local runner" : "Remote runner"
     }
 
+    var consentKey: String {
+        [
+            id,
+            sourceName,
+            baseURL.absoluteString,
+            modelID
+        ]
+        .joined(separator: "|")
+        .lowercased()
+    }
+
     var handoffSummary: String {
         var lines = [
             "Runner: \(title)",
@@ -36,6 +47,57 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
             lines.insert("Embeddings: \(embeddingModelID)", after: "Model: \(modelID)")
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+struct ExtensionRunnerConsentStore {
+    private let defaults: UserDefaults
+    private let key: String
+
+    init(defaults: UserDefaults = .standard, key: String = "intelligence.extensionRunnerConsents") {
+        self.defaults = defaults
+        self.key = key
+    }
+
+    func hasApproved(_ profile: ExtensionIntelligenceProviderProfile) -> Bool {
+        guard !profile.isLoopback else { return true }
+        return Set(defaults.stringArray(forKey: key) ?? []).contains(profile.consentKey)
+    }
+
+    func approve(_ profile: ExtensionIntelligenceProviderProfile) {
+        var approved = Set(defaults.stringArray(forKey: key) ?? [])
+        approved.insert(profile.consentKey)
+        defaults.set(Array(approved).sorted(), forKey: key)
+    }
+
+    func requiredApprovalProfile(
+        runnerURL: String?,
+        modelID: String,
+        profiles: [ExtensionIntelligenceProviderProfile]
+    ) -> ExtensionIntelligenceProviderProfile? {
+        guard let profile = ExtensionIntelligenceProviderProfile.matching(
+            runnerURL: runnerURL,
+            modelID: modelID,
+            profiles: profiles
+        ), !hasApproved(profile) else {
+            return nil
+        }
+        return profile
+    }
+}
+
+extension ExtensionIntelligenceProviderProfile {
+    static func matching(
+        runnerURL: String?,
+        modelID: String,
+        profiles: [ExtensionIntelligenceProviderProfile]
+    ) -> ExtensionIntelligenceProviderProfile? {
+        guard let runnerURL else { return nil }
+        let trimmedModel = modelID.trimmingCharacters(in: .whitespacesAndNewlines)
+        return profiles.first {
+            $0.baseURL.absoluteString == runnerURL
+                && $0.modelID.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedModel
+        }
     }
 }
 

@@ -61,7 +61,7 @@ struct ModelPickerList: View {
             }
 
             Divider().padding(.vertical, 4)
-            Text("On-device models download once (~1–3 GB); tap ↓ to download. Cloud models (Claude/Codex) use the sessions already logged in your Terminal.")
+            Text("On-device models download once and keep notes on this Mac. Cloud models (Claude/Codex) send note context through sessions already logged in your Terminal.")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -125,6 +125,10 @@ private struct ModelRow: View {
                         Text(subtitle)
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
+                        Text(model.dataBoundaryLabel)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary.opacity(0.82))
+                            .lineLimit(2)
                     }
                     Spacer(minLength: 8)
                 }
@@ -138,6 +142,7 @@ private struct ModelRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(hovered ? Color.primary.opacity(0.06) : .clear, in: RoundedRectangle(cornerRadius: 7))
+        .help(model.dataBoundaryLabel)
         .onHover { hovered = $0 }
     }
 

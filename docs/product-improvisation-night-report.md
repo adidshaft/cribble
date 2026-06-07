@@ -90,6 +90,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The first-run Cribble AI engine chooser now shows a data-boundary line for
   every option, distinguishing on-Mac models from Claude/Codex CLI choices that
   send note context through the user's signed-in command-line tool.
+- The regular Chat HUD model picker now keeps that boundary visible in each
+  model row and tooltip, so users see local-vs-CLI context even after first-run
+  onboarding is dismissed.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
 - Missing wiki-link recovery now creates notes through the same review/apply sheet instead of writing directly, while existing targets still open immediately.
@@ -478,6 +481,9 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
   adding first-run engine chooser data-boundary labels for local and cloud CLI
   choices: 40 XCTest tests, 0 failures.
+- Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
+  carrying the same data-boundary copy into the regular Chat HUD model picker:
+  40 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.

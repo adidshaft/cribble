@@ -4,6 +4,34 @@ enum RemoteRunnerDataBoundary {
     static let detail = "Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner."
 }
 
+enum RemoteRunnerSetupReview {
+    static let markdown = """
+    # Remote Runner Setup Review
+
+    Runner name:
+    Endpoint:
+    Model:
+    Embeddings:
+    Trust label:
+
+    Context boundary:
+    \(RemoteRunnerDataBoundary.detail)
+
+    API key:
+    Store credentials in Keychain. Do not put secrets in manifests, notes, examples, fixtures, or docs.
+
+    Approval checklist:
+    - Endpoint is controlled by the user, team, or trusted vendor.
+    - Retention policy, logging, and access controls are understood before use.
+    - Requested note context is appropriate for this runner.
+    - Secrets stay out of manifests and notes; use Keychain only.
+    - Disable path is understood before approval.
+
+    Disable/revoke:
+    Choose a different runner, clear the API key, or disable/remove the contributing extension in Settings.
+    """
+}
+
 struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
     let id: String
     let title: String

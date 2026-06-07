@@ -572,6 +572,10 @@ Latest pass:
 - The first-run checklist, DemoNotes home, and Team Extension Kit now teach the
   Help > Copy Extension Proposal route alongside Settings > Extensions > Copy
   Proposal, keeping onboarding aligned with the native command.
+- Help now includes Copy Remote Runner Setup Review, a generic VPS/team-runner
+  approval template covering endpoint/model/trust, data boundary, Keychain-only
+  secrets, retention/logging/access-control review, and revoke paths before a
+  runner is configured.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
@@ -579,6 +583,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching contributor docs and the Team Extension Kit to use File > Import > Copy Review for importer proposals: 1 XCTest test, 0 failures. A docs search confirmed Copy Review, user-selected files, previewed writes, native SwiftUI, and clean-disable language across the contributor surfaces.
 - Latest `swift test --filter ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract` passed on 2026-06-08 after adding the Help > Copy Extension Proposal command: 1 Swift Testing test, 0 failures. A source search confirmed the focused command, Help menu item, pasteboard action, and shared proposal template wiring.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after aligning DemoNotes and the first-run checklist with Help > Copy Extension Proposal: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation` passed on 2026-06-08 after adding Help > Copy Remote Runner Setup Review: 1 XCTest test, 0 failures. A source search confirmed the focused command, Help menu item, pasteboard action, data-boundary wording, Keychain-secret guidance, and retention/logging/access-control review prompt.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -107,6 +107,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)
             .focusedSceneValue(\.copyExtensionProposalAction, copyExtensionProposal)
+            .focusedSceneValue(\.copyRemoteRunnerSetupReviewAction, copyRemoteRunnerSetupReview)
             .focusedSceneValue(\.copyStarterChecklistAction, copyStarterChecklist)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
     }
@@ -115,6 +116,12 @@ struct ContentView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(ExtensionProposalTemplate.markdown, forType: .string)
         library.statusMessage = "Copied extension proposal template"
+    }
+
+    private func copyRemoteRunnerSetupReview() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(RemoteRunnerSetupReview.markdown, forType: .string)
+        library.statusMessage = "Copied remote runner setup review"
     }
 
     private func copyStarterChecklist() {

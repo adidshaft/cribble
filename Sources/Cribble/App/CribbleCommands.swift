@@ -43,6 +43,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
     @FocusedValue(\.openExtensionSettingsAction) private var openExtensionSettings
     @FocusedValue(\.copyExtensionProposalAction) private var copyExtensionProposal
+    @FocusedValue(\.copyRemoteRunnerSetupReviewAction) private var copyRemoteRunnerSetupReview
     @FocusedValue(\.copyStarterChecklistAction) private var copyStarterChecklist
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
@@ -224,6 +225,9 @@ struct CribbleCommands: Commands {
 
             Button("Copy Extension Proposal", action: { copyExtensionProposal?() })
                 .disabled(copyExtensionProposal == nil)
+
+            Button("Copy Remote Runner Setup Review", action: { copyRemoteRunnerSetupReview?() })
+                .disabled(copyRemoteRunnerSetupReview == nil)
 
             Button("Copy Starter Checklist", action: { copyStarterChecklist?() })
                 .disabled(copyStarterChecklist == nil)
@@ -420,6 +424,10 @@ private struct OpenExtensionSettingsActionKey: FocusedValueKey {
 }
 
 private struct CopyExtensionProposalActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopyRemoteRunnerSetupReviewActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -652,6 +660,11 @@ extension FocusedValues {
     var copyExtensionProposalAction: (() -> Void)? {
         get { self[CopyExtensionProposalActionKey.self] }
         set { self[CopyExtensionProposalActionKey.self] = newValue }
+    }
+
+    var copyRemoteRunnerSetupReviewAction: (() -> Void)? {
+        get { self[CopyRemoteRunnerSetupReviewActionKey.self] }
+        set { self[CopyRemoteRunnerSetupReviewActionKey.self] = newValue }
     }
 
     var copyStarterChecklistAction: (() -> Void)? {

@@ -89,6 +89,21 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(handoff.contains("Disable/revoke"))
     }
 
+    func testRemoteRunnerSetupReviewNamesConsentAndRevocation() {
+        let review = RemoteRunnerSetupReview.markdown
+
+        XCTAssertTrue(review.contains("Remote Runner Setup Review"))
+        XCTAssertTrue(review.contains("Endpoint:"))
+        XCTAssertTrue(review.contains("Model:"))
+        XCTAssertTrue(review.contains("Trust label:"))
+        XCTAssertTrue(review.contains(RemoteRunnerDataBoundary.detail))
+        XCTAssertTrue(review.contains("Store credentials in Keychain"))
+        XCTAssertTrue(review.contains("Do not put secrets in manifests"))
+        XCTAssertTrue(review.contains("Endpoint is controlled by the user, team, or trusted vendor."))
+        XCTAssertTrue(review.contains("Retention policy, logging, and access controls"))
+        XCTAssertTrue(review.contains("Disable/revoke"))
+    }
+
     func testExtensionRunnerConsentReviewSummaryNamesApprovalDetails() {
         let profile = ExtensionIntelligenceProviderProfile(
             id: "com.example.runner.research-gpu",

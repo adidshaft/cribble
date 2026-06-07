@@ -23,6 +23,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Research Review]] | Evidence-first workflow for claims, decisions, and source trails | 4 min |
 | [[Decision Log]] | Lightweight decision records, rationale, and follow-up tasks | 3 min |
 | [[Team Extension Kit]] | Shared plugin conventions, review checklist, and remote runner policy | 4 min |
+| [[Extension Contribution Guide]] | Open-source extension PR rules and native-first guardrails | 3 min |
 | [[Extensions and Remote Intelligence]] | Plugin manifests, trusted runners, renderer aliases, import lanes | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
 
@@ -92,6 +93,7 @@ changes in this demo copy only.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Use **Help → Copy Research Review Template**, then open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
+- [ ] Use **Help → Open Extension Contribution Guide** before proposing an extension PR.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.

@@ -2456,6 +2456,7 @@ enum WelcomeStarterChecklist {
     - [ ] Use **Help -> Copy Research Review Template** for evidence-heavy work.
     - [ ] Use **Help -> Copy Decision Entry Template** when a decision should survive the week.
     - [ ] Open [[Team Extension Kit]] before designing an extension.
+    - [ ] Use **Help -> Open Extension Contribution Guide** before proposing an extension PR.
     - [ ] Use **Help -> Copy Extension Proposal** or **Settings -> Extensions -> Copy Proposal** for new extension ideas.
     - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.
     - [ ] Use **Help -> Copy Remote Runner Setup Review** before using a VPS or remote runner.

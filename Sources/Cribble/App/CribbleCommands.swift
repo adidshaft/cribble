@@ -41,6 +41,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openResearchReviewAction) private var openResearchReview
     @FocusedValue(\.openDecisionLogGuideAction) private var openDecisionLogGuide
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
+    @FocusedValue(\.openExtensionContributionGuideAction) private var openExtensionContributionGuide
     @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
     @FocusedValue(\.openExtensionSettingsAction) private var openExtensionSettings
     @FocusedValue(\.copyExtensionProposalAction) private var copyExtensionProposal
@@ -222,6 +223,9 @@ struct CribbleCommands: Commands {
 
             Button("Open Team Extension Kit", action: { openTeamExtensionKit?() })
                 .disabled(openTeamExtensionKit == nil)
+
+            Button("Open Extension Contribution Guide", action: { openExtensionContributionGuide?() })
+                .disabled(openExtensionContributionGuide == nil)
 
             Button("Open Remote Intelligence Guide", action: { openRemoteIntelligenceGuide?() })
                 .disabled(openRemoteIntelligenceGuide == nil)
@@ -428,6 +432,10 @@ private struct OpenDecisionLogGuideActionKey: FocusedValueKey {
 }
 
 private struct OpenTeamExtensionKitActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenExtensionContributionGuideActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -674,6 +682,11 @@ extension FocusedValues {
     var openTeamExtensionKitAction: (() -> Void)? {
         get { self[OpenTeamExtensionKitActionKey.self] }
         set { self[OpenTeamExtensionKitActionKey.self] = newValue }
+    }
+
+    var openExtensionContributionGuideAction: (() -> Void)? {
+        get { self[OpenExtensionContributionGuideActionKey.self] }
+        set { self[OpenExtensionContributionGuideActionKey.self] = newValue }
     }
 
     var openRemoteIntelligenceGuideAction: (() -> Void)? {

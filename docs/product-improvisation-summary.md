@@ -59,6 +59,8 @@ The extension path is intentionally strict:
 - `docs/extension-contributions.md` is the standalone contributor on-ramp:
   ideas stay open, while first PRs must be read-only, least-access,
   least-writing, no-hidden-execution, cleanly disableable, and native SwiftUI.
+- DemoNotes and Help expose an in-app Extension Contribution Guide so the same
+  contributor rules are discoverable without leaving Cribble.
 
 ## What Was Verified
 
@@ -72,6 +74,7 @@ Focused validation passed across the newest work:
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
 - Open-source extension contribution guide links and strict first-PR rules.
+- Bundled Extension Contribution Guide note and native Help entry.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics that distinguish local runners from remote runners before asking

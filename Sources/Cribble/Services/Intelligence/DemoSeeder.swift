@@ -57,6 +57,7 @@ enum DemoSeeder {
     | Research Review.md | Evidence-heavy review | Claims, source trails, review quick actions |
     | Decision Log.md | Team decisions | Rationale, evidence, follow-up tasks, review boundaries |
     | Team Extension Kit.md | Team plugin conventions | Manifest layout, review checklist, remote-runner policy |
+    | Extension Contribution Guide.md | Open-source extension PR rules | Read-only first, least access, native SwiftUI |
     | Extensions and Remote Intelligence.md | Extension and VPS path | Declarative plugins, trusted runners, importer/renderer lanes |
     | Markdown Showcase.md | Rendering reference | LaTeX equations, Mermaid diagrams, task lists |
 
@@ -64,15 +65,16 @@ enum DemoSeeder {
 
     - **README** routes beginners into **Getting Started** and power users into
       **Workflow Playbook**, **Research Review**, **Decision Log**, and
-      **Team Extension Kit**.
+      **Team Extension Kit**, and **Extension Contribution Guide**.
     - **Tasks and Intelligence** bridges everyday checkboxes into Project Intelligence.
-    - **Extensions and Remote Intelligence** and **Team Extension Kit** form the plugin
-      path: safe manifests first, trusted remote runners when teams need more compute.
+    - **Extensions and Remote Intelligence**, **Team Extension Kit**, and
+      **Extension Contribution Guide** form the plugin path: safe manifests first,
+      contributor rules, and trusted remote runners when teams need more compute.
     - **Markdown Showcase** remains the rendering reference that other notes point to.
 
     ## Statistics
 
-    - 11 tour documents covering beginner, research, team, decision, and power-user paths
+    - 12 tour documents covering beginner, research, team, contributor, decision, and power-user paths
     - Extension lanes: quick actions, intelligence providers, renderers, and importers
     - Remote runner guidance includes endpoint ownership, native approval, Keychain secrets, and revocation
     """
@@ -92,6 +94,7 @@ enum DemoSeeder {
         Home --> RR["Research Review"]
         Home --> DL["Decision Log"]
         Home --> TEK["Team Extension Kit"]
+        TEK --> ECG["Extension Contribution Guide"]
         Home --> ERI["Extensions and Remote Intelligence"]
         Home --> MS["Markdown Showcase"]
 
@@ -119,7 +122,8 @@ enum DemoSeeder {
       for evidence-heavy folders.
     - **Decision Log** gives teams a low-friction way to preserve rationale,
       owners, evidence, and follow-up tasks in plain Markdown.
-    - Extension onboarding has two layers: **Team Extension Kit** for team policy and
+    - Extension onboarding has three layers: **Team Extension Kit** for team policy,
+      **Extension Contribution Guide** for open-source PR rules, and
       **Extensions and Remote Intelligence** for copy-ready manifests and trusted runners.
     - **Tasks and Intelligence** connects everyday checkbox capture to broader folder
       analysis, making Project Intelligence feel useful beyond code repositories.
@@ -135,7 +139,7 @@ enum DemoSeeder {
     | Project Intelligence | ✅ | Preflight, Ask, artifacts, and source trails |
     | Research review | ✅ | Claims, evidence, and follow-up actions |
     | Decision records | ✅ | Decision Log template and example |
-    | Extension framework | ✅ | Team Extension Kit and Extensions and Remote Intelligence |
+    | Extension framework | ✅ | Team Extension Kit, Extension Contribution Guide, and Extensions and Remote Intelligence |
     | Remote runner trust | ✅ | Approval sheet, handoff checklist, Keychain guidance, revocation |
     | Markdown rendering | ✅ | Markdown Showcase |
     """

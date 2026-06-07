@@ -880,6 +880,7 @@ final class CribbleUITests: XCTestCase {
             "Research Review.md",
             "Decision Log.md",
             "Team Extension Kit.md",
+            "Extension Contribution Guide.md",
             "Extensions and Remote Intelligence.md"
         ]
 
@@ -923,6 +924,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("Help → Copy Extension Proposal"))
         XCTAssertTrue(home.contains("Help → Copy Research Review Template"))
         XCTAssertTrue(home.contains("Help → Copy Decision Entry Template"))
+        XCTAssertTrue(home.contains("Help → Open Extension Contribution Guide"))
         XCTAssertTrue(home.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(home.contains("[[Decision Log]]"))
         XCTAssertFalse(home.contains("No cloud, no account"))
@@ -958,6 +960,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(teamKit.contains("Help → Copy Extension Proposal"))
         XCTAssertTrue(teamKit.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
+        XCTAssertTrue(teamKit.contains("[[Extension Contribution Guide]]"))
+        XCTAssertTrue(teamKit.contains("Help → Open Extension Contribution Guide"))
         XCTAssertTrue(teamKit.contains("docs/extension-contributions.md"))
         XCTAssertTrue(teamKit.contains("read-only first, least reading, least writing"))
         XCTAssertTrue(teamKit.contains("hard native SwiftUI surfaces"))
@@ -965,6 +969,15 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(teamKit.contains("Executable plugins need a separate readiness review"))
         XCTAssertTrue(teamKit.contains("process isolation"))
         XCTAssertTrue(teamKit.contains("native SwiftUI surfaces"))
+
+        let contributionGuide = try String(contentsOf: demoRoot.appendingPathComponent("Extension Contribution Guide.md"), encoding: .utf8)
+        XCTAssertTrue(contributionGuide.contains("Ideas should be open and ambitious"))
+        XCTAssertTrue(contributionGuide.contains("Read-only first"))
+        XCTAssertTrue(contributionGuide.contains("Least writing"))
+        XCTAssertTrue(contributionGuide.contains("Hard native SwiftUI"))
+        XCTAssertTrue(contributionGuide.contains("No hidden execution"))
+        XCTAssertTrue(contributionGuide.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(contributionGuide.contains("signed bundle identity"))
 
         let researchReview = try String(contentsOf: demoRoot.appendingPathComponent("Research Review.md"), encoding: .utf8)
         XCTAssertTrue(researchReview.contains("Help → Copy Research Review Template"))
@@ -1002,6 +1015,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("Help -> Copy Research Review Template"))
         XCTAssertTrue(checklist.contains("Help -> Copy Decision Entry Template"))
         XCTAssertTrue(checklist.contains("[[Team Extension Kit]]"))
+        XCTAssertTrue(checklist.contains("Help -> Open Extension Contribution Guide"))
         XCTAssertTrue(checklist.contains("Help -> Copy Extension Proposal"))
         XCTAssertTrue(checklist.contains("Copy Proposal"))
         XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))

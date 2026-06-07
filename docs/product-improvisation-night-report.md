@@ -602,6 +602,9 @@ Latest pass:
   read-only, least-reading, least-writing, no-hidden-execution, cleanly
   disableable, Keychain-safe, and hard native SwiftUI. README, CONTRIBUTING,
   docs index, the manifest reference, and Team Extension Kit all point to it.
+- Help now includes Open Extension Contribution Guide, backed by a bundled
+  DemoNotes note and refreshed seeded demo intelligence, so contributors can
+  review read-only, least-writing, hard-native-SwiftUI rules inside the app.
 - `docs/extensions.md` now defines executable-plugin readiness gates: signed
   bundle identity, process isolation, Cribble-mediated permissions, native
   consent, previewed writes, Keychain-only secrets, revocation, audit trails, and
@@ -624,6 +627,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testDecisionLogTemplateNamesReviewBoundary'` passed on 2026-06-08 after adding Help > Copy Decision Entry Template and the shared Decision Log template: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testResearchReviewTemplateNamesEvidenceAndBoundaries'` passed on 2026-06-08 after adding Help > Copy Research Review Template and the shared Research Review template: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding the standalone open-source extension contribution guide and Team Extension Kit links: 1 XCTest test and 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the bundled Extension Contribution Guide and Help menu route: 4 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

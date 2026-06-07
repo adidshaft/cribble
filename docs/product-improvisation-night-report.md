@@ -67,6 +67,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings now turns the no-extension empty state into direct actions for creating a read-only quick action, creating a project-local example, or opening the Team Extension Kit.
 - The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
+- The public guide and Team Extension Kit now ask contributors to open with an idea-first proposal: audience, repeated workflow, first read-only surface, data access, network/write needs, and the native SwiftUI review point.
 - The GitHub pull request template now includes an extension/plugin review section for read scope, writes, network, secrets, disable behavior, native SwiftUI UI, and focused tests/docs.
 - Copied extension and import-lane review summaries now include the same contributor safety contract, so PRs and team approvals carry read-only-first, least-read/write, Keychain-only secrets, clean-disable, and native SwiftUI expectations without hunting through docs.
 - Extension manifest loading now rejects secret-looking JSON keys and values before decoding, so ignored unknown fields cannot smuggle API keys, bearer tokens, passwords, private keys, authorization headers, or token query strings into `cribble-extension.json`.
@@ -292,6 +293,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionRegistryTests|CribbleUITests'` passed on 2026-06-08 after Settings Remote Guide entry point: 18 XCTest tests and 11 Swift Testing tests, 0 failures.
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash-command discovery and alias ranking: 36 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after welcome-screen folder shortcuts: 20 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after idea-first extension contribution guidance: 23 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

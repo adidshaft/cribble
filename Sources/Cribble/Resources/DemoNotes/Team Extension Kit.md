@@ -75,6 +75,19 @@ Open `docs/extensions.md` before proposing a new extension surface. First PRs
 should prove value with a declarative manifest, native SwiftUI affordance, or
 validation improvement before any runtime work.
 
+## Idea first, runtime later
+
+When proposing a new plugin or extension, start with the idea rather than code:
+
+- who would use it;
+- which repeated folder workflow it improves;
+- what the first read-only version would show in Cribble;
+- what it needs to read, write, or send over the network;
+- which native SwiftUI surface people review before anything changes.
+
+Good ideas can be ambitious. The first version should still be small enough to
+disable cleanly, inspect in Settings, and explain to a non-technical reader.
+
 ## Remote runner policy
 
 Remote intelligence can be excellent when it is intentional. Use it for a large

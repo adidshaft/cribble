@@ -303,6 +303,14 @@ strict because extensions sit close to people's notes. Contributors should feel
 free to propose ambitious workflows, while implementation should start from the
 smallest native, reviewable surface that proves the value.
 
+Start with an idea before a runtime. A good proposal should explain:
+
+- who the extension helps;
+- which repeated workflow it makes smoother;
+- what the first read-only version would expose in Cribble;
+- what data it needs to read, write, or send over the network;
+- what native SwiftUI surface users would review before anything changes.
+
 Default rules for extension pull requests:
 
 - **Read-only first.** New extension capabilities should start as manifest

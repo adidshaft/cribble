@@ -445,6 +445,15 @@ private struct SidebarControls: View {
             }
 
             sidebarIconButton(
+                title: "Today",
+                systemImage: "calendar.badge.plus",
+                disabled: !library.hasFolders,
+                help: "Open or create today's Markdown note"
+            ) {
+                library.openTodayNote()
+            }
+
+            sidebarIconButton(
                 title: "Refresh",
                 systemImage: "arrow.clockwise",
                 disabled: !library.hasFolders,

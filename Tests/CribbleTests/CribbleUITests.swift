@@ -825,6 +825,59 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Created Untitled 2.md")
     }
 
+    func testTodayNoteProposalUsesReviewFlowAndNestedDailyFolder() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TodayNote-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 6, day: 8)))
+        store.openTodayNote(date: date, calendar: calendar)
+
+        let pending = try XCTUnwrap(store.pendingDiff)
+        XCTAssertEqual(pending.files.first?.oldPath, "/dev/null")
+        XCTAssertEqual(pending.files.first?.newPath, "Daily/2026-06-08.md")
+        XCTAssertEqual(store.statusMessage, "Review today's note")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: rootURL.appendingPathComponent("Daily/2026-06-08.md").path))
+
+        store.applyPendingDiff()
+        await store.waitForLoadToComplete()
+
+        let createdURL = rootURL.appendingPathComponent("Daily/2026-06-08.md")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: createdURL.path))
+        XCTAssertEqual(try String(contentsOf: createdURL, encoding: .utf8), "# 2026-06-08\n\n## Notes\n")
+        XCTAssertEqual(store.statusMessage, "Created Daily/2026-06-08.md")
+    }
+
+    func testTodayNoteOpensExistingDailyNote() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TodayExisting-\(UUID().uuidString)", isDirectory: true)
+        let dailyURL = rootURL.appendingPathComponent("Daily", isDirectory: true)
+        try FileManager.default.createDirectory(at: dailyURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = dailyURL.appendingPathComponent("2026-06-08.md")
+        try "# Existing Today\n".write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        let calendar = Calendar(identifier: .gregorian)
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 6, day: 8)))
+        store.openTodayNote(date: date, calendar: calendar)
+
+        XCTAssertNil(store.pendingDiff)
+        XCTAssertEqual(store.selectedURL?.standardizedFileURL, noteURL.standardizedFileURL)
+        XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, noteURL.standardizedFileURL)
+        XCTAssertEqual(store.statusMessage, "Opened Today")
+    }
+
     func testTaskExternalExportStatusNamesTasksAndDestination() {
         XCTAssertEqual(
             TaskTrackerStatus.externalExportMessage(target: .reminders, addedToTasks: true),

@@ -77,6 +77,7 @@ private struct ShortcutReferencePopover: View {
                 ("Command Left / Right", "Back / Forward"),
                 ("Command F", "Find in files"),
                 ("Command N", "New note"),
+                ("Command Shift N", "Open today's note"),
                 ("Command O", "Open folder"),
                 ("Command Shift I", "Import"),
                 ("Command R", "Refresh folder"),
@@ -2236,6 +2237,15 @@ private struct WelcomeView: View {
                     .controlSize(.large)
                     .cribbleGlassButton()
                     .help("Create a new Markdown note through the review flow")
+
+                    Button {
+                        library.openTodayNote()
+                    } label: {
+                        Label("Today", systemImage: "calendar.badge.plus")
+                    }
+                    .controlSize(.large)
+                    .cribbleGlassButton()
+                    .help("Open or create today's Markdown note")
                 }
             }
 

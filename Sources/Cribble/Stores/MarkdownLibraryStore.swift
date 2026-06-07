@@ -299,6 +299,32 @@ final class MarkdownLibraryStore: ObservableObject {
         }
     }
 
+    func openTodayNote(date: Date = Date(), calendar: Calendar = .current) {
+        guard let root = activeRootURL else {
+            errorMessage = "Open a folder before opening today's note."
+            return
+        }
+
+        let title = Self.dailyNoteTitle(for: date, calendar: calendar)
+        let relativePath = "Daily/\(title).md"
+        let noteURL = root.appendingPathComponent(relativePath).standardizedFileURL
+
+        if FileManager.default.fileExists(atPath: noteURL.path) {
+            select(url: noteURL)
+            statusMessage = "Opened Today"
+            return
+        }
+
+        presentNewNoteProposal(
+            fileName: relativePath,
+            content: "# \(title)\n\n## Notes",
+            rootURL: root
+        )
+        if pendingDiff != nil {
+            statusMessage = "Review today's note"
+        }
+    }
+
     func openRootLanding(_ rootURL: URL, sortMode: FileSortMode) {
         let standardized = rootURL.standardizedFileURL
         if !rootURLs.contains(standardized) {
@@ -1279,20 +1305,54 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     private func uniqueRelativeFileName(for fileName: String, in root: URL) -> String {
-        let sanitized = fileName
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
-        let nsName = sanitized as NSString
+        let sanitized = Self.sanitizedRelativeMarkdownPath(fileName)
+        let nsPath = sanitized as NSString
+        let directory = nsPath.deletingLastPathComponent
+        let baseName = nsPath.lastPathComponent
+        let nsName = baseName as NSString
         let ext = nsName.pathExtension.isEmpty ? "md" : nsName.pathExtension
         let base = nsName.deletingPathExtension
 
-        var candidate = "\(base).\(ext)"
+        var candidateName = "\(base).\(ext)"
+        var candidate = Self.joinRelativePath(directory: directory, fileName: candidateName)
         var counter = 2
         while FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path) {
-            candidate = "\(base) \(counter).\(ext)"
+            candidateName = "\(base) \(counter).\(ext)"
+            candidate = Self.joinRelativePath(directory: directory, fileName: candidateName)
             counter += 1
         }
         return candidate
+    }
+
+    private static func sanitizedRelativeMarkdownPath(_ path: String) -> String {
+        var components = path
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .map(String.init)
+            .filter { component in
+                component != "." && component != ".."
+            }
+            .map { component in
+                component.replacingOccurrences(of: ":", with: "-")
+            }
+        if components.isEmpty {
+            components = ["Untitled.md"]
+        }
+        return components.joined(separator: "/")
+    }
+
+    private static func joinRelativePath(directory: String, fileName: String) -> String {
+        guard !directory.isEmpty, directory != "." else { return fileName }
+        return "\(directory)/\(fileName)"
+    }
+
+    private static func dailyNoteTitle(for date: Date, calendar: Calendar) -> String {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(
+            format: "%04d-%02d-%02d",
+            components.year ?? 0,
+            components.month ?? 1,
+            components.day ?? 1
+        )
     }
 
     func folderURLForAI(mode: AIMode) -> URL? {
@@ -1810,7 +1870,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.4.1"
+    private static let bundledDemoNotesVersion = "1.4.2"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

@@ -34,6 +34,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 ## Focus, outline & folders
 
 - **Command N** proposes a new `Untitled.md` note. Review it before Cribble writes anything.
+- **Command Shift N** opens or proposes today's note in `Daily/YYYY-MM-DD.md`.
 - **Command Shift F** toggles Focus Mode (hides the sidebar for distraction-free reading).
 - **Command Option O** toggles the headings outline.
 - **Command O** opens a folder, and **Command R** refreshes it.
@@ -50,6 +51,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `Esc` | Exit highlight mode · close a zoom overlay |
 | `⌘ ←` / `⌘ →` | Back · Forward |
 | `⌘ N` | New note |
+| `⌘ ⇧ N` | Open today's note |
 | `⌘ ⌥ O` | Toggle outline |
 | `⌘ ⇧ F` | Toggle Focus Mode |
 | `⌘ O` / `⌘ R` | Open folder · Refresh |

@@ -1,6 +1,6 @@
 # Product Improvisation Night Report
 
-Date: 2026-06-07
+Date: 2026-06-08
 Branch: `codex/product-improvisation-night`
 
 ## What changed
@@ -34,6 +34,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
+- File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
+- The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -84,18 +86,20 @@ Ran:
 swift test --filter ExtensionManifestTests
 swift test --filter 'Extension|RunnerCredentialStoreTests'
 swift test
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
 
 - `swift test` passed on 2026-06-08: 177 XCTest tests, 0 failures.
 - The Swift Testing extension/credential suites also passed: 22 tests across manifest, registry, and runner credential coverage.
+- `swift test --filter CribbleUITests` passed on 2026-06-08: 11 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-2. Add a small signed-extension trust model before any executable plugin surface.
+2. Turn the documented executable-plugin trust model into enforced signed bundle verification before enabling any code execution.
 3. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

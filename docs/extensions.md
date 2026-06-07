@@ -81,6 +81,29 @@ Optional fields:
 `entrypoint` is intentionally unused for API v1. Manifests that request
 `"runtime": "executable"` are rejected.
 
+## Trust Model For Future Executable Plugins
+
+Cribble's extension system starts with declarative manifests because those are
+inspectable, reversible, and easy to keep local-first. Executable plugins should
+not be added until the product can make trust visible and enforceable.
+
+Before Cribble accepts `"runtime": "executable"`, the plugin surface should
+require:
+
+- signed plugin bundles with a stable developer identity;
+- a first-run consent sheet that names the plugin, developer, requested
+  permissions, network destinations, and note-folder access;
+- a sandboxed process boundary instead of loading third-party code into the app;
+- per-permission enforcement, including separate approval for file writes,
+  project-wide reads, network access, and remote intelligence calls;
+- Keychain-only secret storage, with no secrets in manifests or plugin folders;
+- a revocation path in Settings that disables the plugin, clears cached trust,
+  and stops background work;
+- a visible audit log for file edits, remote calls, and generated artifacts.
+
+API v1 validates the shape of `entrypoint` paths so manifests can evolve without
+breaking compatibility, but executable entrypoints are not launched.
+
 ## Kinds
 
 ### Quick Action

@@ -30,7 +30,7 @@ struct ContentView: View {
     private var sceneConfiguredContent: some View {
         alertContent
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
-            .focusedSceneValue(\.importFileAction, { library.chooseImportFile(capabilities: extensionRegistry.importerCapabilities) })
+            .focusedSceneValue(\.importFileAction, importFileAction)
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
@@ -68,6 +68,12 @@ struct ContentView: View {
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
             .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
+    }
+
+    private var importFileAction: (() -> Void)? {
+        let capabilities = extensionRegistry.importerCapabilities
+        guard !capabilities.isEmpty else { return nil }
+        return { library.chooseImportFile(capabilities: capabilities) }
     }
 
     private var alertContent: some View {

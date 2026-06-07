@@ -79,6 +79,28 @@ final class ExtensionRegistry: ObservableObject {
         )
     }
 
+    var importerCapabilities: [ExtensionImporterCapability] {
+        installedExtensions
+            .filter { isEnabled($0) && $0.manifest.kind == .importer }
+            .flatMap { installed in
+                installed.manifest.importers.map { importer in
+                    ExtensionImporterCapability(
+                        id: "\(installed.manifest.id).\(importer.id)",
+                        title: importer.title,
+                        fileExtensions: importer.fileExtensions.map { $0.lowercased() }.sorted(),
+                        outputFormat: importer.outputFormat,
+                        sourceName: installed.manifest.name
+                    )
+                }
+            }
+            .sorted {
+                if $0.title == $1.title {
+                    return $0.sourceName.localizedCaseInsensitiveCompare($1.sourceName) == .orderedAscending
+                }
+                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }
+    }
+
     func reload(projectRoots: [URL]) {
         var loaded: [InstalledCribbleExtension] = []
         var warnings: [String] = []
@@ -196,6 +218,18 @@ final class ExtensionRegistry: ObservableObject {
 
     private enum Keys {
         static let disabledExtensionIDs = "extensions.disabledIDs"
+    }
+}
+
+struct ExtensionImporterCapability: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let fileExtensions: [String]
+    let outputFormat: String
+    let sourceName: String
+
+    var extensionSummary: String {
+        fileExtensions.map { ".\($0)" }.joined(separator: ", ")
     }
 }
 

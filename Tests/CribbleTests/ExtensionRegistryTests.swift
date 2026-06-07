@@ -124,6 +124,42 @@ struct ExtensionRegistryTests {
 
         #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "workflow")
     }
+
+    @Test
+    func importerCapabilitiesComeFromEnabledImporters() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        try fixture.writeImporter(
+            folder: fixture.userExtensions.appendingPathComponent("importer", isDirectory: true),
+            id: "com.example.cribble.importer",
+            name: "Research Importer",
+            importerTitle: "Chat Export",
+            fileExtensions: ["TXT", "json"]
+        )
+
+        let registry = fixture.makeRegistry()
+
+        #expect(registry.importerCapabilities == [
+            ExtensionImporterCapability(
+                id: "com.example.cribble.importer.chat-export",
+                title: "Chat Export",
+                fileExtensions: ["json", "txt"],
+                outputFormat: "markdown",
+                sourceName: "Research Importer"
+            )
+        ])
+        #expect(registry.importerCapabilities.first?.extensionSummary == ".json, .txt")
+
+        guard let installed = registry.installedExtensions.first else {
+            Issue.record("Expected installed extension")
+            return
+        }
+
+        registry.setEnabled(false, for: installed)
+
+        #expect(registry.importerCapabilities.isEmpty)
+    }
 }
 
 private struct ExtensionRegistryFixture {
@@ -212,6 +248,37 @@ private struct ExtensionRegistryFixture {
                     title: "Diagram Aliases",
                     languages: languages,
                     builtInRenderer: .mermaid
+                )
+            ]
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(manifest).write(
+            to: folder.appendingPathComponent("cribble-extension.json"),
+            options: .atomic
+        )
+    }
+
+    func writeImporter(
+        folder: URL,
+        id: String,
+        name: String,
+        importerTitle: String,
+        fileExtensions: [String]
+    ) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let manifest = CribbleExtensionManifest(
+            id: id,
+            name: name,
+            version: "0.1.0",
+            kind: .importer,
+            summary: "Test importer.",
+            importers: [
+                CribbleExtensionImporter(
+                    id: "chat-export",
+                    title: importerTitle,
+                    fileExtensions: fileExtensions,
+                    outputFormat: "markdown"
                 )
             ]
         )

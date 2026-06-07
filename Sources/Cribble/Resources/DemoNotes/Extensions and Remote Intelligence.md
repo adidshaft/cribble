@@ -78,7 +78,7 @@ Good extensions should feel native, inspectable, and reversible:
 | Quick Action | Turn highlighted text into a follow-up question |
 | Intelligence Provider | Use a trusted OpenAI-compatible runner |
 | Renderer | Map a custom diagram fence to a built-in renderer |
-| Importer | Convert exported chats, PDFs, or research bundles into notes |
+| Importer | Declare import lanes for exported chats, PDFs, or research bundles |
 
 The rule is simple: every extension declares what it wants, Cribble shows that
 clearly, user files stay under user control, and secrets live in Keychain — never
@@ -175,8 +175,9 @@ renderer without running extension code.
 
 ### Import lane
 
-Declares file types an importer wants to convert into Markdown later. Today it
-is inspectable metadata only.
+Declares file types an importer wants to convert into Markdown later. Today the
+lane appears in Settings so teams can agree on supported import formats before
+Cribble executes converters.
 
 ```json
 {

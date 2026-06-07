@@ -138,6 +138,31 @@ struct SettingsView: View {
                         }
                     }
 
+                    if !extensionRegistry.importerCapabilities.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Import lanes", systemImage: "square.and.arrow.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            ForEach(extensionRegistry.importerCapabilities) { capability in
+                                HStack(spacing: 8) {
+                                    Text(capability.title)
+                                        .font(.caption.weight(.medium))
+                                    Text(capability.extensionSummary)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    Spacer(minLength: 8)
+                                    Text("\(capability.outputFormat) • \(capability.sourceName)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(.quaternary.opacity(0.32), in: RoundedRectangle(cornerRadius: 6))
+                            }
+                        }
+                    }
+
                     if let extensionStatus {
                         Text(extensionStatus)
                             .font(.caption)

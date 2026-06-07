@@ -49,6 +49,17 @@ final class LocalRunnerStoreTests: XCTestCase {
         XCTAssertEqual(store.defaultModelID, "qwen2.5:7b")
     }
 
+    func testClearSurvivesRelaunchDespiteLegacyKey() {
+        // clear() must stick even though IntelligenceSettings still has the
+        // legacy runner key — migration is one-shot, not on every launch.
+        defaults.set("http://127.0.0.1:11434/v1", forKey: "intelligence.runnerURL")
+        defaults.set("qwen2.5:7b", forKey: "intelligence.modelID")
+        let migrated = LocalRunnerStore(defaults: defaults)
+        XCTAssertTrue(migrated.isConfigured)
+        migrated.clear()
+        XCTAssertFalse(LocalRunnerStore(defaults: defaults).isConfigured)
+    }
+
     func testClearRemovesConfig() {
         let store = LocalRunnerStore(defaults: defaults)
         store.configure(baseURLString: "http://127.0.0.1:8080/v1", displayName: "llama.cpp", modelIDs: ["m"], defaultModelID: "m")

@@ -6,7 +6,9 @@ import Foundation
 /// one place to point Cribble at a runner (issue #3).
 ///
 /// Persists under its own keys and migrates the legacy Intelligence-only key
-/// (`intelligence.runnerURL`, PR #2) on first read. The legacy key remains
+/// (`intelligence.runnerURL`, PR #2) exactly once, tracked by the
+/// `localRunner.migrated` sentinel so `clear()` survives relaunch even while
+/// the legacy key still exists. The legacy key remains
 /// owned by `IntelligenceSettings` as "Intelligence currently uses the runner";
 /// this store answers the broader "a runner is configured for the app".
 @MainActor
@@ -32,8 +34,11 @@ final class LocalRunnerStore: ObservableObject {
             displayName = defaults.string(forKey: Keys.displayName)
             cachedModelIDs = defaults.stringArray(forKey: Keys.modelIDs) ?? []
             defaultModelID = defaults.string(forKey: Keys.defaultModelID)
-        } else if let legacy = defaults.string(forKey: Keys.legacyIntelligenceRunnerURL) {
-            // One-time migration from the Intelligence-only configuration.
+        } else if defaults.bool(forKey: Keys.migrated) == false,
+                  let legacy = defaults.string(forKey: Keys.legacyIntelligenceRunnerURL) {
+            // One-time migration from the Intelligence-only configuration,
+            // guarded by the `Keys.migrated` sentinel so a later `clear()`
+            // sticks even while the legacy key still exists.
             baseURLString = legacy
             displayName = nil
             cachedModelIDs = []
@@ -80,6 +85,9 @@ final class LocalRunnerStore: ObservableObject {
         defaults.set(displayName, forKey: Keys.displayName)
         defaults.set(cachedModelIDs, forKey: Keys.modelIDs)
         defaults.set(defaultModelID, forKey: Keys.defaultModelID)
+        // Any persist (configure, clear, or the migration itself) settles the
+        // legacy migration — it must never run again.
+        defaults.set(true, forKey: Keys.migrated)
     }
 
     private enum Keys {
@@ -87,6 +95,8 @@ final class LocalRunnerStore: ObservableObject {
         static let displayName = "localRunner.displayName"
         static let modelIDs = "localRunner.modelIDs"
         static let defaultModelID = "localRunner.defaultModelID"
+        /// One-shot sentinel: once true, the legacy migration never runs again.
+        static let migrated = "localRunner.migrated"
         static let legacyIntelligenceRunnerURL = "intelligence.runnerURL"
         static let legacyIntelligenceModelID = "intelligence.modelID"
     }

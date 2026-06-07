@@ -21,6 +21,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - The Project Intelligence preflight now names remote runner endpoints, selected models, and extension trust labels before scanning notes, making VPS/team-runner decisions more explicit.
+- Extension-provided remote runner profiles now show a compact handoff strip in the Intelligence HUD with trust/source details and a copyable endpoint/model/API-key/revocation checklist.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
@@ -140,6 +141,8 @@ swift test --filter ChatHUDLogicTests
 swift test --filter CribbleUITests
 swift test --filter DiagnosticsCenterTests
 swift test --filter 'NavigationHistoryTests|CribbleUITests'
+swift test --filter IntelligencePreflightTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -173,6 +176,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native Find in Files commands: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after visible refresh performance summaries: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'NavigationHistoryTests|CribbleUITests'` passed on 2026-06-08 after stateful Mac menu actions: 15 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after extension runner handoff details: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after extension runner handoff UI wiring: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

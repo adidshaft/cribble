@@ -41,6 +41,7 @@ struct IntelligenceHUDView: View {
     @State private var localRunnerRequiresProbe = true
     @State private var localRunnerAPIKey = ""
     @State private var localRunnerUsesKeychain = false
+    @State private var selectedExtensionProviderProfile: ExtensionIntelligenceProviderProfile?
     @State private var pendingPreflightScope: IntelligencePreflightScope?
 
     var body: some View {
@@ -391,6 +392,12 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(localRunnerStatus.isError ? Color.red.opacity(0.85) : Color.green.opacity(0.85))
                     .lineLimit(2)
             }
+            if let selectedExtensionProviderProfile {
+                ExtensionRunnerHandoffStrip(
+                    profile: selectedExtensionProviderProfile,
+                    onCopy: { copyRunnerHandoff(selectedExtensionProviderProfile) }
+                )
+            }
             SecureField("API key (optional)", text: $localRunnerAPIKey)
                 .font(.system(size: 10))
                 .textFieldStyle(.plain)
@@ -437,6 +444,7 @@ struct IntelligenceHUDView: View {
         localRunnerRequiresProbe = true
         localRunnerAPIKey = ""
         localRunnerUsesKeychain = engine.settings.runnerUsesKeychain(baseURL: baseURL)
+        selectedExtensionProviderProfile = nil
         showLocalRunnerConfig = true
         Task { _ = await probeLocalRunner() }
     }
@@ -450,7 +458,14 @@ struct IntelligenceHUDView: View {
         localRunnerRequiresProbe = false
         localRunnerAPIKey = ""
         localRunnerUsesKeychain = engine.settings.runnerUsesKeychain(baseURL: profile.baseURL.absoluteString)
+        selectedExtensionProviderProfile = profile
         showLocalRunnerConfig = true
+    }
+
+    private func copyRunnerHandoff(_ profile: ExtensionIntelligenceProviderProfile) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(profile.handoffSummary, forType: .string)
+        localRunnerStatus = .ready("Copied runner handoff details.")
     }
 
     @MainActor
@@ -1748,6 +1763,46 @@ private struct LocalRunnerProbeStatus: Equatable {
 
     static func failed(_ message: String) -> LocalRunnerProbeStatus {
         LocalRunnerProbeStatus(message: message, isError: true)
+    }
+}
+
+private struct ExtensionRunnerHandoffStrip: View {
+    let profile: ExtensionIntelligenceProviderProfile
+    let onCopy: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: profile.isLoopback ? "checkmark.seal" : "exclamationmark.triangle")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(profile.isLoopback ? Color.green.opacity(0.9) : Color.orange.opacity(0.9))
+                .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profile.trustLabel)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.86))
+                Text("\(profile.sourceName) · \(profile.baseURL.host ?? profile.baseURL.absoluteString)")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 6)
+
+            Button {
+                onCopy()
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .buttonStyle(.plain)
+            .help("Copy runner handoff details")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Runner handoff: \(profile.trustLabel), \(profile.sourceName)")
     }
 }
 

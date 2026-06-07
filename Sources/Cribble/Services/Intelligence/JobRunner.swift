@@ -310,32 +310,17 @@ actor JobRunner {
         let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
 
-        let output = try await provider.generate(
-            prompt: Prompts.connectionResearch(summaries: summaries),
-            maxTokens: 1800
-        )
-        let body = try await validatedMarkdown(output)
-        let artifact = try await artifacts.store(
-            type: .researchInsight,
-            relativePath: "research/suggested-connections.md",
-            title: "Suggested Connections",
-            content: body,
-            sourceHashes: [job.inputHash]
-        )
-        await persistEmbedding(artifactID: artifact.id, text: body)
-        await db.upsertResearchInsight(ResearchInsight(
-            id: ContentHasher.hash("\(projectID)\u{1}suggested-connections\u{1}\(job.inputHash)"),
-            projectID: projectID,
-            title: "Suggested Connections",
-            body: body,
-            kind: .suggestedConnection,
-            status: .new,
-            artifactID: artifact.id,
-            sourceHashes: [job.inputHash],
-            createdAt: Date()
-        ))
-        await persistSuggestedConnectionEdges(markdown: body, evidenceArtifactID: artifact.id, sourceHashes: [job.inputHash])
-        return artifact.id
+        let body: String
+        do {
+            let output = try await provider.generate(
+                prompt: Prompts.connectionResearch(summaries: summaries),
+                maxTokens: 1800
+            )
+            body = try await validatedMarkdown(output)
+        } catch where shouldUseGenericInsightFallback(error) {
+            body = deterministicSuggestedConnections()
+        }
+        return try await storeSuggestedConnections(body: body, inputHash: job.inputHash)
     }
 
     // MARK: - Deterministic executors (no model)
@@ -635,6 +620,9 @@ actor JobRunner {
     }
 
     private func shouldUseGenericInsightFallback(_ error: Error) -> Bool {
+        if error is CancellationError {
+            return true
+        }
         switch error {
         case JobRunnerError.emptyOutput, JobRunnerError.timedOut:
             return true
@@ -649,6 +637,10 @@ actor JobRunner {
         "# Contradiction Report\n\nNo contradictions found across the current documents."
     }
 
+    private func deterministicSuggestedConnections() -> String {
+        "# Suggested Connections\n\nNo new suggested connections found across the current summaries."
+    }
+
     private func fallbackGenericInsightArtifact(for job: IntelligenceJob, error: Error) async throws -> String? {
         guard shouldUseGenericInsightFallback(error) else { throw error }
         let summaries = await aggregateSummaryInputs()
@@ -659,6 +651,11 @@ actor JobRunner {
         let title: String
         let body: String
         switch job.type {
+        case .discoverConnections:
+            return try await storeSuggestedConnections(
+                body: deterministicSuggestedConnections(),
+                inputHash: job.inputHash
+            )
         case .detectContradictions:
             type = .contradictionReport
             relativePath = "insights/contradictions.md"
@@ -686,6 +683,30 @@ actor JobRunner {
             sourceHashes: [job.inputHash]
         )
         await persistEmbedding(artifactID: artifact.id, text: body)
+        return artifact.id
+    }
+
+    private func storeSuggestedConnections(body: String, inputHash: String) async throws -> String {
+        let artifact = try await artifacts.store(
+            type: .researchInsight,
+            relativePath: "research/suggested-connections.md",
+            title: "Suggested Connections",
+            content: body,
+            sourceHashes: [inputHash]
+        )
+        await persistEmbedding(artifactID: artifact.id, text: body)
+        await db.upsertResearchInsight(ResearchInsight(
+            id: ContentHasher.hash("\(projectID)\u{1}suggested-connections\u{1}\(inputHash)"),
+            projectID: projectID,
+            title: "Suggested Connections",
+            body: body,
+            kind: .suggestedConnection,
+            status: .new,
+            artifactID: artifact.id,
+            sourceHashes: [inputHash],
+            createdAt: Date()
+        ))
+        await persistSuggestedConnectionEdges(markdown: body, evidenceArtifactID: artifact.id, sourceHashes: [inputHash])
         return artifact.id
     }
 

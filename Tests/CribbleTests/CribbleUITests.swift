@@ -888,6 +888,22 @@ final class CribbleUITests: XCTestCase {
         }
     }
 
+    func testCribbleAIGuideNamesModelDataBoundaries() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let guideURL = projectRoot.appendingPathComponent("Sources/Cribble/Resources/DemoNotes/Cribble AI.md")
+
+        let guide = try String(contentsOf: guideURL, encoding: .utf8)
+        XCTAssertTrue(guide.contains("On-device"))
+        XCTAssertTrue(guide.contains("keep notes on this Mac"))
+        XCTAssertTrue(guide.contains("Claude or Codex"))
+        XCTAssertTrue(guide.contains("note context leaves the Mac"))
+        XCTAssertTrue(guide.contains("signed-in command-line tool"))
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

@@ -93,6 +93,10 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The regular Chat HUD model picker now keeps that boundary visible in each
   model row and tooltip, so users see local-vs-CLI context even after first-run
   onboarding is dismissed.
+- The Cribble AI DemoNotes guide now matches the product behavior: local-first
+  on-device models are private by default, while Claude/Codex CLI choices are
+  opt-in and clearly described as sending note context through the signed-in
+  command-line tool.
 - The empty reader now shows already-open folders with note counts and one-click README/first-note landing, so returning users can resume from a restored workspace without digging through the sidebar or menus.
 - File now includes New Note (`Command-N`) for the active folder. It creates an `Untitled.md` proposal through the same review/apply sheet used by AI and trail-generated notes, avoiding silent disk writes and filename clobbering.
 - Missing wiki-link recovery now creates notes through the same review/apply sheet instead of writing directly, while existing targets still open immediately.
@@ -484,6 +488,7 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
   carrying the same data-boundary copy into the regular Chat HUD model picker:
   40 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testCribbleAIGuideNamesModelDataBoundaries|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after correcting the Cribble AI DemoNotes guide to describe on-device versus Claude/Codex CLI data boundaries: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
   after adding copyable remote-runner consent review summaries: 8 XCTest tests,
   0 failures.

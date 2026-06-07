@@ -5,14 +5,14 @@ tags: [demo, feature, ai]
 ---
 # Cribble AI
 
-A private assistant that reads your notes and runs **on your Mac** — no cloud, no account, nothing leaves your machine. Open it three ways:
+A local-first assistant that reads your notes and prefers **on-your-Mac** models. You can also choose Claude or Codex through command-line sessions you are already signed into; Cribble labels that data boundary before you send note context. Open it three ways:
 
 - Press **Command J**
 - Click the **✦ icon in the menu bar** (top-right of your screen)
 - Toolbar → **Cribble AI**
 
 > **Note:**
-> First time? Pick a model from the chip at the bottom of the chat. **On-device** models (Gemma, Qwen) download once — tap the ↓ to grab one. **Cloud** models (Claude, Codex) use the sessions you're already logged into in your Terminal.
+> First time? Pick a model from the chip at the bottom of the chat. **On-device** models (Gemma, Qwen) download once and keep notes on this Mac. **Cloud** models (Claude, Codex) send note context through the sessions you're already logged into in Terminal. The chooser and model picker show this data boundary on every option.
 
 ## The four things it does
 
@@ -64,6 +64,6 @@ new to a folder and do not know the local vocabulary yet.
 
 ## Private by design
 
-On-device models do all their thinking on your Apple Silicon GPU. Your notes are never uploaded. Every change the AI proposes — a link, an edit, a new file — is shown as a preview first, so you're always in control.
+On-device models do all their thinking on your Apple Silicon GPU. Cloud CLI models are opt-in and clearly labeled because note context leaves the Mac through your signed-in command-line tool. Every change the AI proposes — a link, an edit, a new file — is shown as a preview first, so you're always in control.
 
 ← Back to [[README|Home]] · Next: [[Feature Tour]]

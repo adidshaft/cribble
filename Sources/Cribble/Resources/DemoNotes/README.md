@@ -47,7 +47,7 @@ Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, 
 
 ## New in 1.2.0 — Cribble AI
 
-A private AI assistant that runs **fully on your Mac**. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. No cloud, no account. → [[Cribble AI]]
+A local-first AI assistant that can run **fully on your Mac** with on-device models, or through clearly labeled Claude/Codex CLI choices when you opt in. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. → [[Cribble AI]]
 
 ## 60-second quick try
 

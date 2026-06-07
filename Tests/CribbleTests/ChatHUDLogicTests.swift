@@ -181,6 +181,13 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(QuickActions.matching("tasks").contains { $0.id == "extract-tasks" })
     }
 
+    func testBuiltInQuickActionsHaveShortDescriptions() {
+        let actions = QuickActions.builtIns(todayTitle: "2026-06-08")
+
+        XCTAssertTrue(actions.allSatisfy { $0.description?.isEmpty == false })
+        XCTAssertTrue(actions.allSatisfy { ($0.description?.count ?? 0) <= 48 })
+    }
+
     func testSlashCommandsMatchAliasesAndRankStrongMatchesFirst() {
         let matches = QuickActions.matching("eli5")
 

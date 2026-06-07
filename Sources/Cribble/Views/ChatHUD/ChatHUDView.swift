@@ -271,17 +271,18 @@ struct ChatEmptyState: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(action.title)
                             .font(.system(size: 12, weight: .medium))
-                        if showsSource, let source = action.extensionSourceName {
-                            Text(source)
+                        if let detail = action.detailText(showsSource: showsSource) {
+                            Text(detail)
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.5))
+                                .lineLimit(1)
                         }
                     }
                     Spacer(minLength: 0)
                 }
                 .foregroundStyle(.white.opacity(0.85))
                 .padding(.horizontal, 12)
-                .padding(.vertical, showsSource ? 7 : 8)
+                .padding(.vertical, action.description == nil && !showsSource ? 8 : 7)
                 .frame(width: 200)
             }
             .cribbleGlassCapsuleButton()
@@ -325,5 +326,12 @@ private extension QuickAction {
             return name
         }
         return nil
+    }
+
+    func detailText(showsSource: Bool) -> String? {
+        if showsSource, let source = extensionSourceName {
+            return source
+        }
+        return description
     }
 }

@@ -12,6 +12,7 @@ struct QuickAction: Identifiable, Hashable {
     let title: String
     let icon: String
     let prompt: String
+    var description: String? = nil
     var aliases: [String] = []
     var source: Source = .builtIn
 }
@@ -28,6 +29,7 @@ enum QuickActions {
                 title: "Summarize",
                 icon: "text.alignleft",
                 prompt: "Summarize the current note in 3–5 concise bullet points.",
+                description: "3–5 bullets from the current note",
                 aliases: ["brief", "recap", "tl;dr", "overview"]
             ),
             QuickAction(
@@ -35,6 +37,7 @@ enum QuickActions {
                 title: "Draft today",
                 icon: "calendar.badge.plus",
                 prompt: "Draft a useful daily note for \(todayTitle). Reply with a CREATE: Daily/\(todayTitle).md block only, with sections for Notes, Decisions, Tasks, and Follow-ups.",
+                description: "Reviewed Daily/YYYY-MM-DD.md proposal",
                 aliases: ["daily", "journal", "capture", "log", "standup"]
             ),
             QuickAction(
@@ -42,6 +45,7 @@ enum QuickActions {
                 title: "Extract tasks",
                 icon: "checklist",
                 prompt: "Extract concrete next actions from the current note. Reply with a CREATE: Tasks.md block only, using Markdown checkboxes and short source notes for each task.",
+                description: "Reviewed Tasks.md checklist proposal",
                 aliases: ["tasks", "todo", "todos", "actions", "next steps"]
             ),
             QuickAction(
@@ -49,6 +53,7 @@ enum QuickActions {
                 title: "Find related",
                 icon: "doc.text.magnifyingglass",
                 prompt: "Which other notes in my workspace relate to this one, and how? List them with a one-line reason each.",
+                description: "Next notes to read and why",
                 aliases: ["connections", "similar", "search", "graph"]
             ),
             QuickAction(
@@ -56,6 +61,7 @@ enum QuickActions {
                 title: "Suggest links",
                 icon: "link",
                 prompt: "Suggest sparse, high-confidence [[wiki links]] connecting the notes in context. Reply with a unified diff only.",
+                description: "Preview-only wiki link diff",
                 aliases: ["backlinks", "wiki", "connect"]
             ),
             QuickAction(
@@ -63,6 +69,7 @@ enum QuickActions {
                 title: "Create index",
                 icon: "list.bullet.rectangle",
                 prompt: "Create a single index note that links and briefly describes the notes in context. Output it as a CREATE: index.md block.",
+                description: "Reviewed index.md note proposal",
                 aliases: ["map", "table of contents", "toc", "overview"]
             ),
             QuickAction(
@@ -70,6 +77,7 @@ enum QuickActions {
                 title: "Explain simply",
                 icon: "lightbulb",
                 prompt: "Explain the current note in simple, plain language a beginner could follow.",
+                description: "Plain-language explanation",
                 aliases: ["eli5", "beginner", "plain", "teach"]
             )
         ]

@@ -120,9 +120,17 @@ struct ChatInputBar: View {
                                     .font(.system(size: 12))
                                     .foregroundStyle(.white.opacity(0.7))
                                     .frame(width: 16)
-                                Text(action.title)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.9))
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(action.title)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.9))
+                                    if let description = action.description {
+                                        Text(description)
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundStyle(.white.opacity(0.45))
+                                            .lineLimit(1)
+                                    }
+                                }
                                 Spacer(minLength: 0)
                             }
                             .padding(.horizontal, 10)

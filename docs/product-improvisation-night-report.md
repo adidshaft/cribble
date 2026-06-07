@@ -86,6 +86,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
   new-note proposals, so users can safely link before writing without surprise
   file creation.
 - The Chat HUD now surfaces a visible context receipt after each send, showing how many sources were included or limited and offering copyable details for trust/debugging.
+- Built-in Chat HUD quick actions now carry short descriptions in the empty
+  state chips and slash-command palette, helping beginners understand what each
+  action will do before running it.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
@@ -409,6 +412,9 @@ Latest pass:
   template plus `CONTRIBUTING.md` and `docs/extensions.md` mention read-only
   first versions, data contracts, least note access, native SwiftUI surfaces,
   later-not-first-PR scope, and clean disable behavior.
+- Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
+  adding short descriptions to built-in Chat HUD quick actions and slash-command
+  rows: 39 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

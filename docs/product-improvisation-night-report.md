@@ -39,6 +39,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Full folder refresh now prunes the reader render cache by stable note content hash instead of clearing every rendered note, keeping unchanged notes warm after single-file external edits.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
+- DemoNotes AI onboarding now consistently uses the native `Command J` chat shortcut and the bundled demo version was bumped so installed DemoNotes refresh.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
 - Help now exposes the Team Extension Kit directly, making the extension/plugin design guide recoverable outside Settings.
@@ -173,6 +174,7 @@ swift test --filter IntelligenceEngineTests
 swift test --filter TaskExporterTests
 swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
+swift test --filter 'LinkIndexTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -224,6 +226,7 @@ Latest pass:
 - Latest `swift test --filter TaskExporterTests` passed on 2026-06-08 after destination-specific Reminders/Calendar permission messages: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after import-lane review summaries: 10 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after the Settings import-lane copy action: 16 XCTest tests, 0 failures.
+- Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes chat shortcut cleanup: 18 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

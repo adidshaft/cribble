@@ -46,14 +46,14 @@ Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, 
 
 ## New in 1.2.0 — Cribble AI
 
-A private AI assistant that runs **fully on your Mac**. Press **C** (or click the menu-bar icon) to open the chat, then ask a question about the note you're reading. No cloud, no account. → [[Cribble AI]]
+A private AI assistant that runs **fully on your Mac**. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. No cloud, no account. → [[Cribble AI]]
 
 ## 60-second quick try
 
 1. Select this sentence and press **H** to highlight it.
 2. Press **B** to drop a reading bookmark, then scroll away and watch the **Resume** strip appear.
 3. Click a wiki link, like [[Markdown Showcase]], to jump between notes.
-4. Press **C** and ask *"what is this library about?"*
+4. Press **Command J** and ask *"what is this library about?"*
 5. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist

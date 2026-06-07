@@ -7,7 +7,7 @@ tags: [demo, feature, ai]
 
 A private assistant that reads your notes and runs **on your Mac** — no cloud, no account, nothing leaves your machine. Open it three ways:
 
-- Press **C**
+- Press **Command J**
 - Click the **✦ icon in the menu bar** (top-right of your screen)
 - Toolbar → **Cribble AI**
 
@@ -17,7 +17,7 @@ A private assistant that reads your notes and runs **on your Mac** — no cloud,
 ## The four things it does
 
 ### 1. Answer questions about what you're reading
-Open any note, then press **C** and ask. The model automatically sees the note you have open.
+Open any note, then press **Command J** and ask. The model automatically sees the note you have open.
 
 > **Try it**
 > Stay on this note, open the chat, and ask: *"summarize this note in three bullets"* or *"what are the four things Cribble AI does?"*

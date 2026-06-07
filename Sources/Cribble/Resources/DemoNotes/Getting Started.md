@@ -46,7 +46,6 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `H` | Highlight selected text |
 | `B` | Drop a reading bookmark |
 | `P` | Toggle the Reading Trail panel |
-| `C` | Open Cribble AI chat |
 | `Esc` | Exit highlight mode · close a zoom overlay |
 | `⌘ ←` / `⌘ →` | Back · Forward |
 | `⌘ ⌥ O` | Toggle outline |

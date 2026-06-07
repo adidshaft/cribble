@@ -179,6 +179,26 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(QuickActions.matching("index").contains { $0.id == "index" })
     }
 
+    func testSlashCommandsMatchAliasesAndRankStrongMatchesFirst() {
+        let matches = QuickActions.matching("eli5")
+
+        XCTAssertEqual(matches.first?.id, "simplify")
+    }
+
+    func testSlashCommandsMatchExtensionSourceName() {
+        let extensionAction = QuickAction(
+            id: "remote-review",
+            title: "Review with Runner",
+            icon: "bolt.horizontal",
+            prompt: "Review this note using the configured runner.",
+            source: .extension("Remote Intelligence")
+        )
+
+        let matches = QuickActions.matching("remote", extensions: [extensionAction])
+
+        XCTAssertTrue(matches.contains(extensionAction))
+    }
+
     func testExtensionQuickActionsSuppressAmbientContext() {
         XCTAssertTrue(ChatHUDViewModel.includesAmbientContext(for: nil))
         XCTAssertTrue(ChatHUDViewModel.includesAmbientContext(for: .builtIn))

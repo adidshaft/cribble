@@ -211,6 +211,7 @@ struct ChatEmptyState: View {
                 .multilineTextAlignment(.center)
 
             quickActions
+            commandHint
 
             modelHint
         }
@@ -233,6 +234,26 @@ struct ChatEmptyState: View {
         .padding(.top, 4)
         .disabled(viewModel.isGenerating)
         .cribbleGlassContainer()
+    }
+
+    private var commandHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "command")
+                .font(.system(size: 11, weight: .semibold))
+            Text("Type / for commands")
+                .font(.system(size: 11, weight: .medium))
+            if !viewModel.extensionQuickActions.isEmpty {
+                Text("\(viewModel.extensionQuickActions.count) extension action\(viewModel.extensionQuickActions.count == 1 ? "" : "s")")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .padding(.leading, 2)
+            }
+        }
+        .foregroundStyle(.white.opacity(0.62))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .cribbleMaterialSurface(in: Capsule())
+        .help("Slash commands include built-in actions and installed extension actions")
     }
 
     private func quickActionGroup<S: Sequence>(

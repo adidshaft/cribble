@@ -289,6 +289,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after installed-vs-active extension diagnostics: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after direct Remote Intelligence entry points: 18 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests|CribbleUITests'` passed on 2026-06-08 after Settings Remote Guide entry point: 18 XCTest tests and 11 Swift Testing tests, 0 failures.
+- Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after slash-command discovery and alias ranking: 36 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

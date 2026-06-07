@@ -27,4 +27,27 @@ final class LinkIndexTests: XCTestCase {
         XCTAssertEqual(index.resolve(WikiLink(original: "", target: "Alpha Title", label: "", anchor: "Road Map")).targetURL, alpha)
         XCTAssertEqual(index.resolve(WikiLink(original: "", target: "Beta Note", label: "", anchor: nil)).targetURL, beta)
     }
+
+    func testMetadataIndexPreservesAliasesAndAnchors() throws {
+        let root = try Fixture.makeFolder()
+        let alpha = root.appendingPathComponent("Alpha.md")
+
+        try """
+        ---
+        aliases: [Project A]
+        keywords: planning
+        tags: [strategy]
+        ---
+        # Alpha Title
+        ## Road Map
+        """.write(to: alpha, atomically: true, encoding: .utf8)
+
+        let document = try DocumentLoader().load(url: alpha)
+        let index = LinkIndex(documentMetas: [MarkdownDocumentMeta(document)], rootURL: root)
+
+        XCTAssertEqual(index.resolve(WikiLink(original: "", target: "Project A", label: "", anchor: nil)).targetURL, alpha)
+        XCTAssertEqual(index.resolve(WikiLink(original: "", target: "planning", label: "", anchor: nil)).targetURL, alpha)
+        XCTAssertEqual(index.resolve(WikiLink(original: "", target: "strategy", label: "", anchor: nil)).targetURL, alpha)
+        XCTAssertEqual(index.resolve(WikiLink(original: "", target: "Alpha Title", label: "", anchor: "Road Map")).targetURL, alpha)
+    }
 }

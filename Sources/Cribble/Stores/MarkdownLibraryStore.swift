@@ -48,10 +48,15 @@ final class MarkdownLibraryStore: ObservableObject {
 
     private let loader = DocumentLoader()
     private let monitor = FileChangeMonitor()
+    private struct RefreshFileSignature: Equatable, Sendable {
+        let modifiedAt: TimeInterval
+        let fileSize: Int
+    }
     /// Body-free metadata for every note in the open folders. The full text is
     /// loaded on demand (for the selected note, semantic re-embeds, previews) so
     /// a large vault never pins all note contents in RAM.
     private(set) var documents: [MarkdownDocumentMeta] = []
+    private var documentRefreshSignatures: [String: RefreshFileSignature] = [:]
     private var linkIndex: LinkIndex?
     private var currentSortMode: FileSortMode = .name
     private var renderTask: Task<Void, Never>?
@@ -340,11 +345,13 @@ final class MarkdownLibraryStore: ObservableObject {
         let roots = rootURLs
         let sort = currentSortMode
         let displayNames = rootDisplayNames
+        let previousDocuments = Dictionary(uniqueKeysWithValues: documents.map { ($0.url.standardizedFileURL.path, $0) })
+        let previousSignatures = documentRefreshSignatures
 
         loadTask?.cancel()
         let concurrency = Self.loadConcurrency
         loadTask = Task {
-            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
+            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
                     var failedRoots: [URL] = []
                     for rootURL in roots {
@@ -384,6 +391,23 @@ final class MarkdownLibraryStore: ObservableObject {
                     }
                     let urls = collect(nodesList).uniqued()
                     let loader = DocumentLoader()
+                    let fileSignatures = Dictionary(uniqueKeysWithValues: urls.compactMap { url -> (String, RefreshFileSignature)? in
+                        guard let signature = Self.refreshFileSignature(for: url) else { return nil }
+                        return (url.standardizedFileURL.path, signature)
+                    })
+                    var reusedDocuments: [String: MarkdownDocumentMeta] = [:]
+                    var urlsToLoad: [URL] = []
+                    urlsToLoad.reserveCapacity(urls.count)
+                    for url in urls {
+                        let path = url.standardizedFileURL.path
+                        if let signature = fileSignatures[path],
+                           previousSignatures[path] == signature,
+                           let previousDocument = previousDocuments[path] {
+                            reusedDocuments[path] = previousDocument
+                        } else {
+                            urlsToLoad.append(url)
+                        }
+                    }
 
                     // Bounded-concurrency fan-out. Each file loads independently:
                     // a file that can't be read (unsupported encoding handled in
@@ -392,14 +416,14 @@ final class MarkdownLibraryStore: ObservableObject {
                     // whole folder open — real Obsidian/iCloud vaults routinely
                     // contain such files.
                     let outcomes = await withTaskGroup(of: (URL, MarkdownDocument?).self) { group -> [(URL, MarkdownDocument?)] in
-                        var iterator = urls.makeIterator()
+                        var iterator = urlsToLoad.makeIterator()
                         var inFlight = 0
                         while inFlight < concurrency, let url = iterator.next() {
                             group.addTask { (url, try? loader.load(url: url)) }
                             inFlight += 1
                         }
                         var collected: [(URL, MarkdownDocument?)] = []
-                        collected.reserveCapacity(urls.count)
+                        collected.reserveCapacity(urlsToLoad.count)
                         while let outcome = await group.next() {
                             collected.append(outcome)
                             if let url = iterator.next() {
@@ -409,34 +433,37 @@ final class MarkdownLibraryStore: ObservableObject {
                         return collected
                     }
 
-                    var docs: [MarkdownDocument] = []
-                    docs.reserveCapacity(outcomes.count)
+                    var loadedMetas: [String: MarkdownDocumentMeta] = [:]
+                    loadedMetas.reserveCapacity(outcomes.count)
                     var skippedFiles: [URL] = []
                     for (url, document) in outcomes {
                         if let document {
-                            docs.append(document)
+                            loadedMetas[url.standardizedFileURL.path] = MarkdownDocumentMeta(document)
                         } else {
                             skippedFiles.append(url)
                         }
                     }
 
+                    let metas = urls.compactMap { url -> MarkdownDocumentMeta? in
+                        let path = url.standardizedFileURL.path
+                        return reusedDocuments[path] ?? loadedMetas[path]
+                    }
+
                     let index: LinkIndex?
                     if let firstRoot = roots.first {
-                        index = LinkIndex(documents: docs, rootURL: firstRoot)
+                        index = LinkIndex(documentMetas: metas, rootURL: firstRoot)
                     } else {
                         index = nil
                     }
 
-                    // Drop full bodies now that the link index is built; keep only
-                    // metadata resident.
-                    let metas = docs.map(MarkdownDocumentMeta.init)
-                    return (nodesList, metas, index, skippedFiles, failedRoots)
+                    return (nodesList, metas, fileSignatures, index, skippedFiles, failedRoots)
                 }.value
 
                 guard !Task.isCancelled else { return }
 
                 self.nodes = result.nodes
                 self.documents = result.documents
+                self.documentRefreshSignatures = result.signatures
                 self.linkIndex = result.linkIndex
                 // Render cache keys by URL, so prune entries whose file changed
                 // or disappeared while preserving unchanged notes across a full
@@ -619,6 +646,17 @@ final class MarkdownLibraryStore: ObservableObject {
         guard renderCache[url] != nil else { return }
         renderCacheOrder.removeAll { $0 == url }
         renderCacheOrder.append(url)
+    }
+
+    nonisolated private static func refreshFileSignature(for url: URL) -> RefreshFileSignature? {
+        guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+              let modifiedAt = values.contentModificationDate,
+              let fileSize = values.fileSize
+        else { return nil }
+        return RefreshFileSignature(
+            modifiedAt: modifiedAt.timeIntervalSinceReferenceDate,
+            fileSize: fileSize
+        )
     }
 
     private func pruneRenderCache(using documents: [MarkdownDocumentMeta]) {
@@ -1305,6 +1343,7 @@ final class MarkdownLibraryStore: ObservableObject {
         if let index = documents.firstIndex(where: { $0.url.standardizedFileURL == url }) {
             documents[index] = MarkdownDocumentMeta(reloaded)
         }
+        documentRefreshSignatures[url.standardizedFileURL.path] = Self.refreshFileSignature(for: url)
         renderCache.removeValue(forKey: reloaded.url)
         renderCacheOrder.removeAll { $0 == reloaded.url }
         if selectedDocument?.url.standardizedFileURL == url {

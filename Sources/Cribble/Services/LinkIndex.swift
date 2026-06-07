@@ -4,10 +4,13 @@ struct LinkIndex: Sendable {
     private var targets: [String: URL] = [:]
 
     init(documents: [MarkdownDocument], rootURL: URL) {
+        self.init(documentMetas: documents.map(MarkdownDocumentMeta.init), rootURL: rootURL)
+    }
+
+    init(documentMetas: [MarkdownDocumentMeta], rootURL: URL) {
         var entries: [(String, URL)] = []
 
-        for document in documents.sorted(by: { $0.url.path < $1.url.path }) {
-            let metadata = FrontMatterParser.parse(document.rawMarkdown)
+        for document in documentMetas.sorted(by: { $0.url.path < $1.url.path }) {
             let stem = document.url.deletingPathExtension().lastPathComponent
             let relativePath = document.url.relativePath(from: rootURL)
             let title = document.title
@@ -23,7 +26,7 @@ struct LinkIndex: Sendable {
                 entries.append(("\(title)#\(heading.anchor)", document.url))
             }
 
-            for alias in metadata.aliases + metadata.keywords + metadata.tags {
+            for alias in document.linkAliases {
                 entries.append((alias, document.url))
             }
         }

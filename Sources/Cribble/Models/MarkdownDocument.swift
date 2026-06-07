@@ -27,6 +27,7 @@ struct MarkdownDocumentMeta: Equatable, Sendable, Identifiable {
     let title: String
     let headings: [DocumentHeading]
     let outboundLinks: [WikiLink]
+    let linkAliases: [String]
     /// Stable (cross-launch) hash of title + body, for change detection.
     let contentHash: UInt64
     /// De-noised leading slice of the body used to build the semantic embedding.
@@ -43,6 +44,7 @@ struct MarkdownDocumentMeta: Equatable, Sendable, Identifiable {
         title: String,
         headings: [DocumentHeading],
         outboundLinks: [WikiLink],
+        linkAliases: [String] = [],
         contentHash: UInt64,
         embeddingPrefix: String
     ) {
@@ -50,6 +52,7 @@ struct MarkdownDocumentMeta: Equatable, Sendable, Identifiable {
         self.title = title
         self.headings = headings
         self.outboundLinks = outboundLinks
+        self.linkAliases = linkAliases
         self.contentHash = contentHash
         self.embeddingPrefix = embeddingPrefix
     }
@@ -60,6 +63,8 @@ struct MarkdownDocumentMeta: Equatable, Sendable, Identifiable {
         self.title = document.title
         self.headings = document.headings
         self.outboundLinks = document.outboundLinks
+        let metadata = FrontMatterParser.parse(document.rawMarkdown)
+        self.linkAliases = metadata.aliases + metadata.keywords + metadata.tags
         self.contentHash = SemanticSearchIndex.stableHash(title: document.title, body: document.rawMarkdown)
         self.embeddingPrefix = SemanticSearchIndex.embeddingPrefix(forBody: document.rawMarkdown)
     }

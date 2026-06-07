@@ -1961,7 +1961,7 @@ final class MarkdownLibraryStore: ObservableObject {
         return nil
     }
 
-    private static let bundledDemoNotesVersion = "1.4.6"
+    private static let bundledDemoNotesVersion = "1.4.7"
 
     private static func applicationSupportDirectory() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

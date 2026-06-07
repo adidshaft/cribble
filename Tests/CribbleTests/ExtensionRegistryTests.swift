@@ -451,6 +451,8 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("Native UI"))
         #expect(guide.contains("Until those gates exist in code and tests"))
         #expect(guide.contains("declarative manifests"))
+        #expect(guide.contains("Help > Copy Import Lane Setup Review"))
+        #expect(guide.contains("File > Import > Copy Review"))
     }
 
     @Test

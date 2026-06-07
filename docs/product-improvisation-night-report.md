@@ -627,6 +627,10 @@ Latest pass:
   safety checklist as File > Import > Copy Review. Public docs, DemoNotes, Team
   Extension Kit, and the starter checklist all point importer authors to that
   native Help path before any converter runtime exists.
+- The bundled Extension Contribution Guide, Team Extension Kit checklist,
+  Decision Log, and manifest reference now all prefer Help > Copy Import Lane
+  Setup Review while keeping File > Import > Copy Review as the in-sheet
+  alternate; the bundled DemoNotes version was bumped so installed demos refresh.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -661,6 +665,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionRegistryTests/installedExtensionReviewSummaryIncludesManifestDetails|ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings'` passed on 2026-06-08 after separating contribution guide and manifest-reference links in copied extension reviews: 2 Swift Testing tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics|CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after exposing Help > Copy Import Lane Setup Review and moving the importer checklist to shared templates: 4 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligencePreflightTests/testProjectIntelligencePreflightReviewCopiesScopeAndBoundary|IntelligencePreflightTests/testRemoteRunnerSummaryIncludesEndpointModelAndTrustLabel|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation'` passed on 2026-06-08 after adding Copy Review to remote Project Intelligence preflight: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|ExtensionRegistryTests/extensionGuideDocumentsExecutableReadinessGates|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after aligning the bundled contribution guide, Team Extension Kit, Decision Log, and public manifest reference with Help > Copy Import Lane Setup Review: 1 XCTest test and 2 Swift Testing tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

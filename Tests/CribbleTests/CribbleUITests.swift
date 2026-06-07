@@ -1021,6 +1021,9 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(contributionGuide.contains("Hard native SwiftUI"))
         XCTAssertTrue(contributionGuide.contains("No hidden execution"))
         XCTAssertTrue(contributionGuide.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(contributionGuide.contains("Help → Copy Import Lane Setup Review"))
+        XCTAssertTrue(contributionGuide.contains("File → Import → Copy Review"))
+        XCTAssertTrue(contributionGuide.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(contributionGuide.contains("signed bundle identity"))
 
         let researchReview = try String(contentsOf: demoRoot.appendingPathComponent("Research Review.md"), encoding: .utf8)
@@ -1043,6 +1046,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(decisionLog.contains("Status: proposed | accepted | reversed"))
         XCTAssertTrue(decisionLog.contains("Review boundary"))
         XCTAssertTrue(decisionLog.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(decisionLog.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(decisionLog.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(decisionLog.contains("executable readiness gates"))
     }

@@ -61,8 +61,8 @@ pull request or handoff note:
 - Are permissions limited to the smallest useful set?
 - If it uses a remote runner, who controls the endpoint?
 - Does the manifest avoid secrets, tokens, and private keys?
-- For importers, did someone paste **File → Import → Copy Review** before
-  creating or adapting a manifest?
+- For importers, did someone paste **Help → Copy Import Lane Setup Review** or
+  **File → Import → Copy Review** before creating or adapting a manifest?
 - Would a quick action still be useful with only the current note and explicit
   attachments?
 - Is the source URL or signing identity filled in when known?

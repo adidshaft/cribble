@@ -54,7 +54,8 @@ Answer these in the issue, Discussion, or pull request:
 | Renderer | Alias for a built-in renderer | No file access |
 | Importer | Declared formats and review copy | No execution; user-selected files only |
 
-For importer ideas, use **File → Import → Copy Review**. For remote runners, use
+For importer ideas, use **Help → Copy Import Lane Setup Review** or
+**File → Import → Copy Review**. For remote runners, use
 **Help → Copy Remote Runner Setup Review**. Paste the copied review into the
 proposal so reviewers can see data boundaries, writes, secrets, and revocation.
 

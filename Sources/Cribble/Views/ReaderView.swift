@@ -2181,7 +2181,7 @@ private struct WelcomeView: View {
     @EnvironmentObject private var settings: AppSettings
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 20) {
             Image(systemName: "text.book.closed")
                 .font(.system(size: 42))
                 .foregroundStyle(.secondary)
@@ -2189,7 +2189,7 @@ private struct WelcomeView: View {
             VStack(spacing: 6) {
                 Text("Open a Markdown Folder")
                     .font(.system(size: 22, weight: .semibold))
-                Text("Cribble reads folders in place, keeps editing in your editor, and gives you a guided demo when you want a quick tour.")
+                Text("Cribble reads folders in place, keeps editing in your editor, and can start with the demo path closest to your work.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -2197,26 +2197,38 @@ private struct WelcomeView: View {
             }
 
             HStack(spacing: 10) {
-                Button("Open Folder") {
+                Button {
                     library.chooseFolder(sortMode: settings.fileSortMode)
+                } label: {
+                    Label("Open Folder", systemImage: "folder")
                 }
                 .controlSize(.large)
                 .cribbleGlassButton(prominent: true)
                 .help("Open a Markdown folder and keep it in the sidebar")
 
-                Button("Open Demo Tour") {
+                Button {
                     library.openDemoLibrary(sortMode: settings.fileSortMode)
+                } label: {
+                    Label("Open Demo Tour", systemImage: "sparkles")
                 }
                 .controlSize(.large)
                 .cribbleGlassButton()
                 .help("Open the bundled DemoNotes tutorial")
+            }
 
-                Button("Workflow Playbook") {
-                    library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode)
+            VStack(spacing: 8) {
+                Text("Start with")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 124), spacing: 8)], spacing: 8) {
+                    demoStartButton("Basics", systemImage: "list.bullet.rectangle", note: "Getting Started.md")
+                    demoStartButton("Workflows", systemImage: "point.3.connected.trianglepath.dotted", note: "Workflow Playbook.md")
+                    demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")
+                    demoStartButton("Extensions", systemImage: "puzzlepiece.extension", note: "Team Extension Kit.md")
                 }
-                .controlSize(.large)
-                .cribbleGlassButton()
-                .help("Open practical DemoNotes workflows")
+                .frame(maxWidth: 560)
             }
 
             Button("Reset DemoNotes") {
@@ -2229,5 +2241,16 @@ private struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
+    }
+
+    private func demoStartButton(_ title: String, systemImage: String, note: String) -> some View {
+        Button {
+            library.openDemoNote(named: note, sortMode: settings.fileSortMode)
+        } label: {
+            Label(title, systemImage: systemImage)
+        }
+        .controlSize(.regular)
+        .cribbleGlassButton()
+        .help("Open \(note.replacingOccurrences(of: ".md", with: ""))")
     }
 }

@@ -96,7 +96,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(secondSnapshot?.reusedDocuments, 2)
         XCTAssertEqual(secondSnapshot?.loadedDocuments, 0)
     }
-    
+
     func testLibraryStoreSearchFiltering() throws {
         let store = MarkdownLibraryStore(includeBundledDemo: false)
         

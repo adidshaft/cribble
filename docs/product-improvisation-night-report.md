@@ -21,6 +21,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - A Project Intelligence preflight sheet in the HUD before starting folder/all-folder scans, summarizing scope, local vs remote processing, disk/cache expectations, and performance mode.
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
+- The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
 - Extension registry coverage for user/project scans, project-over-user duplicate precedence, warnings, and disabled extension filtering.
 - Cleaned up a SQLite vector-binding compiler warning so verification output stays easier to read.
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
@@ -39,6 +40,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now include a `Research Review` workflow for evidence-heavy folders, claim tables, source trails, extension quick actions, and intentional remote-runner use.
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
+- The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
@@ -111,6 +113,7 @@ swift test --filter Extension
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
 swift test --filter CribbleUITests
+swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
 swift test --filter ExtensionRegistryTests
 swift test --filter DiagnosticsCenterTests
@@ -138,6 +141,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after refresh diagnostics snapshots: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after refresh diagnostics integration: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter 'LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes extension/onboarding updates: 16 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after welcome-screen onboarding entry points: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

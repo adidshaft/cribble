@@ -533,6 +533,10 @@ Latest pass:
 - DemoNotes Home, Feature Tour, and Cribble AI now use the same local-first
   model-boundary language for Pathfinder and generic intelligence, replacing
   older on-device shorthand where Claude/Codex choices may also appear.
+- Copied diagnostic reports now include next-action guidance for intelligence
+  and extensions, including missing remote-runner Keychain credentials,
+  extension manifest warnings, empty extension setups, queued jobs, and stale
+  artifacts.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

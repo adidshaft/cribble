@@ -449,7 +449,8 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
             "- Enabled: \(enabledCount)",
             "- Warnings: \(warningCount)",
             "- Installed contributions: \(quickActionCount) quick actions, \(remoteRunnerCount) remote runners, \(rendererCount) renderers, \(importerCount) importers",
-            "- Active contributions: \(activeQuickActionCount) quick actions, \(activeRemoteRunnerCount) remote runners, \(activeRendererCount) renderers, \(activeImporterCount) importers"
+            "- Active contributions: \(activeQuickActionCount) quick actions, \(activeRemoteRunnerCount) remote runners, \(activeRendererCount) renderers, \(activeImporterCount) importers",
+            "- Next action: \(nextAction)"
         ]
 
         if !warnings.isEmpty {
@@ -489,6 +490,19 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
         case .importer:
             return manifest.importers.map { "\($0.title) [\($0.fileExtensions.joined(separator: ", "))]" }.joined(separator: ", ")
         }
+    }
+
+    private var nextAction: String {
+        if warningCount > 0 {
+            return "Open Settings > Extensions, fix manifest warnings, then run Check Again."
+        }
+        if installedCount == 0 {
+            return "Open Settings > Extensions and create a read-only project example."
+        }
+        if enabledCount == 0 {
+            return "Enable a reviewed extension or leave all extensions disabled."
+        }
+        return "No extension action needed."
     }
 }
 
@@ -560,6 +574,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
         - Last activity: \(lastActivity ?? "none")
         - Resource gate: \(resourceGateDescription)
         - Model download: \(modelDownloadDescription)
+        - Next action: \(nextAction)
         """
     }
 
@@ -583,6 +598,22 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
     private var modelDownloadDescription: String {
         guard let modelDownloadFraction else { return "none" }
         return "\(Int((modelDownloadFraction * 100).rounded()))%"
+    }
+
+    private var nextAction: String {
+        if !isEnabled {
+            return "Enable Project Intelligence from the Intelligence HUD when this folder should be indexed."
+        }
+        if runnerBaseURL != nil && !usesKeychainCredential {
+            return "Store the remote runner credential in Keychain or switch back to an on-device model."
+        }
+        if pendingJobs > 0 {
+            return "Keep Cribble open during an idle window so queued intelligence jobs can finish."
+        }
+        if staleArtifacts > 0 {
+            return "Run or refresh Project Intelligence to rebuild stale artifacts."
+        }
+        return "No intelligence action needed."
     }
 
     nonisolated static func redactedRunnerURL(_ raw: String) -> String {

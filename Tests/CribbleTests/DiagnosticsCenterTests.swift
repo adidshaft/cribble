@@ -24,9 +24,34 @@ final class DiagnosticsCenterTests: XCTestCase {
 
         XCTAssertTrue(section.contains("OpenAI-compatible runner at http://127.0.0.1:11434"))
         XCTAssertTrue(section.contains("Credential: Keychain"))
+        XCTAssertTrue(section.contains("Next action: Keep Cribble open during an idle window so queued intelligence jobs can finish."))
         XCTAssertFalse(section.contains("/v1"))
         XCTAssertFalse(section.contains("token"))
         XCTAssertFalse(section.contains("secret"))
+    }
+
+    func testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential() {
+        let snapshot = IntelligenceDiagnosticsSnapshot(
+            isEnabled: true,
+            scope: "single folder",
+            statusDescription: "Ready",
+            modelID: "team-model",
+            runnerBaseURL: "https://runner.example.com/v1",
+            usesKeychainCredential: false,
+            performanceMode: "Balanced",
+            pendingJobs: 0,
+            filesIndexed: 10,
+            staleArtifacts: 0,
+            lastActivity: nil,
+            resourceDecisionSummary: nil,
+            allowedTier: nil,
+            modelDownloadFraction: nil
+        )
+
+        let section = snapshot.formattedReportSection
+
+        XCTAssertTrue(section.contains("Credential: none configured"))
+        XCTAssertTrue(section.contains("Next action: Store the remote runner credential in Keychain or switch back to an on-device model."))
     }
 
     @MainActor
@@ -210,6 +235,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Warnings: 1"))
         XCTAssertTrue(section.contains("Installed contributions: 1 quick actions, 1 remote runners, 0 renderers, 0 importers"))
         XCTAssertTrue(section.contains("Active contributions: 1 quick actions, 0 remote runners, 0 renderers, 0 importers"))
+        XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, fix manifest warnings, then run Check Again."))
         XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))
         XCTAssertTrue(section.contains("Quick Review (com.example.quick): Quick Action, User, enabled"))
         XCTAssertTrue(section.contains("Permissions: Read Current Note"))
@@ -229,6 +255,7 @@ final class DiagnosticsCenterTests: XCTestCase {
 
         XCTAssertTrue(report.contains("## Extensions"))
         XCTAssertTrue(report.contains("Installed: 0"))
+        XCTAssertTrue(report.contains("Next action: Open Settings > Extensions and create a read-only project example."))
         XCTAssertTrue(report.contains("No extension manifests are installed."))
     }
 

@@ -538,6 +538,44 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertEqual(completed, 1)
     }
 
+    func testRunnerFallsBackWhenFileSummaryIsEmpty() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-empty-summary-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let noteURL = root.appendingPathComponent("Notes.md")
+        try """
+        # Notes
+
+        ## Plan
+
+        This note describes the launch plan and links to [[Roadmap]].
+
+        - [ ] Ship the release
+        """.write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let provider = MockIntelligenceProvider(response: "")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+
+        let ran = await runner.runNext()
+
+        XCTAssertTrue(ran)
+        let summaries = await db.artifacts(projectID: "p", type: .fileSummary)
+        let summary = try XCTUnwrap(summaries.first)
+        let content = try XCTUnwrap(artifacts.content(for: summary))
+        XCTAssertTrue(content.hasPrefix("# Notes.md"), content)
+        XCTAssertTrue(content.contains("Generated deterministically"), content)
+        XCTAssertTrue(content.contains("wiki link"), content)
+        let failed = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertTrue(failed.isEmpty)
+    }
+
     func testRunnerRequeuesWhenProviderUnavailable() async throws {
         let db = try IntelligenceDatabase(path: ":memory:")
         await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .summarizeFile, inputHash: "h1", inputPaths: ["a.swift"]))

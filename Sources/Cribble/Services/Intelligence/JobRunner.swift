@@ -201,8 +201,16 @@ actor JobRunner {
     private func summarizeFile(_ job: IntelligenceJob) async throws -> String? {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         guard let path = job.inputPaths.first, let source = readSource(path) else { throw JobRunnerError.missingInput }
-        let output = try await provider.generate(prompt: Prompts.fileSummary(path: path, source: source), maxTokens: 512)
-        let summary = try await validatedMarkdown(output)
+        let summary: String
+        do {
+            let output = try await provider.generate(prompt: Prompts.fileSummary(path: path, source: source), maxTokens: 512)
+            summary = try await validatedMarkdown(output)
+        } catch JobRunnerError.emptyOutput {
+            summary = deterministicFileSummary(path: path, source: source)
+        } catch JobRunnerError.validationFailed(let issues)
+            where issues.contains("provider returned reasoning instead of the requested artifact") {
+            summary = deterministicFileSummary(path: path, source: source)
+        }
         let artifactID = try await storeSummary(summary, type: .fileSummary, path: path, inputHash: job.inputHash)
         await upsertFileNode(path: path, inputHash: job.inputHash)
         return artifactID
@@ -565,6 +573,45 @@ actor JobRunner {
             return String(normalized[...period])
         }
         return String(normalized.prefix(180))
+    }
+
+    private func deterministicFileSummary(path: String, source: String) -> String {
+        let title = (path as NSString).lastPathComponent
+        let lines = source.components(separatedBy: .newlines)
+        let headings = lines.compactMap { line -> String? in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("#") else { return nil }
+            let markerCount = trimmed.prefix { $0 == "#" }.count
+            guard (1...6).contains(markerCount) else { return nil }
+            let heading = trimmed.dropFirst(markerCount).trimmingCharacters(in: .whitespaces)
+            return heading.isEmpty ? nil : String(heading)
+        }
+        let taskCount = lines.filter { TaskCheckbox.parse(line: $0) != nil }.count
+        let wikiLinkCount = WikiLinkParser.parse(source).count
+        let excerpt = source
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { paragraph in
+                !paragraph.isEmpty && !paragraph.hasPrefix("#") && !paragraph.hasPrefix("```")
+            }
+            .map { String($0.prefix(240)) }
+
+        var bullets = [
+            "Generated deterministically because the local model did not return a usable summary.",
+            "Contains \(headings.count) heading\(headings.count == 1 ? "" : "s"), \(taskCount) task checkbox\(taskCount == 1 ? "" : "es"), and \(wikiLinkCount) wiki link\(wikiLinkCount == 1 ? "" : "s")."
+        ]
+        if !headings.isEmpty {
+            bullets.append("Main sections: \(headings.prefix(8).map { "`\($0)`" }.joined(separator: ", ")).")
+        }
+        if let excerpt, !excerpt.isEmpty {
+            bullets.append("Opening context: \(excerpt)")
+        }
+
+        return """
+        # \(title)
+
+        \(bullets.map { "- \($0)" }.joined(separator: "\n"))
+        """
     }
 
     private func storeSummary(

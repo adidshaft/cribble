@@ -407,7 +407,12 @@ struct IntelligenceHUDView: View {
         }
         let baseURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         showModelPicker = false
-        await engine.setLocalRunner(baseURL: baseURL, model: modelID)
+        await engine.setLocalRunner(
+            baseURL: baseURL,
+            model: modelID,
+            displayName: localRunnerName == "Custom" ? nil : localRunnerName,
+            availableModels: localRunnerModelIDs
+        )
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {

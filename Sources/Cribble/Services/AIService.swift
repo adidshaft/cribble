@@ -3,14 +3,36 @@ import Foundation
 enum AIProvider: String, CaseIterable, Identifiable {
     case codex = "Codex"
     case claude = "Claude"
+    case localRunner = "Local Runner"
 
     var id: String { rawValue }
+
+    /// The CLI-spawning providers (the runner is HTTP, not a CLI).
+    static var cliProviders: [AIProvider] { [.codex, .claude] }
 
     var lowestModelName: String {
         switch self {
         case .codex: "gpt-5.5"
         case .claude: "haiku"
+        case .localRunner: "" // model comes from LocalRunnerStore
         }
+    }
+}
+
+extension AIProvider {
+    /// SF Symbol for provider buttons (shared by AIProviderSheet & ReaderView).
+    var systemImage: String {
+        switch self {
+        case .codex: "terminal"
+        case .claude: "brain.head.profile"
+        case .localRunner: "network"
+        }
+    }
+
+    /// Providers to offer in pickers: the runner appears only when configured.
+    @MainActor
+    static var availableProviders: [AIProvider] {
+        LocalRunnerStore.shared.isConfigured ? allCases : cliProviders
     }
 }
 
@@ -45,6 +67,117 @@ enum AIMode: String, CaseIterable, Identifiable {
 }
 
 struct AIService {
+    /// Where `runViaLocalRunner` gets its endpoint.
+    enum RunnerEndpointSource {
+        /// Production: read the live LocalRunnerStore.
+        case liveStore
+        /// Tests: use exactly this endpoint (nil = behave as unconfigured).
+        case fixed(RunnerEndpoint?)
+    }
+
+    private let runnerEndpointSource: RunnerEndpointSource
+    private let session: URLSession
+
+    init(runnerEndpointSource: RunnerEndpointSource = .liveStore, session: URLSession = .shared) {
+        self.runnerEndpointSource = runnerEndpointSource
+        self.session = session
+    }
+
+    @MainActor
+    private func resolveRunnerEndpoint() -> RunnerEndpoint? {
+        switch runnerEndpointSource {
+        case .liveStore: return LocalRunnerStore.shared.endpoint
+        case .fixed(let endpoint): return endpoint
+        }
+    }
+
+    /// Concatenates the folder's Markdown files (smallest first) into a
+    /// fenced context block, stopping at `maxCharacters`. Smallest-first
+    /// packs the most files into the budget.
+    static func vaultContext(folderURL: URL, maxCharacters: Int) -> String {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(
+            at: folderURL,
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else { return "" }
+
+        // Resolve symlinks so prefix-stripping works when the folder is e.g.
+        // `/var/folders/…` but enumerated URLs come back `/private/var/folders/…`.
+        let basePrefix = folderURL.resolvingSymlinksInPath().path + "/"
+        var files: [(path: String, size: Int, url: URL)] = []
+        for case let url as URL in enumerator where url.pathExtension.lowercased() == "md" {
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? .max
+            let filePath = url.resolvingSymlinksInPath().path
+            let relative = filePath.hasPrefix(basePrefix)
+                ? String(filePath.dropFirst(basePrefix.count))
+                : filePath
+            files.append((relative, size, url))
+        }
+        files.sort { $0.size < $1.size }
+
+        var sections: [String] = []
+        var remaining = maxCharacters
+        var omitted = 0
+        for file in files {
+            // Cheap pre-check: a file's byte size conservatively approximates
+            // (over-estimates) its section's character count, so skipping the
+            // content read when the byte size exceeds the budget is safe —
+            // though multibyte files may be omitted slightly early.
+            // (`continue` rather than `break` keeps the omitted count exact.)
+            guard file.size <= remaining else {
+                omitted += 1
+                continue
+            }
+            guard let content = try? String(contentsOf: file.url, encoding: .utf8) else { continue }
+            let section = "=== \(file.path) ===\n\(content)\n"
+            guard section.count <= remaining else {
+                omitted += 1
+                continue
+            }
+            remaining -= section.count
+            sections.append(section)
+        }
+        if omitted > 0 {
+            sections.append("[\(omitted) file(s) omitted — context budget exhausted]\n")
+        }
+        return sections.joined(separator: "\n")
+    }
+
+    /// Sends `prompt` (plus inlined vault context, since an HTTP runner can't
+    /// read the folder like the CLIs do) to the configured local runner via
+    /// the same OpenAI-compatible client Intelligence uses.
+    private func runViaLocalRunner(prompt: String, folderURL: URL) async throws -> String {
+        guard let endpoint = await resolveRunnerEndpoint() else {
+            throw AIServiceError.commandFailed(
+                "No local runner is configured. Set one up from the Intelligence HUD's model menu, then try again."
+            )
+        }
+        let context = Self.vaultContext(folderURL: folderURL, maxCharacters: 32_000)
+        let provider = OpenAICompatibleProvider(
+            baseURL: endpoint.baseURL,
+            model: endpoint.modelID,
+            session: session
+        )
+        // The shared prompts assume CLI filesystem access; adapt them for the
+        // runner, which only sees the inlined <vault> block.
+        let systemPrompt = prompt + """
+
+
+        NOTE: You cannot access the filesystem. The folder's full contents are inlined in the <vault> block of the user message; each file begins with a `=== relative/path.md ===` header. Treat those as the folder's files, and use exactly those relative paths in any diff headers (`--- a/<path>` / `+++ b/<path>`).
+        """
+        let messages = [
+            EngineMessage(role: .system, content: systemPrompt),
+            EngineMessage(role: .user, content: "<vault>\n\(context)\n</vault>")
+        ]
+        do {
+            // 4k tokens: diff outputs are long; CLI paths have no cap.
+            return try await provider.generate(prompt: messages, schema: nil, maxTokens: 4_096)
+        } catch {
+            throw AIServiceError.commandFailed(error.localizedDescription)
+        }
+    }
+
     func generateLinkPatch(provider: AIProvider, mode: AIMode, folderURL: URL) async throws -> UnifiedDiff {
         let prompt = Self.prompt(for: mode)
         let output: String
@@ -90,6 +223,8 @@ struct AIService {
                 currentDirectory: folderURL,
                 provider: provider
             )
+        case .localRunner:
+            output = try await runViaLocalRunner(prompt: prompt, folderURL: folderURL)
         }
 
         return UnifiedDiffParser.parse(UnifiedDiffParser.extractDiffText(from: output))
@@ -147,6 +282,8 @@ struct AIService {
                 currentDirectory: folderURL,
                 provider: provider
             )
+        case .localRunner:
+            return try await runViaLocalRunner(prompt: prompt, folderURL: folderURL)
         }
     }
 

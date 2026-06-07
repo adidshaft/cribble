@@ -25,6 +25,7 @@ struct ModelPickerButton: View {
         switch viewModel.selectedModel.kind {
         case .localMLX: .blue
         case .claudeCLI, .codexCLI: .green
+        case .localRunner: .orange
         }
     }
 
@@ -52,16 +53,25 @@ struct ModelPickerList: View {
     @ObservedObject var viewModel: ChatHUDViewModel
     let onSelect: () -> Void
 
+    @ObservedObject private var runnerStore = LocalRunnerStore.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             section(title: "ON-DEVICE", models: ModelCatalog.localModels)
+            if runnerStore.isConfigured, !ModelCatalog.runnerModels.isEmpty {
+                Divider().padding(.vertical, 4)
+                section(
+                    title: "LOCAL RUNNER" + (runnerStore.displayName.map { " — \($0.uppercased())" } ?? ""),
+                    models: ModelCatalog.runnerModels
+                )
+            }
             if !ModelCatalog.cloudModels.isEmpty {
                 Divider().padding(.vertical, 4)
                 section(title: "CLOUD", models: ModelCatalog.cloudModels)
             }
 
             Divider().padding(.vertical, 4)
-            Text("On-device models download once (~1–3 GB); tap ↓ to download. Cloud models (Claude/Codex) use the sessions already logged in your Terminal.")
+            Text("On-device models download once (~1–3 GB); tap ↓ to download. Local runner models are served by your configured runner (set up in the Intelligence HUD). Cloud models (Claude/Codex) use the sessions already logged in your Terminal.")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -71,6 +81,7 @@ struct ModelPickerList: View {
         }
         .padding(8)
         .frame(width: 284)
+        .task { await runnerStore.refreshModels() }
     }
 
     private func section(title: String, models: [LocalModel]) -> some View {
@@ -166,6 +177,8 @@ private struct ModelRow: View {
             switch availability {
             case .cloud:
                 Image(systemName: "cloud").foregroundStyle(.secondary).help("Runs via your Terminal session")
+            case .runner:
+                Image(systemName: "network").foregroundStyle(.orange).help("Served by your local runner")
             case .downloaded:
                 Image(systemName: "checkmark.circle").foregroundStyle(.green).help("Downloaded")
             case .notDownloaded:

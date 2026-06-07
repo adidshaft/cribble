@@ -281,6 +281,66 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(ModelCatalog.defaultModel.kind.isCloud)
     }
 
+    // MARK: - Local runner catalog entries
+
+    func testRunnerModelIDRoundTrips() {
+        let model = LocalModel.runnerModel(modelID: "qwen2.5:7b")
+        XCTAssertEqual(model.id, "runner:qwen2.5:7b")
+        XCTAssertEqual(model.kind, .localRunner)
+        XCTAssertEqual(model.name, "qwen2.5:7b")
+        // Resolution is pure — a persisted runner selection resolves even
+        // before the store has probed the runner.
+        let resolved = ModelCatalog.model(withID: "runner:qwen2.5:7b")
+        XCTAssertEqual(resolved?.id, "runner:qwen2.5:7b")
+        XCTAssertEqual(resolved?.kind, .localRunner)
+    }
+
+    func testRunnerKindIsLocalNotCloud() {
+        XCTAssertFalse(ModelKind.localRunner.isCloud)
+    }
+
+    func testRunnerAvailabilityIsRunner() {
+        let model = LocalModel.runnerModel(modelID: "m")
+        if case .runner = ModelInventory.availability(of: model) {} else {
+            XCTFail("Expected .runner availability")
+        }
+    }
+
+    @MainActor
+    func testRunnerSelectionPersistsAndDoesNotFallBackToDefault() {
+        withCleanEngineChoiceDefaults {
+            let runner = LocalModel.runnerModel(modelID: "qwen2.5:7b")
+            let first = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            first.selectModel(runner)
+            XCTAssertEqual(UserDefaults.standard.string(forKey: "chatHUD.selectedModelID"), "runner:qwen2.5:7b")
+
+            // A fresh view model (app relaunch) must restore the runner model,
+            // NOT silently fall back to ModelCatalog.defaultModel.
+            let recreated = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            XCTAssertEqual(recreated.selectedModel.id, "runner:qwen2.5:7b")
+            XCTAssertEqual(recreated.selectedModel.kind, .localRunner)
+        }
+    }
+
+    func testRunnerShortNameDropsTagSuffix() {
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "mistral-small:24b-instruct-q4_K_M").shortName, "mistral-small")
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "qwen2.5:7b").shortName, "qwen2.5")
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "plain-model").shortName, "plain-model")
+    }
+
+    func testFactoryMakesRunnerEngineForRunnerKind() {
+        let engine = LocalChatEngineFactory.make(for: .runnerModel(modelID: "m"))
+        XCTAssertTrue(engine is LocalRunnerChatEngine)
+    }
+
+    func testModelKindCloudTruthTable() {
+        // Pin the full truth table: only the CLI providers are cloud.
+        XCTAssertFalse(ModelKind.localMLX.isCloud)
+        XCTAssertFalse(ModelKind.localRunner.isCloud)
+        XCTAssertTrue(ModelKind.claudeCLI.isCloud)
+        XCTAssertTrue(ModelKind.codexCLI.isCloud)
+    }
+
     @MainActor
     func testEngineChooserShowsForFreshDefaults() {
         withCleanEngineChoiceDefaults {

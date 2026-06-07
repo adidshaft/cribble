@@ -167,6 +167,8 @@ enum LocalChatEngineFactory {
             #else
             return UnavailableChatEngine()
             #endif
+        case .localRunner:
+            return LocalRunnerChatEngine()
         }
     }
 }

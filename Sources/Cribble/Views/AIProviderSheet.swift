@@ -33,16 +33,16 @@ struct AIProviderSheet: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                ForEach(AIProvider.allCases) { provider in
+                ForEach(AIProvider.availableProviders) { provider in
                     Button {
                         onSelect(provider, mode)
                     } label: {
-                        Label(provider.rawValue, systemImage: provider == .codex ? "terminal" : "brain.head.profile")
+                        Label(provider.rawValue, systemImage: provider.systemImage)
                             .frame(maxWidth: .infinity)
                     }
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)
-                    .help("Run \(provider.rawValue) locally for: \(mode.title)")
+                    .help(help(for: provider))
                 }
             }
 
@@ -58,6 +58,12 @@ struct AIProviderSheet: View {
         .padding(24)
         .frame(width: 460)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func help(for provider: AIProvider) -> String {
+        provider == .localRunner
+            ? "Run your configured local runner for: \(mode.title)"
+            : "Run \(provider.rawValue) locally for: \(mode.title)"
     }
 }
 

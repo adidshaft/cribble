@@ -18,7 +18,9 @@ final class IntelligenceSettings: ObservableObject {
     }
 
     /// When set, intelligence uses an OpenAI-compatible runner at this base URL
-    /// instead of an on-device model.
+    /// instead of an on-device model. App-wide runner config lives in
+    /// `LocalRunnerStore`; this key only means "Intelligence currently uses the
+    /// runner" (legacy `intelligence.runnerURL`).
     @Published var localRunnerBaseURL: String? {
         didSet { UserDefaults.standard.set(localRunnerBaseURL, forKey: Keys.runnerURL) }
     }

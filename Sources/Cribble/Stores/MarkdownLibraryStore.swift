@@ -824,7 +824,11 @@ final class MarkdownLibraryStore: ObservableObject {
         pendingDiffRootURL = folderURL
         pendingDiffMode = mode
         let actionLabel = mode == .updateReadme ? "rewrite the folder README" : "suggest links"
-        statusMessage = "Asking \(provider.rawValue) \(provider.lowestModelName) to \(actionLabel)..."
+        // The runner has no static model name (it comes from LocalRunnerStore),
+        // so avoid the "<name> <model>" template's double space for it.
+        statusMessage = provider == .localRunner
+            ? "Asking your local runner to \(actionLabel)..."
+            : "Asking \(provider.rawValue) \(provider.lowestModelName) to \(actionLabel)..."
 
         Task {
             do {

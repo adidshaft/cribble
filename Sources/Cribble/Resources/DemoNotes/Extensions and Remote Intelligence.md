@@ -79,7 +79,8 @@ Good extensions should feel native, inspectable, and reversible:
 | Importer | Convert exported chats, PDFs, or research bundles into notes |
 
 The rule is simple: every extension declares what it wants, Cribble shows that
-clearly, and user files stay under user control.
+clearly, user files stay under user control, and secrets live in Keychain — never
+in `cribble-extension.json`.
 
 ## 5. Copy-ready manifest patterns
 
@@ -115,6 +116,10 @@ Adds a prompt to the Chat HUD empty state and `/` command palette.
 
 Adds a preset to the Intelligence HUD model picker. If the URL is not loopback,
 Cribble shows a warning that note context may leave this Mac.
+
+Do **not** put API keys in the manifest. Add the profile here, then paste the
+token into the Intelligence HUD and store it in Keychain when you choose the
+runner.
 
 ```json
 {

@@ -39,6 +39,8 @@ struct IntelligenceHUDView: View {
     @State private var localRunnerStatus: LocalRunnerProbeStatus?
     @State private var isProbingLocalRunner = false
     @State private var localRunnerRequiresProbe = true
+    @State private var localRunnerAPIKey = ""
+    @State private var localRunnerUsesKeychain = false
     @State private var pendingPreflightScope: IntelligencePreflightScope?
 
     var body: some View {
@@ -390,6 +392,15 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(localRunnerStatus.isError ? Color.red.opacity(0.85) : Color.green.opacity(0.85))
                     .lineLimit(2)
             }
+            SecureField("API key (optional)", text: $localRunnerAPIKey)
+                .font(.system(size: 10))
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 8).padding(.vertical, 5)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            Toggle("Store API key in Keychain", isOn: $localRunnerUsesKeychain)
+                .font(.system(size: 10))
+                .toggleStyle(.checkbox)
+                .foregroundStyle(.white.opacity(0.72))
             if let warning = localRunnerPrivacyWarning {
                 Label(warning, systemImage: "exclamationmark.triangle")
                     .font(.system(size: 9))
@@ -425,6 +436,8 @@ struct IntelligenceHUDView: View {
         localRunnerStatus = nil
         localRunnerModelIDs = []
         localRunnerRequiresProbe = true
+        localRunnerAPIKey = ""
+        localRunnerUsesKeychain = engine.settings.runnerUsesKeychain(baseURL: baseURL)
         showLocalRunnerConfig = true
         Task { _ = await probeLocalRunner() }
     }
@@ -436,6 +449,8 @@ struct IntelligenceHUDView: View {
         localRunnerModelIDs = [profile.modelID]
         localRunnerStatus = .ready(profile.isLoopback ? "Extension profile from \(profile.sourceName)." : "Remote profile from \(profile.sourceName).")
         localRunnerRequiresProbe = false
+        localRunnerAPIKey = ""
+        localRunnerUsesKeychain = engine.settings.runnerUsesKeychain(baseURL: profile.baseURL.absoluteString)
         showLocalRunnerConfig = true
     }
 
@@ -480,7 +495,18 @@ struct IntelligenceHUDView: View {
         }
         let baseURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         showModelPicker = false
-        await engine.setLocalRunner(baseURL: baseURL, model: modelID)
+        do {
+            try await engine.setLocalRunner(
+                baseURL: baseURL,
+                model: modelID,
+                apiKey: localRunnerAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : localRunnerAPIKey,
+                usesKeychain: localRunnerUsesKeychain
+            )
+            localRunnerAPIKey = ""
+        } catch {
+            showModelPicker = true
+            localRunnerStatus = .failed(error.localizedDescription)
+        }
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {

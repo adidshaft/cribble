@@ -24,6 +24,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Updated MLX cache-limit setup to the current `Memory.cacheLimit` API, removing the deprecation warning from focused builds.
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
+- Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -76,15 +77,14 @@ swift test --filter ExtensionManifestTests
 Latest pass:
 
 - `swift test --filter Extension`
-- 16 tests passed across manifest and registry suites.
+- 17 tests passed across manifest, registry, and runner credential suites.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-2. Add secure credential handling for remote runner profiles without storing secrets in manifests.
-3. Add an in-demo checklist/progress affordance for the tour notes.
-4. Add an in-demo checklist/progress affordance for the tour notes.
-5. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
+2. Add an in-demo checklist/progress affordance for the tour notes.
+3. Consider a dedicated Extensions developer guide outside DemoNotes for longer examples.
+4. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

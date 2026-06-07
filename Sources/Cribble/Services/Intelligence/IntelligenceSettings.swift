@@ -23,6 +23,12 @@ final class IntelligenceSettings: ObservableObject {
         didSet { UserDefaults.standard.set(localRunnerBaseURL, forKey: Keys.runnerURL) }
     }
 
+    /// Base URLs whose bearer token lives in Keychain. This stores only the URL
+    /// marker, never the secret itself.
+    @Published var keychainRunnerBaseURLs: Set<String> {
+        didSet { UserDefaults.standard.set(Array(keychainRunnerBaseURLs), forKey: Keys.keychainRunnerURLs) }
+    }
+
     @Published var pauseOnBattery: Bool {
         didSet { UserDefaults.standard.set(pauseOnBattery, forKey: Keys.pauseOnBattery) }
     }
@@ -75,6 +81,7 @@ final class IntelligenceSettings: ObservableObject {
             modelID = onDeviceDefault
         }
         localRunnerBaseURL = storedRunnerURL
+        keychainRunnerBaseURLs = Set(UserDefaults.standard.stringArray(forKey: Keys.keychainRunnerURLs) ?? [])
         pauseOnBattery = UserDefaults.standard.object(forKey: Keys.pauseOnBattery) as? Bool ?? true
         if let storedMode = UserDefaults.standard.string(forKey: Keys.performanceMode),
            let mode = PerformanceMode(rawValue: storedMode) {
@@ -94,10 +101,24 @@ final class IntelligenceSettings: ObservableObject {
         else { enabledProjectIDs.remove(projectID) }
     }
 
+    func runnerUsesKeychain(baseURL: String) -> Bool {
+        keychainRunnerBaseURLs.contains(RunnerCredentialStore.accountKey(for: baseURL))
+    }
+
+    func setRunnerUsesKeychain(_ usesKeychain: Bool, baseURL: String) {
+        let key = RunnerCredentialStore.accountKey(for: baseURL)
+        if usesKeychain {
+            keychainRunnerBaseURLs.insert(key)
+        } else {
+            keychainRunnerBaseURLs.remove(key)
+        }
+    }
+
     private enum Keys {
         static let enabledProjects = "intelligence.enabledProjects"
         static let modelID = "intelligence.modelID"
         static let runnerURL = "intelligence.runnerURL"
+        static let keychainRunnerURLs = "intelligence.keychainRunnerURLs"
         static let pauseOnBattery = "intelligence.pauseOnBattery"
         static let performanceMode = "intelligence.performanceMode"
         static let autoPublish = "intelligence.autoPublish"

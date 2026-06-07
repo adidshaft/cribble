@@ -853,7 +853,13 @@ final class IntelligenceEngine: ObservableObject {
     }
 
     /// Points intelligence at an OpenAI-compatible local runner (Ollama, llama.cpp…).
-    func setLocalRunner(baseURL: String, model: String) async {
+    func setLocalRunner(baseURL: String, model: String, apiKey: String? = nil, usesKeychain: Bool = false) async throws {
+        if let apiKey, !apiKey.isEmpty {
+            try RunnerCredentialStore.setAPIKey(apiKey, for: baseURL)
+        } else if !usesKeychain {
+            RunnerCredentialStore.deleteAPIKey(for: baseURL)
+        }
+        settings.setRunnerUsesKeychain(usesKeychain || (apiKey?.isEmpty == false), baseURL: baseURL)
         settings.localRunnerBaseURL = baseURL
         settings.modelID = model
         await rebuildRunner()
@@ -922,7 +928,10 @@ final class IntelligenceEngine: ObservableObject {
 
     private func makeProvider() -> IntelligenceProvider? {
         if let urlString = settings.localRunnerBaseURL, let url = URL(string: urlString) {
-            return OpenAICompatibleProvider(baseURL: url, model: settings.modelID, embedModel: nil)
+            let apiKey = settings.runnerUsesKeychain(baseURL: urlString)
+                ? RunnerCredentialStore.apiKey(for: urlString)
+                : nil
+            return OpenAICompatibleProvider(baseURL: url, model: settings.modelID, embedModel: nil, apiKey: apiKey)
         }
         guard let model = ModelCatalog.model(withID: settings.modelID) else { return nil }
         let engine = LocalLLM.shared.engine(for: model)

@@ -94,6 +94,10 @@ struct SettingsView: View {
                             validateExtensions()
                         }
                         .help("Reload extension manifests and surface validation warnings")
+                        Button("Open Kit") {
+                            library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+                        }
+                        .help("Open the DemoNotes guide for team extension design")
                         Menu("Create Example") {
                             ForEach(ExtensionExampleTemplate.allCases) { template in
                                 Button(template.title) {

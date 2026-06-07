@@ -57,6 +57,7 @@ What would need source-note writes:
 - [ ] The proposal asks for the least note access that can prove the workflow.
 - [ ] No API keys, passwords, certificates, tokens, private endpoints, or other secrets belong in manifests, examples, fixtures, or docs.
 - [ ] Any user-facing UI can be built with native SwiftUI, system controls, Settings, sheets, menus, commands, toolbars, focused values, and SF Symbols.
+- [ ] The first version does not need web views, custom chrome, Electron-style panels, or non-native UI.
 - [ ] Disabling the extension can remove its contribution cleanly.
 
 Good ideas can be ambitious. The first shipped step should still preserve

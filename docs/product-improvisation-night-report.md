@@ -145,6 +145,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
   first read-only version, data contract, native Mac surface, later-not-first-PR
   scope, least access, preview-before-write, secrets, and clean disable behavior
   before implementation starts.
+- Extension issue and PR templates now make the native UI condition explicit:
+  first versions should not need web views, custom chrome, Electron-style panels,
+  or non-native UI without maintainer approval.
 - Settings Extensions now includes Copy Proposal, giving contributors a native
   way to copy the same idea-first, read-only-first extension proposal template
   before writing implementation code.
@@ -443,6 +446,9 @@ Latest pass:
   template plus `CONTRIBUTING.md` and `docs/extensions.md` mention read-only
   first versions, data contracts, least note access, native SwiftUI surfaces,
   later-not-first-PR scope, and clean disable behavior.
+- Docs-only validation on 2026-06-08 confirmed extension issue and PR templates
+  now mention native SwiftUI plus no web views, custom chrome, Electron-style
+  panels, or non-native UI.
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
   adding short descriptions to built-in Chat HUD quick actions and slash-command
   rows: 39 XCTest tests, 0 failures.

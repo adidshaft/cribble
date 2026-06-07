@@ -272,7 +272,6 @@ private struct SidebarControls: View {
         }
         .disabled(activeIntelligenceRoot == nil)
         .sidebarIntelligenceIcon(disabled: activeIntelligenceRoot == nil, isOn: isIntelligenceOn)
-        .tint(isIntelligenceOn ? .green : .accentColor)
         .help(intelligenceHelp)
         .accessibilityValue(isIntelligenceOn ? "On" : "Off")
     }
@@ -374,13 +373,20 @@ private extension View {
             .labelStyle(.iconOnly)
             .font(.system(size: 20, weight: .semibold))
             .symbolRenderingMode(.monochrome)
-            .foregroundStyle(isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .foregroundStyle(.primary)
             .frame(width: 38, height: 38)
             .contentShape(Circle())
-            .background {
-                Circle()
-                    .fill(isOn ? Color.green : Color.clear)
-                    .opacity(isOn ? 0.92 : 0)
+            .overlay(alignment: .bottomTrailing) {
+                if isOn {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                        .overlay {
+                            Circle()
+                                .stroke(.background, lineWidth: 1.5)
+                        }
+                        .padding(6)
+                }
             }
             .clipShape(Circle())
             .cribbleInteractiveGlass(in: Circle())

@@ -74,6 +74,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Remote runner trust matching now uses endpoint plus model id, and approval keys include profile id, source, endpoint, and model, preventing one extension profile from borrowing another profile's trust or approval.
 - Sidebar Project Intelligence starts now reuse the same extension remote-runner approval sheet before enabling a folder, and app restore reloads project extension profiles, presents the same consent sheet when needed, then resumes restore after approval.
 - Settings now opens the Extensions section with a compact native dashboard: installed/enabled status, warnings, and lane counts for quick actions, remote runners, renderers, and importers, so beginners and power users can see extension health at a glance.
+- The extension dashboard now counts active lanes only, so disabled remote runners, importers, renderers, or quick actions no longer look available in the summary.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.
@@ -206,6 +207,7 @@ swift test --filter DiagnosticsCenterTests
 swift test
 swift test --filter CribbleUITests
 swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'
+swift test --filter ExtensionRegistryTests
 ```
 
 Latest pass:
@@ -274,6 +276,7 @@ Latest pass:
 - Full `swift test` passed on 2026-06-08 after the latest diagnostics and sidebar changes: 201 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after clearer task export status: 18 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes diagnostic-handoff guidance: 21 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after active-lane extension dashboard counts: 11 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

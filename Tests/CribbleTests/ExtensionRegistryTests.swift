@@ -373,7 +373,7 @@ struct ExtensionRegistryTests {
         #expect(summary.enabledCount == 2)
         #expect(summary.warningCount == 2)
         #expect(summary.quickActionCount == 2)
-        #expect(summary.remoteRunnerCount == 1)
+        #expect(summary.remoteRunnerCount == 0)
         #expect(summary.rendererCount == 0)
         #expect(summary.importerCount == 1)
         #expect(summary.statusTitle == "2 warnings need review")

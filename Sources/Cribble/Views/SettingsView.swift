@@ -292,10 +292,11 @@ struct ExtensionDashboardSummary: Equatable {
         self.installedCount = installed.count
         self.enabledCount = installed.filter { !disabledIDs.contains($0.manifest.id) }.count
         self.warningCount = warningCount
-        quickActionCount = installed.reduce(0) { $0 + $1.manifest.quickActions.count }
-        remoteRunnerCount = installed.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
-        rendererCount = installed.reduce(0) { $0 + $1.manifest.renderers.count }
-        importerCount = installed.reduce(0) { $0 + $1.manifest.importers.count }
+        let enabled = installed.filter { !disabledIDs.contains($0.manifest.id) }
+        quickActionCount = enabled.reduce(0) { $0 + $1.manifest.quickActions.count }
+        remoteRunnerCount = enabled.reduce(0) { $0 + $1.manifest.intelligenceProviders.count }
+        rendererCount = enabled.reduce(0) { $0 + $1.manifest.renderers.count }
+        importerCount = enabled.reduce(0) { $0 + $1.manifest.importers.count }
     }
 
     var statusTitle: String {
@@ -339,10 +340,10 @@ private struct ExtensionDashboard: View {
             }
 
             HStack(spacing: 6) {
-                ExtensionDashboardMetric(title: "Actions", value: summary.quickActionCount, systemImage: "bolt")
-                ExtensionDashboardMetric(title: "Runners", value: summary.remoteRunnerCount, systemImage: "brain.head.profile")
-                ExtensionDashboardMetric(title: "Renderers", value: summary.rendererCount, systemImage: "doc.richtext")
-                ExtensionDashboardMetric(title: "Importers", value: summary.importerCount, systemImage: "square.and.arrow.down")
+                ExtensionDashboardMetric(title: "Active Actions", value: summary.quickActionCount, systemImage: "bolt")
+                ExtensionDashboardMetric(title: "Active Runners", value: summary.remoteRunnerCount, systemImage: "brain.head.profile")
+                ExtensionDashboardMetric(title: "Active Renderers", value: summary.rendererCount, systemImage: "doc.richtext")
+                ExtensionDashboardMetric(title: "Active Importers", value: summary.importerCount, systemImage: "square.and.arrow.down")
             }
         }
         .padding(10)

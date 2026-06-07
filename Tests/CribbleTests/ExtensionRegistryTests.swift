@@ -227,6 +227,25 @@ struct ExtensionRegistryTests {
     }
 
     @Test
+    func writesProjectImporterExampleIntoOpenedFolder() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        let project = try fixture.projectRoot()
+        let registry = fixture.makeRegistry()
+        let url = try registry.writeProjectExampleManifest(template: .importer, projectRoot: project)
+
+        #expect(url.path.contains(".cribble/extensions/example-import-lane/cribble-extension.json"))
+
+        registry.reload(projectRoots: [project])
+        let installed = try #require(registry.installedExtensions.first)
+        #expect(installed.location.title == project.lastPathComponent)
+        #expect(installed.manifest.kind == .importer)
+        #expect(registry.importerCapabilities.first?.title == "Chat Export")
+        #expect(registry.importerCapabilities.first?.sourceName == "Example Chat Importers")
+    }
+
+    @Test
     func reloadPrunesStaleTrustDecisions() throws {
         let fixture = try ExtensionRegistryFixture()
         defer { fixture.cleanUp() }

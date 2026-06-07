@@ -21,6 +21,7 @@ Please open an issue or GitHub Discussion before working on:
 
 - new product features or major UX changes
 - AI behavior, storage/write policy, monetization, or distribution changes
+- new extension surfaces beyond declarative manifest contributions
 - roadmap changes
 - large refactors or module extraction
 - anything that changes Cribble's local-first or preview-before-mutation model
@@ -85,6 +86,17 @@ agreement:
 - **Preview before mutation:** AI or generated changes must be reviewable before
   touching source files.
 - **Native Mac feel:** prefer system-native patterns over heavy custom chrome.
+
+## Extension contributions
+
+Extension work has an extra safety bar. Start with read-only, declarative
+manifest behavior; request the least note access possible; avoid source-note
+writes unless they go through an explicit preview; and keep extension UI native
+SwiftUI with system controls, menus, settings, sheets, commands, and SF Symbols.
+
+See `docs/extensions.md` for the full extension contribution checklist,
+including read-only-first, least-reading, least-writing, no hidden execution,
+Keychain-only secrets, and native SwiftUI expectations.
 
 ## Security and conduct
 

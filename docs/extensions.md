@@ -277,5 +277,55 @@ Good Cribble extensions should be:
 - narrow: one extension kind per manifest;
 - helpful immediately: provide a clear title, summary, and practical contribution.
 
+## Open Source Extension Contribution Guide
+
+Cribble welcomes extension ideas, but the contribution bar is deliberately
+strict because extensions sit close to people's notes. Contributors should feel
+free to propose ambitious workflows, while implementation should start from the
+smallest native, reviewable surface that proves the value.
+
+Default rules for extension pull requests:
+
+- **Read-only first.** New extension capabilities should start as manifest
+  validation, settings visibility, command discovery, previews, or copied
+  prompts. Do not add source-note writes as part of a first version.
+- **Least writing.** When a write is truly necessary, prefer writing a new
+  project-local manifest or generated artifact over editing user notes. Any note
+  edit must go through an explicit preview/review flow and be easy to cancel.
+- **Least reading.** Request `read-current-note` before `read-project-notes`.
+  Project-wide access needs a specific user-facing reason and should avoid
+  retaining full note bodies longer than needed.
+- **No hidden execution.** API v1 contributions stay declarative. Do not run
+  scripts, shell commands, bundled binaries, background daemons, or network
+  calls from an extension PR.
+- **No secrets in files.** Manifests, examples, fixtures, and docs must never
+  contain API keys, tokens, private endpoints, passwords, certificates, or
+  signing credentials. Use Keychain-backed app flows for secrets.
+- **Native SwiftUI only for UI.** Extension UI work should use standard SwiftUI
+  controls, Settings sections, sheets, menus, commands, toolbars, focused
+  values, and system symbols. Avoid web views, custom chrome, non-native
+  component frameworks, or visual patterns that fight macOS.
+- **Data before abstraction.** Add a typed manifest field, validation rule,
+  setting, demo note, or focused test before introducing a new runtime layer.
+- **Disable cleanly.** Turning an extension off should remove its contribution
+  from menus, HUDs, settings summaries, import lanes, renderer aliases, and
+  provider lists without restarting the app.
+- **Document the trust story.** Any remote runner, importer, renderer, or future
+  executable proposal must explain what it reads, what it writes, whether it
+  touches the network, how secrets are stored, and how a user revokes it.
+
+Good first extension contributions include:
+
+- new declarative template examples;
+- stricter manifest validation and clearer validation errors;
+- Settings summaries that make extension permissions easier to review;
+- DemoNotes examples for team workflows;
+- read-only renderer aliases and import-lane declarations;
+- tests proving disabled extensions contribute nothing.
+
+Discuss broader ideas early. A strong proposal can be creative and ambitious,
+but the first merged step should preserve Cribble's local-first, reader-first,
+native Mac defaults.
+
 For an interactive tour, open the bundled DemoNotes library and read
 `Extensions and Remote Intelligence.md`.

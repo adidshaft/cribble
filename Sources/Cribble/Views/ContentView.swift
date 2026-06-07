@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var showingAIProviderSheet = false
     @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
+    @State private var showingImportGuidance = false
+    @State private var importGuidanceStatus: String?
     @State private var showingPreviousSessionIssue = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     /// True when the window is too narrow for a side-by-side sidebar; the
@@ -76,9 +78,17 @@ struct ContentView: View {
     }
 
     private var importFileAction: (() -> Void)? {
+        { openImportFlow() }
+    }
+
+    private func openImportFlow() {
         let capabilities = extensionRegistry.importerCapabilities
-        guard !capabilities.isEmpty else { return nil }
-        return { library.chooseImportFile(capabilities: capabilities) }
+        if capabilities.isEmpty {
+            importGuidanceStatus = nil
+            showingImportGuidance = true
+        } else {
+            library.chooseImportFile(capabilities: capabilities)
+        }
     }
 
     private func selectedDocumentAction(_ action: @escaping () -> Void) -> (() -> Void)? {
@@ -135,6 +145,19 @@ struct ContentView: View {
                     onRevealCrashReport: { diagnostics.revealLatestCrashReportInFinder() },
                     onReportIssue: { reportIssueOnGitHub() },
                     onOpenPullRequest: { openPullRequestOnGitHub() }
+                )
+            }
+            .sheet(isPresented: $showingImportGuidance) {
+                ImportGuidanceSheet(
+                    canCreateProjectExample: library.activeRootURL != nil,
+                    status: importGuidanceStatus,
+                    onCreateProjectExample: createProjectImportLane,
+                    onCreateUserExample: createUserImportLane,
+                    onOpenSettings: openSettingsWindow,
+                    onOpenTeamKit: {
+                        showingImportGuidance = false
+                        library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+                    }
                 )
             }
             .sheet(item: pendingDiffBinding) { item in
@@ -378,6 +401,125 @@ struct ContentView: View {
         let report = diagnostics.makeReport(library: library, settings: settings)
         GitHubReport.openPullRequest(report: report)
         diagnostics.record(level: .info, message: "Opened GitHub pull request flow.")
+    }
+
+    private func createProjectImportLane() {
+        guard let root = library.activeRootURL else {
+            importGuidanceStatus = "Open a folder before creating a project import lane."
+            return
+        }
+
+        do {
+            let url = try extensionRegistry.writeProjectExampleManifest(template: .importer, projectRoot: root)
+            extensionRegistry.reload(projectRoots: library.rootURLs)
+            let folderName = url.deletingLastPathComponent().lastPathComponent
+            importGuidanceStatus = "Created \(folderName) in this folder. Import is ready after you adapt the manifest."
+            library.statusMessage = "Created project import lane example"
+        } catch {
+            importGuidanceStatus = error.localizedDescription
+        }
+    }
+
+    private func createUserImportLane() {
+        do {
+            let url = try extensionRegistry.writeExampleManifest(template: .importer)
+            extensionRegistry.reload(projectRoots: library.rootURLs)
+            let folderName = url.deletingLastPathComponent().lastPathComponent
+            importGuidanceStatus = "Created \(folderName) in your user extension folder. Import is ready after you adapt the manifest."
+            library.statusMessage = "Created user import lane example"
+        } catch {
+            importGuidanceStatus = error.localizedDescription
+        }
+    }
+
+    private func openSettingsWindow() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    }
+}
+
+private struct ImportGuidanceSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let canCreateProjectExample: Bool
+    let status: String?
+    let onCreateProjectExample: () -> Void
+    let onCreateUserExample: () -> Void
+    let onOpenSettings: () -> Void
+    let onOpenTeamKit: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 36)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Set Up an Import Lane")
+                        .font(.title3.weight(.semibold))
+                    Text("Import uses enabled declarative extensions to match source files before converter execution is allowed. Create a starter lane, review it, then adapt it for your team.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    onCreateProjectExample()
+                } label: {
+                    Label("Create Project Import Lane", systemImage: "folder.badge.plus")
+                }
+                .disabled(!canCreateProjectExample)
+                .help("Write an importer manifest into the current folder's .cribble/extensions directory")
+
+                Button {
+                    onCreateUserExample()
+                } label: {
+                    Label("Create User Import Lane", systemImage: "person.crop.circle.badge.plus")
+                }
+                .help("Write an importer manifest into Cribble's user extension folder")
+
+                Divider()
+
+                Button {
+                    onOpenSettings()
+                } label: {
+                    Label("Open Extension Settings", systemImage: "gearshape")
+                }
+
+                Button {
+                    onOpenTeamKit()
+                } label: {
+                    Label("Open Team Extension Kit", systemImage: "book.pages")
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+
+            if !canCreateProjectExample {
+                Label("Open a Markdown folder to create a project-local import lane.", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let status {
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 430)
     }
 }
 

@@ -43,7 +43,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
-- File > Import now disables itself when no enabled import lanes exist, keeping the menu honest and avoiding a dead-end picker.
+- File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
 - Cribble now has a local extension trust-decision store for future executable plugin consent/revocation, with Settings controls to revoke or clear remembered trust decisions while API v1 remains data-only.
@@ -51,6 +51,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Settings can now create starter extension manifests directly in the active folder's `.cribble/extensions` directory, making the project-local team workflow actionable from the app.
 - Settings now links directly to the Team Extension Kit from the Extensions section, so users can move from manifest controls to the practical guide without hunting through DemoNotes.
+- The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
@@ -127,6 +128,8 @@ swift test --filter ExtensionRegistryTests
 swift test --filter DiagnosticsCenterTests
 swift test --filter CribbleUITests
 swift test --filter 'LinkIndexTests|CribbleUITests'
+swift test --filter ExtensionRegistryTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -154,6 +157,8 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after toolbar shortcut help cleanup: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Help linked the Team Extension Kit: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligencePreflightTests|CribbleUITests'` passed on 2026-06-08 after remote-runner preflight trust details: 16 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after guided Import setup added project importer example coverage: 10 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after guided Import setup: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

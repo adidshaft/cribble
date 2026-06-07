@@ -16,10 +16,19 @@ starter folder in Application Support with a `cribble-extension.json` file:
 
 ```json
 {
+  "apiVersion": 1,
   "id": "com.example.cribble.quick-action",
   "kind": "quick-action",
   "name": "Example Quick Action",
   "permissions": ["read-current-note"],
+  "quickActions": [
+    {
+      "id": "explain-jargon",
+      "title": "Explain jargon",
+      "icon": "text.magnifyingglass",
+      "prompt": "Explain the specialized terms in the current note in plain language."
+    }
+  ],
   "summary": "Adds a user-authored action to Cribble's future extension command surface.",
   "version": "0.1.0"
 }
@@ -71,5 +80,110 @@ Good extensions should feel native, inspectable, and reversible:
 
 The rule is simple: every extension declares what it wants, Cribble shows that
 clearly, and user files stay under user control.
+
+## 5. Copy-ready manifest patterns
+
+These are **declarations**, not executable plugins. Cribble validates them,
+lists them in Settings, and only routes supported data-only contributions
+through existing safe UI.
+
+### Quick action
+
+Adds a prompt to the Chat HUD empty state and `/` command palette.
+
+```json
+{
+  "apiVersion": 1,
+  "id": "com.example.cribble.research-actions",
+  "name": "Research Actions",
+  "version": "0.1.0",
+  "kind": "quick-action",
+  "summary": "Adds research-oriented prompts.",
+  "permissions": ["read-current-note"],
+  "quickActions": [
+    {
+      "id": "extract-claims",
+      "title": "Extract claims",
+      "icon": "checklist",
+      "prompt": "Extract the factual claims from the current note and list what evidence each claim needs."
+    }
+  ]
+}
+```
+
+### Trusted remote runner
+
+Adds a preset to the Intelligence HUD model picker. If the URL is not loopback,
+Cribble shows a warning that note context may leave this Mac.
+
+```json
+{
+  "apiVersion": 1,
+  "id": "com.example.cribble.team-runner",
+  "name": "Team Runner",
+  "version": "0.1.0",
+  "kind": "intelligence-provider",
+  "summary": "Adds a team-controlled OpenAI-compatible runner.",
+  "permissions": ["network-openai-compatible"],
+  "intelligenceProviders": [
+    {
+      "id": "research-gpu",
+      "title": "Research GPU",
+      "baseURL": "https://ai.example.com/v1",
+      "modelID": "qwen3-32b",
+      "embeddingModelID": "text-embedding-3-small",
+      "trustLabel": "Team-controlled VPS"
+    }
+  ]
+}
+```
+
+### Renderer alias
+
+Declares extra fenced-code languages that should map to a built-in renderer in
+the future. Today this is inspectable metadata only.
+
+```json
+{
+  "apiVersion": 1,
+  "id": "com.example.cribble.diagram-aliases",
+  "name": "Diagram Aliases",
+  "version": "0.1.0",
+  "kind": "renderer",
+  "summary": "Declares diagram fence aliases.",
+  "renderers": [
+    {
+      "id": "workflow-diagrams",
+      "title": "Workflow Diagrams",
+      "languages": ["workflow", "flowchart"],
+      "builtInRenderer": "mermaid"
+    }
+  ]
+}
+```
+
+### Import lane
+
+Declares file types an importer wants to convert into Markdown later. Today it
+is inspectable metadata only.
+
+```json
+{
+  "apiVersion": 1,
+  "id": "com.example.cribble.chat-importers",
+  "name": "Chat Importers",
+  "version": "0.1.0",
+  "kind": "importer",
+  "summary": "Declares future chat export import lanes.",
+  "importers": [
+    {
+      "id": "chat-export",
+      "title": "Chat Export",
+      "fileExtensions": ["json", "txt"],
+      "outputFormat": "markdown"
+    }
+  ]
+}
+```
 
 ← Back to [[README|Home]] · next: [[Cribble AI]]

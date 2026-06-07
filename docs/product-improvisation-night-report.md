@@ -34,6 +34,7 @@ DemoNotes now include `Extensions and Remote Intelligence.md`, linked from the w
 - project-local extension folders,
 - trusted remote intelligence runners,
 - and the intended extension lanes: quick actions, intelligence providers, renderers, and importers.
+- copy-ready manifest patterns for quick actions, remote runners, renderer aliases, and import lanes.
 
 The first-run demo now points users toward the product's broader future without hiding the current safety boundary.
 
@@ -82,5 +83,5 @@ Latest pass:
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
 2. Add secure credential handling for remote runner profiles without storing secrets in manifests.
 3. Add an in-demo checklist/progress affordance for the tour notes.
-4. Add contribution docs/templates for renderer/importer manifests in DemoNotes.
+4. Add an in-demo checklist/progress affordance for the tour notes.
 5. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.

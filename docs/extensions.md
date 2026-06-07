@@ -314,6 +314,26 @@ Default rules for extension pull requests:
   executable proposal must explain what it reads, what it writes, whether it
   touches the network, how secrets are stored, and how a user revokes it.
 
+### First Extension PR Recipe
+
+Use this as the copy-paste shape for a first extension contribution:
+
+1. Pick one manifest kind: quick action, intelligence provider, renderer, or
+   importer.
+2. Start from **Settings > Extensions > Create Project Example** so the manifest
+   lives in `.cribble/extensions` beside the notes it affects.
+3. Keep the first PR declarative and read-only. Prove the workflow through a
+   manifest, validation rule, Settings affordance, DemoNotes example, or copied
+   prompt before proposing runtime execution.
+4. Include this checklist in the pull request:
+   `reads`, `writes`, `network`, `secrets`, `disable behavior`.
+5. Paste the copied extension details from Settings into the PR so reviewers can
+   inspect id, kind, permissions, runtime, trust metadata, and contributions
+   without checking out the branch.
+6. Add or update focused tests when validation, discovery, disabled-state
+   filtering, renderer aliases, importer lanes, provider profiles, or quick
+   action routing changes.
+
 Good first extension contributions include:
 
 - new declarative template examples;

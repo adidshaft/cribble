@@ -252,6 +252,13 @@ final class ChatHUDViewModel: ObservableObject {
         statusMessage = "Copied to clipboard"
     }
 
+    func copyLastContextReceipt() {
+        guard let receipt = lastContextReceipt, !receipt.items.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Self.renderContextReceipt(receipt), forType: .string)
+        statusMessage = "Copied context receipt"
+    }
+
     func saveMessageAsNote(_ message: ChatMessage) {
         library.presentNewNoteProposal(
             fileName: Self.suggestedFileName(for: message.text),
@@ -269,6 +276,44 @@ final class ChatHUDViewModel: ObservableObject {
         library.presentAppendProposal(to: url, content: message.text)
         bringMainWindowForward()
         statusMessage = "Review the insertion in the main window"
+    }
+
+    nonisolated static func contextReceiptSummary(_ receipt: ContextReceipt) -> String {
+        let included = receipt.items.filter { item in
+            item.status == .included || item.status == .summarized || item.status == .truncated
+        }.count
+        let limited = receipt.items.count - included
+        var parts = ["\(included) source\(included == 1 ? "" : "s")"]
+        if limited > 0 {
+            parts.append("\(limited) limited")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    nonisolated static func contextReceiptLine(_ item: ContextReceipt.Item) -> String {
+        let source = switch item.source {
+        case .currentNote: "Current note"
+        case .explicitAttachment: "Attachment"
+        case .relatedNote: "Related note"
+        }
+        let status = switch item.status {
+        case .included: "included"
+        case .truncated: "truncated"
+        case .summarized: "summarized"
+        case .omitted: "omitted"
+        case .blockedNeedsSummary: "needs summary"
+        case .unavailable: "unavailable"
+        }
+        var line = "\(source): \(item.filename) - \(status), \(item.includedCharacters)/\(item.originalCharacters) chars"
+        if let reason = item.reason, !reason.isEmpty {
+            line += " (\(reason))"
+        }
+        return line
+    }
+
+    nonisolated static func renderContextReceipt(_ receipt: ContextReceipt) -> String {
+        guard !receipt.items.isEmpty else { return "No context sources were sent." }
+        return receipt.items.map(contextReceiptLine).joined(separator: "\n")
     }
 
     /// Derives a filename from the answer's first heading/line.

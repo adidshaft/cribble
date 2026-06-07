@@ -100,6 +100,31 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(prompt.contains("CREATE:"))
     }
 
+    func testContextReceiptDisplayHelpers() {
+        let receipt = ContextReceipt(items: [
+            ContextReceipt.Item(
+                source: .currentNote,
+                filename: "Current.md",
+                status: .included,
+                originalCharacters: 20,
+                includedCharacters: 20,
+                reason: nil
+            ),
+            ContextReceipt.Item(
+                source: .explicitAttachment,
+                filename: "Huge.md",
+                status: .blockedNeedsSummary,
+                originalCharacters: 80_000,
+                includedCharacters: 0,
+                reason: "explicit attachment exceeds per-file context budget"
+            )
+        ])
+
+        XCTAssertEqual(ChatHUDViewModel.contextReceiptSummary(receipt), "1 source, 1 limited")
+        XCTAssertTrue(ChatHUDViewModel.renderContextReceipt(receipt).contains("Current note: Current.md - included, 20/20 chars"))
+        XCTAssertTrue(ChatHUDViewModel.renderContextReceipt(receipt).contains("Attachment: Huge.md - needs summary"))
+    }
+
     func testSystemPromptIncludesCurrentNote() {
         let prompt = ContextAssembler.systemPrompt(
             modelName: "Gemma 4",

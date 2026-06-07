@@ -21,6 +21,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.navigateForwardAction) private var navigateForward
     @FocusedValue(\.toggleOutlineAction) private var toggleOutline
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
+    @FocusedValue(\.focusSearchAction) private var focusSearch
+    @FocusedValue(\.clearSearchAction) private var clearSearch
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
@@ -94,6 +96,16 @@ struct CribbleCommands: Commands {
             Button("Drop Reading Bookmark", action: { ReaderShortcutHub.shared.performDropBookmark() })
             Button("Highlight", action: { ReaderShortcutHub.shared.performHighlightKey() })
             Button("Toggle Reading Trail", action: { ReaderShortcutHub.shared.performToggleTrail() })
+        }
+
+        CommandGroup(after: .textEditing) {
+            Button("Find in Files", action: { focusSearch?() })
+                .keyboardShortcut("f", modifiers: [.command])
+                .disabled(focusSearch == nil)
+
+            Button("Clear Search", action: { clearSearch?() })
+                .keyboardShortcut(.escape, modifiers: [])
+                .disabled(clearSearch == nil)
         }
 
         // AI — the two LLM entry points.
@@ -230,6 +242,14 @@ private struct ToggleFocusModeActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct FocusSearchActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct ClearSearchActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct OpenDemoNotesActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -353,6 +373,16 @@ extension FocusedValues {
     var toggleFocusModeAction: (() -> Void)? {
         get { self[ToggleFocusModeActionKey.self] }
         set { self[ToggleFocusModeActionKey.self] = newValue }
+    }
+
+    var focusSearchAction: (() -> Void)? {
+        get { self[FocusSearchActionKey.self] }
+        set { self[FocusSearchActionKey.self] = newValue }
+    }
+
+    var clearSearchAction: (() -> Void)? {
+        get { self[ClearSearchActionKey.self] }
+        set { self[ClearSearchActionKey.self] = newValue }
     }
 
     var openDemoNotesAction: (() -> Void)? {

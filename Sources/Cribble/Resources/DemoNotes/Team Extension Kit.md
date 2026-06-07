@@ -63,6 +63,10 @@ pull request or handoff note:
 - Did someone paste the copied extension details into the review thread?
 - Can a non-technical reader understand why this exists?
 
+Open `docs/extensions.md` before proposing a new extension surface. First PRs
+should prove value with a declarative manifest, native SwiftUI affordance, or
+validation improvement before any runtime work.
+
 ## Remote runner policy
 
 Remote intelligence can be excellent when it is intentional. Use it for a large

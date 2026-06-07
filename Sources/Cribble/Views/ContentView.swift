@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var importGuidanceStatus: String?
     @State private var showingPreviousSessionIssue = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @FocusState private var isSearchFocused: Bool
     /// True when the window is too narrow for a side-by-side sidebar; the
     /// sidebar then becomes an on-demand overlay instead of a column.
     @State private var isCompactWidth = false
@@ -71,6 +72,13 @@ struct ContentView: View {
             .focusedSceneValue(\.navigateForwardAction, { library.navigateForward() })
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
+            .focusedSceneValue(\.focusSearchAction, {
+                isSearchFocused = true
+            })
+            .focusedSceneValue(\.clearSearchAction, {
+                library.searchText = ""
+                isSearchFocused = false
+            })
             .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openWorkflowPlaybookAction, { library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
@@ -211,6 +219,7 @@ struct ContentView: View {
     private var toolbarContent: some View {
         content
         .searchable(text: $library.searchText, placement: .toolbar, prompt: "Search files")
+        .searchFocused($isSearchFocused)
         .onChange(of: settings.isFocusMode, initial: true) {
             let isFocus = settings.isFocusMode
             withAnimation {

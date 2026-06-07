@@ -13,6 +13,11 @@ struct ChatHUDView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if let receipt = viewModel.lastContextReceipt, !receipt.items.isEmpty {
+                ChatContextReceiptBar(viewModel: viewModel, receipt: receipt)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 4)
+            }
             transcript
             ChatInputBar(viewModel: viewModel)
         }
@@ -111,6 +116,52 @@ private extension View {
                 .cribbleMaterialSurface(in: shape)
                 .clipShape(shape)
         }
+    }
+}
+
+private struct ChatContextReceiptBar: View {
+    @ObservedObject var viewModel: ChatHUDViewModel
+    let receipt: ContextReceipt
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: receipt.hasBlockedExplicitAttachments ? "exclamationmark.triangle" : "checkmark.seal")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(receipt.hasBlockedExplicitAttachments ? .orange : .green)
+
+            Text("Context used: \(ChatHUDViewModel.contextReceiptSummary(receipt))")
+                .font(.system(size: 11, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            Spacer(minLength: 8)
+
+            Menu {
+                ForEach(Array(receipt.items.enumerated()), id: \.offset) { _, item in
+                    Text(ChatHUDViewModel.contextReceiptLine(item))
+                }
+
+                Divider()
+
+                Button {
+                    viewModel.copyLastContextReceipt()
+                } label: {
+                    Label("Copy Context Receipt", systemImage: "doc.on.doc")
+                }
+            } label: {
+                Label("Details", systemImage: "list.bullet.rectangle")
+                    .labelStyle(.iconOnly)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("Show what note context was sent to the model")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.white.opacity(0.08), in: Capsule())
+        .foregroundStyle(.white.opacity(0.82))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Context used: \(ChatHUDViewModel.contextReceiptSummary(receipt))")
     }
 }
 

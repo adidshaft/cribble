@@ -132,6 +132,15 @@ Do **not** put API keys in the manifest. Add the profile here, then paste the
 token into the Intelligence HUD and store it in Keychain when you choose the
 runner.
 
+Before sharing a remote runner profile, write down:
+
+- who owns the endpoint;
+- the model id people should select;
+- the trust label users will see in Cribble;
+- what note context may leave the Mac;
+- where the API key is entered and whether it should be saved to Keychain;
+- how to disable the extension or revoke the runner.
+
 ```json
 {
   "apiVersion": 1,

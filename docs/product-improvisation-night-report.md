@@ -76,6 +76,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.
+- Sidebar search now also shows a compact success summary when matches exist, including visible file-result counts, semantic related-result counts, and a Clear action directly above the file tree.
 - Semantic search reindexing now skips exact repeat document sets by comparing a stable path/content-hash signature before touching the embedding engine, so no-op refreshes avoid needless indexing churn.
 - Folder refresh now reuses prior `MarkdownDocumentMeta` for unchanged files based on path, modification time, and file size, so no-op or single-file refreshes avoid reparsing every note body while still rebuilding the sidebar tree.
 - `LinkIndex` can now build from metadata, including frontmatter aliases, tags, keywords, headings, titles, and relative paths, which keeps wiki-link resolution intact when unchanged files skip full loading.
@@ -197,6 +198,7 @@ swift test --filter IntelligencePreflightTests
 swift test --filter 'IntelligencePreflightTests|CribbleUITests'
 swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'
 swift test --filter ExtensionRegistryTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -260,6 +262,7 @@ Latest pass:
 - Latest `swift test --filter 'IntelligencePreflightTests|CribbleUITests'` passed on 2026-06-08 after sidebar/restore remote-runner approval gates: 22 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes remote-runner consent refresh: 19 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after the Settings extension dashboard: 11 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar search success summaries: 17 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

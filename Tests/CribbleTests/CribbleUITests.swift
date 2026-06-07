@@ -145,6 +145,64 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.filteredNodes.isEmpty)
     }
 
+    func testSidebarSearchSummaryCountsNestedFileMatches() {
+        let root = MarkdownNode(
+            id: URL(fileURLWithPath: "/dummy"),
+            name: "Root",
+            url: URL(fileURLWithPath: "/dummy"),
+            kind: .folder,
+            createdAt: nil,
+            modifiedAt: nil,
+            readmeURL: nil,
+            children: [
+                MarkdownNode(
+                    id: URL(fileURLWithPath: "/dummy/one.md"),
+                    name: "One",
+                    url: URL(fileURLWithPath: "/dummy/one.md"),
+                    kind: .markdown,
+                    createdAt: nil,
+                    modifiedAt: nil,
+                    readmeURL: nil,
+                    children: []
+                ),
+                MarkdownNode(
+                    id: URL(fileURLWithPath: "/dummy/nested"),
+                    name: "Nested",
+                    url: URL(fileURLWithPath: "/dummy/nested"),
+                    kind: .folder,
+                    createdAt: nil,
+                    modifiedAt: nil,
+                    readmeURL: nil,
+                    children: [
+                        MarkdownNode(
+                            id: URL(fileURLWithPath: "/dummy/nested/two.md"),
+                            name: "Two",
+                            url: URL(fileURLWithPath: "/dummy/nested/two.md"),
+                            kind: .markdown,
+                            createdAt: nil,
+                            modifiedAt: nil,
+                            readmeURL: nil,
+                            children: []
+                        )
+                    ]
+                )
+            ]
+        )
+
+        let summary = SidebarSearchSummary(
+            query: " project ",
+            filteredNodes: [root],
+            semanticResultCount: 3
+        )
+
+        XCTAssertEqual(summary?.query, "project")
+        XCTAssertEqual(summary?.fileMatchCount, 2)
+        XCTAssertEqual(summary?.semanticResultCount, 3)
+        XCTAssertEqual(summary?.title, "2 visible file results")
+        XCTAssertEqual(summary?.detail, "3 related results")
+        XCTAssertNil(SidebarSearchSummary(query: " ", filteredNodes: [root], semanticResultCount: 0))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

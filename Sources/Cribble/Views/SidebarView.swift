@@ -32,6 +32,16 @@ struct SidebarView: View {
                     Spacer(minLength: 0)
                 }
             } else {
+                if let summary = SidebarSearchSummary(
+                    query: library.searchText,
+                    filteredNodes: library.filteredNodes,
+                    semanticResultCount: semanticIndex.results.count
+                ) {
+                    SidebarSearchSummaryStrip(summary: summary) {
+                        library.searchText = ""
+                    }
+                }
+
                 List(library.filteredNodes, children: \.childNodes, selection: $library.selectedURL) { node in
                     sidebarRow(node)
                 }
@@ -204,6 +214,77 @@ struct SidebarView: View {
             await intelligence.enable(rootURL: url)
             IntelligenceHUDController.shared.show()
         }
+    }
+}
+
+struct SidebarSearchSummary: Equatable {
+    let query: String
+    let fileMatchCount: Int
+    let semanticResultCount: Int
+
+    init?(
+        query rawQuery: String,
+        filteredNodes: [MarkdownNode],
+        semanticResultCount: Int
+    ) {
+        let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return nil }
+        self.query = query
+        self.fileMatchCount = Self.markdownFileCount(in: filteredNodes)
+        self.semanticResultCount = semanticResultCount
+    }
+
+    var title: String {
+        if fileMatchCount == 0 {
+            return "No visible file results"
+        }
+        return "\(fileMatchCount) visible file result\(fileMatchCount == 1 ? "" : "s")"
+    }
+
+    var detail: String? {
+        guard semanticResultCount > 0 else { return nil }
+        return "\(semanticResultCount) related result\(semanticResultCount == 1 ? "" : "s")"
+    }
+
+    private static func markdownFileCount(in nodes: [MarkdownNode]) -> Int {
+        nodes.reduce(0) { count, node in
+            let own = node.isMarkdownFile ? 1 : 0
+            return count + own + markdownFileCount(in: node.children)
+        }
+    }
+}
+
+private struct SidebarSearchSummaryStrip: View {
+    let summary: SidebarSearchSummary
+    let onClear: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(summary.title)
+                    .font(.caption.weight(.semibold))
+                if let detail = summary.detail {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Button("Clear", action: onClear)
+                .font(.caption)
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Clear sidebar search")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(.quaternary.opacity(0.28))
     }
 }
 

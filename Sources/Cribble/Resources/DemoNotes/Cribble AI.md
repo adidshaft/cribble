@@ -41,7 +41,7 @@ chat with a reviewed `index.md` proposal prompt.
 > Type: *"create an index note for @README @Getting Started @Feature Tour"* — Cribble offers to create the file.
 
 ### 4. Explain how two notes connect
-This is **Pathfinder** — drag one note onto another in the sidebar, then choose **Explain the connection** → an on-device model. More in [[Feature Tour]].
+This is **Pathfinder** — drag one note onto another in the sidebar, then choose **Explain the connection** and pick the model boundary you trust. More in [[Feature Tour]].
 
 ## Tag notes with @
 

@@ -58,6 +58,6 @@ Beyond filename matching, Cribble runs an on-device semantic index, so search su
 Pathfinder finds how two notes relate: the shortest wiki-link path **and** a conceptual bridge from the semantic index — then explains it.
 
 > **Try it**
-> Drag **[[Markdown Showcase]]** onto **[[Cribble AI]]** in the sidebar. Then choose **Explain the connection → an on-device model** for a one-paragraph synthesis (or use Claude / Codex). See [[Cribble AI]] for the AI details.
+> Drag **[[Markdown Showcase]]** onto **[[Cribble AI]]** in the sidebar. Then choose **Explain the connection** and pick the model boundary you trust: on-this-Mac by default, or a clearly labeled Claude/Codex CLI choice. See [[Cribble AI]] for the AI details.
 
 ← Back to [[README|Home]]

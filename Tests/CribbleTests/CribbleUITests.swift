@@ -914,6 +914,8 @@ final class CribbleUITests: XCTestCase {
 
         let home = try String(contentsOf: demoRoot.appendingPathComponent("README.md"), encoding: .utf8)
         XCTAssertTrue(home.contains("local-first AI"))
+        XCTAssertTrue(home.contains("local-first intelligence"))
+        XCTAssertTrue(home.contains("keep notes on this Mac"))
         XCTAssertFalse(home.contains("No cloud, no account"))
 
         let gettingStarted = try String(contentsOf: demoRoot.appendingPathComponent("Getting Started.md"), encoding: .utf8)
@@ -922,6 +924,13 @@ final class CribbleUITests: XCTestCase {
         let tasks = try String(contentsOf: demoRoot.appendingPathComponent("Tasks and Intelligence.md"), encoding: .utf8)
         XCTAssertTrue(tasks.contains("trusted remote runners are opt-in"))
         XCTAssertTrue(tasks.contains("reviewed before note context"))
+
+        let featureTour = try String(contentsOf: demoRoot.appendingPathComponent("Feature Tour.md"), encoding: .utf8)
+        XCTAssertTrue(featureTour.contains("pick the model boundary you trust"))
+        XCTAssertTrue(featureTour.contains("clearly labeled Claude/Codex CLI choice"))
+
+        let cribbleAI = try String(contentsOf: demoRoot.appendingPathComponent("Cribble AI.md"), encoding: .utf8)
+        XCTAssertTrue(cribbleAI.contains("pick the model boundary you trust"))
     }
 
     func testWelcomeStarterChecklistGuidesCoreProductTour() {

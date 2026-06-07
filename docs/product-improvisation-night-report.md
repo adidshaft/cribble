@@ -530,6 +530,9 @@ Latest pass:
   for sharing the recommended tour order: basics, AI model boundary, Tasks,
   workflow playbook, extension proposal, native/read-only guardrails, and remote
   runner review.
+- DemoNotes Home, Feature Tour, and Cribble AI now use the same local-first
+  model-boundary language for Pathfinder and generic intelligence, replacing
+  older on-device shorthand where Claude/Codex choices may also appear.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

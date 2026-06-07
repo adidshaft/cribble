@@ -43,11 +43,11 @@ into three practical flows.
 
 ## New in 1.3.1 — Tasks & generic intelligence
 
-Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, and let on-device intelligence build a **Contradiction Report**, **Glossary**, and **Timeline** for any kind of folder — not just code. → [[Tasks and Intelligence]]
+Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, and let local-first intelligence build a **Contradiction Report**, **Glossary**, and **Timeline** for any kind of folder — not just code. → [[Tasks and Intelligence]]
 
 ## New in 1.2.0 — Cribble AI
 
-A local-first AI assistant that can run **fully on your Mac** with on-device models, or through clearly labeled Claude/Codex CLI choices when you opt in. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. → [[Cribble AI]]
+A local-first AI assistant that can keep notes on this Mac with on-device models, or use clearly labeled Claude/Codex CLI choices when you opt in. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. → [[Cribble AI]]
 
 ## 60-second quick try
 

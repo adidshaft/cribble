@@ -103,8 +103,8 @@ swift test --filter Extension
 
 Latest pass:
 
-- `swift test` passed on 2026-06-08 after the latest extension-trust and DemoNotes work: 180 XCTest tests, 0 failures.
-- The Swift Testing extension/credential suites also passed: 24 tests across manifest, registry, and runner credential coverage.
+- `swift test` passed on 2026-06-08 after the latest extension trust-decision work: 180 XCTest tests, 0 failures.
+- The Swift Testing extension/credential suites also passed: 28 tests across manifest, registry, trust-decision, and runner credential coverage.
 - `swift test --filter CribbleUITests` passed on 2026-06-08: 11 XCTest tests, 0 failures.
 - `swift test --filter SemanticSearchIndexTests` passed on 2026-06-08: 9 XCTest tests, 0 failures.
 - `swift test --filter 'LinkIndexTests|SemanticSearchIndexTests|CribbleUITests'` passed on 2026-06-08: 22 XCTest tests, 0 failures.

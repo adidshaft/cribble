@@ -42,6 +42,7 @@ DemoNotes now include `Extensions and Remote Intelligence.md`, linked from the w
 - trusted remote intelligence runners,
 - and the intended extension lanes: quick actions, intelligence providers, renderers, and importers.
 - copy-ready manifest patterns for quick actions, remote runners, renderer aliases, and import lanes.
+- a dedicated `docs/extensions.md` developer guide for extension authors outside the bundled demo library.
 
 The first-run demo now points users toward the product's broader future without hiding the current safety boundary.
 

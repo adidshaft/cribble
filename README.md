@@ -58,6 +58,7 @@ Useful project docs:
 - `CONTRIBUTING.md` for build, test, pull request, and DCO signoff guidance.
 - `GOVERNANCE.md` for the owner-led decision model.
 - `ROADMAP.md` for current contribution lanes and future directions.
+- `docs/extensions.md` for Cribble's declarative extension manifest API.
 - `SECURITY.md` for private vulnerability reporting.
 - `TRADEMARK.md` for Cribble name and logo usage.
 - `MAINTAINER_HANDBOOK.md` for release, website, and project-management habits.

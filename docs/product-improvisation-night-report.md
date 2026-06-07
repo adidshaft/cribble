@@ -36,6 +36,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
+- Help now exposes the Team Extension Kit directly, making the extension/plugin design guide recoverable outside Settings.
 - DemoNotes now include a `Workflow Playbook` that explains practical flows for reading, project brief creation, team extension conventions, and trusted remote intelligence use.
 - DemoNotes now include a `Research Review` workflow for evidence-heavy folders, claim tables, source trails, extension quick actions, and intentional remote-runner use.
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
@@ -109,6 +110,7 @@ swift test --filter ExtensionManifestTests
 swift test --filter 'Extension|RunnerCredentialStoreTests'
 swift test
 swift test --filter CribbleUITests
+swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
 swift test --filter CribbleUITests
 swift test --filter SemanticSearchIndexTests
@@ -148,6 +150,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after welcome-screen onboarding entry points: 14 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after Settings linked the Team Extension Kit: 9 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after toolbar shortcut help cleanup: 14 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after Help linked the Team Extension Kit: 14 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

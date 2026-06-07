@@ -23,6 +23,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
+    @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
 
     var body: some Commands {
@@ -118,6 +119,9 @@ struct CribbleCommands: Commands {
 
             Button("Open Workflow Playbook", action: { openWorkflowPlaybook?() })
                 .disabled(openWorkflowPlaybook == nil)
+
+            Button("Open Team Extension Kit", action: { openTeamExtensionKit?() })
+                .disabled(openTeamExtensionKit == nil)
 
             Button("Reset DemoNotes Tour", action: { resetDemoNotes?() })
                 .disabled(resetDemoNotes == nil)
@@ -231,6 +235,10 @@ private struct OpenDemoNotesActionKey: FocusedValueKey {
 }
 
 private struct OpenWorkflowPlaybookActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenTeamExtensionKitActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -355,6 +363,11 @@ extension FocusedValues {
     var openWorkflowPlaybookAction: (() -> Void)? {
         get { self[OpenWorkflowPlaybookActionKey.self] }
         set { self[OpenWorkflowPlaybookActionKey.self] = newValue }
+    }
+
+    var openTeamExtensionKitAction: (() -> Void)? {
+        get { self[OpenTeamExtensionKitActionKey.self] }
+        set { self[OpenTeamExtensionKitActionKey.self] = newValue }
     }
 
     var resetDemoNotesAction: (() -> Void)? {

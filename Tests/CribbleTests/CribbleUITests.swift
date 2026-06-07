@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import Cribble
 
@@ -31,6 +32,23 @@ final class CribbleUITests: XCTestCase {
 
         settings.setFontSize(.small)
         XCTAssertEqual(settings.readerFontScale, ReaderFontSizePreset.small.scale)
+    }
+
+    func testCopySelectedDocumentWikiLinkUsesDocumentTitle() {
+        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        store.selectedDocument = MarkdownDocument(
+            url: URL(fileURLWithPath: "/tmp/meeting.md"),
+            title: "Team Review | June",
+            rawMarkdown: "# Team Review | June\n",
+            headings: [],
+            outboundLinks: []
+        )
+
+        NSPasteboard.general.clearContents()
+        store.copySelectedDocumentWikiLink()
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), #"[[Team Review \| June]]"#)
+        XCTAssertEqual(store.statusMessage, #"Copied [[Team Review \| June]]"#)
     }
     
     func testLibraryStoreSearchFiltering() throws {

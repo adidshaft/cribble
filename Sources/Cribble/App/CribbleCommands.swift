@@ -7,6 +7,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openInEditorAction) private var openInEditor
     @FocusedValue(\.revealSelectedDocumentAction) private var revealSelectedDocument
     @FocusedValue(\.copySelectedDocumentPathAction) private var copySelectedDocumentPath
+    @FocusedValue(\.copySelectedDocumentWikiLinkAction) private var copySelectedDocumentWikiLink
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
@@ -52,6 +53,10 @@ struct CribbleCommands: Commands {
             Button("Copy File Path", action: { copySelectedDocumentPath?() })
                 .keyboardShortcut("c", modifiers: [.command, .option, .shift])
                 .disabled(copySelectedDocumentPath == nil)
+
+            Button("Copy Wiki Link", action: { copySelectedDocumentWikiLink?() })
+                .keyboardShortcut("l", modifiers: [.command, .option, .shift])
+                .disabled(copySelectedDocumentWikiLink == nil)
 
             Divider()
 
@@ -165,6 +170,10 @@ private struct CopySelectedDocumentPathActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct CopySelectedDocumentWikiLinkActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct UndoNoteChangeActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -266,6 +275,11 @@ extension FocusedValues {
     var copySelectedDocumentPathAction: (() -> Void)? {
         get { self[CopySelectedDocumentPathActionKey.self] }
         set { self[CopySelectedDocumentPathActionKey.self] = newValue }
+    }
+
+    var copySelectedDocumentWikiLinkAction: (() -> Void)? {
+        get { self[CopySelectedDocumentWikiLinkActionKey.self] }
+        set { self[CopySelectedDocumentWikiLinkActionKey.self] = newValue }
     }
 
     var undoNoteChangeAction: (() -> Void)? {

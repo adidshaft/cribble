@@ -940,6 +940,16 @@ final class MarkdownLibraryStore: ObservableObject {
         copyActualPath(for: selectedDocument.url)
     }
 
+    func copySelectedDocumentWikiLink() {
+        guard let selectedDocument else { return }
+        let title = selectedDocument.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        let link = "[[\(title.replacingOccurrences(of: "|", with: "\\|"))]]"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(link, forType: .string)
+        statusMessage = "Copied \(link)"
+    }
+
     func runAILinking(provider: AIProvider, mode: AIMode) {
         guard let folderURL = folderURLForAI(mode: mode) else { return }
         isRunningAI = true

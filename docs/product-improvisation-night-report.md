@@ -25,6 +25,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
 - Remote Intelligence runner API keys can be entered in the HUD and stored in Keychain; manifests and defaults keep only non-secret profile metadata/URL markers.
+- DemoNotes home now includes a checklist-style tour that exercises highlights, bookmarks, zoom, trails, chat, Intelligence preflight, extensions, and search.
 
 This is intentionally data-only. Cribble validates and displays extension intent, but does not execute arbitrary extension code yet.
 
@@ -83,8 +84,8 @@ Latest pass:
 ## Next best sections
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-2. Add an in-demo checklist/progress affordance for the tour notes.
-3. Consider a dedicated Extensions developer guide outside DemoNotes for longer examples.
+2. Consider a dedicated Extensions developer guide outside DemoNotes for longer examples.
+3. Add a full-app validation pass beyond focused extension/credential tests.
 4. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

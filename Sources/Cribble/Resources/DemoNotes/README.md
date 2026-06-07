@@ -45,4 +45,18 @@ A private AI assistant that runs **fully on your Mac**. Press **C** (or click th
 4. Press **C** and ask *"what is this library about?"*
 5. Open **Settings → Extensions** and create the example manifest.
 
+## Tour checklist
+
+Use this like a flight plan. Check items off as you try them; Cribble keeps the
+changes in this demo copy only.
+
+- [ ] Read [[Getting Started]] and highlight one useful sentence.
+- [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
+- [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.
+- [ ] Press **P** after visiting a few notes and inspect the Reading Trail.
+- [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
+- [ ] Open **Project Intelligence** and review the preflight before starting.
+- [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
+- [ ] Search for `private assistant on my mac` and compare filename results with Related results.
+
 Have fun exploring. When you're done, everything you made stays in these files — yours to keep or delete.

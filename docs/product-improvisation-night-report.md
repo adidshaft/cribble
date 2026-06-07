@@ -72,6 +72,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The public extension guide now includes an open-source contribution checklist for read-only-first behavior, least reading, least writing, no hidden execution, Keychain-only secrets, clean disabling, and native SwiftUI-only UI.
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
 - The public guide and Team Extension Kit now ask contributors to open with an idea-first proposal: audience, repeated workflow, first read-only surface, data access, network/write needs, and the native SwiftUI review point.
+- `SECURITY.md` now covers the new extension and remote-intelligence surfaces explicitly: manifest permissions, disabled-state filtering, Keychain-backed runner keys, diagnostic-report redaction, importer/renderer declarations, and non-loopback runner consent.
 - The GitHub pull request template now includes an extension/plugin review section for read scope, writes, network, secrets, disable behavior, native SwiftUI UI, and focused tests/docs.
 - Copied extension and import-lane review summaries now include the same contributor safety contract, so PRs and team approvals carry read-only-first, least-read/write, Keychain-only secrets, clean-disable, and native SwiftUI expectations without hunting through docs.
 - Extension manifest loading now rejects secret-looking JSON keys and values before decoding, so ignored unknown fields cannot smuggle API keys, bearer tokens, passwords, private keys, authorization headers, or token query strings into `cribble-extension.json`.
@@ -303,6 +304,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar Copy Markdown handoff: 22 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native New Note proposals: 23 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes New Note and Copy Markdown onboarding: 26 XCTest tests, 0 failures.
+- Docs-only validation on 2026-06-08 confirmed `SECURITY.md` includes extension manifests, remote runners, Keychain/API-key redaction, diagnostic reports, importer/renderer declarations, and hidden execution guidance.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

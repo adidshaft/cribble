@@ -308,6 +308,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after adding visible New Note entry points to the sidebar controls and welcome surface: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile` passed on 2026-06-08 after clarifying the review sheet subtitle and cancel help for new-note proposals: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests'` passed on 2026-06-08 after adding the native Today note workflow, sidebar/welcome/menu entry points, nested Daily note creation, and DemoNotes onboarding: 26 XCTest tests, 0 failures.
+- Full `swift test` passed on 2026-06-08 after the native New Note and Today note workflows: 214 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

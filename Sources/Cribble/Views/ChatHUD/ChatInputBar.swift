@@ -95,7 +95,7 @@ struct ChatInputBar: View {
                             Text("No command matches")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.85))
-                            Text("Try /summarize, /index, or an installed extension action.")
+                            Text("Try /summarize, /tasks, /daily, or an installed extension action.")
                                 .font(.system(size: 10))
                                 .foregroundStyle(.white.opacity(0.45))
                         }

@@ -240,7 +240,7 @@ struct ChatEmptyState: View {
         HStack(spacing: 8) {
             Image(systemName: "command")
                 .font(.system(size: 11, weight: .semibold))
-            Text("Type / for commands")
+            Text("Type / for \(QuickActions.all.count) commands")
                 .font(.system(size: 11, weight: .medium))
             if !viewModel.extensionQuickActions.isEmpty {
                 Text("\(viewModel.extensionQuickActions.count) extension action\(viewModel.extensionQuickActions.count == 1 ? "" : "s")")

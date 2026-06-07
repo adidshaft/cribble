@@ -48,6 +48,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now include a `Team Extension Kit` that turns extension design into a practical team workflow: folder layout, four extension lanes, manifest review checklist, remote-runner policy, and a starter quick action.
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
 - DemoNotes now include a remote-runner handoff checklist for endpoint ownership, model id, trust label, note context, Keychain entry, and revocation.
+- DemoNotes now teach the stricter API v1 extension permission map, extension quick-action context limits, and the native remote-runner approval sheet before non-loopback extension profiles are used.
 - Seeded Project Intelligence artifacts for DemoNotes now match the current tour, including Tasks and Intelligence, Workflow Playbook, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
@@ -193,6 +194,7 @@ swift test --filter 'ExtensionManifestTests|ExtensionRegistryTests'
 swift test --filter ChatHUDLogicTests
 swift test --filter IntelligencePreflightTests
 swift test --filter 'IntelligencePreflightTests|CribbleUITests'
+swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -254,6 +256,7 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after extension quick actions stopped receiving ambient project context: 34 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08 after extension remote-runner consent: 6 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligencePreflightTests|CribbleUITests'` passed on 2026-06-08 after sidebar/restore remote-runner approval gates: 22 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes remote-runner consent refresh: 19 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

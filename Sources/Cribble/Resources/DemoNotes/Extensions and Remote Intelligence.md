@@ -45,6 +45,18 @@ handoff. API v1 extensions use `"runtime": "declarative"` and Cribble rejects
 executable runtimes for now. That boundary keeps the system safe while the
 design matures.
 
+Current API v1 permission rules are strict:
+
+- quick actions use exactly `read-current-note`;
+- remote runner profiles use exactly `network-openai-compatible`;
+- renderer aliases and import lanes request no permissions;
+- project-wide reads and proposed file writes are reserved until Cribble has a
+  consented review flow for them.
+
+Extension quick actions receive the current note and any files you explicitly
+attach for that send. They do not automatically receive related-note or Project
+Intelligence context.
+
 ## 2. Project-local plugins
 
 Teams can keep extension ideas next to the notes they affect:
@@ -126,7 +138,9 @@ Adds a prompt to the Chat HUD empty state and `/` command palette.
 ### Trusted remote runner
 
 Adds a preset to the Intelligence HUD model picker. If the URL is not loopback,
-Cribble shows a warning that note context may leave this Mac.
+Cribble shows a native review sheet before applying the runner. It names the
+endpoint, model, extension source, trust label, Keychain state, disable path,
+and the fact that note context may leave this Mac.
 
 Do **not** put API keys in the manifest. Add the profile here, then paste the
 token into the Intelligence HUD and store it in Keychain when you choose the
@@ -137,9 +151,11 @@ Before sharing a remote runner profile, write down:
 - who owns the endpoint;
 - the model id people should select;
 - the trust label users will see in Cribble;
+- the source extension or review thread people can inspect;
 - what note context may leave the Mac;
 - where the API key is entered and whether it should be saved to Keychain;
-- how to disable the extension or revoke the runner.
+- how to disable the extension or revoke the runner;
+- when people should choose the on-device model instead.
 
 ```json
 {

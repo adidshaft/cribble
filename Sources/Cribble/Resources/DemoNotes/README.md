@@ -31,7 +31,8 @@ Cribble now has the first native extension foundation: a validated
 `cribble-extension.json` manifest, a Settings surface, and project-local
 extension discovery from `.cribble/extensions`. It also points toward trusted
 OpenAI-compatible runners, including your own VPS when you want heavier
-intelligence than a laptop should run. → [[Extensions and Remote Intelligence]]
+intelligence than a laptop should run, with a review sheet before remote
+extension profiles are used. → [[Extensions and Remote Intelligence]]
 
 ## New workflow playbook
 
@@ -71,6 +72,7 @@ changes in this demo copy only.
 - [ ] Open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
+- [ ] Review the remote runner checklist and notice which data may leave the Mac.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
 
 Have fun exploring. When you're done, everything you made stays in these files — yours to keep or delete.

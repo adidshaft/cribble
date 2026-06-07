@@ -41,13 +41,15 @@ to review the manifest in a pull request or team chat.
 
 | Lane | Good first use | Permission posture |
 | --- | --- | --- |
-| Quick action | Repeatable review prompt in the Chat HUD | Read current note first |
-| Intelligence provider | Shared OpenAI-compatible runner profile | Network only when selected |
+| Quick action | Repeatable review prompt in the Chat HUD | Exactly `read-current-note` |
+| Intelligence provider | Shared OpenAI-compatible runner profile | Exactly `network-openai-compatible` |
 | Renderer | Custom fence names like `workflow` or `decision-map` | No file access needed |
 | Importer | Chat exports, research bundles, meeting transcripts | Declare formats first |
 
 Everything in API v1 is declarative. If a manifest asks for executable runtime,
-Cribble rejects it until a signed, sandboxed trust model exists.
+Cribble rejects it until a signed, sandboxed trust model exists. Cribble also
+rejects project-wide read permissions and proposed file-change permissions in
+API v1; those need explicit consent, preview, and revocation design first.
 
 ## Review checklist
 
@@ -59,6 +61,8 @@ pull request or handoff note:
 - Are permissions limited to the smallest useful set?
 - If it uses a remote runner, who controls the endpoint?
 - Does the manifest avoid secrets, tokens, and private keys?
+- Would a quick action still be useful with only the current note and explicit
+  attachments?
 - Is the source URL or signing identity filled in when known?
 - Did someone paste the copied extension details into the review thread?
 - Can a non-technical reader understand why this exists?
@@ -106,7 +110,10 @@ Recommended manifest fields:
 ```
 
 Put API keys in Cribble's Intelligence HUD and store them in Keychain. Never put
-secrets in `cribble-extension.json`.
+secrets in `cribble-extension.json`. For non-loopback extension runner profiles,
+Cribble asks each user to approve the runner before using it, and it keys that
+approval to the extension source, endpoint, and model. Changing any of those
+should trigger another review.
 
 ## A useful first quick action
 

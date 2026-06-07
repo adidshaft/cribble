@@ -72,7 +72,7 @@ enum DemoSeeder {
 
     - 10 tour documents covering beginner, research, team, and power-user paths
     - Extension lanes: quick actions, intelligence providers, renderers, and importers
-    - Remote runner guidance includes endpoint ownership, Keychain secrets, and revocation
+    - Remote runner guidance includes endpoint ownership, native approval, Keychain secrets, and revocation
     """
 
     private static let contentMap = """
@@ -129,7 +129,7 @@ enum DemoSeeder {
     | Project Intelligence | ✅ | Preflight, Ask, artifacts, and source trails |
     | Research review | ✅ | Claims, evidence, and follow-up actions |
     | Extension framework | ✅ | Team Extension Kit and Extensions and Remote Intelligence |
-    | Remote runner trust | ✅ | Handoff checklist, Keychain guidance, revocation |
+    | Remote runner trust | ✅ | Approval sheet, handoff checklist, Keychain guidance, revocation |
     | Markdown rendering | ✅ | Markdown Showcase |
     """
 }

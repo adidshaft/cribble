@@ -106,8 +106,15 @@ struct ContentView: View {
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openExtensionSettingsAction, openSettingsWindow)
+            .focusedSceneValue(\.copyExtensionProposalAction, copyExtensionProposal)
             .focusedSceneValue(\.copyStarterChecklistAction, copyStarterChecklist)
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
+    }
+
+    private func copyExtensionProposal() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ExtensionProposalTemplate.markdown, forType: .string)
+        library.statusMessage = "Copied extension proposal template"
     }
 
     private func copyStarterChecklist() {

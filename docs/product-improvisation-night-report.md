@@ -566,11 +566,15 @@ Latest pass:
   manifest, so the pre-install no-execution, selected-file, previewed-write,
   no-secret, native-SwiftUI, and clean-disable contract is visible in proposal
   threads.
+- Help now includes Copy Extension Proposal, reusing the Settings proposal
+  template as a native command so contributors can start an idea-first,
+  read-only-first extension proposal without opening Settings first.
 - Latest `swift test --filter CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear` passed on 2026-06-08 after adding Import setup Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after clarifying current extension lanes in DemoNotes: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after adding Intelligence artifact and Ask answer Markdown handoffs: 2 XCTest tests, 0 failures.
 - Latest combined `swift test --filter 'CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|IntelligenceEngineTests/testArtifactHandoffMarkdownIncludesReviewMetadataAndBody|IntelligenceEngineTests/testAskHandoffMarkdownIncludesQuestionAndAnswer'` passed on 2026-06-08 after the newest import, DemoNotes, and Intelligence handoff work: 5 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching contributor docs and the Team Extension Kit to use File > Import > Copy Review for importer proposals: 1 XCTest test, 0 failures. A docs search confirmed Copy Review, user-selected files, previewed writes, native SwiftUI, and clean-disable language across the contributor surfaces.
+- Latest `swift test --filter ExtensionRegistryTests/extensionProposalTemplateCopiesIdeaFirstSafetyContract` passed on 2026-06-08 after adding the Help > Copy Extension Proposal command: 1 Swift Testing test, 0 failures. A source search confirmed the focused command, Help menu item, pasteboard action, and shared proposal template wiring.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

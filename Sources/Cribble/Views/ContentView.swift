@@ -60,6 +60,7 @@ struct ContentView: View {
             .focusedSceneValue(\.summarizeWithAIAction, summarizeWithAIAction)
             .focusedSceneValue(\.explainSimplyWithAIAction, explainSimplyWithAIAction)
             .focusedSceneValue(\.findRelatedWithAIAction, findRelatedWithAIAction)
+            .focusedSceneValue(\.createIndexWithAIAction, createIndexWithAIAction)
             .focusedSceneValue(\.draftTodayWithAIAction, draftTodayWithAIAction)
             .focusedSceneValue(\.extractTasksWithAIAction, extractTasksWithAIAction)
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
@@ -197,6 +198,10 @@ struct ContentView: View {
         return {
             ChatHUDController.shared.runBuiltInQuickAction(id: "related")
         }
+    }
+
+    private var createIndexWithAIAction: (() -> Void)? {
+        library.hasFolders ? { ChatHUDController.shared.runBuiltInQuickAction(id: "index") } : nil
     }
 
     private var extractTasksWithAIAction: (() -> Void)? {

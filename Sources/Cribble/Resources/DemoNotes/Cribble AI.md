@@ -34,6 +34,8 @@ Tag notes with **@** in the chat, then ask to connect them. Cribble shows the su
 
 ### 3. Create a new note from many
 Ask it to synthesize, index, or summarize notes into a fresh file. It proposes the new note as a preview before saving.
+For a quick folder map, choose **AI → Create Index Note**. Cribble opens the
+chat with a reviewed `index.md` proposal prompt.
 
 > **Try it**
 > Type: *"create an index note for @README @Getting Started @Feature Tour"* — Cribble offers to create the file.

@@ -59,11 +59,12 @@ A private AI assistant that runs **fully on your Mac**. Press **Command J** (or 
 6. Press **Command Shift N** to open or propose today's note.
 7. Choose **AI → Summarize Current Note**, **Explain Current Note Simply**, or
    **Find Related Notes** to open Cribble AI with a useful built-in prompt.
-8. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
-9. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
-10. Use **File → Copy Markdown** to copy the current note for another app.
-11. Press **Command J** and ask *"what is this library about?"*
-12. Open **Settings → Extensions** and create the example manifest.
+8. Choose **AI → Create Index Note** to propose a reviewed `index.md` map.
+9. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
+10. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
+11. Use **File → Copy Markdown** to copy the current note for another app.
+12. Press **Command J** and ask *"what is this library about?"*
+13. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
 
@@ -76,6 +77,7 @@ changes in this demo copy only.
 - [ ] Press **Command Shift N** and notice the daily note also waits for review before writing.
 - [ ] Try **AI → Summarize Current Note**, **Explain Current Note Simply**, or
   **Find Related Notes** for one-click reading help.
+- [ ] Try **AI → Create Index Note** for a reviewed folder map proposal.
 - [ ] Try **AI → Draft Today with AI** for an AI-assisted daily note proposal.
 - [ ] Try **AI → Extract Tasks from Current Note** to turn prose into a reviewed `Tasks.md` proposal.
 - [ ] Use **File → Copy Markdown** or right-click a note and copy its Markdown for handoff.

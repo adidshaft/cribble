@@ -17,6 +17,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.summarizeWithAIAction) private var summarizeWithAI
     @FocusedValue(\.explainSimplyWithAIAction) private var explainSimplyWithAI
     @FocusedValue(\.findRelatedWithAIAction) private var findRelatedWithAI
+    @FocusedValue(\.createIndexWithAIAction) private var createIndexWithAI
     @FocusedValue(\.draftTodayWithAIAction) private var draftTodayWithAI
     @FocusedValue(\.extractTasksWithAIAction) private var extractTasksWithAI
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
@@ -167,6 +168,9 @@ struct CribbleCommands: Commands {
             Button("Find Related Notes", action: { findRelatedWithAI?() })
                 .disabled(findRelatedWithAI == nil)
 
+            Button("Create Index Note", action: { createIndexWithAI?() })
+                .disabled(createIndexWithAI == nil)
+
             Divider()
 
             Button("Draft Today with AI", action: { draftTodayWithAI?() })
@@ -291,6 +295,10 @@ private struct ExplainSimplyWithAIActionKey: FocusedValueKey {
 }
 
 private struct FindRelatedWithAIActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CreateIndexWithAIActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -473,6 +481,11 @@ extension FocusedValues {
     var findRelatedWithAIAction: (() -> Void)? {
         get { self[FindRelatedWithAIActionKey.self] }
         set { self[FindRelatedWithAIActionKey.self] = newValue }
+    }
+
+    var createIndexWithAIAction: (() -> Void)? {
+        get { self[CreateIndexWithAIActionKey.self] }
+        set { self[CreateIndexWithAIActionKey.self] = newValue }
     }
 
     var draftTodayWithAIAction: (() -> Void)? {

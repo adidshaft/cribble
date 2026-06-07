@@ -177,6 +177,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Chat HUD empty-state and no-match hints now advertise the live command count and newer `/tasks` and `/daily` commands, making the slash palette easier to recover from.
 - The AI menu now exposes `Summarize Current Note`, opening the Chat HUD directly into the built-in summary prompt and disabling when no note is selected.
 - The AI menu now also exposes `Explain Current Note Simply` and `Find Related Notes`, turning beginner comprehension and next-note discovery into native commands instead of hidden prompts.
+- The AI menu now exposes `Create Index Note`, opening the Chat HUD into the
+  reviewed `index.md` proposal flow so messy folders can get a map from a
+  native command.
 - The AI menu now exposes `Extract Tasks from Current Note`, opening the Chat HUD directly into the reviewed `Tasks.md` proposal flow and disabling when no note is selected.
 - The AI menu now also exposes `Draft Today with AI`, giving daily capture a native menu entry that still routes through the reviewed `Daily/YYYY-MM-DD.md` proposal flow.
 - The AI menu is grouped into linking/chat, reading help, capture/tasks, and project intelligence sections so the expanded native surface stays scannable.
@@ -415,6 +418,7 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests` passed on 2026-06-08 after
   adding short descriptions to built-in Chat HUD quick actions and slash-command
   rows: 39 XCTest tests, 0 failures.
+- Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Create Index Note to the native AI menu and refreshing DemoNotes onboarding: 40 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

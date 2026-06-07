@@ -408,6 +408,14 @@ struct IntelligenceHUDView: View {
         let baseURL = localRunnerBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         showModelPicker = false
         await engine.setLocalRunner(baseURL: baseURL, model: modelID)
+        // Publish the runner app-wide: chat, Pathfinder, and AI Link Notes all
+        // resolve the runner from this store (issue #3 — one config surface).
+        LocalRunnerStore.shared.configure(
+            baseURLString: baseURL,
+            displayName: localRunnerName == "Custom" ? nil : localRunnerName,
+            modelIDs: localRunnerModelIDs,
+            defaultModelID: modelID
+        )
     }
 
     private func headerIcon(_ name: String, help: String, action: @escaping () -> Void) -> some View {

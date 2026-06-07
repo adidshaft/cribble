@@ -41,6 +41,9 @@ struct LocalModel: Identifiable, Hashable {
     /// Compact label for the input-bar chip (keeps it narrow).
     var shortName: String {
         if speedLabel == "Flash" { return "Flash" }
+        if kind == .localRunner, let base = name.split(separator: ":").first {
+            return String(base)
+        }
         return name.split(separator: " ").first.map(String.init) ?? name
     }
 

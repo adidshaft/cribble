@@ -322,6 +322,12 @@ final class ChatHUDLogicTests: XCTestCase {
         }
     }
 
+    func testRunnerShortNameDropsTagSuffix() {
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "mistral-small:24b-instruct-q4_K_M").shortName, "mistral-small")
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "qwen2.5:7b").shortName, "qwen2.5")
+        XCTAssertEqual(LocalModel.runnerModel(modelID: "plain-model").shortName, "plain-model")
+    }
+
     func testFactoryMakesRunnerEngineForRunnerKind() {
         let engine = LocalChatEngineFactory.make(for: .runnerModel(modelID: "m"))
         XCTAssertTrue(engine is LocalRunnerChatEngine)

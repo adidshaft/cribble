@@ -39,10 +39,13 @@ final class LocalRunnerStore: ObservableObject {
             // One-time migration from the Intelligence-only configuration,
             // guarded by the `Keys.migrated` sentinel so a later `clear()`
             // sticks even while the legacy key still exists.
+            let legacyModelID = defaults.string(forKey: Keys.legacyIntelligenceModelID)
             baseURLString = legacy
             displayName = nil
-            cachedModelIDs = []
-            defaultModelID = defaults.string(forKey: Keys.legacyIntelligenceModelID)
+            defaultModelID = legacyModelID
+            // Seed the cache with the migrated model so pickers gated on a
+            // non-empty cache show the runner section right away.
+            cachedModelIDs = legacyModelID.map { [$0] } ?? []
             persist()
         } else {
             baseURLString = nil
@@ -57,7 +60,8 @@ final class LocalRunnerStore: ObservableObject {
 
     func configure(baseURLString: String, displayName: String?, modelIDs: [String], defaultModelID: String?) {
         self.baseURLString = baseURLString
-        self.displayName = displayName
+        // Normalize "" to nil so the UI never renders "Local runner ()".
+        self.displayName = displayName.flatMap { $0.isEmpty ? nil : $0 }
         self.cachedModelIDs = modelIDs
         self.defaultModelID = defaultModelID
         persist()

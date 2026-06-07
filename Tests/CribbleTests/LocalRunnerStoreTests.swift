@@ -47,6 +47,14 @@ final class LocalRunnerStoreTests: XCTestCase {
         XCTAssertTrue(store.isConfigured)
         XCTAssertEqual(store.baseURL?.absoluteString, "http://127.0.0.1:11434/v1")
         XCTAssertEqual(store.defaultModelID, "qwen2.5:7b")
+        // The migrated model seeds the cache so pickers have something to show.
+        XCTAssertEqual(store.cachedModelIDs, ["qwen2.5:7b"])
+    }
+
+    func testConfigureNormalizesEmptyDisplayName() {
+        let store = LocalRunnerStore(defaults: defaults)
+        store.configure(baseURLString: "http://127.0.0.1:11434/v1", displayName: "", modelIDs: ["m"], defaultModelID: "m")
+        XCTAssertNil(store.displayName)
     }
 
     func testClearSurvivesRelaunchDespiteLegacyKey() {

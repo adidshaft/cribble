@@ -124,9 +124,19 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
             for try await line in bytes.lines {
                 if lock.withLock({ cancelRequested }) { throw CancellationError() }
                 try Task.checkCancellation()
-                guard let delta = Self.deltaText(fromSSELine: line) else { continue }
-                full += delta
-                onToken(delta)
+                if let delta = Self.deltaText(fromSSELine: line) {
+                    full += delta
+                    onToken(delta)
+                } else if Self.isReasoningDelta(fromSSELine: line) {
+                    // Liveness only: keeps the chat HUD's stall watchdog from
+                    // killing a reasoning model that is still thinking.
+                    onToken("")
+                }
+            }
+            guard !full.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw LocalChatEngineError.generationFailed(
+                    "The model produced no answer text — reasoning models can spend the whole token budget thinking. Try again, ask for a shorter answer, or pick a different runner model."
+                )
             }
             return full
         }
@@ -161,6 +171,23 @@ final class LocalRunnerChatEngine: LocalChatEngine, @unchecked Sendable {
             return text
         }
         return nil
+    }
+
+    /// True when the SSE line carries a reasoning delta (`reasoning_content`).
+    /// Reasoning models think before they answer; these chunks carry no user-
+    /// visible text but do prove the runner is alive and working.
+    static func isReasoningDelta(fromSSELine line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("data:") else { return false }
+        let payload = trimmed.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+        guard payload != "[DONE]", !payload.isEmpty else { return false }
+        guard
+            let json = try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let delta = choices.first?["delta"] as? [String: Any],
+            let reasoning = delta["reasoning_content"] as? String
+        else { return false }
+        return !reasoning.isEmpty
     }
 
     /// Parses a complete (non-streaming) chat-completions body. Delegates the

@@ -33,6 +33,13 @@ final class LocalRunnerChatEngineTests: XCTestCase {
         XCTAssertEqual(text, "Part one. Part two.")
     }
 
+    func testRecognizesReasoningDeltas() {
+        XCTAssertTrue(LocalRunnerChatEngine.isReasoningDelta(fromSSELine: #"data: {"choices":[{"delta":{"reasoning_content":"hmm"}}]}"#))
+        XCTAssertFalse(LocalRunnerChatEngine.isReasoningDelta(fromSSELine: #"data: {"choices":[{"delta":{"content":"hi"}}]}"#))
+        XCTAssertFalse(LocalRunnerChatEngine.isReasoningDelta(fromSSELine: "data: [DONE]"))
+        XCTAssertFalse(LocalRunnerChatEngine.isReasoningDelta(fromSSELine: #"data: {"choices":[{"delta":{"reasoning_content":""}}]}"#))
+    }
+
     // MARK: - End-to-end with stubbed HTTP
 
     @MainActor
@@ -66,6 +73,70 @@ final class LocalRunnerChatEngineTests: XCTestCase {
 
         XCTAssertEqual(full, "Hello world")
         XCTAssertEqual(collector.tokens, ["Hello", " world"])
+    }
+
+    @MainActor
+    func testReasoningDeltasEmitLivenessAndContentStillAssembles() async throws {
+        let body = """
+        data: {"choices":[{"delta":{"role":"assistant"}}]}
+
+        data: {"choices":[{"delta":{"reasoning_content":"thinking..."}}]}
+
+        data: {"choices":[{"delta":{"reasoning_content":"more thinking"}}]}
+
+        data: {"choices":[{"delta":{"content":"Answer."}}]}
+
+        data: [DONE]
+
+        """
+        StubURLProtocol.handler = { request in
+            if request.url!.path.hasSuffix("/models") {
+                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
+            }
+            return (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        }
+        let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
+            URL(string: "http://stub.local/v1")
+        }
+        try await engine.prepare(model: .runnerModel(modelID: "m")) { _ in }
+
+        let collector = TokenCollector()
+        let full = try await engine.generate(
+            messages: [EngineMessage(role: .user, content: "hi")],
+            maxTokens: 64
+        ) { delta in collector.append(delta) }
+
+        XCTAssertEqual(full, "Answer.")
+        // Two liveness pings (empty) + one real token, in order.
+        XCTAssertEqual(collector.tokens, ["", "", "Answer."])
+    }
+
+    @MainActor
+    func testReasoningOnlyStreamFailsWithActionableError() async throws {
+        let body = """
+        data: {"choices":[{"delta":{"reasoning_content":"endless thinking"}}]}
+
+        data: {"choices":[{"delta":{"content":"\\n"}}]}
+
+        data: [DONE]
+
+        """
+        StubURLProtocol.handler = { request in
+            if request.url!.path.hasSuffix("/models") {
+                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
+            }
+            return (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        }
+        let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
+            URL(string: "http://stub.local/v1")
+        }
+        try await engine.prepare(model: .runnerModel(modelID: "m")) { _ in }
+        do {
+            _ = try await engine.generate(messages: [EngineMessage(role: .user, content: "hi")], maxTokens: 8) { _ in }
+            XCTFail("Expected generationFailed for whitespace-only content")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("no answer text"), "got: \(error.localizedDescription)")
+        }
     }
 
     @MainActor

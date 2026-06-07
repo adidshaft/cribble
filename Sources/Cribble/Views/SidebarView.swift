@@ -436,6 +436,15 @@ private struct SidebarControls: View {
             }
 
             sidebarIconButton(
+                title: "New Note",
+                systemImage: "doc.badge.plus",
+                disabled: !library.hasFolders,
+                help: "Create a new Markdown note through the review flow"
+            ) {
+                library.proposeBlankNote()
+            }
+
+            sidebarIconButton(
                 title: "Refresh",
                 systemImage: "arrow.clockwise",
                 disabled: !library.hasFolders,

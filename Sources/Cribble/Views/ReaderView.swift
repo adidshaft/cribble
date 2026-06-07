@@ -2226,6 +2226,17 @@ private struct WelcomeView: View {
                 .controlSize(.large)
                 .cribbleGlassButton()
                 .help("Open the bundled DemoNotes tutorial")
+
+                if library.hasFolders {
+                    Button {
+                        library.proposeBlankNote()
+                    } label: {
+                        Label("New Note", systemImage: "doc.badge.plus")
+                    }
+                    .controlSize(.large)
+                    .cribbleGlassButton()
+                    .help("Create a new Markdown note through the review flow")
+                }
             }
 
             if !library.rootFolderShortcuts.isEmpty {

@@ -183,6 +183,7 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(seededContent.contains("Tasks and Intelligence"))
         XCTAssertTrue(seededContent.contains("Team Extension Kit"))
         XCTAssertTrue(seededContent.contains("Extension Contribution Guide"))
+        XCTAssertTrue(seededContent.contains("contributors into"))
         XCTAssertTrue(seededContent.contains("Decision Log"))
 
         let staleDemo = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-stale-demo-\(UUID().uuidString)")

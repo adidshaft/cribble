@@ -63,6 +63,8 @@ The extension path is intentionally strict:
   least-writing, no-hidden-execution, cleanly disableable, and native SwiftUI.
 - DemoNotes and Help expose an in-app Extension Contribution Guide so the same
   contributor rules are discoverable without leaving Cribble.
+- The welcome Start With grid has a Contribute tile for extension authors and
+  open-source contributors.
 
 ## What Was Verified
 
@@ -77,6 +79,7 @@ Focused validation passed across the newest work:
 - Extension dashboard and proposal summaries.
 - Open-source extension contribution guide links and strict first-PR rules.
 - Bundled Extension Contribution Guide note and native Help entry.
+- Welcome Contribute tile for the extension contribution guide.
 - Product readiness checkpoint with keep, stop, defer, and verification sections.
 - Help-copy template for product readiness checkpoints and maintainer handoffs.
 - Remote-runner consent and handoff checklists.

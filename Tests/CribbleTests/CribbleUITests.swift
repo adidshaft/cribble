@@ -890,6 +890,20 @@ final class CribbleUITests: XCTestCase {
         }
     }
 
+    func testWelcomeStartGridIncludesContributorPath() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let readerViewURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReaderView.swift")
+        let readerView = try String(contentsOf: readerViewURL, encoding: .utf8)
+
+        XCTAssertTrue(readerView.contains("demoStartButton(\"Contribute\""))
+        XCTAssertTrue(readerView.contains("Extension Contribution Guide.md"))
+        XCTAssertTrue(readerView.contains("person.crop.circle.badge.plus"))
+    }
+
     func testCribbleAIGuideNamesModelDataBoundaries() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile
@@ -918,6 +932,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("local-first AI"))
         XCTAssertTrue(home.contains("local-first intelligence"))
         XCTAssertTrue(home.contains("keep notes on this Mac"))
+        XCTAssertTrue(home.contains("Contribute"))
         XCTAssertTrue(home.contains("renderer aliases, import-lane"))
         XCTAssertTrue(home.contains("extension profiles get a review sheet"))
         XCTAssertTrue(home.contains("Copy a generated Intelligence artifact as Markdown"))

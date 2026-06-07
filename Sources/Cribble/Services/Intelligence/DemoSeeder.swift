@@ -63,9 +63,9 @@ enum DemoSeeder {
 
     ## Connections
 
-    - **README** routes beginners into **Getting Started** and power users into
-      **Workflow Playbook**, **Research Review**, **Decision Log**, and
-      **Team Extension Kit**, and **Extension Contribution Guide**.
+    - **README** routes beginners into **Getting Started**, contributors into
+      **Extension Contribution Guide**, and power users into **Workflow Playbook**,
+      **Research Review**, **Decision Log**, and **Team Extension Kit**.
     - **Tasks and Intelligence** bridges everyday checkboxes into Project Intelligence.
     - **Extensions and Remote Intelligence**, **Team Extension Kit**, and
       **Extension Contribution Guide** form the plugin path: safe manifests first,

@@ -2339,6 +2339,7 @@ private struct WelcomeView: View {
                     demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")
                     demoStartButton("Decisions", systemImage: "checkmark.seal", note: "Decision Log.md")
                     demoStartButton("Extensions", systemImage: "puzzlepiece.extension", note: "Team Extension Kit.md")
+                    demoStartButton("Contribute", systemImage: "person.crop.circle.badge.plus", note: "Extension Contribution Guide.md")
                     demoStartButton("Remote AI", systemImage: "network", note: "Extensions and Remote Intelligence.md")
                 }
                 .frame(maxWidth: 560)

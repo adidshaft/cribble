@@ -607,6 +607,8 @@ Latest pass:
 - Help now includes Open Extension Contribution Guide, backed by a bundled
   DemoNotes note and refreshed seeded demo intelligence, so contributors can
   review read-only, least-writing, hard-native-SwiftUI rules inside the app.
+- The welcome Start With grid now includes Contribute, opening the Extension
+  Contribution Guide directly for extension authors and open-source contributors.
 - `docs/product-improvisation-readiness-checkpoint.md` now captures the
   keep/stop/defer guidance for this branch, including explicit stop conditions
   around executable plugins, hidden execution, broad reads, source-note writes,
@@ -637,6 +639,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testResearchReviewTemplateNamesEvidenceAndBoundaries'` passed on 2026-06-08 after adding Help > Copy Research Review Template and the shared Research Review template: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding the standalone open-source extension contribution guide and Team Extension Kit links: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the bundled Extension Contribution Guide and Help menu route: 4 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testWelcomeStartGridIncludesContributorPath|CribbleUITests/testDemoNotesUseLocalFirstAICopy|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding the welcome Contribute tile: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions` passed on 2026-06-08 after adding the branch readiness checkpoint: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testProductReadinessCheckpointTemplateNamesStopConditions|ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions'` passed on 2026-06-08 after adding Help > Copy Product Readiness Checkpoint: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,

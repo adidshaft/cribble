@@ -368,6 +368,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after adding a top-level diagnostic Health Summary that keeps status, refresh, intelligence, extension, and crash-report state scannable without exposing runner secrets: 7 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding direct Help menu entries for Tasks & Intelligence and Research Review onboarding guides: 28 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding a first-screen Tasks onboarding tile to the Welcome Start With grid: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding New Note/Today/Open Folder actions to the sidebar empty-folder state: 27 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

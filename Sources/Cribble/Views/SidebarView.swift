@@ -97,8 +97,35 @@ struct SidebarView: View {
         VStack {
             Spacer()
             if library.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                ContentUnavailableView("No Markdown Files", systemImage: "doc.text.magnifyingglass")
-                    .padding(.vertical, 24)
+                ContentUnavailableView {
+                    Label("No Markdown Files", systemImage: "doc.text.magnifyingglass")
+                } description: {
+                    Text(library.hasFolders ? "Create a note to start this folder." : "Open a folder to start reading Markdown.")
+                } actions: {
+                    if library.hasFolders {
+                        Button {
+                            library.proposeBlankNote()
+                        } label: {
+                            Label("New Note", systemImage: "doc.badge.plus")
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button {
+                            library.openTodayNote()
+                        } label: {
+                            Label("Today", systemImage: "calendar.badge.plus")
+                        }
+                        .buttonStyle(.bordered)
+                    } else {
+                        Button {
+                            library.chooseFolder(sortMode: settings.fileSortMode)
+                        } label: {
+                            Label("Open Folder", systemImage: "folder")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+                .padding(.vertical, 24)
             } else {
                 ContentUnavailableView {
                     Label("No Matches", systemImage: "magnifyingglass")

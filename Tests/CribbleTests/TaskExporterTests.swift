@@ -2,6 +2,17 @@ import XCTest
 @testable import Cribble
 
 final class TaskExporterTests: XCTestCase {
+    func testAccessDeniedMessagesNameThePermissionPane() throws {
+        XCTAssertEqual(
+            TaskExporterError.accessDenied(.reminders).errorDescription,
+            "Cribble doesn't have permission to access Reminders. Grant access in System Settings → Privacy & Security → Reminders."
+        )
+        XCTAssertEqual(
+            TaskExporterError.accessDenied(.calendar).errorDescription,
+            "Cribble doesn't have permission to access Calendars. Grant access in System Settings → Privacy & Security → Calendars."
+        )
+    }
+
     func testAllDayRangeEndsAfterStartOnNextDay() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))

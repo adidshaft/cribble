@@ -76,6 +76,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
 - The in-reader shortcut popover now includes Find in Files, Import, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
+- Reminders/Calendar export permission errors now name the exact System Settings privacy pane to fix, instead of giving a generic access-denied message.
 - Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
 - Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
 - The Intelligence Ask tab now offers starter question chips that adapt to available artifacts, giving new users a faster path from generated context to useful project answers.
@@ -168,6 +169,7 @@ swift test --filter CribbleUITests
 swift test --filter IntelligenceEngineTests
 swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts
 swift test --filter IntelligenceEngineTests
+swift test --filter TaskExporterTests
 ```
 
 Latest pass:
@@ -216,6 +218,7 @@ Latest pass:
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after custom remote-runner handoff UI: 25 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after refreshing DemoNotes seeded artifacts: 1 XCTest test, 0 failures.
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after refreshed seeded artifacts: 25 XCTest tests, 0 failures.
+- Latest `swift test --filter TaskExporterTests` passed on 2026-06-08 after destination-specific Reminders/Calendar permission messages: 2 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

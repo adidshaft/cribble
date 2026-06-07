@@ -166,8 +166,15 @@ struct PathfinderSheet: View {
                             }
                         }
                     }
+                    if LocalRunnerStore.shared.isConfigured {
+                        Section("Local runner") {
+                            ForEach(ModelCatalog.runnerModels) { model in
+                                Button(model.name) { explainLocally(model: model) }
+                            }
+                        }
+                    }
                     Section("Cloud") {
-                        ForEach(AIProvider.allCases) { provider in
+                        ForEach(AIProvider.cliProviders) { provider in
                             Button(provider.rawValue) { explain(with: provider) }
                         }
                     }
@@ -177,7 +184,7 @@ struct PathfinderSheet: View {
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help("Explain how these notes connect, using an on-device model or the Claude / Codex CLI")
+                .help("Explain how these notes connect, using an on-device model, your local runner, or the Claude / Codex CLI")
             }
         }
     }

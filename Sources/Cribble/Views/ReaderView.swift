@@ -2027,22 +2027,40 @@ private struct EmptyReadmePanel: View {
             }
 
             HStack(spacing: 10) {
-                ForEach(AIProvider.allCases) { provider in
+                ForEach(availableProviders) { provider in
                     Button {
                         onFillReadme(provider)
                     } label: {
-                        Label("Fill + Link with \(provider.rawValue)", systemImage: provider == .codex ? "terminal" : "brain.head.profile")
+                        Label("Fill + Link with \(provider.rawValue)", systemImage: icon(for: provider))
                     }
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)
                     .disabled(isRunningAI)
-                    .help("Use \(provider.rawValue) \(provider.lowestModelName) to draft this README, then review the patch before applying")
+                    .help(help(for: provider))
                 }
             }
         }
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var availableProviders: [AIProvider] {
+        LocalRunnerStore.shared.isConfigured ? AIProvider.allCases : AIProvider.cliProviders
+    }
+
+    private func icon(for provider: AIProvider) -> String {
+        switch provider {
+        case .codex: "terminal"
+        case .claude: "brain.head.profile"
+        case .localRunner: "network"
+        }
+    }
+
+    private func help(for provider: AIProvider) -> String {
+        provider == .localRunner
+            ? "Use your configured local runner to draft this README, then review the patch before applying"
+            : "Use \(provider.rawValue) \(provider.lowestModelName) to draft this README, then review the patch before applying"
     }
 }
 

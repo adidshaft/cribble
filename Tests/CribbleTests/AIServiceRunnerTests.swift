@@ -113,7 +113,7 @@ final class AIServiceRunnerTests: XCTestCase {
             "choices": [["message": ["role": "assistant", "content": "no changes"]]]
         ])
         StubURLProtocol.handler = { request in
-            captured.store(Self.bodyData(of: request))
+            captured.store(StubURLProtocol.bodyData(of: request))
             return (200, ["Content-Type": "application/json"], body)
         }
         let service = AIService(
@@ -129,29 +129,4 @@ final class AIServiceRunnerTests: XCTestCase {
         XCTAssertTrue(sent.contains("You cannot access the filesystem"), "system adapter missing from request")
         XCTAssertTrue(sent.contains("=== Note.md ==="), "vault content missing from request")
     }
-
-    /// Reads a URLRequest body whether it arrived as data or a stream.
-    private static func bodyData(of request: URLRequest) -> Data? {
-        if let data = request.httpBody { return data }
-        guard let stream = request.httpBodyStream else { return nil }
-        stream.open()
-        defer { stream.close() }
-        var data = Data()
-        let bufferSize = 16_384
-        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-        defer { buffer.deallocate() }
-        while stream.hasBytesAvailable {
-            let read = stream.read(buffer, maxLength: bufferSize)
-            if read <= 0 { break }
-            data.append(buffer, count: read)
-        }
-        return data
-    }
-}
-
-private final class CapturedRequestBody: @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: Data?
-    func store(_ data: Data?) { lock.withLock { storage = data } }
-    var data: Data? { lock.withLock { storage } }
 }

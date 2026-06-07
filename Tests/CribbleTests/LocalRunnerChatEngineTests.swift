@@ -54,11 +54,8 @@ final class LocalRunnerChatEngineTests: XCTestCase {
         data: [DONE]
 
         """
-        StubURLProtocol.handler = { request in
-            if request.url!.path.hasSuffix("/models") {
-                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
-            }
-            return (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        StubURLProtocol.handler = StubURLProtocol.modelsThen { _ in
+            (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
         }
         let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
             URL(string: "http://stub.local/v1")
@@ -89,11 +86,8 @@ final class LocalRunnerChatEngineTests: XCTestCase {
         data: [DONE]
 
         """
-        StubURLProtocol.handler = { request in
-            if request.url!.path.hasSuffix("/models") {
-                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
-            }
-            return (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        StubURLProtocol.handler = StubURLProtocol.modelsThen { _ in
+            (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
         }
         let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
             URL(string: "http://stub.local/v1")
@@ -121,11 +115,8 @@ final class LocalRunnerChatEngineTests: XCTestCase {
         data: [DONE]
 
         """
-        StubURLProtocol.handler = { request in
-            if request.url!.path.hasSuffix("/models") {
-                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
-            }
-            return (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        StubURLProtocol.handler = StubURLProtocol.modelsThen { _ in
+            (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
         }
         let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
             URL(string: "http://stub.local/v1")
@@ -141,10 +132,7 @@ final class LocalRunnerChatEngineTests: XCTestCase {
 
     @MainActor
     func testFallsBackToNonStreamingJSONResponse() async throws {
-        StubURLProtocol.handler = { request in
-            if request.url!.path.hasSuffix("/models") {
-                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
-            }
+        StubURLProtocol.handler = StubURLProtocol.modelsThen { _ in
             let body = #"{"choices":[{"message":{"role":"assistant","content":"All at once"}}]}"#
             return (200, ["Content-Type": "application/json"], Data(body.utf8))
         }
@@ -174,11 +162,8 @@ final class LocalRunnerChatEngineTests: XCTestCase {
 
     @MainActor
     func testGenerateSurfacesHTTPErrorBody() async throws {
-        StubURLProtocol.handler = { request in
-            if request.url!.path.hasSuffix("/models") {
-                return (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"m"}]}"#.utf8))
-            }
-            return (404, ["Content-Type": "application/json"], Data(#"{"error":"model 'm' not found"}"#.utf8))
+        StubURLProtocol.handler = StubURLProtocol.modelsThen { _ in
+            (404, ["Content-Type": "application/json"], Data(#"{"error":"model 'm' not found"}"#.utf8))
         }
         let engine = LocalRunnerChatEngine(session: StubURLProtocol.session()) {
             URL(string: "http://stub.local/v1")
@@ -191,40 +176,4 @@ final class LocalRunnerChatEngineTests: XCTestCase {
             XCTAssertTrue(error.localizedDescription.contains("not found"), "got: \(error.localizedDescription)")
         }
     }
-}
-
-/// Thread-safe token sink for streaming assertions.
-private final class TokenCollector: @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: [String] = []
-    func append(_ token: String) { lock.withLock { storage.append(token) } }
-    var tokens: [String] { lock.withLock { storage } }
-}
-
-/// Minimal URLProtocol stub. `handler` maps a request to (status, headers, body).
-/// Intentionally `internal`: AIServiceRunnerTests reuses it.
-final class StubURLProtocol: URLProtocol {
-    nonisolated(unsafe) static var handler: (@Sendable (URLRequest) -> (Int, [String: String], Data))?
-
-    static func session() -> URLSession {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [StubURLProtocol.self]
-        return URLSession(configuration: config)
-    }
-
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
-        guard let handler = Self.handler else { return }
-        let (status, headers, body) = handler(request)
-        let response = HTTPURLResponse(
-            url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers
-        )!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: body)
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
 }

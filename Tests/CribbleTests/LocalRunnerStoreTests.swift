@@ -13,6 +13,7 @@ final class LocalRunnerStoreTests: XCTestCase {
 
     override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite)
+        StubURLProtocol.handler = nil
     }
 
     func testUnconfiguredByDefault() {
@@ -76,6 +77,27 @@ final class LocalRunnerStoreTests: XCTestCase {
         XCTAssertTrue(migrated.isConfigured)
         migrated.clear()
         XCTAssertFalse(LocalRunnerStore(defaults: defaults).isConfigured)
+    }
+
+    func testRefreshModelsUpdatesAndPersistsCache() async {
+        StubURLProtocol.handler = { _ in
+            (200, ["Content-Type": "application/json"], Data(#"{"data":[{"id":"b"},{"id":"a"}]}"#.utf8))
+        }
+        let store = LocalRunnerStore(defaults: defaults)
+        store.configure(baseURLString: "http://stub.local/v1", displayName: nil, modelIDs: ["old"], defaultModelID: "old")
+        await store.refreshModels(session: StubURLProtocol.session())
+        XCTAssertEqual(store.cachedModelIDs, ["a", "b"], "probe results are sorted")
+        // Persisted: a fresh instance sees the refreshed list.
+        XCTAssertEqual(LocalRunnerStore(defaults: defaults).cachedModelIDs, ["a", "b"])
+    }
+
+    func testRefreshModelsKeepsStaleCacheOnFailure() async {
+        StubURLProtocol.handler = { _ in (500, [:], Data()) }
+        let store = LocalRunnerStore(defaults: defaults)
+        store.configure(baseURLString: "http://stub.local/v1", displayName: nil, modelIDs: ["stale"], defaultModelID: "stale")
+        await store.refreshModels(session: StubURLProtocol.session())
+        // Silent-on-failure by design: the stale cache beats an empty picker.
+        XCTAssertEqual(store.cachedModelIDs, ["stale"])
     }
 
     func testClearRemovesConfig() {

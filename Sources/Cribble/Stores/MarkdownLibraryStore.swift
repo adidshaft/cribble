@@ -1551,6 +1551,7 @@ final class MarkdownLibraryStore: ObservableObject {
         }
         let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
         var isDirectory: ObjCBool = false
+        var createdTasksFile = false
         if FileManager.default.fileExists(atPath: tasksURL.path, isDirectory: &isDirectory) {
             guard !isDirectory.boolValue else {
                 errorMessage = "Couldn't open Tasks.md: a folder already uses that name."
@@ -1560,6 +1561,7 @@ final class MarkdownLibraryStore: ObservableObject {
             let seed = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n"
             do {
                 try SafeFileWriter.create(seed, at: tasksURL)
+                createdTasksFile = true
                 refresh(keepStatusQuiet: true)
             } catch {
                 errorMessage = "Couldn't create Tasks.md: \(error.localizedDescription)"
@@ -1568,7 +1570,7 @@ final class MarkdownLibraryStore: ObservableObject {
         }
         select(url: tasksURL)
         if selectedURL?.standardizedFileURL == tasksURL {
-            statusMessage = "Opened Tasks"
+            statusMessage = createdTasksFile ? "Created Tasks.md" : "Opened Tasks"
         }
     }
 

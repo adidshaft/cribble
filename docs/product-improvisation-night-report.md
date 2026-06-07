@@ -187,6 +187,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
 - The in-reader shortcut popover now includes Find in Files, Import, Copy Markdown, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
+- Opening Tasks now distinguishes first creation from existing-file opens with
+  `Created Tasks.md` vs `Opened Tasks`, making the native task workflow less
+  ambiguous.
 - Task export status now says when a task was collected in `Tasks.md` and sent to Reminders or Calendar, so the in-app tracker and external handoff do not feel like separate invisible actions.
 - Reminders/Calendar export permission errors now name the exact System Settings privacy pane to fix, instead of giving a generic access-denied message.
 - Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
@@ -453,6 +456,7 @@ Latest pass:
 - Docs-only validation on 2026-06-08 confirmed `README.md` mentions the native
   AI menu commands, `cribble-extension.json`, trusted local/VPS/team runners,
   and review-first generated note proposals.
+- Latest `swift test --filter 'CribbleUITests/testOpenTasksCreatesAndSelectsTasksFile|CribbleUITests/testAddToTasksAnchorsSourceAndDeduplicatesBacklink'` passed on 2026-06-08 after clarifying first-time Tasks creation status and tightening isolated store setup in the focused UI tests: 2 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

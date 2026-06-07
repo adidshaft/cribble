@@ -138,7 +138,7 @@ final class CribbleUITests: XCTestCase {
     }
 
     func testLibraryStoreSearchFiltering() throws {
-        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
         
         // Create nodes mock
         let node1 = MarkdownNode(
@@ -285,7 +285,7 @@ final class CribbleUITests: XCTestCase {
         let noteURL = rootURL.appendingPathComponent("Note.md")
         try "# Note\n".write(to: noteURL, atomically: true, encoding: .utf8)
 
-        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
         XCTAssertEqual(store.rootURLs, [rootURL.standardizedFileURL])
@@ -813,7 +813,7 @@ final class CribbleUITests: XCTestCase {
         try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: rootURL) }
 
-        let store = MarkdownLibraryStore(includeBundledDemo: false)
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
         store.openFolder(rootURL, sortMode: .name)
         await store.waitForLoadToComplete()
 
@@ -824,7 +824,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: tasksURL.path))
         XCTAssertEqual(store.selectedURL?.standardizedFileURL, tasksURL)
         XCTAssertEqual(store.selectedDocument?.url.standardizedFileURL, tasksURL)
-        XCTAssertEqual(store.statusMessage, "Opened Tasks")
+        XCTAssertEqual(store.statusMessage, "Created Tasks.md")
     }
 
     func testDemoHelpGuideTargetsExistInBundledNotes() throws {

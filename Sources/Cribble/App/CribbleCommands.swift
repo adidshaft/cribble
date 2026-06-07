@@ -4,6 +4,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.openFolderAction) private var openFolder
     @FocusedValue(\.refreshFolderAction) private var refreshFolder
     @FocusedValue(\.openInEditorAction) private var openInEditor
+    @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
     @FocusedValue(\.toggleIntelligenceHUDAction) private var toggleIntelligenceHUD
@@ -33,6 +34,12 @@ struct CribbleCommands: Commands {
             Button("Open in Editor", action: { openInEditor?() })
                 .keyboardShortcut("e", modifiers: [])
                 .disabled(openInEditor == nil)
+
+            Divider()
+
+            Button("Undo Last Note Change", action: { undoNoteChange?() })
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(undoNoteChange == nil)
         }
 
         // View — navigation, layout, and reading actions, merged into the
@@ -120,6 +127,10 @@ private struct OpenInEditorActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct UndoNoteChangeActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct RunAILinkingActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -190,6 +201,11 @@ extension FocusedValues {
     var openInEditorAction: (() -> Void)? {
         get { self[OpenInEditorActionKey.self] }
         set { self[OpenInEditorActionKey.self] = newValue }
+    }
+
+    var undoNoteChangeAction: (() -> Void)? {
+        get { self[UndoNoteChangeActionKey.self] }
+        set { self[UndoNoteChangeActionKey.self] = newValue }
     }
 
     var runAILinkingAction: (() -> Void)? {

@@ -724,9 +724,16 @@ final class MarkdownLibraryStore: ObservableObject {
         let fileURL = folderURL.appendingPathComponent(filename.hasSuffix(".md") ? filename : "\(filename).md")
         let title = fileURL.deletingPathExtension().lastPathComponent
         let defaultContent = "# \(title)\n\n"
-        
+
+        // If the note already exists, never clobber it — just open it.
+        if FileManager.default.fileExists(atPath: fileURL.standardizedFileURL.path) {
+            statusMessage = "\(fileURL.lastPathComponent) already exists — opening it"
+            select(url: fileURL)
+            return
+        }
+
         do {
-            try defaultContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            try SafeFileWriter.create(defaultContent, at: fileURL)
             refresh(sortMode: currentSortMode, keepStatusQuiet: true)
             Task {
                 try? await Task.sleep(for: .milliseconds(300))
@@ -1165,7 +1172,7 @@ final class MarkdownLibraryStore: ObservableObject {
         existing += "- [ ] \(label) — \(backlink)\n"
         do {
             selfWriteSuppressionDeadline = Date().addingTimeInterval(1.5)
-            try existing.write(to: tasksURL, atomically: true, encoding: .utf8)
+            try SafeFileWriter.overwrite(existing, at: tasksURL)
             if documents.contains(where: { $0.url.standardizedFileURL == tasksURL }) {
                 reloadDocumentInPlace(tasksURL)
             } else {
@@ -1187,10 +1194,33 @@ final class MarkdownLibraryStore: ObservableObject {
         let tasksURL = root.appendingPathComponent("Tasks.md").standardizedFileURL
         if !FileManager.default.fileExists(atPath: tasksURL.path) {
             let seed = "# Tasks\n\nCollected from your notes by Cribble. Each item links back to its source.\n"
-            try? seed.write(to: tasksURL, atomically: true, encoding: .utf8)
+            try? SafeFileWriter.create(seed, at: tasksURL)
             refresh(keepStatusQuiet: true)
         }
         select(url: tasksURL)
+    }
+
+    /// Whether the currently open note has a Cribble backup that can be reverted.
+    var canUndoSelectedNote: Bool {
+        guard let url = selectedDocument?.url else { return false }
+        return SafeFileWriter.hasBackup(for: url)
+    }
+
+    /// Reverts the open note to the most recent contents Cribble backed up before
+    /// one of its own writes (a checkbox flip, AI diff, task anchor, etc.).
+    func undoLastChangeToSelectedNote() {
+        guard let url = selectedDocument?.url else {
+            statusMessage = "Open a note to undo"
+            return
+        }
+        let standardized = url.standardizedFileURL
+        selfWriteSuppressionDeadline = Date().addingTimeInterval(1.5)
+        if SafeFileWriter.restoreMostRecentBackup(for: standardized) != nil {
+            reloadDocumentInPlace(standardized)
+            statusMessage = "Reverted \(url.lastPathComponent) to the previous version"
+        } else {
+            statusMessage = "No Cribble backup to undo for \(url.lastPathComponent)"
+        }
     }
 
     private func reloadDocumentInPlace(_ url: URL) {

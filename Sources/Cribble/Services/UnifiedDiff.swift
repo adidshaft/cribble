@@ -175,11 +175,9 @@ struct DiffApplier {
             lineOffset += replacement.count - expected.count
         }
 
-        try FileManager.default.createDirectory(
-            at: fileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try lines.joined(separator: "\n").write(to: fileURL, atomically: true, encoding: .utf8)
+        // Route through SafeFileWriter so the prior contents are backed up and
+        // recoverable before an AI-generated diff replaces them.
+        try SafeFileWriter.overwrite(lines.joined(separator: "\n"), at: fileURL)
     }
 
     private func matches(_ needle: [String], in haystack: [String], at start: Int) -> Bool {

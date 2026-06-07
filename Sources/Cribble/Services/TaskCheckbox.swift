@@ -145,6 +145,7 @@ enum TaskCheckbox {
                 let anchor = "cribble-" + String(UUID().uuidString.prefix(6)).lowercased()
                 let insertion = Array(" ^\(anchor)".utf8)
                 data.insert(contentsOf: insertion, at: range.upperBound)
+                SafeFileWriter.backUpExisting(at: fileURL)
                 try data.write(to: fileURL, options: [.atomic])
                 return LocatedTask(label: displayLabel, anchor: anchor)
             }
@@ -230,6 +231,7 @@ enum TaskCheckbox {
                 guard stateByteIndex < range.upperBound else { return .notFound }
                 // 0x20 = space (unchecked), 0x78 = 'x' (checked)
                 data[stateByteIndex] = expectedCurrentChecked ? 0x20 : 0x78
+                SafeFileWriter.backUpExisting(at: fileURL)
                 try data.write(to: fileURL, options: [.atomic])
                 return .toggled
             }

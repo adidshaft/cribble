@@ -31,6 +31,7 @@ struct ContentView: View {
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.refreshFolderAction, { library.refresh(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openInEditorAction, { library.openSelectedInEditor(settings: settings) })
+            .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
             .focusedSceneValue(\.toggleIntelligenceHUDAction, { openIntelligenceHUD() })

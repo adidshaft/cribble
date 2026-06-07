@@ -10,6 +10,7 @@ For user-facing and contributor docs, see the repo root
 
 | Doc | Status | What it covers |
 | --- | --- | --- |
+| [product-improvisation-night-report.md](product-improvisation-night-report.md) | Branch report | Current product-improvisation work: UI, onboarding, extensions, remote intelligence, performance, validation, and next bets. |
 | [cribble-open-source-plan.md](cribble-open-source-plan.md) | Plan | Open-sourcing runbook — licensing, governance, contribution surfaces. |
 | [cribble-intelligence-plan.md](cribble-intelligence-plan.md) | Draft | Technical design for background workspace intelligence. |
 | [cribble-intelligence-research.md](cribble-intelligence-research.md) | Research | UX direction + research behind the intelligence work. |

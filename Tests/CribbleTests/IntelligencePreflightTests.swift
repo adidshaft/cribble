@@ -84,6 +84,47 @@ final class IntelligencePreflightTests: XCTestCase {
         XCTAssertTrue(handoff.contains("Disable/revoke"))
     }
 
+    func testExtensionRunnerConsentReviewSummaryNamesApprovalDetails() {
+        let profile = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.research-gpu",
+            title: "Research GPU",
+            baseURL: URL(string: "https://ai.example.com/v1")!,
+            modelID: "qwen3-32b",
+            embeddingModelID: "text-embedding-3-small",
+            trustLabel: "Team-controlled VPS",
+            sourceName: "Team Runner"
+        )
+
+        let summary = profile.consentReviewSummary(usesKeychain: true)
+
+        XCTAssertTrue(summary.contains("Remote runner review"))
+        XCTAssertTrue(summary.contains("Endpoint: https://ai.example.com/v1"))
+        XCTAssertTrue(summary.contains("Model: qwen3-32b"))
+        XCTAssertTrue(summary.contains("Embeddings: text-embedding-3-small"))
+        XCTAssertTrue(summary.contains("Trust label: Team-controlled VPS"))
+        XCTAssertTrue(summary.contains("Source extension: Team Runner"))
+        XCTAssertTrue(summary.contains(RemoteRunnerDataBoundary.detail))
+        XCTAssertTrue(summary.contains("saved in Keychain"))
+        XCTAssertTrue(summary.contains("Disable/revoke"))
+    }
+
+    func testExtensionRunnerConsentReviewSummaryNamesMissingKeychain() {
+        let profile = ExtensionIntelligenceProviderProfile(
+            id: "com.example.runner.research-gpu",
+            title: "Research GPU",
+            baseURL: URL(string: "https://ai.example.com/v1")!,
+            modelID: "qwen3-32b",
+            embeddingModelID: nil,
+            trustLabel: "Team-controlled VPS",
+            sourceName: "Team Runner"
+        )
+
+        let summary = profile.consentReviewSummary(usesKeychain: false)
+
+        XCTAssertTrue(summary.contains("not selected in Keychain"))
+        XCTAssertFalse(summary.contains("Embeddings:"))
+    }
+
     func testOnDeviceSummaryStaysLocal() {
         let summary = IntelligencePreflightRunnerSummary.current(
             runnerURL: nil,

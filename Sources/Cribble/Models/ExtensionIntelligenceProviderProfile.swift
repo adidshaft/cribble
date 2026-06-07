@@ -52,6 +52,23 @@ struct ExtensionIntelligenceProviderProfile: Identifiable, Equatable {
         }
         return lines.joined(separator: "\n")
     }
+
+    func consentReviewSummary(usesKeychain: Bool) -> String {
+        [
+            "Remote runner review",
+            "Runner: \(title)",
+            "Endpoint: \(baseURL.absoluteString)",
+            "Model: \(modelID)",
+            embeddingModelID.map { "Embeddings: \($0)" },
+            "Trust label: \(trustLabel)",
+            "Source extension: \(sourceName)",
+            "Context boundary: \(RemoteRunnerDataBoundary.detail)",
+            "API key: \(usesKeychain ? "saved in Keychain for this endpoint" : "not selected in Keychain for this endpoint")",
+            "Disable/revoke: disable the extension in Settings or choose a different runner"
+        ]
+        .compactMap { $0 }
+        .joined(separator: "\n")
+    }
 }
 
 struct ExtensionRunnerConsentStore {

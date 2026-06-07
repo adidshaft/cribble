@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 enum IntelligencePreflightScope: Identifiable {
@@ -168,6 +169,7 @@ struct ExtensionRunnerConsentSheet: View {
     let usesKeychain: Bool
     let onCancel: () -> Void
     let onApprove: () -> Void
+    @State private var copiedReview = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -220,6 +222,12 @@ struct ExtensionRunnerConsentSheet: View {
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
+                Button {
+                    copyReviewSummary()
+                } label: {
+                    Label(copiedReview ? "Copied" : "Copy Review", systemImage: copiedReview ? "checkmark" : "doc.on.doc")
+                }
+                .help("Copy runner, endpoint, model, data boundary, Keychain, and disable details")
                 Spacer()
                 Button("Use Runner", action: onApprove)
                     .keyboardShortcut(.defaultAction)
@@ -228,6 +236,12 @@ struct ExtensionRunnerConsentSheet: View {
         }
         .padding(22)
         .frame(width: 480)
+    }
+
+    private func copyReviewSummary() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(profile.consentReviewSummary(usesKeychain: usesKeychain), forType: .string)
+        copiedReview = true
     }
 
     private func consentRow(icon: String, title: String, detail: String) -> some View {

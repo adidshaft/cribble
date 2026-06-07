@@ -76,6 +76,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Remote Project Intelligence preflight now separates the runner details from a visible orange Data Boundary row, explicitly naming prompts, note excerpts, generated summaries, and embedding requests that may leave the Mac.
 - Intelligence HUD runner tooltips, inline warnings, and copied handoff checklists now reuse the same precise remote Data Boundary language as preflight and consent.
 - Extension-provided remote runner profiles now show a compact handoff strip in the Intelligence HUD with trust/source details and a copyable endpoint/model/API-key/revocation checklist.
+- The remote-runner consent sheet now includes Copy Review, letting users paste
+  runner, endpoint, model, embedding model, data-boundary, Keychain, source, and
+  disable/revoke details into a team thread before approving a VPS/team runner.
 - Manually configured custom remote runners now get the same copyable handoff checklist in the Intelligence HUD, covering endpoint, model, context boundary, Keychain secret handling, review, and revocation.
 - A richer empty state that lets new users open a Markdown folder, open the bundled DemoNotes tour, or reset DemoNotes to a clean sandbox.
 - The welcome screen now offers role-oriented DemoNotes entry points for Basics, Workflows, Research, and Extensions, helping beginners and power users start from the right mental model.
@@ -419,6 +422,9 @@ Latest pass:
   adding short descriptions to built-in Chat HUD quick actions and slash-command
   rows: 39 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Create Index Note to the native AI menu and refreshing DemoNotes onboarding: 40 XCTest tests, 0 failures.
+- Latest `swift test --filter IntelligencePreflightTests` passed on 2026-06-08
+  after adding copyable remote-runner consent review summaries: 8 XCTest tests,
+  0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

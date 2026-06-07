@@ -317,6 +317,63 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(failed.isEmpty)
     }
 
+    func testGenericInsightsFallBackWhenProviderReturnsEmptyOutput() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-insights-fallback-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Alpha\n\nThe Alpha launch plan mentions WWDC 2026 and Project Atlas.".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+        try "# Beta\n\nBeta tracks Project Atlas decisions from 2026-06-07.".write(to: root.appendingPathComponent("Beta.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        let alphaHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("Alpha.md")))
+        let betaHash = try XCTUnwrap(ContentHasher.hashFile(at: root.appendingPathComponent("Beta.md")))
+        _ = await db.upsertFile(projectID: "p", path: "Alpha.md", hash: alphaHash, sizeBytes: 66, language: "markdown")
+        _ = await db.upsertFile(projectID: "p", path: "Beta.md", hash: betaHash, sizeBytes: 58, language: "markdown")
+
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        _ = try await artifacts.store(
+            type: .fileSummary,
+            relativePath: "summaries/alpha.md",
+            title: "Alpha.md",
+            content: "Alpha.md covers the Alpha launch plan, WWDC 2026, and Project Atlas.",
+            sourceHashes: [alphaHash]
+        )
+        _ = try await artifacts.store(
+            type: .fileSummary,
+            relativePath: "summaries/beta.md",
+            title: "Beta.md",
+            content: "Beta.md tracks Project Atlas decisions on 2026-06-07.",
+            sourceHashes: [betaHash]
+        )
+
+        let combined = ContentHasher.combine([alphaHash, betaHash].sorted())
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .detectContradictions, inputHash: combined, priority: 200))
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .buildGlossary, inputHash: combined, priority: 190))
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .buildTimeline, inputHash: combined, priority: 180))
+
+        let provider = StubProvider(text: "")
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: provider, projectID: "p", rootURL: root)
+        await runner.drain(limit: 10)
+
+        let produced = await db.artifacts(projectID: "p")
+        let types = Set(produced.map(\.type))
+        XCTAssertTrue(types.contains(.contradictionReport))
+        XCTAssertTrue(types.contains(.glossary))
+        XCTAssertTrue(types.contains(.timeline))
+
+        let contradiction = try XCTUnwrap(produced.first { $0.type == .contradictionReport })
+        let glossary = try XCTUnwrap(produced.first { $0.type == .glossary })
+        let timeline = try XCTUnwrap(produced.first { $0.type == .timeline })
+        XCTAssertTrue(try XCTUnwrap(artifacts.content(for: contradiction)).contains("No contradictions found"))
+        XCTAssertTrue(try XCTUnwrap(artifacts.content(for: glossary)).contains("Project Atlas"))
+        XCTAssertTrue(try XCTUnwrap(artifacts.content(for: timeline)).contains("2026-06-07"))
+        let failed = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertTrue(failed.isEmpty)
+    }
+
     func testDiscoverConnectionsCreatesVirtualResearchAndSuggestedEdges() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-research-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

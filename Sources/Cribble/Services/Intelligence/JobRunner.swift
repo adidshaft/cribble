@@ -428,11 +428,16 @@ actor JobRunner {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
-        let output = try await provider.generate(
-            prompt: Prompts.contradictionReport(documents: summaries),
-            maxTokens: 1800
-        )
-        let body = try await validatedMarkdownOrNoContradictionsFallback(output)
+        let body: String
+        do {
+            let output = try await provider.generate(
+                prompt: Prompts.contradictionReport(documents: summaries),
+                maxTokens: 1800
+            )
+            body = try await validatedMarkdownOrNoContradictionsFallback(output)
+        } catch where shouldUseGenericInsightFallback(error) {
+            body = deterministicContradictionReport()
+        }
         let artifact = try await artifacts.store(
             type: .contradictionReport, relativePath: "insights/contradictions.md",
             title: "Contradiction Report", content: body, sourceHashes: [job.inputHash]
@@ -458,11 +463,16 @@ actor JobRunner {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
-        let output = try await provider.generate(
-            prompt: Prompts.glossary(documents: summaries),
-            maxTokens: 1800
-        )
-        let body = try await validatedMarkdown(output)
+        let body: String
+        do {
+            let output = try await provider.generate(
+                prompt: Prompts.glossary(documents: summaries),
+                maxTokens: 1800
+            )
+            body = try await validatedMarkdown(output)
+        } catch where shouldUseGenericInsightFallback(error) {
+            body = deterministicGlossary(from: summaries)
+        }
         let artifact = try await artifacts.store(
             type: .glossary, relativePath: "insights/glossary.md",
             title: "Glossary", content: body, sourceHashes: [job.inputHash]
@@ -475,11 +485,16 @@ actor JobRunner {
         guard let provider else { throw JobRunnerError.providerUnavailable("none configured") }
         let summaries = await aggregateSummaryInputs()
         guard summaries.count >= 2 else { throw JobRunnerError.missingInput }
-        let output = try await provider.generate(
-            prompt: Prompts.timeline(documents: summaries),
-            maxTokens: 1800
-        )
-        let body = try await validatedMarkdown(output)
+        let body: String
+        do {
+            let output = try await provider.generate(
+                prompt: Prompts.timeline(documents: summaries),
+                maxTokens: 1800
+            )
+            body = try await validatedMarkdown(output)
+        } catch where shouldUseGenericInsightFallback(error) {
+            body = deterministicTimeline(from: summaries)
+        }
         let artifact = try await artifacts.store(
             type: .timeline, relativePath: "insights/timeline.md",
             title: "Timeline", content: body, sourceHashes: [job.inputHash]
@@ -612,6 +627,89 @@ actor JobRunner {
 
         \(bullets.map { "- \($0)" }.joined(separator: "\n"))
         """
+    }
+
+    private func shouldUseGenericInsightFallback(_ error: Error) -> Bool {
+        switch error {
+        case JobRunnerError.emptyOutput, JobRunnerError.timedOut:
+            return true
+        case JobRunnerError.validationFailed(let issues):
+            return issues.contains("provider returned reasoning instead of the requested artifact")
+        default:
+            return false
+        }
+    }
+
+    private func deterministicContradictionReport() -> String {
+        "# Contradiction Report\n\nNo contradictions found across the current documents."
+    }
+
+    private func deterministicGlossary(from summaries: [(path: String, summary: String)]) -> String {
+        var counts: [String: (count: Int, paths: Set<String>)] = [:]
+        let stopwords: Set<String> = [
+            "Generated", "Contains", "Opening", "Main", "Summary", "Markdown",
+            "Cribble", "This", "That", "The", "And", "For", "With", "From"
+        ]
+        let pattern = #"\b[A-Z][A-Za-z0-9][A-Za-z0-9 -]{2,}\b"#
+        let regex = try? NSRegularExpression(pattern: pattern)
+        for summary in summaries {
+            let ns = summary.summary as NSString
+            let matches = regex?.matches(in: summary.summary, range: NSRange(location: 0, length: ns.length)) ?? []
+            for match in matches {
+                let term = ns.substring(with: match.range).trimmingCharacters(in: .whitespacesAndNewlines)
+                guard term.count <= 48, !stopwords.contains(term) else { continue }
+                var entry = counts[term, default: (0, [])]
+                entry.count += 1
+                entry.paths.insert(summary.path)
+                counts[term] = entry
+            }
+        }
+
+        let entries = counts
+            .filter { $0.value.count >= 1 }
+            .sorted { lhs, rhs in
+                if lhs.value.count != rhs.value.count { return lhs.value.count > rhs.value.count }
+                return lhs.key.localizedCaseInsensitiveCompare(rhs.key) == .orderedAscending
+            }
+            .prefix(30)
+            .map { term, entry in
+                let paths = entry.paths.sorted().prefix(3).map { "`\($0)`" }.joined(separator: ", ")
+                return "- **\(term)** — Mentioned in \(paths)."
+            }
+
+        if entries.isEmpty {
+            return "# Glossary\n\nNo recurring glossary terms found in the current summaries."
+        }
+        return "# Glossary\n\n" + entries.joined(separator: "\n")
+    }
+
+    private func deterministicTimeline(from summaries: [(path: String, summary: String)]) -> String {
+        let pattern = #"\b(?:\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}|\d{4})\b"#
+        let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+        var rows: [(date: String, path: String, context: String)] = []
+        for summary in summaries {
+            let text = summary.summary
+            let ns = text as NSString
+            let matches = regex?.matches(in: text, range: NSRange(location: 0, length: ns.length)) ?? []
+            for match in matches.prefix(6) {
+                let date = ns.substring(with: match.range)
+                let start = max(0, match.range.location - 80)
+                let end = min(ns.length, match.range.location + match.range.length + 120)
+                let context = ns.substring(with: NSRange(location: start, length: end - start))
+                    .replacingOccurrences(of: "\n", with: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                rows.append((date, summary.path, context))
+            }
+        }
+
+        if rows.isEmpty {
+            return "# Timeline\n\nNo dated events found in the current summaries."
+        }
+        let lines = rows
+            .sorted { $0.date.localizedStandardCompare($1.date) == .orderedAscending }
+            .prefix(40)
+            .map { "- **\($0.date)** — `\($0.path)`: \($0.context)" }
+        return "# Timeline\n\n" + lines.joined(separator: "\n")
     }
 
     private func storeSummary(

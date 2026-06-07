@@ -716,6 +716,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Opened Tasks")
     }
 
+    func testTaskExternalExportStatusNamesTasksAndDestination() {
+        XCTAssertEqual(
+            TaskTrackerStatus.externalExportMessage(target: .reminders, addedToTasks: true),
+            "Added to Tasks and Reminders"
+        )
+        XCTAssertEqual(
+            TaskTrackerStatus.externalExportMessage(target: .calendar, addedToTasks: true),
+            "Added to Tasks and Calendar"
+        )
+        XCTAssertEqual(
+            TaskTrackerStatus.externalExportMessage(target: .reminders, addedToTasks: false),
+            "Already in Tasks; added to Reminders"
+        )
+    }
+
     func testOpenTasksReportsNameCollisionWithDirectory() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("TasksDirectoryCollision-\(UUID().uuidString)", isDirectory: true)

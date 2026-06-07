@@ -1334,7 +1334,7 @@ final class MarkdownLibraryStore: ObservableObject {
         do {
             let notes = "From Cribble note: \(stem)\n\(backlink)"
             try await TaskExporter.export(target, title: located.label, notes: notes)
-            statusMessage = target == .reminders ? "Added to Reminders" : "Added to Calendar"
+            statusMessage = TaskTrackerStatus.externalExportMessage(target: target, addedToTasks: addedToTasks)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1766,6 +1766,15 @@ final class MarkdownLibraryStore: ObservableObject {
         static let legacyLastFolderPath = "lastFolderPath"
         static let lastOpenedFile = "lastOpenedFile"
         static let bundledDemoNotesVersion = "bundledDemoNotesVersion"
+    }
+}
+
+enum TaskTrackerStatus {
+    static func externalExportMessage(target: TaskExportTarget, addedToTasks: Bool) -> String {
+        let destination = target == .reminders ? "Reminders" : "Calendar"
+        return addedToTasks
+            ? "Added to Tasks and \(destination)"
+            : "Already in Tasks; added to \(destination)"
     }
 }
 

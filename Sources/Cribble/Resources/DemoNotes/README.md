@@ -22,17 +22,18 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 | [[Workflow Playbook]] | Practical flows for readers, researchers, teams, and remote runners | 4 min |
 | [[Research Review]] | Evidence-first workflow for claims, decisions, and source trails | 4 min |
 | [[Team Extension Kit]] | Shared plugin conventions, review checklist, and remote runner policy | 4 min |
-| [[Extensions and Remote Intelligence]] | Plugin manifests, trusted runners, and future automation hooks | 3 min |
+| [[Extensions and Remote Intelligence]] | Plugin manifests, trusted runners, renderer aliases, import lanes | 3 min |
 | [[Markdown Showcase]] | Every Markdown element Cribble renders | browse |
 
 ## New next — Extensions & remote intelligence
 
 Cribble now has the first native extension foundation: a validated
-`cribble-extension.json` manifest, a Settings surface, and project-local
-extension discovery from `.cribble/extensions`. It also points toward trusted
-OpenAI-compatible runners, including your own VPS when you want heavier
-intelligence than a laptop should run, with a review sheet before remote
-extension profiles are used. → [[Extensions and Remote Intelligence]]
+`cribble-extension.json` manifest, a Settings surface, project-local discovery
+from `.cribble/extensions`, quick actions, renderer aliases, import-lane
+declarations, and trusted OpenAI-compatible runner profiles, including your own
+VPS when you want heavier intelligence than a laptop should run. Remote
+extension profiles get a review sheet before note context leaves the Mac.
+→ [[Extensions and Remote Intelligence]]
 
 ## New workflow playbook
 

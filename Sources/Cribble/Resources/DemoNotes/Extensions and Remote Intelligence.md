@@ -6,8 +6,8 @@ tags: [demo, extensions, intelligence, roadmap]
 # Extensions & Remote Intelligence
 
 Cribble is local-first, but local-first should not mean small. This note shows
-the new foundation for people who want to extend Cribble gently: simple
-manifests first, trusted execution later.
+the new foundation for people who want to extend Cribble gently: data-only
+manifests now, trusted execution only after a signed/revocable model exists.
 
 ## 1. Extension manifests
 
@@ -33,7 +33,7 @@ The Quick Action template looks like this:
       "prompt": "Explain the specialized terms in the current note in plain language."
     }
   ],
-  "summary": "Adds a user-authored action to Cribble's future extension command surface.",
+  "summary": "Adds a user-authored action to Cribble's Chat HUD command surface.",
   "version": "0.1.0"
 }
 ```

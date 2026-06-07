@@ -546,6 +546,9 @@ Latest pass:
   lane proposals, making the no-execution, user-selected-files, previewed-writes,
   no-secrets, native-SwiftUI, and clean-disable boundaries shareable before a
   manifest is created or adapted.
+- DemoNotes now describe the current extension surface as data-only lanes:
+  quick actions, remote runner profiles, renderer aliases, and import-lane
+  declarations, replacing vaguer "future automation" language.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

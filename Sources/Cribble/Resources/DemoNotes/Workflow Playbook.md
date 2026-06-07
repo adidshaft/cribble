@@ -54,7 +54,7 @@ Use this flow when a folder should carry its own tools.
 1. Create `.cribble/extensions/your-extension/cribble-extension.json`.
 2. Start with a quick action for a repeat prompt.
 3. Add a renderer alias if your team uses custom fence names.
-4. Add an import lane for future exports, chat logs, or research bundles.
+4. Add an import-lane declaration for exports, chat logs, or research bundles.
 5. Keep remote runners explicit and store secrets in Keychain, not manifests.
 
 See [[Team Extension Kit]] for a team review checklist, then open

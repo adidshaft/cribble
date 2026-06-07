@@ -916,6 +916,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(home.contains("local-first AI"))
         XCTAssertTrue(home.contains("local-first intelligence"))
         XCTAssertTrue(home.contains("keep notes on this Mac"))
+        XCTAssertTrue(home.contains("renderer aliases, import-lane"))
+        XCTAssertTrue(home.contains("extension profiles get a review sheet"))
         XCTAssertFalse(home.contains("No cloud, no account"))
 
         let gettingStarted = try String(contentsOf: demoRoot.appendingPathComponent("Getting Started.md"), encoding: .utf8)
@@ -931,6 +933,14 @@ final class CribbleUITests: XCTestCase {
 
         let cribbleAI = try String(contentsOf: demoRoot.appendingPathComponent("Cribble AI.md"), encoding: .utf8)
         XCTAssertTrue(cribbleAI.contains("pick the model boundary you trust"))
+
+        let extensions = try String(contentsOf: demoRoot.appendingPathComponent("Extensions and Remote Intelligence.md"), encoding: .utf8)
+        XCTAssertTrue(extensions.contains("data-only"))
+        XCTAssertTrue(extensions.contains("signed/revocable model"))
+        XCTAssertTrue(extensions.contains("Chat HUD command surface"))
+
+        let workflow = try String(contentsOf: demoRoot.appendingPathComponent("Workflow Playbook.md"), encoding: .utf8)
+        XCTAssertTrue(workflow.contains("import-lane declaration"))
     }
 
     func testWelcomeStarterChecklistGuidesCoreProductTour() {

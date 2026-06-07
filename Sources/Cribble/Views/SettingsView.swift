@@ -90,13 +90,11 @@ struct SettingsView: View {
                         Spacer()
                         Button("Reveal", action: extensionRegistry.revealUserExtensionsFolder)
                             .help("Open Cribble's user extension folder in Finder")
-                        Button("Create Example") {
-                            do {
-                                let url = try extensionRegistry.writeExampleManifest()
-                                extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
-                                extensionRegistry.reload(projectRoots: library.rootURLs)
-                            } catch {
-                                extensionStatus = error.localizedDescription
+                        Menu("Create Example") {
+                            ForEach(ExtensionExampleTemplate.allCases) { template in
+                                Button(template.title) {
+                                    createExample(template)
+                                }
                             }
                         }
                         .help("Write a starter cribble-extension.json manifest")
@@ -182,6 +180,16 @@ struct SettingsView: View {
         }
         .onChange(of: library.rootURLs) { _, roots in
             extensionRegistry.reload(projectRoots: roots)
+        }
+    }
+
+    private func createExample(_ template: ExtensionExampleTemplate) {
+        do {
+            let url = try extensionRegistry.writeExampleManifest(template: template)
+            extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
+            extensionRegistry.reload(projectRoots: library.rootURLs)
+        } catch {
+            extensionStatus = error.localizedDescription
         }
     }
 }

@@ -28,6 +28,16 @@ Your Notes/
 Project extensions win over user extensions with the same id. This lets a folder
 carry its own conventions without permanently changing the user's global setup.
 
+## Create A Starter
+
+Open **Settings > Extensions > Create Example** to write a starter manifest into
+the user extensions folder. Templates are available for:
+
+- quick actions;
+- OpenAI-compatible remote runners;
+- renderer aliases;
+- import lanes.
+
 ## Manifest Shape
 
 Every extension folder needs a `cribble-extension.json` file:

@@ -11,8 +11,9 @@ manifests first, trusted execution later.
 
 ## 1. Extension manifests
 
-Open **Settings → Extensions** and click **Create Example**. Cribble writes a
-starter folder in Application Support with a `cribble-extension.json` file:
+Open **Settings → Extensions** and use **Create Example**. Cribble can write
+starter folders for quick actions, trusted runners, renderer aliases, and import
+lanes. The Quick Action template looks like this:
 
 ```json
 {

@@ -157,32 +157,14 @@ final class ExtensionRegistry: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([installed.manifestURL])
     }
 
-    func writeExampleManifest() throws -> URL {
-        let exampleFolder = userExtensionsFolder.appendingPathComponent("example-quick-action", isDirectory: true)
+    func writeExampleManifest(template: ExtensionExampleTemplate = .quickAction) throws -> URL {
+        let exampleFolder = userExtensionsFolder.appendingPathComponent(template.folderName, isDirectory: true)
         try fileManager.createDirectory(at: exampleFolder, withIntermediateDirectories: true)
         let manifestURL = exampleFolder.appendingPathComponent("cribble-extension.json")
         if !fileManager.fileExists(atPath: manifestURL.path) {
-            let example = CribbleExtensionManifest(
-                id: "com.example.cribble.quick-action",
-                name: "Example Quick Action",
-                version: "0.1.0",
-                kind: .quickAction,
-                summary: "Adds a user-authored action to Cribble's future extension command surface.",
-                runtime: .declarative,
-                homepage: URL(string: "https://example.com/cribble-extension"),
-                permissions: [.readCurrentNote],
-                quickActions: [
-                    CribbleExtensionQuickAction(
-                        id: "explain-jargon",
-                        title: "Explain jargon",
-                        icon: "text.magnifyingglass",
-                        prompt: "Explain the specialized terms in the current note in plain language."
-                    )
-                ]
-            )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            try encoder.encode(example).write(to: manifestURL, options: .atomic)
+            try encoder.encode(template.manifest).write(to: manifestURL, options: .atomic)
         }
         reload(projectRoots: [])
         return manifestURL
@@ -222,6 +204,112 @@ final class ExtensionRegistry: ObservableObject {
 
     private enum Keys {
         static let disabledExtensionIDs = "extensions.disabledIDs"
+    }
+}
+
+enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
+    case quickAction
+    case intelligenceProvider
+    case renderer
+    case importer
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .quickAction: "Quick Action"
+        case .intelligenceProvider: "Remote Runner"
+        case .renderer: "Renderer Alias"
+        case .importer: "Import Lane"
+        }
+    }
+
+    var folderName: String {
+        switch self {
+        case .quickAction: "example-quick-action"
+        case .intelligenceProvider: "example-remote-runner"
+        case .renderer: "example-renderer-alias"
+        case .importer: "example-import-lane"
+        }
+    }
+
+    var manifest: CribbleExtensionManifest {
+        switch self {
+        case .quickAction:
+            return CribbleExtensionManifest(
+                id: "com.example.cribble.quick-action",
+                name: "Example Quick Action",
+                version: "0.1.0",
+                kind: .quickAction,
+                summary: "Adds a user-authored action to Cribble's chat command surface.",
+                runtime: .declarative,
+                homepage: URL(string: "https://example.com/cribble-extension"),
+                permissions: [.readCurrentNote],
+                quickActions: [
+                    CribbleExtensionQuickAction(
+                        id: "explain-jargon",
+                        title: "Explain jargon",
+                        icon: "text.magnifyingglass",
+                        prompt: "Explain the specialized terms in the current note in plain language."
+                    )
+                ]
+            )
+        case .intelligenceProvider:
+            return CribbleExtensionManifest(
+                id: "com.example.cribble.team-runner",
+                name: "Example Team Runner",
+                version: "0.1.0",
+                kind: .intelligenceProvider,
+                summary: "Adds a trusted OpenAI-compatible runner preset.",
+                runtime: .declarative,
+                homepage: URL(string: "https://example.com/cribble-runner"),
+                permissions: [.networkOpenAICompatible],
+                intelligenceProviders: [
+                    CribbleExtensionIntelligenceProvider(
+                        id: "research-gpu",
+                        title: "Research GPU",
+                        baseURL: URL(string: "https://ai.example.com/v1")!,
+                        modelID: "qwen3-32b",
+                        embeddingModelID: "text-embedding-3-small",
+                        trustLabel: "Team-controlled VPS"
+                    )
+                ]
+            )
+        case .renderer:
+            return CribbleExtensionManifest(
+                id: "com.example.cribble.diagram-aliases",
+                name: "Example Diagram Aliases",
+                version: "0.1.0",
+                kind: .renderer,
+                summary: "Maps team diagram fence names to built-in renderers.",
+                runtime: .declarative,
+                renderers: [
+                    CribbleExtensionRenderer(
+                        id: "workflow-diagrams",
+                        title: "Workflow Diagrams",
+                        languages: ["workflow", "flowchart"],
+                        builtInRenderer: .mermaid
+                    )
+                ]
+            )
+        case .importer:
+            return CribbleExtensionManifest(
+                id: "com.example.cribble.chat-importers",
+                name: "Example Chat Importers",
+                version: "0.1.0",
+                kind: .importer,
+                summary: "Declares chat export files Cribble could convert later.",
+                runtime: .declarative,
+                importers: [
+                    CribbleExtensionImporter(
+                        id: "chat-export",
+                        title: "Chat Export",
+                        fileExtensions: ["json", "txt"],
+                        outputFormat: "markdown"
+                    )
+                ]
+            )
+        }
     }
 }
 

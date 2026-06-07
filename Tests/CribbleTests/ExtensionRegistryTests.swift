@@ -160,6 +160,24 @@ struct ExtensionRegistryTests {
 
         #expect(registry.importerCapabilities.isEmpty)
     }
+
+    @Test
+    func writesAllExampleTemplates() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        let registry = fixture.makeRegistry()
+        for template in ExtensionExampleTemplate.allCases {
+            let url = try registry.writeExampleManifest(template: template)
+            #expect(url.lastPathComponent == "cribble-extension.json")
+            #expect(url.deletingLastPathComponent().lastPathComponent == template.folderName)
+        }
+
+        #expect(registry.quickActions.contains { $0.title == "Explain jargon" })
+        #expect(registry.intelligenceProviderProfiles.contains { $0.title == "Research GPU" })
+        #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "mermaid")
+        #expect(registry.importerCapabilities.contains { $0.title == "Chat Export" })
+    }
 }
 
 private struct ExtensionRegistryFixture {

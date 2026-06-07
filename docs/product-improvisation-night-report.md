@@ -12,7 +12,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - `cribble-extension.json` manifests with `apiVersion`, reverse-DNS ids, typed extension kinds, typed permissions, optional homepage, explicit runtime mode, and safe relative entrypoints.
 - Discovery from the user's Application Support extension folder.
 - Discovery from each opened folder's `.cribble/extensions` directory.
-- Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation.
+- Settings UI for installed extensions, load warnings, permissions, location, enable/disable state, and starter manifest creation across quick actions, remote runners, renderer aliases, and import lanes.
 - Installed extension rows can reveal their manifest in Finder, making the declarative system easier to inspect and debug.
 - Duplicate id handling, with project-local extensions taking precedence over user-level extensions.
 - Data-only quick action contributions that merge enabled extension prompts into the Chat HUD empty state and `/` slash palette.
@@ -89,14 +89,13 @@ swift test
 Latest pass:
 
 - `swift test` passed: 177 XCTest tests, 0 failures.
-- The Swift Testing extension suites also passed: 20 tests across manifest and registry coverage.
+- The Swift Testing extension suites also passed: 21 tests across manifest and registry coverage.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
-2. Consider a dedicated Extensions developer guide outside DemoNotes for longer examples.
-3. Add a small signed-extension trust model before any executable plugin surface.
-4. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
+2. Add a small signed-extension trust model before any executable plugin surface.
+3. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

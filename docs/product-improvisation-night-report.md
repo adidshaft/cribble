@@ -73,19 +73,21 @@ Ran:
 
 ```sh
 swift test --filter ExtensionManifestTests
+swift test --filter 'Extension|RunnerCredentialStoreTests'
+swift test
 ```
 
 Latest pass:
 
-- `swift test --filter Extension`
-- 17 tests passed across manifest, registry, and runner credential suites.
+- `swift test` passed: 177 XCTest tests, 0 failures.
+- The Swift Testing extension/credential suites also passed: 17 tests across manifest, registry, and runner credential coverage.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections
 
 1. Incrementalize file-change refresh so edits do not trigger full rescans and reindexing.
 2. Consider a dedicated Extensions developer guide outside DemoNotes for longer examples.
-3. Add a full-app validation pass beyond focused extension/credential tests.
+3. Add a small signed-extension trust model before any executable plugin surface.
 4. Continue reducing warning noise from broader full-suite builds as new dependency APIs shift.
 
 Note: a first attempt to pass FSEvent changed paths into the store hit a Swift 6.3 compiler crash in sendability analysis, so that risky path was not kept. The committed performance work stays on a stable preview-cache path.

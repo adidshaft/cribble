@@ -79,6 +79,9 @@ for bundle in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
   /bin/test -d "$APP_PATH/Contents/Resources/$bundle"
   echo "$bundle"
 done
+/bin/test -d "$APP_PATH/Contents/Resources/DemoNotes"
+/bin/test -f "$APP_PATH/Contents/Resources/DemoNotes/Getting Started.md"
+echo "DemoNotes"
 
 echo
 echo "== Gatekeeper app assessment =="
@@ -119,6 +122,8 @@ fi
 for bundle in "${REQUIRED_RESOURCE_BUNDLES[@]}"; do
   /bin/test -d "$MOUNT_DIR/Cribble.app/Contents/Resources/$bundle"
 done
+/bin/test -d "$MOUNT_DIR/Cribble.app/Contents/Resources/DemoNotes"
+/bin/test -f "$MOUNT_DIR/Cribble.app/Contents/Resources/DemoNotes/Getting Started.md"
 /bin/ls -la "$MOUNT_DIR"
 
 echo

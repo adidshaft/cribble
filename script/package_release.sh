@@ -44,6 +44,7 @@ APP_NOTARY_ZIP="$OUT_DIR/$APP_NAME-$VERSION-app-notary.zip"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 APP_ICON_SOURCE="$ROOT_DIR/Cribble_App_Icons/cribble-icon-reference-light.icns"
 PRIVACY_MANIFEST_SOURCE="$ROOT_DIR/Sources/Cribble/PrivacyInfo.xcprivacy"
+DEMO_NOTES_SOURCE="$ROOT_DIR/Sources/Cribble/Resources/DemoNotes"
 PYTHON_DEPS="$OUT_DIR/python-deps"
 SPARKLE_PUBLIC_ED_KEY="YfAh7JbGoiQoB9KqD7U9S+Olejk9jDNSUc7Z0I+o820="
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://github.com/adidshaft/cribble/releases/download/stable/appcast.xml}"
@@ -156,6 +157,14 @@ if [[ -f "$PRIVACY_MANIFEST_SOURCE" ]]; then
   cp "$PRIVACY_MANIFEST_SOURCE" "$APP_RESOURCES/PrivacyInfo.xcprivacy"
 else
   echo "error: privacy manifest missing at $PRIVACY_MANIFEST_SOURCE" >&2
+  exit 1
+fi
+
+if [[ -d "$DEMO_NOTES_SOURCE" ]]; then
+  rm -rf "$APP_RESOURCES/DemoNotes"
+  cp -R "$DEMO_NOTES_SOURCE" "$APP_RESOURCES/DemoNotes"
+else
+  echo "error: bundled DemoNotes missing at $DEMO_NOTES_SOURCE" >&2
   exit 1
 fi
 

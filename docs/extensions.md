@@ -316,6 +316,10 @@ Start with an idea before a runtime. A good proposal should explain:
 Use this shape for issues, Discussions, or early pull requests. It keeps
 ambitious ideas welcome while making the first mergeable step concrete:
 
+GitHub also includes an **Extension proposal** issue template with these same
+sections. Prefer that template before opening a code PR for a new extension
+surface.
+
 ```markdown
 ## Extension idea
 

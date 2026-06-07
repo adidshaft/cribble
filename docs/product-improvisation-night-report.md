@@ -122,6 +122,10 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The extension author guide now sketches the trust model required before executable plugins: signed bundles, explicit consent, process isolation, enforced permissions, Keychain-only secrets, revocation, and audit logs.
 - Extension manifests can now declare validated trust metadata (`developerName`, `signingIdentifier`, optional Apple Team ID, and source URL), and Settings shows that declared identity while executable runtime remains blocked.
 - Cribble now has a local extension trust-decision store for future executable plugin consent/revocation, with Settings controls to revoke or clear remembered trust decisions while API v1 remains data-only.
+- GitHub now includes an Extension proposal issue template that asks for the
+  first read-only version, data contract, native Mac surface, later-not-first-PR
+  scope, least access, preview-before-write, secrets, and clean disable behavior
+  before implementation starts.
 - Settings now lets extension authors copy a concise manifest review summary for any installed extension, making support threads, PR reviews, and team approval flows easier.
 - Settings now has a Check Again action for extension manifests, reloading user/project manifests and surfacing a clear validated/warnings status without leaving the Settings window.
 - Settings can now create starter extension manifests directly in the active folder's `.cribble/extensions` directory, making the project-local team workflow actionable from the app.
@@ -401,6 +405,10 @@ Latest pass:
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Explain Simply and Find Related to native AI menu commands: 39 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest native AI menu and onboarding work: 220 XCTest tests and 42 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest `swift test --filter ChatHUDLogicTests/testCatalogHasDefaultAndUniqueIDs` passed on 2026-06-08 after grouping the expanded AI menu: 1 XCTest test, 0 failures.
+- Docs-only validation on 2026-06-08 confirmed the new Extension proposal issue
+  template plus `CONTRIBUTING.md` and `docs/extensions.md` mention read-only
+  first versions, data contracts, least note access, native SwiftUI surfaces,
+  later-not-first-PR scope, and clean disable behavior.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

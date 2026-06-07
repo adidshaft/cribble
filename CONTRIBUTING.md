@@ -98,6 +98,10 @@ See `docs/extensions.md` for the full extension contribution checklist,
 including read-only-first, least-reading, least-writing, no hidden execution,
 Keychain-only secrets, and native SwiftUI expectations.
 
+For new extension ideas, start with the **Extension proposal** issue template.
+It asks for the first read-only version, data contract, native Mac surface, and
+"later, not first PR" scope before anyone writes code.
+
 ## Security and conduct
 
 Please report security issues privately using `SECURITY.md`. Conduct concerns

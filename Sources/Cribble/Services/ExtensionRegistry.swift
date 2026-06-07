@@ -357,6 +357,17 @@ struct ExtensionImporterCapability: Identifiable, Equatable {
     var extensionSummary: String {
         fileExtensions.map { ".\($0)" }.joined(separator: ", ")
     }
+
+    var reviewSummary: String {
+        [
+            "Import lane: \(title)",
+            "Source extension: \(sourceName)",
+            "Accepted files: \(extensionSummary)",
+            "Output format: \(outputFormat)",
+            "Runtime: declarative manifest only; converter execution is not enabled yet",
+            "Review: confirm reads, writes, network, secrets, disable behavior, and native UI before proposing importer execution"
+        ].joined(separator: "\n")
+    }
 }
 
 struct ExtensionRendererResolver: Equatable {

@@ -32,6 +32,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Data-only renderer and importer contribution declarations, with Settings summaries and validation that keeps each contribution under its matching extension kind.
 - Enabled renderer extensions can now map declared fence languages onto existing built-in renderers, so teams can make aliases like `workflow` render through Mermaid without executable plugin code.
 - Enabled importer extensions now surface as Settings import lanes with file-type and output-format summaries, making future conversion workflows discoverable before any converter execution exists.
+- Import lanes in Settings now have a copy-review action with accepted files, output format, declarative runtime status, and the reads/writes/network/secrets/disable-behavior review checklist.
 - File menu now includes Import, filtered by enabled importer lanes, to match files to declarative import capabilities before converter execution exists.
 - API v1 now makes the extension safety boundary explicit with `"runtime": "declarative"` and rejects executable runtimes until a signed trust model exists.
 - Cached sidebar note previews by URL and modification date, so repeated hover previews avoid rereading and preprocessing note bodies.
@@ -170,6 +171,8 @@ swift test --filter IntelligenceEngineTests
 swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts
 swift test --filter IntelligenceEngineTests
 swift test --filter TaskExporterTests
+swift test --filter ExtensionRegistryTests
+swift test --filter CribbleUITests
 ```
 
 Latest pass:
@@ -219,6 +222,8 @@ Latest pass:
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after refreshing DemoNotes seeded artifacts: 1 XCTest test, 0 failures.
 - Latest `swift test --filter IntelligenceEngineTests` passed on 2026-06-08 after refreshed seeded artifacts: 25 XCTest tests, 0 failures.
 - Latest `swift test --filter TaskExporterTests` passed on 2026-06-08 after destination-specific Reminders/Calendar permission messages: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after import-lane review summaries: 10 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after the Settings import-lane copy action: 16 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

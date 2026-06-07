@@ -179,6 +179,11 @@ struct ExtensionRegistryTests {
             )
         ])
         #expect(registry.importerCapabilities.first?.extensionSummary == ".json, .txt")
+        let reviewSummary = try #require(registry.importerCapabilities.first?.reviewSummary)
+        #expect(reviewSummary.contains("Import lane: Chat Export"))
+        #expect(reviewSummary.contains("Accepted files: .json, .txt"))
+        #expect(reviewSummary.contains("converter execution is not enabled yet"))
+        #expect(reviewSummary.contains("reads, writes, network, secrets, disable behavior"))
 
         guard let installed = registry.installedExtensions.first else {
             Issue.record("Expected installed extension")

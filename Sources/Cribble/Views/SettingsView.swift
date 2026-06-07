@@ -184,6 +184,16 @@ struct SettingsView: View {
                                     Text("\(capability.outputFormat) • \(capability.sourceName)")
                                         .font(.caption2)
                                         .foregroundStyle(.tertiary)
+                                    Button {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(capability.reviewSummary, forType: .string)
+                                        extensionStatus = "Copied \(capability.title) import lane details"
+                                    } label: {
+                                        Image(systemName: "doc.on.doc")
+                                            .font(.system(size: 10, weight: .semibold))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("Copy import lane details for review")
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 5)

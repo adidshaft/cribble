@@ -72,7 +72,12 @@ final class LocalEngineIntelligenceProvider: IntelligenceProvider, @unchecked Se
         embeddingEngine: EmbeddingEngine,
         prepareIfNeeded: Bool = true
     ) {
-        self.displayName = "\(model.name) (\(model.kind == .localMLX ? "MLX" : "CLI"))"
+        let kindLabel: String = switch model.kind {
+        case .localMLX: "MLX"
+        case .claudeCLI, .codexCLI: "CLI"
+        case .localRunner: "Runner"
+        }
+        self.displayName = "\(model.name) (\(kindLabel))"
         self.engine = engine
         self.model = model
         self.embeddingEngine = embeddingEngine
@@ -95,9 +100,9 @@ final class LocalEngineIntelligenceProvider: IntelligenceProvider, @unchecked Se
         case .claudeCLI, .codexCLI:
             return .available
         case .localRunner:
-            // Placeholder until LocalRunnerChatEngine lands (plan Task 3/4);
-            // the factory currently returns UnavailableChatEngine for this kind.
-            return .unavailable(reason: "Local runner engine not wired up yet")
+            // Intelligence reaches runner models through OpenAICompatibleProvider,
+            // never through this on-device wrapper.
+            return .unavailable(reason: "Runner models use the OpenAI-compatible provider, not the on-device wrapper.")
         }
     }
 

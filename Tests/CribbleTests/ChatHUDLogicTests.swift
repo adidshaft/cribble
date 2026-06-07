@@ -307,6 +307,35 @@ final class ChatHUDLogicTests: XCTestCase {
     }
 
     @MainActor
+    func testRunnerSelectionPersistsAndDoesNotFallBackToDefault() {
+        withCleanEngineChoiceDefaults {
+            let runner = LocalModel.runnerModel(modelID: "qwen2.5:7b")
+            let first = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            first.selectModel(runner)
+            XCTAssertEqual(UserDefaults.standard.string(forKey: "chatHUD.selectedModelID"), "runner:qwen2.5:7b")
+
+            // A fresh view model (app relaunch) must restore the runner model,
+            // NOT silently fall back to ModelCatalog.defaultModel.
+            let recreated = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+            XCTAssertEqual(recreated.selectedModel.id, "runner:qwen2.5:7b")
+            XCTAssertEqual(recreated.selectedModel.kind, .localRunner)
+        }
+    }
+
+    func testFactoryMakesRunnerEngineForRunnerKind() {
+        let engine = LocalChatEngineFactory.make(for: .runnerModel(modelID: "m"))
+        XCTAssertTrue(engine is LocalRunnerChatEngine)
+    }
+
+    func testModelKindCloudTruthTable() {
+        // Pin the full truth table: only the CLI providers are cloud.
+        XCTAssertFalse(ModelKind.localMLX.isCloud)
+        XCTAssertFalse(ModelKind.localRunner.isCloud)
+        XCTAssertTrue(ModelKind.claudeCLI.isCloud)
+        XCTAssertTrue(ModelKind.codexCLI.isCloud)
+    }
+
+    @MainActor
     func testEngineChooserShowsForFreshDefaults() {
         withCleanEngineChoiceDefaults {
             let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))

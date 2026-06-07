@@ -397,7 +397,9 @@ final class ChatHUDViewModel: ObservableObject {
         if modelPhase == .ready, loadedModelID == selectedModel.id {
             return true
         }
-        modelPhase = selectedModel.kind.isCloud ? .loading : .downloading(ModelLoadProgress(fraction: 0))
+        // Only on-device MLX models download; cloud CLIs and the local runner
+        // just need a (fast) readiness check.
+        modelPhase = selectedModel.kind == .localMLX ? .downloading(ModelLoadProgress(fraction: 0)) : .loading
         statusMessage = "Preparing \(selectedModel.name)…"
         let model = selectedModel
         let engine = currentEngine()

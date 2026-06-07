@@ -450,6 +450,31 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("Until those gates exist in code and tests"))
         #expect(guide.contains("declarative manifests"))
     }
+
+    @Test
+    func openSourceExtensionContributionGuideKeepsFirstPRsStrict() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let guideURL = projectRoot.appendingPathComponent("docs/extension-contributions.md")
+        let guide = try String(contentsOf: guideURL, encoding: .utf8)
+
+        #expect(guide.contains("Cribble welcomes extension ideas"))
+        #expect(guide.contains("Read-only first"))
+        #expect(guide.contains("Least reading"))
+        #expect(guide.contains("Least writing"))
+        #expect(guide.contains("Hard native SwiftUI condition"))
+        #expect(guide.contains("No hidden execution"))
+        #expect(guide.contains("No secrets in files"))
+        #expect(guide.contains("Clean disable path"))
+        #expect(guide.contains("Help > Copy Extension Proposal"))
+        #expect(guide.contains("declarative, inspectable, reversible"))
+        #expect(guide.contains("API v1 extensions are declarative"))
+        #expect(guide.contains("web views, custom chrome, Electron-style"))
+        #expect(guide.contains("signed bundle identity, process isolation"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

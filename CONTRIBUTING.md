@@ -94,9 +94,10 @@ manifest behavior; request the least note access possible; avoid source-note
 writes unless they go through an explicit preview; and keep extension UI native
 SwiftUI with system controls, menus, settings, sheets, commands, and SF Symbols.
 
-See `docs/extensions.md` for the full extension contribution checklist,
-including read-only-first, least-reading, least-writing, no hidden execution,
-Keychain-only secrets, and native SwiftUI expectations.
+See `docs/extension-contributions.md` for the open-source extension
+contribution guide and `docs/extensions.md` for the manifest reference. The
+guide includes read-only-first, least-reading, least-writing, no hidden
+execution, Keychain-only secrets, and hard native SwiftUI expectations.
 
 For new extension ideas, start with the **Extension proposal** issue template.
 It asks for the first read-only version, data contract, native Mac surface, and

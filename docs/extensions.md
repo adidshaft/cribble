@@ -325,6 +325,11 @@ strict because extensions sit close to people's notes. Contributors should feel
 free to propose ambitious workflows, while implementation should start from the
 smallest native, reviewable surface that proves the value.
 
+For the standalone contributor on-ramp, start with
+[`extension-contributions.md`](extension-contributions.md). This API reference
+keeps the same rules inline so manifest authors can review them without leaving
+the page.
+
 Start with an idea before a runtime. A good proposal should explain:
 
 - who the extension helps;

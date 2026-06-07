@@ -305,7 +305,9 @@ Please read `CONTRIBUTING.md` before opening a pull request. Cribble uses DCO
 signoff (`git commit -s`) and asks contributors to discuss feature or product
 direction work before coding. Bug reports, docs fixes, tests, accessibility
 improvements, rendering fixes, and reproducible diagnostics are the best first
-contribution lanes.
+contribution lanes. New extension ideas should start with
+`docs/extension-contributions.md`: ideas can be ambitious, while first PRs stay
+declarative, read-only, least-access, least-writing, and native SwiftUI.
 
 ## Product Roadmap
 

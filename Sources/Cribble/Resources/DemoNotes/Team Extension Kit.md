@@ -73,9 +73,10 @@ pull request or handoff note:
   Keychain secrets.
 - Can a non-technical reader understand why this exists?
 
-Open `docs/extensions.md` before proposing a new extension surface. First PRs
-should prove value with a declarative manifest, native SwiftUI affordance, or
-validation improvement before any runtime work.
+Open `docs/extension-contributions.md` before proposing a new extension surface,
+then use `docs/extensions.md` for the manifest reference. First PRs should prove
+value with a declarative manifest, native SwiftUI affordance, or validation
+improvement before any runtime work.
 
 ## Idea first, runtime later
 
@@ -93,6 +94,10 @@ disable cleanly, inspect in Settings, and explain to a non-technical reader.
 Use **Help → Copy Extension Proposal** or **Settings → Extensions → Copy Proposal**
 to copy this shape into a GitHub issue, Discussion, or team thread before anyone
 writes implementation code.
+
+The open-source contribution guide keeps ideas open but first PRs strict:
+read-only first, least reading, least writing, no hidden execution,
+Keychain-only secrets, clean disable behavior, and hard native SwiftUI surfaces.
 
 Executable plugins need a separate readiness review before they can exist:
 signed bundle identity, process isolation, a Cribble permission broker, native

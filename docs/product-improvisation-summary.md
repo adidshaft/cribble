@@ -27,7 +27,8 @@ now reads more like a local-first Mac knowledge workspace:
 - **Start an extension ecosystem:** `cribble-extension.json` manifests now cover
   quick actions, remote runner profiles, renderer aliases, and import-lane
   declarations without executing extension code, with Help/Settings proposal
-  templates for contributors.
+  templates and a dedicated open-source extension contribution guide for
+  contributors.
 
 ## Strongest Product Signal
 
@@ -55,6 +56,9 @@ The extension path is intentionally strict:
 - Executable plugin work now has explicit readiness gates in `docs/extensions.md`:
   signed identity, process isolation, brokered permissions, native consent,
   previewed writes, Keychain-only secrets, revocation, audit trail, and native UI.
+- `docs/extension-contributions.md` is the standalone contributor on-ramp:
+  ideas stay open, while first PRs must be read-only, least-access,
+  least-writing, no-hidden-execution, cleanly disableable, and native SwiftUI.
 
 ## What Was Verified
 
@@ -67,6 +71,7 @@ Focused validation passed across the newest work:
 - Help-copy template for evidence-heavy Research Review briefs.
 - Import setup Copy Review boundaries.
 - Extension dashboard and proposal summaries.
+- Open-source extension contribution guide links and strict first-PR rules.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics that distinguish local runners from remote runners before asking

@@ -32,7 +32,18 @@ struct ContentView: View {
     }
 
     private var sceneConfiguredContent: some View {
-        alertContent
+        focusedHelpActions(
+            focusedNavigationActions(
+                focusedDiagnosticsActions(
+                    focusedPrimaryActions(alertContent)
+                )
+            )
+        )
+        .onAppear(perform: configureControllers)
+    }
+
+    private func focusedPrimaryActions<Content: View>(_ content: Content) -> some View {
+        content
             .focusedSceneValue(\.newNoteAction, newNoteAction)
             .focusedSceneValue(\.openTodayNoteAction, openTodayNoteAction)
             .focusedSceneValue(\.openFolderAction, { library.chooseFolder(sortMode: settings.fileSortMode) })
@@ -46,11 +57,15 @@ struct ContentView: View {
             .focusedSceneValue(\.copySelectedDocumentWikiLinkAction, selectedDocumentAction(library.copySelectedDocumentWikiLink))
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.summarizeWithAIAction, summarizeWithAIAction)
             .focusedSceneValue(\.draftTodayWithAIAction, draftTodayWithAIAction)
             .focusedSceneValue(\.extractTasksWithAIAction, extractTasksWithAIAction)
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
             .focusedSceneValue(\.toggleIntelligenceHUDAction, { openIntelligenceHUD() })
-            .onAppear(perform: configureControllers)
+    }
+
+    private func focusedDiagnosticsActions<Content: View>(_ content: Content) -> some View {
+        content
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, {
                 diagnostics.copyReport(
@@ -63,6 +78,10 @@ struct ContentView: View {
             .focusedSceneValue(\.revealCrashReportAction, { _ = diagnostics.revealLatestCrashReportInFinder() })
             .focusedSceneValue(\.reportIssueAction, { reportIssueOnGitHub() })
             .focusedSceneValue(\.openPullRequestAction, { openPullRequestOnGitHub() })
+    }
+
+    private func focusedNavigationActions<Content: View>(_ content: Content) -> some View {
+        content
             .focusedSceneValue(\.navigateBackAction, navigateBackAction)
             .focusedSceneValue(\.navigateForwardAction, navigateForwardAction)
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
@@ -71,6 +90,10 @@ struct ContentView: View {
                 isSearchFocused = true
             })
             .focusedSceneValue(\.clearSearchAction, clearSearchAction)
+    }
+
+    private func focusedHelpActions<Content: View>(_ content: Content) -> some View {
+        content
             .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openWorkflowPlaybookAction, { library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTasksGuideAction, { library.openDemoNote(named: "Tasks and Intelligence.md", sortMode: settings.fileSortMode) })
@@ -151,6 +174,13 @@ struct ContentView: View {
 
     private var draftTodayWithAIAction: (() -> Void)? {
         library.hasFolders ? { ChatHUDController.shared.runBuiltInQuickAction(id: "today-note") } : nil
+    }
+
+    private var summarizeWithAIAction: (() -> Void)? {
+        guard library.selectedDocument != nil else { return nil }
+        return {
+            ChatHUDController.shared.runBuiltInQuickAction(id: "summarize")
+        }
     }
 
     private var extractTasksWithAIAction: (() -> Void)? {

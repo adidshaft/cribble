@@ -57,11 +57,12 @@ A private AI assistant that runs **fully on your Mac**. Press **Command J** (or 
 4. Click a missing wiki link, like [[A Note I Haven't Written]], and notice that creation also waits for review.
 5. Press **Command N**, review the proposed `Untitled.md`, then cancel or create it.
 6. Press **Command Shift N** to open or propose today's note.
-7. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
-8. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
-9. Use **File → Copy Markdown** to copy the current note for another app.
-10. Press **Command J** and ask *"what is this library about?"*
-11. Open **Settings → Extensions** and create the example manifest.
+7. Choose **AI → Summarize Current Note** to open Cribble AI with the built-in summary prompt.
+8. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
+9. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
+10. Use **File → Copy Markdown** to copy the current note for another app.
+11. Press **Command J** and ask *"what is this library about?"*
+12. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
 
@@ -72,6 +73,7 @@ changes in this demo copy only.
 - [ ] Click a missing wiki link and notice that new note creation is review-first.
 - [ ] Press **Command N** and notice that new notes go through a review sheet before writing.
 - [ ] Press **Command Shift N** and notice the daily note also waits for review before writing.
+- [ ] Try **AI → Summarize Current Note** for a one-click summary prompt.
 - [ ] Try **AI → Draft Today with AI** for an AI-assisted daily note proposal.
 - [ ] Try **AI → Extract Tasks from Current Note** to turn prose into a reviewed `Tasks.md` proposal.
 - [ ] Use **File → Copy Markdown** or right-click a note and copy its Markdown for handoff.

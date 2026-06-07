@@ -168,9 +168,11 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Chat HUD slash command search now keeps an explicit no-match recovery state with example commands and a Clear action, making built-in and extension commands easier to discover.
 - Chat HUD now includes a visible `Extract tasks` quick action and `/tasks` slash command that turns prose into a reviewed `Tasks.md` proposal instead of writing directly, connecting AI help to the native Tasks workflow.
 - Chat HUD empty-state and no-match hints now advertise the live command count and newer `/tasks` and `/daily` commands, making the slash palette easier to recover from.
+- The AI menu now exposes `Summarize Current Note`, opening the Chat HUD directly into the built-in summary prompt and disabling when no note is selected.
 - The AI menu now exposes `Extract Tasks from Current Note`, opening the Chat HUD directly into the reviewed `Tasks.md` proposal flow and disabling when no note is selected.
 - The AI menu now also exposes `Draft Today with AI`, giving daily capture a native menu entry that still routes through the reviewed `Daily/YYYY-MM-DD.md` proposal flow.
 - The main `ContentView` controller setup was extracted from the long SwiftUI modifier chain, reducing type-checker pressure as more native commands are added.
+- The main window focused command setup is now split into primary, diagnostics, navigation, and help groups, keeping the expanded Mac command surface easier for Swift to type-check.
 - Reader-only View menu commands now follow the focused document context, disabling bookmark, highlight, and reading-trail actions when no reader can handle them.
 - The Intelligence Ask tab now offers starter question chips that adapt to available artifacts, giving new users a faster path from generated context to useful project answers.
 - The Intelligence Ask tab now adds a remote-runner privacy starter question when a non-loopback runner is selected, helping users ask what context may leave the Mac before leaning on VPS or team GPU intelligence.
@@ -393,6 +395,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding native New Note, Today, and Tasks Guide actions to the empty README panel: 27 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after routing missing wiki-link note creation through the review/apply sheet: 28 XCTest tests, 0 failures.
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after refreshing README/DemoNotes onboarding for review-first missing wiki-link creation: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Summarize to the native AI menu and splitting the focused command setup for faster type-checking: 39 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

@@ -18,6 +18,8 @@ A private assistant that reads your notes and runs **on your Mac** — no cloud,
 
 ### 1. Answer questions about what you're reading
 Open any note, then press **Command J** and ask. The model automatically sees the note you have open.
+For the most common case, choose **AI → Summarize Current Note** and Cribble
+opens the chat with the reviewed summary prompt ready to run.
 
 > **Try it**
 > Stay on this note, open the chat, and ask: *"summarize this note in three bullets"* or *"what are the four things Cribble AI does?"*

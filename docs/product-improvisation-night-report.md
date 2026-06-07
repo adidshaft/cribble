@@ -95,9 +95,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Extension diagnostics now separate installed contribution totals from active contribution totals, so disabled lanes are visible but not mistaken for currently available behavior.
 - File menu now exposes selected-note Reveal in Finder and Copy File Path actions with Mac-style shortcuts and disabled states, making common file handoff tasks accessible without sidebar context menus.
 - File menu now also exposes Copy Wiki Link for the selected note, letting readers hand off `[[Note Title]]` links into notes, chat, task docs, and team workflows without manually retyping titles.
-- Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, and Copy Wiki Link directly in the context menu, using cached metadata for link titles instead of loading note bodies.
+- Markdown file rows in the sidebar now expose Reveal in Finder, Copy File Path, Copy Markdown, and Copy Wiki Link directly in the context menu, using cached metadata for link titles and resilient disk reads for Markdown handoff.
 - Toolbar help now matches the Mac-style command shortcuts for Focus Mode, Outline, AI Link Notes, and Cribble AI instead of stale single-key hints.
-- The in-reader shortcut popover now includes Find in Files, Import, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
+- The in-reader shortcut popover now includes Find in Files, Import, Copy Markdown, Copy Wiki Link, diagnostics, and the newer Mac-style command chords.
 - The Tasks aggregator is now a first-class Mac workflow with File > Open Tasks, `Command-Option-T`, status feedback, and refreshed DemoNotes instructions.
 - Task export status now says when a task was collected in `Tasks.md` and sent to Reminders or Calendar, so the in-app tracker and external handoff do not feel like separate invisible actions.
 - Reminders/Calendar export permission errors now name the exact System Settings privacy pane to fix, instead of giving a generic access-denied message.
@@ -297,6 +297,7 @@ Latest pass:
 - Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after idea-first extension contribution guidance: 23 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after native Copy Markdown command: 21 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Chat HUD, welcome, extension-guide, and native command work: 210 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
+- Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after sidebar Copy Markdown handoff: 22 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

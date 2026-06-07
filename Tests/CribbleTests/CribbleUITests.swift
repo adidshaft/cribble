@@ -88,6 +88,27 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Copied [[Better Team Rituals]]")
     }
 
+    func testCopyMarkdownForURLReadsNoteBody() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SidebarMarkdown-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let noteURL = rootURL.appendingPathComponent("brief.md")
+        let markdown = "# Project Brief\n\nBody from disk.\n"
+        try markdown.write(to: noteURL, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(rootURL, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        NSPasteboard.general.clearContents()
+        store.copyMarkdown(for: noteURL)
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), markdown)
+        XCTAssertEqual(store.statusMessage, "Copied Markdown for Project Brief")
+    }
+
     func testFolderRefreshRecordsDiagnosticsSnapshot() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("RefreshDiagnostics-\(UUID().uuidString)", isDirectory: true)

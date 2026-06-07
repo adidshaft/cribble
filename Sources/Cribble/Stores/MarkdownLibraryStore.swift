@@ -389,6 +389,21 @@ final class MarkdownLibraryStore: ObservableObject {
         statusMessage = "Copied \(standardized.path)"
     }
 
+    func copyMarkdown(for url: URL) {
+        let standardized = url.standardizedFileURL
+        do {
+            let markdown = try DocumentLoader.readText(at: standardized)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(markdown, forType: .string)
+            let title = documents.first { $0.url.standardizedFileURL == standardized }?.title
+                ?? selectedDocument.flatMap { $0.url.standardizedFileURL == standardized ? $0.title : nil }
+                ?? standardized.deletingPathExtension().lastPathComponent
+            statusMessage = "Copied Markdown for \(title)"
+        } catch {
+            errorMessage = "Couldn't copy Markdown: \(error.localizedDescription)"
+        }
+    }
+
     func refresh(sortMode: FileSortMode? = nil, keepStatusQuiet: Bool = false) {
         if let sortMode {
             currentSortMode = sortMode

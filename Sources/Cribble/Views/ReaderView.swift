@@ -81,6 +81,7 @@ private struct ShortcutReferencePopover: View {
                 ("Command R", "Refresh folder"),
                 ("Command Option T", "Open Tasks"),
                 ("Command Option E", "Open current file in your editor"),
+                ("Command Option Shift M", "Copy current note as Markdown"),
                 ("Command Option Shift L", "Copy current note wiki link"),
                 ("Command Option O", "Toggle outline"),
                 ("Command Shift F", "Toggle Focus Mode"),

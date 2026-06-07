@@ -5,6 +5,8 @@ Branch: `codex/product-improvisation-night`
 
 This is the short, human-readable version of the longer
 [`product-improvisation-night-report.md`](product-improvisation-night-report.md).
+For a scannable keep/stop/defer view, see
+[`product-improvisation-readiness-checkpoint.md`](product-improvisation-readiness-checkpoint.md).
 
 ## What Changed
 
@@ -75,6 +77,7 @@ Focused validation passed across the newest work:
 - Extension dashboard and proposal summaries.
 - Open-source extension contribution guide links and strict first-PR rules.
 - Bundled Extension Contribution Guide note and native Help entry.
+- Product readiness checkpoint with keep, stop, defer, and verification sections.
 - Remote-runner consent and handoff checklists.
 - Help-copy templates for extension proposals and remote-runner setup reviews.
 - Diagnostics that distinguish local runners from remote runners before asking

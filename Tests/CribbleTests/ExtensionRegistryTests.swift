@@ -475,6 +475,30 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("web views, custom chrome, Electron-style"))
         #expect(guide.contains("signed bundle identity, process isolation"))
     }
+
+    @Test
+    func productImprovisationReadinessCheckpointNamesStopConditions() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let checkpointURL = projectRoot.appendingPathComponent("docs/product-improvisation-readiness-checkpoint.md")
+        let checkpoint = try String(contentsOf: checkpointURL, encoding: .utf8)
+
+        #expect(checkpoint.contains("Strong Product Signal"))
+        #expect(checkpoint.contains("Ready To Keep"))
+        #expect(checkpoint.contains("Stop Conditions"))
+        #expect(checkpoint.contains("Keep Going Only If"))
+        #expect(checkpoint.contains("Verification Snapshot"))
+        #expect(checkpoint.contains("executable plugin runtime"))
+        #expect(checkpoint.contains("hidden extension execution"))
+        #expect(checkpoint.contains("source-note writes without preview/review/cancel"))
+        #expect(checkpoint.contains("secrets in manifests"))
+        #expect(checkpoint.contains("non-native extension UI"))
+        #expect(checkpoint.contains("remote intelligence that hides retention"))
+        #expect(checkpoint.contains("No executable plugin runtime"))
+    }
 }
 
 private struct ExtensionRegistryFixture {

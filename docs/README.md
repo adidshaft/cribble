@@ -12,6 +12,7 @@ For user-facing and contributor docs, see the repo root
 | --- | --- | --- |
 | [product-improvisation-summary.md](product-improvisation-summary.md) | Summary | Short, readable summary of the product-improvisation branch and strongest signal. |
 | [product-improvisation-night-report.md](product-improvisation-night-report.md) | Branch report | Current product-improvisation work: UI, onboarding, extensions, remote intelligence, performance, validation, and next bets. |
+| [product-improvisation-readiness-checkpoint.md](product-improvisation-readiness-checkpoint.md) | Checkpoint | Scannable keep/stop/defer guidance for the product-improvisation branch. |
 | [cribble-open-source-plan.md](cribble-open-source-plan.md) | Plan | Open-sourcing runbook — licensing, governance, contribution surfaces. |
 | [extension-contributions.md](extension-contributions.md) | Guide | Open-source extension contribution rules: open ideas, read-only first PRs, least access, least writing, native SwiftUI. |
 | [cribble-intelligence-plan.md](cribble-intelligence-plan.md) | Draft | Technical design for background workspace intelligence. |

@@ -46,30 +46,11 @@ struct ContentView: View {
             .focusedSceneValue(\.copySelectedDocumentWikiLinkAction, selectedDocumentAction(library.copySelectedDocumentWikiLink))
             .focusedSceneValue(\.undoNoteChangeAction, { library.undoLastChangeToSelectedNote() })
             .focusedSceneValue(\.runAILinkingAction, { showingAIProviderSheet = true })
+            .focusedSceneValue(\.draftTodayWithAIAction, draftTodayWithAIAction)
             .focusedSceneValue(\.extractTasksWithAIAction, extractTasksWithAIAction)
             .focusedSceneValue(\.toggleChatHUDAction, { openChatHUD() })
             .focusedSceneValue(\.toggleIntelligenceHUDAction, { openIntelligenceHUD() })
-            .onAppear {
-                ChatHUDController.shared.configure(
-                    library: library,
-                    semanticIndex: semanticIndex,
-                    entitlement: llmEntitlement,
-                    intelligence: intelligence,
-                    extensionRegistry: extensionRegistry,
-                    onLocked: { showingLLMUnlockSheet = true }
-                )
-                IntelligenceHUDController.shared.configure(
-                    engine: intelligence,
-                    library: library,
-                    entitlement: llmEntitlement,
-                    extensionRegistry: extensionRegistry,
-                    onLocked: { showingLLMUnlockSheet = true }
-                )
-                extensionRegistry.reload(projectRoots: library.rootURLs)
-                if let root = library.activeRootURL {
-                    restoreIntelligenceAfterConsent(root: root)
-                }
-            }
+            .onAppear(perform: configureControllers)
             .focusedSceneValue(\.showDiagnosticsAction, { showingDiagnosticsReport = true })
             .focusedSceneValue(\.copyDiagnosticsAction, {
                 diagnostics.copyReport(
@@ -97,6 +78,28 @@ struct ContentView: View {
             .focusedSceneValue(\.openTeamExtensionKitAction, { library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openRemoteIntelligenceGuideAction, { library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.resetDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true) })
+    }
+
+    private func configureControllers() {
+        ChatHUDController.shared.configure(
+            library: library,
+            semanticIndex: semanticIndex,
+            entitlement: llmEntitlement,
+            intelligence: intelligence,
+            extensionRegistry: extensionRegistry,
+            onLocked: { showingLLMUnlockSheet = true }
+        )
+        IntelligenceHUDController.shared.configure(
+            engine: intelligence,
+            library: library,
+            entitlement: llmEntitlement,
+            extensionRegistry: extensionRegistry,
+            onLocked: { showingLLMUnlockSheet = true }
+        )
+        extensionRegistry.reload(projectRoots: library.rootURLs)
+        if let root = library.activeRootURL {
+            restoreIntelligenceAfterConsent(root: root)
+        }
     }
 
     private var importFileAction: (() -> Void)? {
@@ -144,6 +147,10 @@ struct ContentView: View {
 
     private var openTodayNoteAction: (() -> Void)? {
         library.hasFolders ? { library.openTodayNote() } : nil
+    }
+
+    private var draftTodayWithAIAction: (() -> Void)? {
+        library.hasFolders ? { ChatHUDController.shared.runBuiltInQuickAction(id: "today-note") } : nil
     }
 
     private var extractTasksWithAIAction: (() -> Void)? {

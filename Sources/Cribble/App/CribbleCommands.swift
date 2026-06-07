@@ -14,6 +14,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copySelectedDocumentWikiLinkAction) private var copySelectedDocumentWikiLink
     @FocusedValue(\.undoNoteChangeAction) private var undoNoteChange
     @FocusedValue(\.runAILinkingAction) private var runAILinking
+    @FocusedValue(\.draftTodayWithAIAction) private var draftTodayWithAI
     @FocusedValue(\.extractTasksWithAIAction) private var extractTasksWithAI
     @FocusedValue(\.toggleChatHUDAction) private var toggleChatHUD
     @FocusedValue(\.toggleIntelligenceHUDAction) private var toggleIntelligenceHUD
@@ -152,6 +153,9 @@ struct CribbleCommands: Commands {
                 .keyboardShortcut("j", modifiers: [.command])
                 .disabled(toggleChatHUD == nil)
 
+            Button("Draft Today with AI", action: { draftTodayWithAI?() })
+                .disabled(draftTodayWithAI == nil)
+
             Button("Extract Tasks from Current Note", action: { extractTasksWithAI?() })
                 .disabled(extractTasksWithAI == nil)
 
@@ -257,6 +261,10 @@ private struct UndoNoteChangeActionKey: FocusedValueKey {
 }
 
 private struct RunAILinkingActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct DraftTodayWithAIActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -420,6 +428,11 @@ extension FocusedValues {
     var runAILinkingAction: (() -> Void)? {
         get { self[RunAILinkingActionKey.self] }
         set { self[RunAILinkingActionKey.self] = newValue }
+    }
+
+    var draftTodayWithAIAction: (() -> Void)? {
+        get { self[DraftTodayWithAIActionKey.self] }
+        set { self[DraftTodayWithAIActionKey.self] = newValue }
     }
 
     var extractTasksWithAIAction: (() -> Void)? {

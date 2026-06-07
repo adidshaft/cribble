@@ -49,6 +49,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - DemoNotes now explain the latest extension authoring affordances directly: Create Project Example, Check Again, copied extension details, and note-row Copy Wiki Link handoff.
 - DemoNotes now include a remote-runner handoff checklist for endpoint ownership, model id, trust label, note context, Keychain entry, and revocation.
 - DemoNotes now teach the stricter API v1 extension permission map, extension quick-action context limits, and the native remote-runner approval sheet before non-loopback extension profiles are used.
+- DemoNotes and the public extension guide now explain that copied diagnostic reports include extension install/enabled state, validation warnings, permissions, and contribution titles for support or PR handoffs without copying Keychain secrets.
 - Seeded Project Intelligence artifacts for DemoNotes now match the current tour, including Tasks and Intelligence, Workflow Playbook, Research Review, Team Extension Kit, and Extensions and Remote Intelligence.
 - The bundled DemoNotes version has been bumped so existing demo installs refresh to the improved onboarding content.
 - File > Import now stays discoverable even before import lanes exist: it opens a guided setup sheet that can create a project-local or user-level importer example, open extension Settings, or jump to the Team Extension Kit.
@@ -204,6 +205,7 @@ swift test --filter CribbleUITests
 swift test --filter DiagnosticsCenterTests
 swift test
 swift test --filter CribbleUITests
+swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'
 ```
 
 Latest pass:
@@ -271,6 +273,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after extension diagnostics snapshots: 6 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest diagnostics and sidebar changes: 201 XCTest tests and 41 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after clearer task export status: 18 XCTest tests, 0 failures.
+- Latest `swift test --filter 'IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|LinkIndexTests|CribbleUITests'` passed on 2026-06-08 after DemoNotes diagnostic-handoff guidance: 21 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

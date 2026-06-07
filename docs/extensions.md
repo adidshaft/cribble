@@ -349,7 +349,11 @@ Use this as the copy-paste shape for a first extension contribution:
 5. Paste the copied extension details from Settings into the PR so reviewers can
    inspect id, kind, permissions, runtime, trust metadata, and contributions
    without checking out the branch.
-6. Add or update focused tests when validation, discovery, disabled-state
+6. For support or release handoff, use **Help > Copy Diagnostic Report** after
+   reloading extensions. The report includes installed/enabled counts, validation
+   warnings, manifest summaries, permissions, and contribution titles without
+   including API keys from Keychain.
+7. Add or update focused tests when validation, discovery, disabled-state
    filtering, renderer aliases, importer lanes, provider profiles, or quick
    action routing changes.
 

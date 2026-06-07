@@ -65,6 +65,10 @@ pull request or handoff note:
   attachments?
 - Is the source URL or signing identity filled in when known?
 - Did someone paste the copied extension details into the review thread?
+- Did someone attach a copied diagnostic report when debugging install,
+  validation, enabled-state, or remote-runner issues? It includes extension
+  counts, warnings, permissions, and contribution titles without copying
+  Keychain secrets.
 - Can a non-technical reader understand why this exists?
 
 Open `docs/extensions.md` before proposing a new extension surface. First PRs

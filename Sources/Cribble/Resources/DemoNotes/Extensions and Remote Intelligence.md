@@ -214,10 +214,10 @@ Declares file types an importer wants to convert into Markdown later. Today the
 lane appears in Settings so teams can agree on supported import formats before
 Cribble executes converters.
 
-Before writing the manifest, choose **File → Import → Copy Review** to paste the
-pre-install safety contract into a proposal thread: no converter execution,
-user-selected files only, previewed writes, no secrets, native SwiftUI controls,
-and clean disabling.
+Before writing the manifest, choose **Help → Copy Import Lane Setup Review** or
+**File → Import → Copy Review** to paste the pre-install safety contract into a
+proposal thread: no converter execution, user-selected files only,
+previewed writes, no secrets, native SwiftUI controls, and clean disabling.
 
 ```json
 {

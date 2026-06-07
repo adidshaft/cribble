@@ -32,6 +32,22 @@ enum RemoteRunnerSetupReview {
     """
 }
 
+enum ImportLaneSetupReview {
+    static let markdown = """
+    Import lane setup review
+    Purpose: declare accepted file types and intended Markdown output before converter execution exists.
+    Runtime: API v1 is declarative manifest data only; no scripts, binaries, network calls, or converters run.
+    First version: create a project-local or user-level importer manifest, review it, then adapt file extensions and output format.
+    Reads: only user-selected files should be considered for future importer execution.
+    Writes: generated notes must use explicit preview/review/cancel before anything is saved.
+    Network: no network access for API v1 import lanes.
+    Secrets: never place tokens, API keys, passwords, or credentials in manifests, examples, fixtures, or notes.
+    UI: any future importer controls must use native SwiftUI, Settings, sheets, menus, commands, system controls, and SF Symbols.
+    Disable/revoke: disabling the extension removes its import lane from Cribble.
+    Next step: use Help > Copy Import Lane Setup Review, open Settings > Extensions, create an importer example, then use Copy Proposal before asking for executable conversion.
+    """
+}
+
 enum DecisionLogTemplate {
     static let markdown = """
     ## YYYY-MM-DD - Decision title

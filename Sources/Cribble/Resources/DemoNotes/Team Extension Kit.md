@@ -95,6 +95,10 @@ Use **Help → Copy Extension Proposal** or **Settings → Extensions → Copy P
 to copy this shape into a GitHub issue, Discussion, or team thread before anyone
 writes implementation code.
 
+Use **Help → Copy Import Lane Setup Review** for chat exports or file importer
+lanes, and **Help → Copy Remote Runner Setup Review** before any VPS or team
+model profile can receive note context.
+
 The open-source contribution guide keeps ideas open but first PRs strict:
 read-only first, least reading, least writing, no hidden execution,
 Keychain-only secrets, clean disable behavior, and hard native SwiftUI surfaces.

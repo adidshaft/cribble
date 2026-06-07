@@ -917,6 +917,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertLessThan(index(of: "Button(\"Reset DemoNotes Tour\"", in: commands), index(of: "Button(\"Open Cribble AI Guide\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Open Remote Intelligence Guide\"", in: commands), index(of: "Button(\"Open Extension Settings\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Open Extension Settings\"", in: commands), index(of: "Button(\"Copy Extension Proposal\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Copy Remote Runner Setup Review\"", in: commands), index(of: "Button(\"Copy Import Lane Setup Review\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Copy Import Lane Setup Review\"", in: commands), index(of: "Button(\"Copy Product Readiness Checkpoint\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Copy Starter Checklist\"", in: commands), index(of: "Button(\"Show Diagnostic Report\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Reveal Latest Crash Report\"", in: commands), index(of: "Button(\"Report Issue on GitHub\"", in: commands))
     }
@@ -991,6 +993,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(extensions.contains("data-only"))
         XCTAssertTrue(extensions.contains("signed/revocable model"))
         XCTAssertTrue(extensions.contains("Chat HUD command surface"))
+        XCTAssertTrue(extensions.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(extensions.contains("File → Import → Copy Review"))
         XCTAssertTrue(extensions.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(extensions.contains("user-selected files only"))
@@ -998,6 +1001,7 @@ final class CribbleUITests: XCTestCase {
 
         let teamKit = try String(contentsOf: demoRoot.appendingPathComponent("Team Extension Kit.md"), encoding: .utf8)
         XCTAssertTrue(teamKit.contains("Help → Copy Extension Proposal"))
+        XCTAssertTrue(teamKit.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(teamKit.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
         XCTAssertTrue(teamKit.contains("[[Extension Contribution Guide]]"))
@@ -1059,6 +1063,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("Help -> Copy Extension Proposal"))
         XCTAssertTrue(checklist.contains("Copy Proposal"))
         XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))
+        XCTAssertTrue(checklist.contains("Help -> Copy Import Lane Setup Review"))
         XCTAssertTrue(checklist.contains("Help -> Copy Remote Runner Setup Review"))
         XCTAssertTrue(checklist.contains("VPS or remote runner"))
     }
@@ -1110,6 +1115,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(review.contains("never place tokens"))
         XCTAssertTrue(review.contains("native SwiftUI"))
         XCTAssertTrue(review.contains("disabling the extension removes its import lane"))
+        XCTAssertTrue(review.contains("Help > Copy Import Lane Setup Review"))
         XCTAssertTrue(review.contains("Copy Proposal"))
     }
 

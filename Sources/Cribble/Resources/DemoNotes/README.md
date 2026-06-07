@@ -98,6 +98,7 @@ changes in this demo copy only.
 - [ ] Use **Help → Open Extension Contribution Guide** before proposing an extension PR.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
+- [ ] Use **Help → Copy Import Lane Setup Review** before proposing a chat export or file importer lane.
 - [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
 

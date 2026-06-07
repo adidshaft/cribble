@@ -48,6 +48,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copyDecisionEntryTemplateAction) private var copyDecisionEntryTemplate
     @FocusedValue(\.copyResearchReviewTemplateAction) private var copyResearchReviewTemplate
     @FocusedValue(\.copyRemoteRunnerSetupReviewAction) private var copyRemoteRunnerSetupReview
+    @FocusedValue(\.copyImportLaneSetupReviewAction) private var copyImportLaneSetupReview
     @FocusedValue(\.copyProductReadinessCheckpointAction) private var copyProductReadinessCheckpoint
     @FocusedValue(\.copyStarterChecklistAction) private var copyStarterChecklist
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
@@ -254,6 +255,9 @@ struct CribbleCommands: Commands {
 
             Button("Copy Remote Runner Setup Review", action: { copyRemoteRunnerSetupReview?() })
                 .disabled(copyRemoteRunnerSetupReview == nil)
+
+            Button("Copy Import Lane Setup Review", action: { copyImportLaneSetupReview?() })
+                .disabled(copyImportLaneSetupReview == nil)
 
             Button("Copy Product Readiness Checkpoint", action: { copyProductReadinessCheckpoint?() })
                 .disabled(copyProductReadinessCheckpoint == nil)
@@ -470,6 +474,10 @@ private struct CopyResearchReviewTemplateActionKey: FocusedValueKey {
 }
 
 private struct CopyRemoteRunnerSetupReviewActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopyImportLaneSetupReviewActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -731,6 +739,11 @@ extension FocusedValues {
     var copyRemoteRunnerSetupReviewAction: (() -> Void)? {
         get { self[CopyRemoteRunnerSetupReviewActionKey.self] }
         set { self[CopyRemoteRunnerSetupReviewActionKey.self] = newValue }
+    }
+
+    var copyImportLaneSetupReviewAction: (() -> Void)? {
+        get { self[CopyImportLaneSetupReviewActionKey.self] }
+        set { self[CopyImportLaneSetupReviewActionKey.self] = newValue }
     }
 
     var copyProductReadinessCheckpointAction: (() -> Void)? {

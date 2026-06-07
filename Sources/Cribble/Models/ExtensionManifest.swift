@@ -256,8 +256,26 @@ struct InstalledCribbleExtension: Identifiable, Equatable {
             lines.append("Importers: \(manifest.importers.map { "\($0.title) [\($0.fileExtensions.joined(separator: ", "))]" }.joined(separator: ", "))")
         }
 
+        lines.append(contentsOf: ExtensionReviewChecklist.manifestSummaryLines)
+
         return lines.joined(separator: "\n")
     }
+}
+
+enum ExtensionReviewChecklist {
+    static let guidePath = "docs/extensions.md"
+
+    static let manifestSummaryLines = [
+        "Safety contract:",
+        "- Read-only first; API v1 is declarative manifest data and does not run extension code.",
+        "- Least reading: prefer Read Current Note; justify project-wide reads.",
+        "- Least writing: source-note edits must go through explicit preview/review, and first versions should avoid note writes.",
+        "- Network: remote runners must be explicit OpenAI-compatible endpoints with user-visible trust labels.",
+        "- Secrets: never put keys or tokens in manifests, fixtures, docs, or extension folders; use Keychain-backed app flows.",
+        "- Disable behavior: turning the extension off must remove its commands, renderers, import lanes, or provider profiles.",
+        "- UI: contribution UI must use native SwiftUI, Settings, sheets, menus, commands, toolbars, and system symbols.",
+        "Contributor guide: \(guidePath)"
+    ]
 }
 
 enum ExtensionManifestError: LocalizedError, Equatable {

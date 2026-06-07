@@ -359,14 +359,14 @@ struct ExtensionImporterCapability: Identifiable, Equatable {
     }
 
     var reviewSummary: String {
-        [
+        ([
             "Import lane: \(title)",
             "Source extension: \(sourceName)",
             "Accepted files: \(extensionSummary)",
             "Output format: \(outputFormat)",
             "Runtime: declarative manifest only; converter execution is not enabled yet",
-            "Review: confirm reads, writes, network, secrets, disable behavior, and native UI before proposing importer execution"
-        ].joined(separator: "\n")
+            "Review: confirm reads, writes, network, secrets, disable behavior, and native SwiftUI before proposing importer execution"
+        ] + ExtensionReviewChecklist.manifestSummaryLines).joined(separator: "\n")
     }
 }
 

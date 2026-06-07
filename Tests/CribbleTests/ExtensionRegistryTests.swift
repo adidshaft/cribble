@@ -65,6 +65,13 @@ struct ExtensionRegistryTests {
         #expect(summary.contains("Permissions: Read Current Note"))
         #expect(summary.contains("Quick actions: Risk questions"))
         #expect(summary.contains("Manifest: \(installed.manifestURL.path)"))
+        #expect(summary.contains("Safety contract:"))
+        #expect(summary.contains("Read-only first; API v1 is declarative manifest data"))
+        #expect(summary.contains("Least reading: prefer Read Current Note"))
+        #expect(summary.contains("Least writing: source-note edits must go through explicit preview/review"))
+        #expect(summary.contains("Secrets: never put keys or tokens in manifests"))
+        #expect(summary.contains("UI: contribution UI must use native SwiftUI"))
+        #expect(summary.contains("Contributor guide: docs/extensions.md"))
     }
 
     @Test
@@ -184,6 +191,10 @@ struct ExtensionRegistryTests {
         #expect(reviewSummary.contains("Accepted files: .json, .txt"))
         #expect(reviewSummary.contains("converter execution is not enabled yet"))
         #expect(reviewSummary.contains("reads, writes, network, secrets, disable behavior"))
+        #expect(reviewSummary.contains("Safety contract:"))
+        #expect(reviewSummary.contains("Read-only first; API v1 is declarative manifest data"))
+        #expect(reviewSummary.contains("Least writing: source-note edits must go through explicit preview/review"))
+        #expect(reviewSummary.contains("UI: contribution UI must use native SwiftUI"))
 
         guard let installed = registry.installedExtensions.first else {
             Issue.record("Expected installed extension")

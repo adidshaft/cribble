@@ -60,7 +60,7 @@ struct ContentView: View {
                     extensionRegistry: extensionRegistry,
                     onLocked: { showingLLMUnlockSheet = true }
                 )
-                if let root = library.activeRootURL {
+                if let root = library.activeRootURL, canRestoreIntelligenceWithoutRunnerConsent {
                     Task { await intelligence.restoreIfEnabled(rootURL: root) }
                 }
             }
@@ -435,6 +435,14 @@ struct ContentView: View {
 
     private var intelligenceDiagnostics: IntelligenceDiagnosticsSnapshot {
         intelligence.diagnosticsSnapshot()
+    }
+
+    private var canRestoreIntelligenceWithoutRunnerConsent: Bool {
+        ExtensionRunnerConsentStore().requiredApprovalProfile(
+            runnerURL: intelligence.settings.localRunnerBaseURL,
+            modelID: intelligence.settings.modelID,
+            profiles: extensionRegistry.intelligenceProviderProfiles
+        ) == nil
     }
 
     private func createProjectImportLane() {

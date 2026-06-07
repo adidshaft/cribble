@@ -8,6 +8,8 @@ struct SidebarView: View {
     @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var iconPickerTarget: FolderIconTarget?
     @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
+    @State private var pendingExtensionRunnerConsent: ExtensionRunnerConsentRequest?
+    private let extensionRunnerConsentStore = ExtensionRunnerConsentStore()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,10 +64,19 @@ struct SidebarView: View {
                 onStart: {
                     let url = target.url.standardizedFileURL
                     intelligencePreflightTarget = nil
-                    Task {
-                        await intelligence.enable(rootURL: url)
-                        IntelligenceHUDController.shared.show()
-                    }
+                    startIntelligenceAfterConsent(url: url)
+                }
+            )
+        }
+        .sheet(item: $pendingExtensionRunnerConsent) { request in
+            ExtensionRunnerConsentSheet(
+                profile: request.profile,
+                usesKeychain: intelligence.settings.runnerUsesKeychain(baseURL: request.profile.baseURL.absoluteString),
+                onCancel: { pendingExtensionRunnerConsent = nil },
+                onApprove: {
+                    extensionRunnerConsentStore.approve(request.profile)
+                    pendingExtensionRunnerConsent = nil
+                    startIntelligenceAfterConsent(url: request.url)
                 }
             )
         }
@@ -179,6 +190,21 @@ struct SidebarView: View {
             extensionProfiles: extensionRegistry.intelligenceProviderProfiles
         )
     }
+
+    private func startIntelligenceAfterConsent(url: URL) {
+        if let profile = extensionRunnerConsentStore.requiredApprovalProfile(
+            runnerURL: intelligence.settings.localRunnerBaseURL,
+            modelID: intelligence.settings.modelID,
+            profiles: extensionRegistry.intelligenceProviderProfiles
+        ) {
+            pendingExtensionRunnerConsent = ExtensionRunnerConsentRequest(url: url, profile: profile)
+            return
+        }
+        Task {
+            await intelligence.enable(rootURL: url)
+            IntelligenceHUDController.shared.show()
+        }
+    }
 }
 
 /// Makes a markdown row a Pathfinder drag source and drop target: drop one note
@@ -272,6 +298,8 @@ private struct SidebarControls: View {
     @EnvironmentObject private var intelligence: IntelligenceEngine
     @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var intelligencePreflightTarget: IntelligencePreflightTarget?
+    @State private var pendingExtensionRunnerConsent: ExtensionRunnerConsentRequest?
+    private let extensionRunnerConsentStore = ExtensionRunnerConsentStore()
 
     var body: some View {
         controls
@@ -294,10 +322,19 @@ private struct SidebarControls: View {
                 onStart: {
                     let url = target.url.standardizedFileURL
                     intelligencePreflightTarget = nil
-                    Task {
-                        await intelligence.enable(rootURL: url)
-                        IntelligenceHUDController.shared.show()
-                    }
+                    startIntelligenceAfterConsent(url: url)
+                }
+            )
+        }
+        .sheet(item: $pendingExtensionRunnerConsent) { request in
+            ExtensionRunnerConsentSheet(
+                profile: request.profile,
+                usesKeychain: intelligence.settings.runnerUsesKeychain(baseURL: request.profile.baseURL.absoluteString),
+                onCancel: { pendingExtensionRunnerConsent = nil },
+                onApprove: {
+                    extensionRunnerConsentStore.approve(request.profile)
+                    pendingExtensionRunnerConsent = nil
+                    startIntelligenceAfterConsent(url: request.url)
                 }
             )
         }
@@ -430,6 +467,21 @@ private struct SidebarControls: View {
         )
     }
 
+    private func startIntelligenceAfterConsent(url: URL) {
+        if let profile = extensionRunnerConsentStore.requiredApprovalProfile(
+            runnerURL: intelligence.settings.localRunnerBaseURL,
+            modelID: intelligence.settings.modelID,
+            profiles: extensionRegistry.intelligenceProviderProfiles
+        ) {
+            pendingExtensionRunnerConsent = ExtensionRunnerConsentRequest(url: url, profile: profile)
+            return
+        }
+        Task {
+            await intelligence.enable(rootURL: url)
+            IntelligenceHUDController.shared.show()
+        }
+    }
+
     private var intelligenceHelp: String {
         guard let activeIntelligenceRoot else {
             return "Open a folder to turn Project Intelligence on"
@@ -452,6 +504,15 @@ private struct SidebarControls: View {
 private struct IntelligencePreflightTarget: Identifiable {
     let url: URL
     var id: String { url.standardizedFileURL.path }
+}
+
+private struct ExtensionRunnerConsentRequest: Identifiable {
+    let url: URL
+    let profile: ExtensionIntelligenceProviderProfile
+
+    var id: String {
+        "\(url.standardizedFileURL.path)|\(profile.consentKey)"
+    }
 }
 
 private extension View {

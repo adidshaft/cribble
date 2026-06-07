@@ -263,6 +263,8 @@ Cribble rejects manifests that:
 - request `"runtime": "executable"`;
 - use a non-HTTP homepage;
 - point `entrypoint` outside the extension folder;
+- include secret-looking fields or values such as API keys, bearer tokens,
+  passwords, private keys, authorization headers, or token query strings;
 - declare contributions under the wrong `kind`;
 - duplicate contribution ids within a manifest;
 - use unsafe language, importer, or contribution tokens.

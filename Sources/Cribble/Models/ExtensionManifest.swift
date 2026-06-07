@@ -310,6 +310,7 @@ enum ExtensionManifestError: LocalizedError, Equatable {
 enum ExtensionManifestLoader {
     static func load(from url: URL) throws -> CribbleExtensionManifest {
         let data = try Data(contentsOf: url)
+        try validateNoSecretMaterial(in: data)
         let decoder = JSONDecoder()
         guard let manifest = try? decoder.decode(CribbleExtensionManifest.self, from: data) else {
             throw ExtensionManifestError.unreadable
@@ -504,5 +505,61 @@ enum ExtensionManifestLoader {
 
     private static func isSafeToken(_ token: String) -> Bool {
         token.range(of: #"^[A-Za-z0-9][A-Za-z0-9._-]*$"#, options: .regularExpression) != nil
+    }
+
+    private static func validateNoSecretMaterial(in data: Data) throws {
+        let object: Any
+        do {
+            object = try JSONSerialization.jsonObject(with: data)
+        } catch {
+            throw ExtensionManifestError.unreadable
+        }
+        try scanForSecretMaterial(object, path: "manifest")
+    }
+
+    private static func scanForSecretMaterial(_ value: Any, path: String) throws {
+        if let dictionary = value as? [String: Any] {
+            for (key, nestedValue) in dictionary {
+                if isSecretLikeKey(key) {
+                    throw ExtensionManifestError.invalidContribution("Manifest field \(path).\(key) looks like secret material. Store keys and tokens in Keychain, not extension manifests.")
+                }
+                try scanForSecretMaterial(nestedValue, path: "\(path).\(key)")
+            }
+        } else if let array = value as? [Any] {
+            for (index, item) in array.enumerated() {
+                try scanForSecretMaterial(item, path: "\(path)[\(index)]")
+            }
+        } else if let string = value as? String, containsSecretLikeValue(string) {
+            throw ExtensionManifestError.invalidContribution("Manifest field \(path) looks like it contains a key or token. Store secrets in Keychain, not extension manifests.")
+        }
+    }
+
+    private static func isSecretLikeKey(_ key: String) -> Bool {
+        let normalized = key
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
+        let blocked = [
+            "apikey",
+            "accesstoken",
+            "authorization",
+            "bearertoken",
+            "clientsecret",
+            "password",
+            "privatekey",
+            "secret",
+            "token"
+        ]
+        return blocked.contains { normalized.contains($0) }
+    }
+
+    private static func containsSecretLikeValue(_ value: String) -> Bool {
+        let patterns = [
+            #"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}"#,
+            #"(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|token|password|secret)=\S{8,}"#,
+            #"\bsk-[A-Za-z0-9_-]{12,}"#
+        ]
+        return patterns.contains { pattern in
+            value.range(of: pattern, options: .regularExpression) != nil
+        }
     }
 }

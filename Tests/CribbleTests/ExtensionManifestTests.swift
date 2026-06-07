@@ -74,6 +74,61 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsUnknownSecretKeysInJSON() throws {
+        let url = try writeManifestJSON(
+            folderName: "CribbleSecretKeyManifestTests",
+            json: """
+            {
+              "apiVersion": 1,
+              "id": "com.example.cribble.secret",
+              "name": "Secret",
+              "version": "0.1.0",
+              "kind": "quick-action",
+              "summary": "Attempts to hide a token.",
+              "permissions": ["read-current-note"],
+              "apiKey": "sk-should-not-live-here"
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Manifest field manifest.apiKey looks like secret material. Store keys and tokens in Keychain, not extension manifests.")) {
+            try ExtensionManifestLoader.load(from: url)
+        }
+    }
+
+    @Test
+    func rejectsSecretLikeStringValuesInJSON() throws {
+        let url = try writeManifestJSON(
+            folderName: "CribbleSecretValueManifestTests",
+            json: """
+            {
+              "apiVersion": 1,
+              "id": "com.example.cribble.runner",
+              "name": "Runner",
+              "version": "0.1.0",
+              "kind": "intelligence-provider",
+              "summary": "Attempts to put a token in the runner URL.",
+              "permissions": ["network-openai-compatible"],
+              "intelligenceProviders": [
+                {
+                  "id": "remote",
+                  "title": "Remote",
+                  "baseURL": "https://ai.example.com/v1?token=abcdef1234567890",
+                  "modelID": "qwen3-32b"
+                }
+              ]
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Manifest field manifest.intelligenceProviders[0].baseURL looks like it contains a key or token. Store secrets in Keychain, not extension manifests.")) {
+            try ExtensionManifestLoader.load(from: url)
+        }
+    }
+
+    @Test
     func validatesTrustDeclarations() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.trusted",
@@ -403,4 +458,13 @@ struct ExtensionManifestTests {
             try ExtensionManifestLoader.validate(manifest)
         }
     }
+}
+
+private func writeManifestJSON(folderName: String, json: String) throws -> URL {
+    let folder = FileManager.default.temporaryDirectory
+        .appendingPathComponent("\(folderName)-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let url = folder.appendingPathComponent("cribble-extension.json")
+    try json.data(using: .utf8)?.write(to: url)
+    return url
 }

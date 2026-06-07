@@ -64,6 +64,7 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The public extension guide now adds a first-extension-PR recipe: pick one manifest kind, start from Create Project Example, stay declarative/read-only, include reads/writes/network/secrets/disable behavior, paste copied extension details, and add focused tests for validation/discovery changes.
 - The GitHub pull request template now includes an extension/plugin review section for read scope, writes, network, secrets, disable behavior, native SwiftUI UI, and focused tests/docs.
 - Copied extension and import-lane review summaries now include the same contributor safety contract, so PRs and team approvals carry read-only-first, least-read/write, Keychain-only secrets, clean-disable, and native SwiftUI expectations without hunting through docs.
+- Extension manifest loading now rejects secret-looking JSON keys and values before decoding, so ignored unknown fields cannot smuggle API keys, bearer tokens, passwords, private keys, authorization headers, or token query strings into `cribble-extension.json`.
 - The app now treats `Command-F` as a native Find in Files shortcut that focuses the toolbar search field, with a Clear Search command for fast recovery.
 - Back/Forward and Clear Search menu commands now mirror real app state, so Mac menus disable when there is no history or search text to act on.
 - Sidebar search now shows a clear “No Matches” recovery state with a Clear Search action instead of implying the folder has no Markdown files.
@@ -180,6 +181,7 @@ swift test --filter 'LinkIndexTests|CribbleUITests'
 swift test --filter DiagnosticsCenterTests
 swift test --filter CribbleUITests
 swift test --filter ExtensionRegistryTests
+swift test --filter ExtensionManifestTests
 ```
 
 Latest pass:
@@ -235,6 +237,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after Intelligence diagnostics snapshots: 4 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after wiring Intelligence diagnostics through report entry points: 16 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after copied extension safety contracts: 10 Swift Testing tests, 0 failures.
+- Latest `swift test --filter ExtensionManifestTests` passed on 2026-06-08 after manifest secret-material rejection: 19 Swift Testing tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

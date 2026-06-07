@@ -827,6 +827,20 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "Opened Tasks")
     }
 
+    func testDemoHelpGuideTargetsExistInBundledNotes() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let demoRoot = projectRoot.appendingPathComponent("Sources/Cribble/Resources/DemoNotes", isDirectory: true)
+
+        for fileName in ["Tasks and Intelligence.md", "Research Review.md"] {
+            let url = demoRoot.appendingPathComponent(fileName)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "\(fileName) should be bundled for Help menu onboarding")
+        }
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

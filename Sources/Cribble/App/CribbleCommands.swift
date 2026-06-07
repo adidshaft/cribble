@@ -29,6 +29,8 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.clearSearchAction) private var clearSearch
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
+    @FocusedValue(\.openTasksGuideAction) private var openTasksGuide
+    @FocusedValue(\.openResearchReviewAction) private var openResearchReview
     @FocusedValue(\.openTeamExtensionKitAction) private var openTeamExtensionKit
     @FocusedValue(\.openRemoteIntelligenceGuideAction) private var openRemoteIntelligenceGuide
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
@@ -162,6 +164,12 @@ struct CribbleCommands: Commands {
 
             Button("Open Workflow Playbook", action: { openWorkflowPlaybook?() })
                 .disabled(openWorkflowPlaybook == nil)
+
+            Button("Open Tasks & Intelligence Guide", action: { openTasksGuide?() })
+                .disabled(openTasksGuide == nil)
+
+            Button("Open Research Review Guide", action: { openResearchReview?() })
+                .disabled(openResearchReview == nil)
 
             Button("Open Team Extension Kit", action: { openTeamExtensionKit?() })
                 .disabled(openTeamExtensionKit == nil)
@@ -305,6 +313,14 @@ private struct OpenDemoNotesActionKey: FocusedValueKey {
 }
 
 private struct OpenWorkflowPlaybookActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenTasksGuideActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenResearchReviewActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -471,6 +487,16 @@ extension FocusedValues {
     var openWorkflowPlaybookAction: (() -> Void)? {
         get { self[OpenWorkflowPlaybookActionKey.self] }
         set { self[OpenWorkflowPlaybookActionKey.self] = newValue }
+    }
+
+    var openTasksGuideAction: (() -> Void)? {
+        get { self[OpenTasksGuideActionKey.self] }
+        set { self[OpenTasksGuideActionKey.self] = newValue }
+    }
+
+    var openResearchReviewAction: (() -> Void)? {
+        get { self[OpenResearchReviewActionKey.self] }
+        set { self[OpenResearchReviewActionKey.self] = newValue }
     }
 
     var openTeamExtensionKitAction: (() -> Void)? {

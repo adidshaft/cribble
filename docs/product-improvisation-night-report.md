@@ -314,6 +314,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests` passed on 2026-06-08 after adding welcome-screen Continue shortcuts from recent note history, including stale-entry filtering and duplicate suppression: 26 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests` passed on 2026-06-08 after adding the native Settings starter-rules strip for extension authors: 12 Swift Testing tests, 0 failures.
 - Latest `swift test --filter DiagnosticsCenterTests` passed on 2026-06-08 after adding a top-level diagnostic Health Summary that keeps status, refresh, intelligence, extension, and crash-report state scannable without exposing runner secrets: 7 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after adding direct Help menu entries for Tasks & Intelligence and Research Review onboarding guides: 28 XCTest tests, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

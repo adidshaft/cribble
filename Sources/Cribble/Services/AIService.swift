@@ -104,8 +104,10 @@ struct AIService {
         var remaining = maxCharacters
         var omitted = 0
         for file in files {
-            // Cheap pre-check: a file's byte size lower-bounds its section
-            // length, so skip the content read entirely when it cannot fit.
+            // Cheap pre-check: a file's byte size conservatively approximates
+            // (over-estimates) its section's character count, so skipping the
+            // content read when the byte size exceeds the budget is safe —
+            // though multibyte files may be omitted slightly early.
             // (`continue` rather than `break` keeps the omitted count exact.)
             guard file.size <= remaining else {
                 omitted += 1
@@ -121,7 +123,7 @@ struct AIService {
             sections.append(section)
         }
         if omitted > 0 {
-            sections.append("=== NOTE: \(omitted) file(s) omitted — context budget exhausted ===\n")
+            sections.append("[\(omitted) file(s) omitted — context budget exhausted]\n")
         }
         return sections.joined(separator: "\n")
     }

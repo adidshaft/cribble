@@ -7,6 +7,13 @@ All notable changes to Cribble are documented here. The format follows
 
 ## Unreleased — Reliability & scale (1.4, in progress)
 
+### New
+- **Local runner everywhere** — local runner (Ollama/llama.cpp/LM Studio)
+  support now extends beyond Intelligence to the Chat HUD (with streaming),
+  quick actions, attachment digests, Pathfinder explanations, AI Link Notes,
+  and the first-run engine chooser — all resolved from one shared
+  configuration (#3).
+
 ### Performance
 - **Lower memory on big vaults** — Cribble no longer keeps every note's full
   text in memory; bodies load on demand, so large libraries stay light.

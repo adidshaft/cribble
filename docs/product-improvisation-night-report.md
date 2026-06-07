@@ -398,6 +398,7 @@ Latest pass:
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after refreshing README/DemoNotes onboarding for review-first missing wiki-link creation: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Summarize to the native AI menu and splitting the focused command setup for faster type-checking: 39 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ChatHUDLogicTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts'` passed on 2026-06-08 after promoting Explain Simply and Find Related to native AI menu commands: 39 XCTest tests, 0 failures.
+- Full `swift test` passed on 2026-06-08 after the latest native AI menu and onboarding work: 220 XCTest tests and 42 Swift Testing tests, 0 failures. The run still prints intermittent CoreData XPC noise from the macOS test environment, but it does not fail tests.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

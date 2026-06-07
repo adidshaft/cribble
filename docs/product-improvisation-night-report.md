@@ -112,6 +112,8 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - Empty README panels now offer native starter actions for New Note, Today, and the Tasks Guide beside the AI README-fill action, so a sparse folder gives users multiple useful next steps.
 - DemoNotes AI onboarding now consistently uses the native `Command J` chat shortcut and the bundled demo version was bumped so installed DemoNotes refresh.
 - Help menu now exposes Open/Reset DemoNotes Tour, so onboarding is recoverable after users add their own folders.
+- Help now exposes the Cribble AI guide directly, making the AI menu/chat
+  onboarding recoverable after users leave the welcome screen.
 - Help and the empty welcome screen now expose the Workflow Playbook directly, giving new users a faster route into practical reader, research, team, and remote-runner flows.
 - Help now exposes the Team Extension Kit directly, making the extension/plugin design guide recoverable outside Settings.
 - Help and the welcome screen now expose the Remote Intelligence guide directly, making VPS/team-runner setup discoverable as a first-class onboarding path.
@@ -444,6 +446,7 @@ Latest pass:
 - Latest `swift test --filter IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts` passed on 2026-06-08 after teaching DemoNotes about Settings > Extensions > Copy Proposal: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding Cribble AI to the welcome Start With grid: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests|IntelligenceJobsTests/testDemoSeederSeedsExampleArtifacts|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after the Settings proposal, DemoNotes handoff, and Welcome AI entry work: 2 XCTest tests and 13 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes` passed on 2026-06-08 after adding the Help > Open Cribble AI Guide entry: 1 XCTest test, 0 failures.
 - Latest runs built without the previous SQLite vector-binding or MLX cache-limit warnings.
 
 ## Next best sections

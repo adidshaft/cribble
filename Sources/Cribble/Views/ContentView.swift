@@ -98,6 +98,7 @@ struct ContentView: View {
     private func focusedHelpActions<Content: View>(_ content: Content) -> some View {
         content
             .focusedSceneValue(\.openDemoNotesAction, { library.openDemoLibrary(sortMode: settings.fileSortMode) })
+            .focusedSceneValue(\.openCribbleAIGuideAction, { library.openDemoNote(named: "Cribble AI.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openWorkflowPlaybookAction, { library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openTasksGuideAction, { library.openDemoNote(named: "Tasks and Intelligence.md", sortMode: settings.fileSortMode) })
             .focusedSceneValue(\.openResearchReviewAction, { library.openDemoNote(named: "Research Review.md", sortMode: settings.fileSortMode) })

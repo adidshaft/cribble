@@ -34,6 +34,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.focusSearchAction) private var focusSearch
     @FocusedValue(\.clearSearchAction) private var clearSearch
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
+    @FocusedValue(\.openCribbleAIGuideAction) private var openCribbleAIGuide
     @FocusedValue(\.openWorkflowPlaybookAction) private var openWorkflowPlaybook
     @FocusedValue(\.openTasksGuideAction) private var openTasksGuide
     @FocusedValue(\.openResearchReviewAction) private var openResearchReview
@@ -191,6 +192,9 @@ struct CribbleCommands: Commands {
         CommandGroup(replacing: .help) {
             Button("Open DemoNotes Tour", action: { openDemoNotes?() })
                 .disabled(openDemoNotes == nil)
+
+            Button("Open Cribble AI Guide", action: { openCribbleAIGuide?() })
+                .disabled(openCribbleAIGuide == nil)
 
             Button("Open Workflow Playbook", action: { openWorkflowPlaybook?() })
                 .disabled(openWorkflowPlaybook == nil)
@@ -363,6 +367,10 @@ private struct ClearSearchActionKey: FocusedValueKey {
 }
 
 private struct OpenDemoNotesActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct OpenCribbleAIGuideActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -566,6 +574,11 @@ extension FocusedValues {
     var openDemoNotesAction: (() -> Void)? {
         get { self[OpenDemoNotesActionKey.self] }
         set { self[OpenDemoNotesActionKey.self] = newValue }
+    }
+
+    var openCribbleAIGuideAction: (() -> Void)? {
+        get { self[OpenCribbleAIGuideActionKey.self] }
+        set { self[OpenCribbleAIGuideActionKey.self] = newValue }
     }
 
     var openWorkflowPlaybookAction: (() -> Void)? {

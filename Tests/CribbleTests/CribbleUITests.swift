@@ -340,6 +340,22 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(unresolved.contains("library.statusMessage = \"Copied [[\\(target.targetName)]]\""))
     }
 
+    func testPathfinderSheetCanCopySummary() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let pathfinderURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/PathfinderSheet.swift")
+        let pathfinder = try String(contentsOf: pathfinderURL, encoding: .utf8)
+
+        XCTAssertTrue(pathfinder.contains("import AppKit"))
+        XCTAssertTrue(pathfinder.contains("copySummary()"))
+        XCTAssertTrue(pathfinder.contains("Label(copiedSummary ? \"Copied Summary\" : \"Copy Summary\""))
+        XCTAssertTrue(pathfinder.contains("PathfinderHandoffSummary.markdown("))
+        XCTAssertTrue(pathfinder.contains("library.statusMessage = \"Copied Pathfinder summary\""))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

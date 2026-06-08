@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The Pathfinder HUD. Given two notes (dragged one onto the other), it shows:
@@ -20,6 +21,7 @@ struct PathfinderSheet: View {
     @State private var cliError: String?
     @State private var isExplaining = false
     @State private var explainingLabel = "Reasoning…"
+    @State private var copiedSummary = false
 
     private var sourceTitle: String { library.title(for: request.source) }
     private var targetTitle: String { library.title(for: request.target) }
@@ -183,7 +185,16 @@ struct PathfinderSheet: View {
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 10) {
+            Button {
+                copySummary()
+            } label: {
+                Label(copiedSummary ? "Copied Summary" : "Copy Summary",
+                      systemImage: copiedSummary ? "checkmark" : "doc.on.doc")
+            }
+            .cribbleGlassButton()
+            .help("Copy the wiki path, conceptual bridge, and explanation for handoff")
+
             Spacer()
             Button {
                 let source = request.source
@@ -201,6 +212,20 @@ struct PathfinderSheet: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 13)
+    }
+
+    private func copySummary() {
+        let summary = PathfinderHandoffSummary.markdown(
+            sourceTitle: sourceTitle,
+            targetTitle: targetTitle,
+            wikiPathTitles: wikiPath?.map { library.title(for: $0) },
+            bridgeTitles: bridge.map(\.title),
+            explanation: cliExplanation
+        )
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(summary, forType: .string)
+        copiedSummary = true
+        library.statusMessage = "Copied Pathfinder summary"
     }
 
     // MARK: - Building blocks
@@ -305,5 +330,47 @@ struct PathfinderSheet: View {
                 cliError = error.localizedDescription
             }
         }
+    }
+}
+
+enum PathfinderHandoffSummary {
+    static func markdown(
+        sourceTitle: String,
+        targetTitle: String,
+        wikiPathTitles: [String]?,
+        bridgeTitles: [String],
+        explanation: String?
+    ) -> String {
+        var lines = [
+            "# Pathfinder Summary",
+            "",
+            "Source: \(sourceTitle)",
+            "Target: \(targetTitle)",
+            ""
+        ]
+
+        lines.append("## Wiki-link path")
+        if let wikiPathTitles, wikiPathTitles.count >= 2 {
+            lines.append(wikiPathTitles.joined(separator: " -> "))
+        } else {
+            lines.append("No existing wiki-link path.")
+        }
+        lines.append("")
+
+        lines.append("## Conceptual bridge")
+        if bridgeTitles.isEmpty {
+            lines.append("No stepping-stone notes selected.")
+        } else {
+            lines.append(([sourceTitle] + bridgeTitles + [targetTitle]).joined(separator: " -> "))
+        }
+
+        if let explanation = explanation?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !explanation.isEmpty {
+            lines.append("")
+            lines.append("## Explanation")
+            lines.append(explanation)
+        }
+
+        return lines.joined(separator: "\n")
     }
 }

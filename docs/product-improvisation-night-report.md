@@ -680,6 +680,9 @@ Latest pass:
 - Missing wiki-link screens now include Copy Wiki Link, so users can hand off
   `[[Missing Note]]` to chat, tasks, or another note without creating the file
   immediately.
+- Pathfinder now includes Copy Summary, producing a portable Markdown handoff
+  with source, target, existing wiki path, conceptual bridge, and any generated
+  explanation for research notes, issues, or team review.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -730,6 +733,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testSettingsExposeProjectIntelligenceControls|CribbleUITests/testExtensionSettingsLinksToContributionGuide'` passed on 2026-06-08 after adding the native Project Intelligence Settings section: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after adding recovery actions to the Reading Trail empty state: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testUnresolvedTargetCanCopyMissingWikiLink|CribbleUITests/testUnresolvedCreateUsesReviewFlowAndOpensExistingFile'` passed on 2026-06-08 after adding Copy Wiki Link to the missing-note screen: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'PathfinderTests|CribbleUITests/testPathfinderSheetCanCopySummary'` passed on 2026-06-08 after adding Copy Summary to Pathfinder: 4 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

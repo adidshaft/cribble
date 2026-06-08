@@ -2,6 +2,37 @@ import XCTest
 @testable import Cribble
 
 final class PathfinderTests: XCTestCase {
+    func testPathfinderHandoffSummaryIncludesPathBridgeAndExplanation() {
+        let summary = PathfinderHandoffSummary.markdown(
+            sourceTitle: "Launch Brief",
+            targetTitle: "Decision Log",
+            wikiPathTitles: ["Launch Brief", "Research Review", "Decision Log"],
+            bridgeTitles: ["Workflow Playbook"],
+            explanation: "Research links the launch to a recorded decision."
+        )
+
+        XCTAssertTrue(summary.contains("# Pathfinder Summary"))
+        XCTAssertTrue(summary.contains("Source: Launch Brief"))
+        XCTAssertTrue(summary.contains("Target: Decision Log"))
+        XCTAssertTrue(summary.contains("Launch Brief -> Research Review -> Decision Log"))
+        XCTAssertTrue(summary.contains("Launch Brief -> Workflow Playbook -> Decision Log"))
+        XCTAssertTrue(summary.contains("Research links the launch to a recorded decision."))
+    }
+
+    func testPathfinderHandoffSummaryNamesMissingPaths() {
+        let summary = PathfinderHandoffSummary.markdown(
+            sourceTitle: "Alpha",
+            targetTitle: "Beta",
+            wikiPathTitles: nil,
+            bridgeTitles: [],
+            explanation: " "
+        )
+
+        XCTAssertTrue(summary.contains("No existing wiki-link path."))
+        XCTAssertTrue(summary.contains("No stepping-stone notes selected."))
+        XCTAssertFalse(summary.contains("## Explanation"))
+    }
+
     @MainActor
     func testWikiLinkShortestPath() throws {
         let root = try Fixture.makeFolder()

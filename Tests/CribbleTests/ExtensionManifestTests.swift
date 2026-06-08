@@ -467,6 +467,56 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsRemoteProviderProfilesWithoutHTTPS() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.vps",
+            name: "Team VPS",
+            version: "0.1.0",
+            kind: .intelligenceProvider,
+            summary: "Adds a trusted OpenAI-compatible VPS runner.",
+            permissions: [.networkOpenAICompatible],
+            intelligenceProviders: [
+                CribbleExtensionIntelligenceProvider(
+                    id: "research-gpu",
+                    title: "Research GPU",
+                    baseURL: URL(string: "http://ai.example.com/v1")!,
+                    modelID: "qwen3-32b",
+                    embeddingModelID: nil,
+                    trustLabel: "Team-controlled VPS"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("http://ai.example.com/v1 must be an https provider URL unless it targets localhost.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func allowsLocalProviderProfilesOverHTTP() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.local",
+            name: "Local Runner",
+            version: "0.1.0",
+            kind: .intelligenceProvider,
+            summary: "Adds a local OpenAI-compatible runner.",
+            permissions: [.networkOpenAICompatible],
+            intelligenceProviders: [
+                CribbleExtensionIntelligenceProvider(
+                    id: "local",
+                    title: "Local Runner",
+                    baseURL: URL(string: "http://localhost:11434/v1")!,
+                    modelID: "llama3.2",
+                    embeddingModelID: nil,
+                    trustLabel: "Localhost"
+                )
+            ]
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+    }
+
+    @Test
     func rejectsProviderProfilesOnWrongKind() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.actions",

@@ -379,6 +379,21 @@ enum ExtensionManifestLoader {
         return scheme == "http" || scheme == "https"
     }
 
+    private static func isLoopbackHost(_ host: String?) -> Bool {
+        guard let host = host?.lowercased(), !host.isEmpty else { return false }
+        return host == "localhost"
+            || host == "127.0.0.1"
+            || host == "::1"
+            || host.hasSuffix(".localhost")
+    }
+
+    private static func isSecureProviderURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        if scheme == "https" { return true }
+        if scheme == "http", isLoopbackHost(url.host) { return true }
+        return false
+    }
+
     private static func validatePermissions(
         _ permissions: [CribbleExtensionPermission],
         manifest: CribbleExtensionManifest
@@ -463,8 +478,8 @@ enum ExtensionManifestLoader {
             if provider.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Intelligence provider title is required.")
             }
-            if !isHTTPURL(provider.baseURL) {
-                throw ExtensionManifestError.invalidContribution("\(provider.baseURL.absoluteString) must be an http or https provider URL.")
+            if !isSecureProviderURL(provider.baseURL) {
+                throw ExtensionManifestError.invalidContribution("\(provider.baseURL.absoluteString) must be an https provider URL unless it targets localhost.")
             }
             if provider.modelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Intelligence provider modelID is required.")

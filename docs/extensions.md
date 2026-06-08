@@ -284,6 +284,8 @@ Permission rules are intentionally narrow in API v1:
   Project Intelligence context;
 - intelligence-provider extensions that contribute remote runner profiles must
   request exactly `network-openai-compatible`;
+- intelligence-provider `baseURL` values must use `https` for remote hosts;
+  `http` is accepted only for localhost or loopback development runners;
 - renderer and importer extensions must not request permissions because they
   are declarative aliases or lanes only;
 - `read-project-notes` is reserved for a future consented project-scope API and

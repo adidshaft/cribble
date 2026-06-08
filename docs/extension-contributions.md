@@ -73,7 +73,7 @@ the best way: declarative, inspectable, reversible, and easy to test.
 | Lane | First contribution | Access posture |
 | --- | --- | --- |
 | Quick action | A useful prompt in the Chat HUD slash palette | Exactly `read-current-note` |
-| Intelligence provider | A local, VPS, or team OpenAI-compatible runner profile | Exactly `network-openai-compatible`; API keys in Keychain |
+| Intelligence provider | A local, VPS, or team OpenAI-compatible runner profile | Exactly `network-openai-compatible`; HTTPS unless localhost; API keys in Keychain |
 | Renderer | A safe alias for an existing built-in renderer | No file access |
 | Importer | Declared file extensions and review copy for a future converter | No execution; user-selected files only |
 

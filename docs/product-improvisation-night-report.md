@@ -80,6 +80,9 @@ Cribble now has a concrete, safe foundation for plugins/extensions:
 - The same preflight confirmation now guards sidebar/context-menu Project Intelligence starts, so quick entry points are safer too.
 - The Project Intelligence preflight now names remote runner endpoints, selected models, and extension trust labels before scanning notes, making VPS/team-runner decisions more explicit.
 - Remote Project Intelligence preflight now separates the runner details from a visible orange Data Boundary row, explicitly naming prompts, note excerpts, generated summaries, and embedding requests that may leave the Mac.
+- Extension remote-runner manifests now require HTTPS for non-local provider
+  URLs while still allowing localhost HTTP development runners, tightening VPS
+  and team-runner safety without breaking local model setups.
 - Intelligence HUD runner tooltips, inline warnings, and copied handoff checklists now reuse the same precise remote Data Boundary language as preflight and consent.
 - Extension-provided remote runner profiles now show a compact handoff strip in the Intelligence HUD with trust/source details and a copyable endpoint/model/API-key/revocation checklist.
 - The remote-runner consent sheet now includes Copy Review, letting users paste
@@ -868,6 +871,7 @@ Latest pass:
 - Latest `swift test --filter 'IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the copied remote-runner template and public contribution guide: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane` passed on 2026-06-08 after adding the Chat HUD slash-command Guide recovery action: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after making Settings extension starter rules wrap in an adaptive grid: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'ExtensionManifestTests/rejectsRemoteProviderProfilesWithoutHTTPS|ExtensionManifestTests/allowsLocalProviderProfilesOverHTTP|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after requiring HTTPS for non-local extension remote-runner provider URLs: 3 Swift Testing tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

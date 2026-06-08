@@ -664,6 +664,9 @@ Latest pass:
 - Settings > Extensions now also offers the Contribution Guide directly from
   the no-extension empty state, so first-time authors can read the read-only
   safety contract before creating a starter manifest.
+- The sidebar empty state now mirrors the first-run launchpad: no-folder users
+  can open the Demo Tour immediately, while opened empty folders offer Tasks
+  beside New Note and Today.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -709,6 +712,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding native extension review routes to README and CONTRIBUTING: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testWelcomeLaunchpadIncludesProjectTaskLane|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testWelcomeStartGridIncludesContributorPath'` passed on 2026-06-08 after adding the welcome Tasks launchpad action: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding the Contribution Guide action to the Extensions empty state: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testSidebarEmptyStateOffersDemoTourAndTaskLane|CribbleUITests/testWelcomeLaunchpadIncludesProjectTaskLane'` passed on 2026-06-08 after adding Demo Tour and Tasks actions to the sidebar empty state: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

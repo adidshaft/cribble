@@ -116,6 +116,13 @@ struct SidebarView: View {
                             Label("Today", systemImage: "calendar.badge.plus")
                         }
                         .buttonStyle(.bordered)
+
+                        Button {
+                            library.openTasksFile()
+                        } label: {
+                            Label("Tasks", systemImage: "checklist.checked")
+                        }
+                        .buttonStyle(.bordered)
                     } else {
                         Button {
                             library.chooseFolder(sortMode: settings.fileSortMode)
@@ -123,6 +130,13 @@ struct SidebarView: View {
                             Label("Open Folder", systemImage: "folder")
                         }
                         .buttonStyle(.borderedProminent)
+
+                        Button {
+                            library.openDemoLibrary(sortMode: settings.fileSortMode)
+                        } label: {
+                            Label("Open Demo Tour", systemImage: "sparkles")
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
                 .padding(.vertical, 24)

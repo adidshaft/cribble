@@ -918,6 +918,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("Open or create Tasks.md for the current folder"))
     }
 
+    func testSidebarEmptyStateOffersDemoTourAndTaskLane() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sidebarURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SidebarView.swift")
+        let sidebar = try String(contentsOf: sidebarURL, encoding: .utf8)
+
+        XCTAssertTrue(sidebar.contains("library.openDemoLibrary(sortMode: settings.fileSortMode)"))
+        XCTAssertTrue(sidebar.contains("Label(\"Open Demo Tour\", systemImage: \"sparkles\")"))
+        XCTAssertTrue(sidebar.contains("library.openTasksFile()"))
+        XCTAssertTrue(sidebar.contains("Label(\"Tasks\", systemImage: \"checklist.checked\")"))
+    }
+
     func testShortcutPopoverSurfacesHelpRecoveryPaths() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

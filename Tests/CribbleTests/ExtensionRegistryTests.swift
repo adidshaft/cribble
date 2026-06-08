@@ -509,6 +509,7 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("Help > Copy Extension Proposal"))
         #expect(guide.contains("Help > Copy Import Lane Setup Review"))
         #expect(guide.contains("File > Import > Copy Review"))
+        #expect(guide.contains("Settings > Project Intelligence > Copy Review"))
         #expect(guide.contains("Help > Copy Remote Runner Setup Review"))
         #expect(guide.contains("declarative, inspectable, reversible"))
         #expect(guide.contains("API v1 extensions are declarative"))

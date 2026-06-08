@@ -79,9 +79,10 @@ the best way: declarative, inspectable, reversible, and easy to test.
 
 Importer proposals must use **Help > Copy Import Lane Setup Review** or
 **File > Import > Copy Review** before adding or adapting a manifest.
-Remote-runner proposals must use **Help > Copy Remote Runner Setup Review** so
-ownership, retention, logging, access controls, Keychain handling, and
-revocation are visible.
+Remote-runner proposals must use
+**Settings > Project Intelligence > Copy Review** or
+**Help > Copy Remote Runner Setup Review** so ownership, retention, logging,
+access controls, Keychain handling, and revocation are visible.
 
 ## Executable Plugins
 

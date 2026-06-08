@@ -771,6 +771,9 @@ Latest pass:
 - The welcome starter checklist now also names Settings > Project Intelligence >
   Copy Review before VPS/team remote-runner use, so first-run guidance matches
   the Settings and DemoNotes handoff.
+- The Remote Runner Setup Review template and public extension contribution
+  guide now include Settings > Project Intelligence > Copy Review as a native
+  route beside Help > Copy Remote Runner Setup Review.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -856,6 +859,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionStarterRulesSurfaceContributionConstraints|CribbleUITests/testExtensionSettingsLinksToContributionGuide'` passed on 2026-06-08 after making least-writing a first-class Settings extension starter rule: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the Settings > Project Intelligence > Copy Review remote-runner handoff: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the first-run remote-runner checklist: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the copied remote-runner template and public contribution guide: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

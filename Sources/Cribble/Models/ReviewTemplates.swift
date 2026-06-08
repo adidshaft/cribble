@@ -20,6 +20,11 @@ enum RemoteRunnerSetupReview {
     API key:
     Store credentials in Keychain. Do not put secrets in manifests, notes, examples, fixtures, or docs.
 
+    Native review routes:
+    - Settings > Project Intelligence > Copy Review
+    - Help > Copy Remote Runner Setup Review
+    - Settings > Extensions > Contribution Guide
+
     Approval checklist:
     - Endpoint is controlled by the user, team, or trusted vendor.
     - Retention policy, logging, and access controls are understood before use.

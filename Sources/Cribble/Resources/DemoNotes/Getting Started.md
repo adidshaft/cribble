@@ -36,11 +36,11 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 
 ## Focus, outline & folders
 
-- **Command N** proposes a new `Untitled.md` note. Review it before Cribble writes anything.
-- **Command Shift N** opens or proposes today's note in `Daily/YYYY-MM-DD.md`.
-- **Command Shift F** toggles Focus Mode (hides the sidebar for distraction-free reading).
-- **Command Option O** toggles the headings outline.
-- **Command O** opens a folder, and **Command R** refreshes it.
+- **N** proposes a new `Untitled.md` note. Review it before Cribble writes anything.
+- **Command N** opens or proposes today's note in `Daily/YYYY-MM-DD.md`.
+- **Space** toggles Focus Mode (hides the sidebar for distraction-free reading).
+- **O** toggles the headings outline.
+- **S** jumps to Search files, **C** opens AI chat, and **T** opens Tasks.
 - **Right-click a folder** to **Pin** it to the top or **Choose Icon…** — both are sidebar-only; files on disk never move.
 - **Right-click a note** to reveal it in Finder, copy its file path, copy Markdown, copy a normal Markdown link, or copy a `[[Wiki Link]]` for pasting into another note.
 
@@ -49,21 +49,25 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | Shortcut | Action |
 | :--- | :--- |
 | `H` | Highlight selected text |
-| `B` | Drop a reading bookmark |
-| `P` | Toggle the Reading Trail panel |
+| `B` | Drop or resume a reading bookmark |
+| `R` | Toggle the Reading Trail panel |
 | `Esc` | Exit highlight mode · close a zoom overlay |
-| `⌘ ←` / `⌘ →` | Back · Forward |
-| `⌘ N` | New note |
-| `⌘ ⇧ N` | Open today's note |
-| `⌘ ⌥ O` | Toggle outline |
-| `⌘ ⇧ F` | Toggle Focus Mode |
-| `⌘ O` / `⌘ R` | Open folder · Refresh |
-| `⌘ ⌥ E` | Open current file in your editor |
-| `⌘ ⌥ ⇧ M` | Copy current note as Markdown |
-| `⌘ ⌥ ⇧ K` | Copy current note as a Markdown link |
-| `⌘ ⌥ L` | AI Link Notes |
-| `⌘ ⌥ I` | Project Intelligence |
-| `⌘ J` | Open Cribble AI chat |
+| `←` / `→` | Back · Forward |
+| `S` | Search files |
+| `O` | Toggle outline |
+| `I` | Project Intelligence |
+| `C` | Open Cribble AI chat |
+| `N` | New note |
+| `⌘ N` | Open today's note |
+| `T` | Open Tasks |
+| `E` | Open current file in your editor |
+| `L` | AI Link Notes |
+| `Space` | Toggle Focus Mode |
+| `F` | Open current file in Finder |
+| `⌘ M` | Copy current note as Markdown |
+| `⌘ L` | Copy current note as a Markdown link |
+| `⌘ W` | Copy current note as a wiki link |
+| `⌘ I` | Import |
 | `⌘ ,` | Settings |
 
 ## Mouse & trackpad

@@ -52,7 +52,7 @@ Send any checkbox to **Reminders**, **Calendar**, or a backlinked **Tasks.md**, 
 
 ## New in 1.2.0 — Cribble AI
 
-A local-first AI assistant that can keep notes on this Mac with on-device models, or use clearly labeled Claude/Codex CLI choices when you opt in. Press **Command J** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. → [[Cribble AI]]
+A local-first AI assistant that can keep notes on this Mac with on-device models, or use clearly labeled Claude/Codex CLI choices when you opt in. Press **C** (or click the toolbar/menu-bar control) to open the chat, then ask a question about the note you're reading. → [[Cribble AI]]
 
 ## 60-second quick try
 
@@ -60,16 +60,16 @@ A local-first AI assistant that can keep notes on this Mac with on-device models
 2. Press **B** to drop a reading bookmark, then scroll away and watch the **Resume** strip appear.
 3. Click a wiki link, like [[Markdown Showcase]], to jump between notes.
 4. Click a missing wiki link, like [[A Note I Haven't Written]], and notice that creation also waits for review.
-5. Press **Command N**, review the proposed `Untitled.md`, then cancel or create it.
-6. Press **Command Shift N** to open or propose today's note.
+5. Press **N**, review the proposed `Untitled.md`, then cancel or create it.
+6. Press **Command N** to open or propose today's note.
 7. Choose **AI → Summarize Current Note**, **Explain Current Note Simply**, or
    **Find Related Notes** to open Cribble AI with a useful built-in prompt.
 8. Choose **AI → Create Index Note** to propose a reviewed `index.md` map.
-9. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
-10. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
+9. Choose **AI → Draft Today with AI** (or press **C** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
+10. Choose **AI → Extract Tasks from Current Note** (or press **C** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
 11. Use **Copy Diff** in the review sheet when you want a teammate to inspect an AI patch before you apply it.
 12. Use **File → Copy Markdown** or **Copy Markdown Link** to hand the current note to another app.
-13. Press **Command J** and ask *"what is this library about?"*
+13. Press **C** and ask *"what is this library about?"*
 14. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
@@ -79,8 +79,8 @@ changes in this demo copy only.
 
 - [ ] Read [[Getting Started]] and highlight one useful sentence.
 - [ ] Click a missing wiki link and notice that new note creation is review-first.
-- [ ] Press **Command N** and notice that new notes go through a review sheet before writing.
-- [ ] Press **Command Shift N** and notice the daily note also waits for review before writing.
+- [ ] Press **N** and notice that new notes go through a review sheet before writing.
+- [ ] Press **Command N** and notice the daily note also waits for review before writing.
 - [ ] Try **AI → Summarize Current Note**, **Explain Current Note Simply**, or
   **Find Related Notes** for one-click reading help.
 - [ ] Try **AI → Create Index Note** for a reviewed folder map proposal.
@@ -91,8 +91,8 @@ changes in this demo copy only.
 - [ ] Use **Help → Show Diagnostic Report → Copy Next Actions** when you only need the actionable checklist.
 - [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
 - [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.
-- [ ] Press **P** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** after visiting a few notes.
-- [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
+- [ ] Press **R** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** after visiting a few notes.
+- [ ] Open [[Cribble AI]], press **C**, and ask about the current note.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
 - [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.

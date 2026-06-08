@@ -223,7 +223,7 @@ This is a good starter for research, support, product, and legal review folders:
 }
 ```
 
-Once this is enabled, open **Command J**, type `/`, and choose the team action.
+Once this is enabled, press **C**, type `/`, and choose the team action.
 
 ## When to stop
 

@@ -434,6 +434,9 @@ struct ContentView: View {
         content
         .searchable(text: $library.searchText, placement: .toolbar, prompt: "Search files")
         .searchFocused($isSearchFocused)
+        .simultaneousGesture(TapGesture().onEnded {
+            isSearchFocused = false
+        })
         .onChange(of: settings.isFocusMode, initial: true) {
             let isFocus = settings.isFocusMode
             withAnimation {
@@ -444,6 +447,22 @@ struct ContentView: View {
             navigationToolbar
             primaryToolbar
         }
+    }
+
+    private var readerShortcutActions: ReaderView.ShortcutActions {
+        ReaderView.ShortcutActions(
+            navigateBack: navigateBackAction,
+            navigateForward: navigateForwardAction,
+            focusSearch: { isSearchFocused = true },
+            toggleOutline: { settings.showOutline.toggle() },
+            toggleIntelligence: { openIntelligenceHUD() },
+            toggleChat: { openChatHUD() },
+            newNote: newNoteAction,
+            openTasks: openTasksAction,
+            openInEditor: selectedDocumentAction { library.openSelectedInEditor(settings: settings) },
+            runAILinking: library.hasFolders && !library.isRunningAI ? { showingAIProviderSheet = true } : nil,
+            revealInFinder: selectedDocumentAction(library.revealSelectedDocumentInFinder)
+        )
     }
 
     private var content: some View {
@@ -474,7 +493,7 @@ struct ContentView: View {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
         } detail: {
-            ReaderView()
+            ReaderView(shortcutActions: readerShortcutActions)
         }
     }
 
@@ -482,7 +501,7 @@ struct ContentView: View {
     /// it on demand, never changing the window size.
     private var compactLayout: some View {
         ZStack(alignment: .leading) {
-            ReaderView()
+            ReaderView(shortcutActions: readerShortcutActions)
 
             if showCompactSidebar {
                 Color.black.opacity(0.35)
@@ -536,7 +555,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateBack)
             .cribbleToolbarIcon()
-            .help("Navigate back (Command-Left)")
+            .help("Navigate back (Left)")
 
             Button {
                 library.navigateForward()
@@ -545,7 +564,7 @@ struct ContentView: View {
             }
             .disabled(!library.canNavigateForward)
             .cribbleToolbarIcon()
-            .help("Navigate forward (Command-Right)")
+            .help("Navigate forward (Right)")
         }
     }
 
@@ -562,7 +581,7 @@ struct ContentView: View {
                 Label("Focus Mode", systemImage: settings.isFocusMode ? "eye.slash.fill" : "eye.slash")
             }
             .cribbleToolbarIcon()
-            .help("Toggle Focus Mode (Command-Shift-F)")
+            .help("Toggle Focus Mode (Space)")
 
             Button {
                 settings.showOutline.toggle()
@@ -571,7 +590,7 @@ struct ContentView: View {
             }
             .disabled(library.selectedDocument == nil || settings.isFocusMode)
             .cribbleToolbarIcon()
-            .help("Toggle Headings Outline (Command-Option-O)")
+            .help("Toggle Headings Outline (O)")
 
             Button {
                 showingAIProviderSheet = true
@@ -580,7 +599,7 @@ struct ContentView: View {
             }
             .disabled(!library.hasFolders || library.isRunningAI)
             .cribbleToolbarIcon()
-            .help("Ask a local AI tool to suggest wiki links with a patch preview (Command-Option-L)")
+            .help("Ask a local AI tool to suggest wiki links with a patch preview (L)")
 
             Button {
                 openChatHUD()
@@ -588,7 +607,7 @@ struct ContentView: View {
                 Label("Cribble AI", systemImage: "bubble.left.and.text.bubble.right")
             }
             .cribbleToolbarIcon()
-            .help("Open the local-first AI chat (Command-J)")
+            .help("Open the local-first AI chat (C)")
         }
     }
 

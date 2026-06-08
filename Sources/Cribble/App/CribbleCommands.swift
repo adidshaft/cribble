@@ -61,39 +61,33 @@ struct CribbleCommands: Commands {
         // File — folder operations (replaces the default "New" group).
         CommandGroup(replacing: .newItem) {
             Button("New Note", action: { newNote?() })
-                .keyboardShortcut("n", modifiers: [.command])
                 .disabled(newNote == nil)
 
             Button("Open Today Note", action: { openTodayNote?() })
-                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .keyboardShortcut("n", modifiers: [.command])
                 .disabled(openTodayNote == nil)
 
             Divider()
 
             Button("Open Folder…", action: { openFolder?() })
-                .keyboardShortcut("o", modifiers: [.command])
                 .disabled(openFolder == nil)
 
             Button("Import…", action: { importFile?() })
-                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .keyboardShortcut("i", modifiers: [.command])
                 .disabled(importFile == nil)
 
             Button("Refresh", action: { refreshFolder?() })
-                .keyboardShortcut("r", modifiers: [.command])
                 .disabled(refreshFolder == nil)
 
             Button("Open Tasks", action: { openTasks?() })
-                .keyboardShortcut("t", modifiers: [.command, .option])
                 .disabled(openTasks == nil)
 
             Divider()
 
             Button("Open in Editor", action: { openInEditor?() })
-                .keyboardShortcut("e", modifiers: [.command, .option])
                 .disabled(openInEditor == nil)
 
             Button("Reveal in Finder", action: { revealSelectedDocument?() })
-                .keyboardShortcut("r", modifiers: [.command, .option])
                 .disabled(revealSelectedDocument == nil)
 
             Button("Copy File Path", action: { copySelectedDocumentPath?() })
@@ -101,15 +95,15 @@ struct CribbleCommands: Commands {
                 .disabled(copySelectedDocumentPath == nil)
 
             Button("Copy Markdown", action: { copySelectedDocumentMarkdown?() })
-                .keyboardShortcut("m", modifiers: [.command, .option, .shift])
+                .keyboardShortcut("m", modifiers: [.command])
                 .disabled(copySelectedDocumentMarkdown == nil)
 
             Button("Copy Markdown Link", action: { copySelectedDocumentMarkdownLink?() })
-                .keyboardShortcut("k", modifiers: [.command, .option, .shift])
+                .keyboardShortcut("l", modifiers: [.command])
                 .disabled(copySelectedDocumentMarkdownLink == nil)
 
             Button("Copy Wiki Link", action: { copySelectedDocumentWikiLink?() })
-                .keyboardShortcut("l", modifiers: [.command, .option, .shift])
+                .keyboardShortcut("w", modifiers: [.command])
                 .disabled(copySelectedDocumentWikiLink == nil)
 
             Divider()
@@ -135,11 +129,9 @@ struct CribbleCommands: Commands {
             Divider()
 
             Button("Toggle Outline", action: { toggleOutline?() })
-                .keyboardShortcut("o", modifiers: [.command, .option])
                 .disabled(toggleOutline == nil)
 
             Button("Toggle Focus Mode", action: { toggleFocusMode?() })
-                .keyboardShortcut("f", modifiers: [.command, .shift])
                 .disabled(toggleFocusMode == nil)
 
             Divider()
@@ -156,7 +148,6 @@ struct CribbleCommands: Commands {
 
         CommandGroup(after: .textEditing) {
             Button("Find in Files", action: { focusSearch?() })
-                .keyboardShortcut("f", modifiers: [.command])
                 .disabled(focusSearch == nil)
 
             Button("Clear Search", action: { clearSearch?() })
@@ -167,11 +158,9 @@ struct CribbleCommands: Commands {
         // AI — the two LLM entry points.
         CommandMenu("AI") {
             Button("AI Link Notes…", action: { runAILinking?() })
-                .keyboardShortcut("l", modifiers: [.command, .option])
                 .disabled(runAILinking == nil)
 
             Button("Cribble AI Chat", action: { toggleChatHUD?() })
-                .keyboardShortcut("j", modifiers: [.command])
                 .disabled(toggleChatHUD == nil)
 
             Divider()
@@ -199,7 +188,6 @@ struct CribbleCommands: Commands {
             Divider()
 
             Button("Project Intelligence", action: { toggleIntelligenceHUD?() })
-                .keyboardShortcut("i", modifiers: [.command, .option])
                 .disabled(toggleIntelligenceHUD == nil)
         }
 

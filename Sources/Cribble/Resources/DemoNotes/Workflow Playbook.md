@@ -17,7 +17,7 @@ Use this flow for articles, specs, meeting notes, and long research files.
 2. Highlight a sentence that changes what you think.
 3. Press **B** where you want to resume later.
 4. Follow two wiki links.
-5. Press **P** and use the Reading Trail to reconstruct how you got there.
+5. Press **R** and use the Reading Trail to reconstruct how you got there.
 
 Try it here:
 

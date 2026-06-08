@@ -7,7 +7,7 @@ tags: [demo, feature, ai]
 
 A local-first assistant that reads your notes and prefers **on-your-Mac** models. You can also choose Claude or Codex through command-line sessions you are already signed into; Cribble labels that data boundary before you send note context. Open it three ways:
 
-- Press **Command J**
+- Press **C**
 - Click the **✦ icon in the menu bar** (top-right of your screen)
 - Toolbar → **Cribble AI**
 
@@ -17,7 +17,7 @@ A local-first assistant that reads your notes and prefers **on-your-Mac** models
 ## The four things it does
 
 ### 1. Answer questions about what you're reading
-Open any note, then press **Command J** and ask. The model automatically sees the note you have open.
+Open any note, then press **C** and ask. The model automatically sees the note you have open.
 For the most common case, choose **AI → Summarize Current Note** and Cribble
 opens the chat with the reviewed summary prompt ready to run.
 Choose **AI → Explain Current Note Simply** when you want a beginner-friendly

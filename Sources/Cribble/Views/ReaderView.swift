@@ -4,9 +4,28 @@ import Textual
 import WebKit
 
 struct ReaderView: View {
+    struct ShortcutActions {
+        let navigateBack: (() -> Void)?
+        let navigateForward: (() -> Void)?
+        let focusSearch: () -> Void
+        let toggleOutline: () -> Void
+        let toggleIntelligence: () -> Void
+        let toggleChat: () -> Void
+        let newNote: (() -> Void)?
+        let openTasks: (() -> Void)?
+        let openInEditor: (() -> Void)?
+        let runAILinking: (() -> Void)?
+        let revealInFinder: (() -> Void)?
+    }
+
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
     @State private var showingShortcuts = false
+    let shortcutActions: ShortcutActions?
+
+    init(shortcutActions: ShortcutActions? = nil) {
+        self.shortcutActions = shortcutActions
+    }
 
     var body: some View {
         Group {
@@ -24,7 +43,8 @@ struct ReaderView: View {
                     onOpenURL: { library.handleOpenURL($0) },
                     onFillReadme: { provider in
                         library.runAILinking(provider: provider, mode: .updateReadme)
-                    }
+                    },
+                    shortcutActions: shortcutActions
                 )
                 .id(document.url)
             } else {
@@ -74,23 +94,23 @@ private struct ShortcutReferencePopover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             shortcutSection("App", rows: [
-                ("Command Left / Right", "Back / Forward"),
-                ("Command F", "Find in files"),
-                ("Command N", "New note"),
-                ("Command Shift N", "Open today's note"),
-                ("Command O", "Open folder"),
-                ("Command Shift I", "Import"),
-                ("Command R", "Refresh folder"),
-                ("Command Option T", "Open Tasks"),
-                ("Command Option E", "Open current file in your editor"),
-                ("Command Option Shift M", "Copy current note as Markdown"),
-                ("Command Option Shift K", "Copy current note as Markdown link"),
-                ("Command Option Shift L", "Copy current note wiki link"),
-                ("Command Option O", "Toggle outline"),
-                ("Command Shift F", "Toggle Focus Mode"),
-                ("Command Option L", "AI Link Notes"),
-                ("Command Option I", "Project Intelligence"),
-                ("Command J", "Open Cribble AI chat"),
+                ("Left / Right", "Back / Forward"),
+                ("S", "Search files"),
+                ("O", "Outline"),
+                ("I", "Intelligence window"),
+                ("C", "AI chat"),
+                ("N", "New note"),
+                ("Command N", "Open today's note"),
+                ("T", "Open Tasks"),
+                ("E", "Open current file in your editor"),
+                ("L", "AI Link Notes"),
+                ("R", "Reading Trail"),
+                ("Space", "Focus Mode"),
+                ("F", "Open current file in Finder"),
+                ("Command M", "Copy current note as Markdown"),
+                ("Command L", "Copy current note as Markdown link"),
+                ("Command W", "Copy current note wiki link"),
+                ("Command I", "Import"),
                 ("Command Shift D", "Show diagnostics")
             ])
 
@@ -115,7 +135,6 @@ private struct ShortcutReferencePopover: View {
             shortcutSection("Reading", rows: [
                 ("H", "Highlight selected text"),
                 ("B", "Drop a reading bookmark"),
-                ("P", "Toggle Reading Trail"),
                 ("Reading Trail", "Copy Trail Summary for a zero-file handoff"),
                 ("Esc", "Exit highlight mode / close zoom overlay")
             ])
@@ -190,6 +209,7 @@ private struct ReaderDocumentView: View {
     let onSelectLink: (LinkedFileSummary) -> Void
     let onOpenURL: (URL) -> OpenURLAction.Result
     let onFillReadme: (AIProvider) -> Void
+    let shortcutActions: ReaderView.ShortcutActions?
 
     /// The right-docked panels (headings outline + reading trail). Extracted
     /// from `body` to keep the main view expression within the type-checker's
@@ -353,7 +373,7 @@ private struct ReaderDocumentView: View {
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,
                 isHighlightMode: $isHighlightMode,
-                onDropBookmark: { dropReadingBookmark() },
+                onBookmarkKey: { handleBookmarkKey() },
                 onHighlightKey: { handleHighlightKey() },
                 onHighlightMouseUp: { captureHighlightFromSelection(keepModeActive: true) },
                 onToggleTrail: {
@@ -361,6 +381,21 @@ private struct ReaderDocumentView: View {
                         readingTrail.isPanelVisible.toggle()
                     }
                 },
+                onNavigateBack: { shortcutActions?.navigateBack?() },
+                onNavigateForward: { shortcutActions?.navigateForward?() },
+                onFocusSearch: { shortcutActions?.focusSearch() },
+                onToggleOutline: {
+                    guard !settings.isFocusMode else { return }
+                    shortcutActions?.toggleOutline()
+                },
+                onToggleIntelligence: { shortcutActions?.toggleIntelligence() },
+                onToggleChat: { shortcutActions?.toggleChat() },
+                onNewNote: { shortcutActions?.newNote?() },
+                onOpenTasks: { shortcutActions?.openTasks?() },
+                onOpenInEditor: { shortcutActions?.openInEditor?() },
+                onRunAILinking: { shortcutActions?.runAILinking?() },
+                onRevealInFinder: { shortcutActions?.revealInFinder?() },
+                onToggleFocusMode: { settings.isFocusMode.toggle() },
                 onEscape: {
                     // Routed through the (reliable) shortcut hub because a
                     // custom `.overlay` isn't in the responder chain, so the
@@ -419,6 +454,14 @@ private struct ReaderDocumentView: View {
         restoredDocumentURL = document.url
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             resumeBookmark(bookmark)
+        }
+    }
+
+    private func handleBookmarkKey() {
+        if let bookmark = readingAnnotations.bookmark(for: document.url) {
+            resumeBookmark(bookmark)
+        } else {
+            dropReadingBookmark()
         }
     }
 
@@ -834,10 +877,22 @@ final class ReaderShortcutHub {
 
     private var activeToken: UUID?
     private var isHighlightMode: Binding<Bool>?
-    private var onDropBookmark: (() -> Void)?
+    private var onBookmarkKey: (() -> Void)?
     private var onHighlightKey: (() -> Void)?
     private var onHighlightMouseUp: (() -> Void)?
     private var onToggleTrail: (() -> Void)?
+    private var onNavigateBack: (() -> Void)?
+    private var onNavigateForward: (() -> Void)?
+    private var onFocusSearch: (() -> Void)?
+    private var onToggleOutline: (() -> Void)?
+    private var onToggleIntelligence: (() -> Void)?
+    private var onToggleChat: (() -> Void)?
+    private var onNewNote: (() -> Void)?
+    private var onOpenTasks: (() -> Void)?
+    private var onOpenInEditor: (() -> Void)?
+    private var onRunAILinking: (() -> Void)?
+    private var onRevealInFinder: (() -> Void)?
+    private var onToggleFocusMode: (() -> Void)?
     // Returns true if Escape was consumed (e.g. an overlay was dismissed).
     private var onEscape: (() -> Bool)?
     nonisolated(unsafe) private var monitor: Any?
@@ -847,18 +902,42 @@ final class ReaderShortcutHub {
     func activate(
         token: UUID,
         isHighlightMode: Binding<Bool>,
-        onDropBookmark: @escaping () -> Void,
+        onBookmarkKey: @escaping () -> Void,
         onHighlightKey: @escaping () -> Void,
         onHighlightMouseUp: @escaping () -> Void,
         onToggleTrail: @escaping () -> Void,
+        onNavigateBack: @escaping () -> Void,
+        onNavigateForward: @escaping () -> Void,
+        onFocusSearch: @escaping () -> Void,
+        onToggleOutline: @escaping () -> Void,
+        onToggleIntelligence: @escaping () -> Void,
+        onToggleChat: @escaping () -> Void,
+        onNewNote: @escaping () -> Void,
+        onOpenTasks: @escaping () -> Void,
+        onOpenInEditor: @escaping () -> Void,
+        onRunAILinking: @escaping () -> Void,
+        onRevealInFinder: @escaping () -> Void,
+        onToggleFocusMode: @escaping () -> Void,
         onEscape: @escaping () -> Bool
     ) {
         activeToken = token
         self.isHighlightMode = isHighlightMode
-        self.onDropBookmark = onDropBookmark
+        self.onBookmarkKey = onBookmarkKey
         self.onHighlightKey = onHighlightKey
         self.onHighlightMouseUp = onHighlightMouseUp
         self.onToggleTrail = onToggleTrail
+        self.onNavigateBack = onNavigateBack
+        self.onNavigateForward = onNavigateForward
+        self.onFocusSearch = onFocusSearch
+        self.onToggleOutline = onToggleOutline
+        self.onToggleIntelligence = onToggleIntelligence
+        self.onToggleChat = onToggleChat
+        self.onNewNote = onNewNote
+        self.onOpenTasks = onOpenTasks
+        self.onOpenInEditor = onOpenInEditor
+        self.onRunAILinking = onRunAILinking
+        self.onRevealInFinder = onRevealInFinder
+        self.onToggleFocusMode = onToggleFocusMode
         self.onEscape = onEscape
         installMonitorIfNeeded()
     }
@@ -867,15 +946,27 @@ final class ReaderShortcutHub {
         guard activeToken == token else { return }
         activeToken = nil
         isHighlightMode = nil
-        onDropBookmark = nil
+        onBookmarkKey = nil
         onHighlightKey = nil
         onHighlightMouseUp = nil
         onToggleTrail = nil
+        onNavigateBack = nil
+        onNavigateForward = nil
+        onFocusSearch = nil
+        onToggleOutline = nil
+        onToggleIntelligence = nil
+        onToggleChat = nil
+        onNewNote = nil
+        onOpenTasks = nil
+        onOpenInEditor = nil
+        onRunAILinking = nil
+        onRevealInFinder = nil
+        onToggleFocusMode = nil
         onEscape = nil
     }
 
     func performDropBookmark() {
-        onDropBookmark?()
+        onBookmarkKey?()
     }
 
     func performHighlightKey() {
@@ -921,6 +1012,20 @@ final class ReaderShortcutHub {
             .subtracting([.capsLock, .shift])
         guard flags.isEmpty else { return event }
 
+        switch event.keyCode {
+        case 49:
+            onToggleFocusMode?()
+            return nil
+        case 123:
+            onNavigateBack?()
+            return nil
+        case 124:
+            onNavigateForward?()
+            return nil
+        default:
+            break
+        }
+
         if event.keyCode == 53 {
             if onEscape?() == true {
                 return nil
@@ -937,14 +1042,41 @@ final class ReaderShortcutHub {
         }
 
         switch key {
-        case "b", "d":
+        case "b":
             performDropBookmark()
+            return nil
+        case "c":
+            onToggleChat?()
+            return nil
+        case "e":
+            onOpenInEditor?()
+            return nil
+        case "f":
+            onRevealInFinder?()
             return nil
         case "h":
             performHighlightKey()
             return nil
-        case "p":
+        case "i":
+            onToggleIntelligence?()
+            return nil
+        case "l":
+            onRunAILinking?()
+            return nil
+        case "n":
+            onNewNote?()
+            return nil
+        case "o":
+            onToggleOutline?()
+            return nil
+        case "r":
             performToggleTrail()
+            return nil
+        case "s":
+            onFocusSearch?()
+            return nil
+        case "t":
+            onOpenTasks?()
             return nil
         default:
             return event
@@ -2515,10 +2647,10 @@ enum WelcomeStarterChecklist {
 
     - [ ] Open a Markdown folder or the bundled Demo Tour.
     - [ ] Read [[Getting Started]] and highlight one useful sentence.
-    - [ ] Press **P** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** for a zero-file research handoff after visiting a few notes.
+    - [ ] Press **R** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** for a zero-file research handoff after visiting a few notes.
     - [ ] Open [[Cribble AI]] and choose the model boundary you trust.
     - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
-    - [ ] Use the welcome **Tasks** button or **Command Option T** to open your project task lane.
+    - [ ] Use the welcome **Tasks** button or press **T** to open your project task lane.
     - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
     - [ ] Search for something that misses and use **Copy Search Handoff** before clearing it.
     - [ ] Review [[Workflow Playbook]] for a real team workflow.

@@ -2426,39 +2426,30 @@ private struct WelcomeView: View {
     @State private var copiedStarterChecklist = false
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 14) {
             Image(systemName: "text.book.closed")
-                .font(.system(size: 42))
+                .font(.system(size: 28, weight: .medium))
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Text("Open a Markdown Folder")
-                    .font(.system(size: 22, weight: .semibold))
-                Text("Cribble reads folders in place, keeps editing in your editor, and can start with the demo path closest to your work.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 17, weight: .semibold))
+                Text("Reads folders in place. No import required.")
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: 420)
+                    .frame(maxWidth: 320)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Button {
                     library.chooseFolder(sortMode: settings.fileSortMode)
                 } label: {
                     Label("Open Folder", systemImage: "folder")
                 }
-                .controlSize(.large)
+                .controlSize(.regular)
                 .cribbleGlassButton(prominent: true)
                 .help("Open a Markdown folder and keep it in the sidebar")
-
-                Button {
-                    library.openDemoLibrary(sortMode: settings.fileSortMode)
-                } label: {
-                    Label("Open Demo Tour", systemImage: "sparkles")
-                }
-                .controlSize(.large)
-                .cribbleGlassButton()
-                .help("Open the bundled DemoNotes tutorial")
 
                 if library.hasFolders {
                     Button {
@@ -2466,7 +2457,7 @@ private struct WelcomeView: View {
                     } label: {
                         Label("New Note", systemImage: "doc.badge.plus")
                     }
-                    .controlSize(.large)
+                    .controlSize(.regular)
                     .cribbleGlassButton()
                     .help("Create a new Markdown note through the review flow")
 
@@ -2475,7 +2466,7 @@ private struct WelcomeView: View {
                     } label: {
                         Label("Today", systemImage: "calendar.badge.plus")
                     }
-                    .controlSize(.large)
+                    .controlSize(.regular)
                     .cribbleGlassButton()
                     .help("Open or create today's Markdown note")
 
@@ -2484,65 +2475,46 @@ private struct WelcomeView: View {
                     } label: {
                         Label("Tasks", systemImage: "checklist.checked")
                     }
-                    .controlSize(.large)
+                    .controlSize(.regular)
                     .cribbleGlassButton()
                     .help("Open or create Tasks.md for the current folder")
                 }
             }
 
-            if !library.rootFolderShortcuts.isEmpty {
-                VStack(spacing: 8) {
+            let folderShortcuts = visibleRootFolderShortcuts
+            if !folderShortcuts.isEmpty {
+                VStack(spacing: 6) {
                     Text("Open folder")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 164), spacing: 8)], spacing: 8) {
-                        ForEach(library.rootFolderShortcuts.prefix(6)) { shortcut in
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: 6)], spacing: 6) {
+                        ForEach(folderShortcuts.prefix(4)) { shortcut in
                             rootFolderButton(shortcut)
                         }
                     }
-                    .frame(maxWidth: 560)
+                    .frame(maxWidth: 460)
                 }
             }
 
             if !library.recentDocumentShortcuts.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text("Continue")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 164), spacing: 8)], spacing: 8) {
-                        ForEach(library.recentDocumentShortcuts.prefix(6)) { shortcut in
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: 6)], spacing: 6) {
+                        ForEach(library.recentDocumentShortcuts.prefix(4)) { shortcut in
                             recentDocumentButton(shortcut)
                         }
                     }
-                    .frame(maxWidth: 560)
+                    .frame(maxWidth: 460)
                 }
             }
 
-            VStack(spacing: 8) {
-                Text("Start with")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 124), spacing: 8)], spacing: 8) {
-                    demoStartButton("Basics", systemImage: "list.bullet.rectangle", note: "Getting Started.md")
-                    demoStartButton("Cribble AI", systemImage: "sparkles", note: "Cribble AI.md")
-                    demoStartButton("Tasks", systemImage: "checklist.checked", note: "Tasks and Intelligence.md")
-                    demoStartButton("Workflows", systemImage: "point.3.connected.trianglepath.dotted", note: "Workflow Playbook.md")
-                    demoStartButton("Research", systemImage: "checklist", note: "Research Review.md")
-                    demoStartButton("Decisions", systemImage: "checkmark.seal", note: "Decision Log.md")
-                    demoStartButton("Extensions", systemImage: "puzzlepiece.extension", note: "Team Extension Kit.md")
-                    demoStartButton("Contribute", systemImage: "person.crop.circle.badge.plus", note: "Extension Contribution Guide.md")
-                    demoStartButton("Remote AI", systemImage: "network", note: "Extensions and Remote Intelligence.md")
-                }
-                .frame(maxWidth: 560)
-            }
-
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button {
                     copyStarterChecklist()
                 } label: {
@@ -2553,18 +2525,14 @@ private struct WelcomeView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .help("Copy a short tour order for trying Cribble with a team or project")
-
-                Button("Reset DemoNotes") {
-                    library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true)
-                }
-                .buttonStyle(.plain)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .help("Restore the bundled demo library to a clean copy")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(32)
+        .padding(22)
+    }
+
+    private var visibleRootFolderShortcuts: [MarkdownLibraryStore.RootFolderShortcut] {
+        library.rootFolderShortcuts.filter { $0.title != "DemoNotes" }
     }
 
     private func copyStarterChecklist() {
@@ -2573,32 +2541,21 @@ private struct WelcomeView: View {
         copiedStarterChecklist = true
     }
 
-    private func demoStartButton(_ title: String, systemImage: String, note: String) -> some View {
-        Button {
-            library.openDemoNote(named: note, sortMode: settings.fileSortMode)
-        } label: {
-            Label(title, systemImage: systemImage)
-        }
-        .controlSize(.regular)
-        .cribbleGlassButton()
-        .help("Open \(note.replacingOccurrences(of: ".md", with: ""))")
-    }
-
     private func rootFolderButton(_ shortcut: MarkdownLibraryStore.RootFolderShortcut) -> some View {
         Button {
             library.openRootLanding(shortcut.url, sortMode: settings.fileSortMode)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Image(systemName: shortcut.icon ?? "folder")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 14)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(shortcut.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .lineLimit(1)
                     Text("\(shortcut.documentCount) note\(shortcut.documentCount == 1 ? "" : "s")")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
@@ -2606,7 +2563,7 @@ private struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .controlSize(.regular)
+        .controlSize(.small)
         .cribbleGlassButton()
         .help("Open \(shortcut.title)")
     }
@@ -2615,17 +2572,17 @@ private struct WelcomeView: View {
         Button {
             library.select(url: shortcut.url)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Image(systemName: "doc.text")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 14)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(shortcut.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .lineLimit(1)
                     Text(shortcut.subtitle)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -2635,7 +2592,7 @@ private struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .controlSize(.regular)
+        .controlSize(.small)
         .cribbleGlassButton()
         .help("Continue \(shortcut.title)")
     }

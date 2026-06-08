@@ -1070,7 +1070,7 @@ final class CribbleUITests: XCTestCase {
         }
     }
 
-    func testWelcomeStartGridIncludesContributorPath() throws {
+    func testWelcomeLaunchpadLeavesDemoNotesOutOfFirstScreen() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile
             .deletingLastPathComponent()
@@ -1079,9 +1079,10 @@ final class CribbleUITests: XCTestCase {
         let readerViewURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReaderView.swift")
         let readerView = try String(contentsOf: readerViewURL, encoding: .utf8)
 
-        XCTAssertTrue(readerView.contains("demoStartButton(\"Contribute\""))
-        XCTAssertTrue(readerView.contains("Extension Contribution Guide.md"))
-        XCTAssertTrue(readerView.contains("person.crop.circle.badge.plus"))
+        XCTAssertTrue(readerView.contains("visibleRootFolderShortcuts"))
+        XCTAssertTrue(readerView.contains("$0.title != \"DemoNotes\""))
+        XCTAssertFalse(readerView.contains("demoStartButton("))
+        XCTAssertFalse(readerView.contains("Reset DemoNotes"))
     }
 
     func testWelcomeLaunchpadIncludesProjectTaskLane() throws {
@@ -1127,7 +1128,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(panel.contains("openDemoNote(named: \"Extension Contribution Guide.md\""))
     }
 
-    func testSidebarEmptyStateOffersDemoTourAndTaskLane() throws {
+    func testSidebarEmptyStateKeepsActionsCompactWithoutDemoTour() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile
             .deletingLastPathComponent()
@@ -1136,8 +1137,8 @@ final class CribbleUITests: XCTestCase {
         let sidebarURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SidebarView.swift")
         let sidebar = try String(contentsOf: sidebarURL, encoding: .utf8)
 
-        XCTAssertTrue(sidebar.contains("library.openDemoLibrary(sortMode: settings.fileSortMode)"))
-        XCTAssertTrue(sidebar.contains("Label(\"Open Demo Tour\", systemImage: \"sparkles\")"))
+        XCTAssertFalse(sidebar.contains("Label(\"Open Demo Tour\", systemImage: \"sparkles\")"))
+        XCTAssertTrue(sidebar.contains(".controlSize(.small)"))
         XCTAssertTrue(sidebar.contains("library.openTasksFile()"))
         XCTAssertTrue(sidebar.contains("Label(\"Tasks\", systemImage: \"checklist.checked\")"))
     }

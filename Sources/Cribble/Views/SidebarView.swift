@@ -95,6 +95,7 @@ struct SidebarView: View {
                     Label("No Markdown Files", systemImage: "doc.text.magnifyingglass")
                 } description: {
                     Text(library.hasFolders ? "Create a note to start this folder." : "Open a folder to start reading Markdown.")
+                        .font(.caption)
                 } actions: {
                     if library.hasFolders {
                         Button {
@@ -103,6 +104,7 @@ struct SidebarView: View {
                             Label("New Note", systemImage: "doc.badge.plus")
                         }
                         .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
 
                         Button {
                             library.openTodayNote()
@@ -110,6 +112,7 @@ struct SidebarView: View {
                             Label("Today", systemImage: "calendar.badge.plus")
                         }
                         .buttonStyle(.bordered)
+                        .controlSize(.small)
 
                         Button {
                             library.openTasksFile()
@@ -117,6 +120,7 @@ struct SidebarView: View {
                             Label("Tasks", systemImage: "checklist.checked")
                         }
                         .buttonStyle(.bordered)
+                        .controlSize(.small)
                     } else {
                         Button {
                             library.chooseFolder(sortMode: settings.fileSortMode)
@@ -124,16 +128,11 @@ struct SidebarView: View {
                             Label("Open Folder", systemImage: "folder")
                         }
                         .buttonStyle(.borderedProminent)
-
-                        Button {
-                            library.openDemoLibrary(sortMode: settings.fileSortMode)
-                        } label: {
-                            Label("Open Demo Tour", systemImage: "sparkles")
-                        }
-                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
                 }
-                .padding(.vertical, 24)
+                .font(.caption)
+                .padding(.vertical, 12)
             } else {
                 let emptySearchHint = SidebarEmptySearchHint(
                     semanticResultCount: semanticIndex.results.count,

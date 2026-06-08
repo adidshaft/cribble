@@ -510,6 +510,9 @@ struct ExtensionRegistryTests {
         #expect(checkpoint.contains("secrets in manifests"))
         #expect(checkpoint.contains("non-native extension UI"))
         #expect(checkpoint.contains("remote intelligence that hides retention"))
+        #expect(checkpoint.contains("Settings summaries"))
+        #expect(checkpoint.contains("exact contribution, import, and remote-runner review routes"))
+        #expect(checkpoint.contains("copied diagnostics or Settings summaries that preserve native review routes"))
         #expect(checkpoint.contains("No executable plugin runtime"))
     }
 }

@@ -91,7 +91,11 @@ Focused validation passed across the newest work:
 - Remote Project Intelligence preflight copy review for team/VPS runner starts.
 - Diagnostics that distinguish local runners from remote runners before asking
   for Keychain credential recovery.
-- Diagnostics next actions and visible recovery strip.
+- Diagnostics next actions, visible recovery strip, and exact extension review
+  routes for contribution guide, proposal, import-lane, and remote-runner
+  handoffs.
+- Settings extension summaries that preserve the same native review routes for
+  issues, PRs, and team chats.
 - Intelligence artifact and Ask answer Markdown handoffs.
 
 Full `swift test` passed after the latest broad Help command, Decision Log

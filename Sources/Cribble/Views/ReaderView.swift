@@ -103,6 +103,15 @@ private struct ShortcutReferencePopover: View {
 
             Divider()
 
+            shortcutSection("Help Menu", rows: [
+                ("Help", "Open or reset DemoNotes"),
+                ("Help", "Open contribution and remote intelligence guides"),
+                ("Help", "Copy starter, research, decision, import, and runner reviews"),
+                ("Help", "Copy diagnostics / report issue")
+            ])
+
+            Divider()
+
             shortcutSection("Reading", rows: [
                 ("H", "Highlight selected text"),
                 ("B", "Drop a reading bookmark"),

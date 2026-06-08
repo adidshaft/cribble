@@ -904,6 +904,22 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("person.crop.circle.badge.plus"))
     }
 
+    func testShortcutPopoverSurfacesHelpRecoveryPaths() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let readerViewURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReaderView.swift")
+        let readerView = try String(contentsOf: readerViewURL, encoding: .utf8)
+
+        XCTAssertTrue(readerView.contains("shortcutSection(\"Help Menu\""))
+        XCTAssertTrue(readerView.contains("Open or reset DemoNotes"))
+        XCTAssertTrue(readerView.contains("contribution and remote intelligence guides"))
+        XCTAssertTrue(readerView.contains("starter, research, decision, import, and runner reviews"))
+        XCTAssertTrue(readerView.contains("Copy diagnostics / report issue"))
+    }
+
     func testHelpMenuGroupsGuidesTemplatesAndDiagnostics() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

@@ -635,6 +635,9 @@ Latest pass:
   so extension authors can move from installed manifests and example creation to
   the strict read-only, least-writing, hard-native-SwiftUI rules without leaving
   the native settings surface.
+- The in-reader Shortcuts popover now includes a compact Help Menu section for
+  recovering DemoNotes, opening contribution/remote-intelligence guides, copying
+  starter/research/decision/import/runner reviews, and diagnostics/reporting.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -671,6 +674,7 @@ Latest pass:
 - Latest `swift test --filter 'IntelligencePreflightTests/testProjectIntelligencePreflightReviewCopiesScopeAndBoundary|IntelligencePreflightTests/testRemoteRunnerSummaryIncludesEndpointModelAndTrustLabel|IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation'` passed on 2026-06-08 after adding Copy Review to remote Project Intelligence preflight: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|ExtensionRegistryTests/extensionGuideDocumentsExecutableReadinessGates|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after aligning the bundled contribution guide, Team Extension Kit, Decision Log, and public manifest reference with Help > Copy Import Lane Setup Review: 1 XCTest test and 2 Swift Testing tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testExtensionSettingsLinksToContributionGuide|CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics'` passed on 2026-06-08 after adding the Settings > Extensions Contribution Guide button: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStartGridIncludesContributorPath'` passed on 2026-06-08 after adding Help Menu recovery paths to the in-reader Shortcuts popover: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

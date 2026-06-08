@@ -1995,8 +1995,8 @@ private struct CustomRunnerHandoffStrip: View {
             Button {
                 onCopy()
             } label: {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 10, weight: .semibold))
+                Label("Copy Review", systemImage: "doc.on.doc")
+                    .font(.system(size: 9, weight: .semibold))
             }
             .buttonStyle(.plain)
             .help("Copy custom runner checklist")
@@ -2035,8 +2035,8 @@ private struct ExtensionRunnerHandoffStrip: View {
             Button {
                 onCopy()
             } label: {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 10, weight: .semibold))
+                Label("Copy Review", systemImage: "doc.on.doc")
+                    .font(.system(size: 9, weight: .semibold))
             }
             .buttonStyle(.plain)
             .help("Copy runner handoff details")

@@ -954,6 +954,22 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("read-only-first contribution guide"))
     }
 
+    func testRemoteRunnerHandoffStripsExposeCopyReviewLabels() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let hudURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/IntelligenceHUD/IntelligenceHUDView.swift")
+        let hud = try String(contentsOf: hudURL, encoding: .utf8)
+
+        XCTAssertTrue(hud.contains("private struct CustomRunnerHandoffStrip"))
+        XCTAssertTrue(hud.contains("private struct ExtensionRunnerHandoffStrip"))
+        XCTAssertEqual(hud.components(separatedBy: "Label(\"Copy Review\", systemImage: \"doc.on.doc\")").count - 1, 2)
+        XCTAssertTrue(hud.contains(".help(\"Copy custom runner checklist\")"))
+        XCTAssertTrue(hud.contains(".help(\"Copy runner handoff details\")"))
+    }
+
     private func index(of needle: String, in haystack: String) -> String.Index {
         guard let index = haystack.range(of: needle)?.lowerBound else {
             XCTFail("Expected to find \(needle)")

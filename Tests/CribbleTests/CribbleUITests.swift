@@ -356,6 +356,22 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(pathfinder.contains("library.statusMessage = \"Copied Pathfinder summary\""))
     }
 
+    func testOutlineEmptyStateCanCopyHeadingStarter() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let outlineURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/OutlineView.swift")
+        let outline = try String(contentsOf: outlineURL, encoding: .utf8)
+
+        XCTAssertTrue(outline.contains("import AppKit"))
+        XCTAssertTrue(outline.contains("Label(\"Copy Heading Starter\", systemImage: \"doc.on.doc\")"))
+        XCTAssertTrue(outline.contains("copyHeadingStarter()"))
+        XCTAssertTrue(outline.contains("NSPasteboard.general.setString(\"## Next section\\n\\nStart writing here.\""))
+        XCTAssertTrue(outline.contains("library.statusMessage = \"Copied heading starter\""))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct OutlineView: View {
@@ -49,12 +50,26 @@ struct OutlineView: View {
                     Label("No Headings", systemImage: "list.bullet.indent")
                 } description: {
                     Text("This document has no markdown headings to show.")
+                } actions: {
+                    Button {
+                        copyHeadingStarter()
+                    } label: {
+                        Label("Copy Heading Starter", systemImage: "doc.on.doc")
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Copy a small Markdown heading scaffold")
                 }
                 .controlSize(.small)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .cribbleMaterialSurface(in: Rectangle())
+    }
+
+    private func copyHeadingStarter() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("## Next section\n\nStart writing here.", forType: .string)
+        library.statusMessage = "Copied heading starter"
     }
 }
 

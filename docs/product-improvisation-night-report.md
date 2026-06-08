@@ -683,6 +683,9 @@ Latest pass:
 - Pathfinder now includes Copy Summary, producing a portable Markdown handoff
   with source, target, existing wiki path, conceptual bridge, and any generated
   explanation for research notes, issues, or team review.
+- The Outline panel's no-heading state now offers Copy Heading Starter, giving
+  new authors a small Markdown scaffold instead of leaving the navigation panel
+  passive.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -734,6 +737,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery|CribbleUITests/testDemoHelpGuideTargetsExistInBundledNotes'` passed on 2026-06-08 after adding recovery actions to the Reading Trail empty state: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testUnresolvedTargetCanCopyMissingWikiLink|CribbleUITests/testUnresolvedCreateUsesReviewFlowAndOpensExistingFile'` passed on 2026-06-08 after adding Copy Wiki Link to the missing-note screen: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'PathfinderTests|CribbleUITests/testPathfinderSheetCanCopySummary'` passed on 2026-06-08 after adding Copy Summary to Pathfinder: 4 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testOutlineEmptyStateCanCopyHeadingStarter|CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths'` passed on 2026-06-08 after adding Copy Heading Starter to the Outline empty state: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

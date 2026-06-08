@@ -62,7 +62,7 @@ final class FolderScannerTests: XCTestCase {
         try FileManager.default.createDirectory(at: notes, withIntermediateDirectories: true)
         try "# Real".write(to: notes.appendingPathComponent("real.md"), atomically: true, encoding: .utf8)
 
-        let ignoredNames = ["node_modules", ".git", ".build", "dist", "DerivedData"]
+        let ignoredNames = ["node_modules", ".git", ".build", "dist", "DerivedData", ".gradle", ".terraform", ".turbo", "coverage", "vendor"]
         for name in ignoredNames {
             let ignored = root.appendingPathComponent(name).appendingPathComponent("nested")
             try FileManager.default.createDirectory(at: ignored, withIntermediateDirectories: true)
@@ -75,6 +75,8 @@ final class FolderScannerTests: XCTestCase {
         XCTAssertEqual(nodes.first?.children.map(\.name), ["README", "real"])
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("node_modules/README.md").path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(".build/README.md").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(".terraform/README.md").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("vendor/README.md").path))
     }
 
     func testScannerSkipsSymlinkCycles() throws {

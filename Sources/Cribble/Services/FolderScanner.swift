@@ -158,17 +158,22 @@ struct FolderScanner {
         ".cache",
         ".cribble",
         ".git",
+        ".gradle",
         ".next",
         ".pytest_cache",
         ".swiftpm",
+        ".terraform",
+        ".turbo",
         ".venv",
         "__pycache__",
         "build",
+        "coverage",
         "DerivedData",
         "dist",
         "node_modules",
         "Pods",
         "target",
+        "vendor",
         "venv"
     ]
 

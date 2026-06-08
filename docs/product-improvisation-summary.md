@@ -75,6 +75,8 @@ The extension path is intentionally strict:
 - Settings > Extensions copied dashboard summaries include Contribution Guide,
   Copy Warnings, extension proposal, import-lane setup, and remote-runner setup
   review routes, so pasted status reports keep contributors oriented.
+- Settings > Extensions now shows least-writing as its own starter rule beside
+  read-only first, least access, and native Mac UI.
 
 ## What Was Verified
 
@@ -100,7 +102,8 @@ Focused validation passed across the newest work:
   the import sheet.
 - Remote Project Intelligence preflight copy review for team/VPS runner starts.
 - Diagnostics that distinguish local runners from remote runners before asking
-  for Keychain credential recovery.
+  for Keychain credential recovery, and route remote credential issues through
+  Help > Copy Remote Runner Setup Review.
 - Diagnostics next actions, visible recovery strip, and exact extension review
   routes for contribution guide, proposal, import-lane, and remote-runner
   handoffs.

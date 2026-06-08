@@ -158,6 +158,7 @@ struct ReadingTrailPanel: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(note.content, forType: .string)
         copiedTrailSummary = true
+        library.statusMessage = "Copied reading trail summary"
     }
 }
 

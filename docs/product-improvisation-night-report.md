@@ -727,6 +727,9 @@ Latest pass:
 - The macOS Help menu now exposes Copy Reading Trail Summary when the reader is
   active, giving the zero-file research handoff a native command route alongside
   the other review templates.
+- Reading Trail panel copies now also update the app status with "Copied reading
+  trail summary", matching the new menu command and making the handoff feel
+  confirmed from either native route.
 - Folder scanning now skips more generated/tool-cache directories including
   `.gradle`, `.terraform`, `.turbo`, `coverage`, and `vendor`, reducing large
   code-folder traversal and avoiding starter README writes in dependency caches.
@@ -801,6 +804,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after surfacing Copy Trail Summary in native first-run guidance: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter FolderScannerTests/testScannerSkipsHeavyGeneratedDirectories` passed on 2026-06-08 after expanding generated/tool-cache directory skips: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics` passed on 2026-06-08 after adding Copy Reading Trail Summary to the native Help menu: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` passed on 2026-06-08 after aligning Reading Trail panel copy feedback with the native command status: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

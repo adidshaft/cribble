@@ -324,6 +324,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(trail.contains("Copy Trail Summary"))
         XCTAssertTrue(trail.contains("NSPasteboard.general.setString(note.content"))
         XCTAssertTrue(trail.contains("Copy this trail as Markdown without creating a note"))
+        XCTAssertTrue(trail.contains("Copied reading trail summary"))
         XCTAssertTrue(trail.contains("Open notes, follow wiki links, and collect highlights"))
     }
 

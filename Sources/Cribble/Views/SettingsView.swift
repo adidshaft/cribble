@@ -247,7 +247,22 @@ struct SettingsView: View {
                     }
 
                     if !extensionRegistry.loadWarnings.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Label("Validation warnings", systemImage: "exclamationmark.triangle")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.orange)
+                                Spacer()
+                                Button {
+                                    copyExtensionWarnings()
+                                } label: {
+                                    Label("Copy Warnings", systemImage: "doc.on.doc")
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .help("Copy extension validation warnings for an issue, PR, or teammate review")
+                            }
+
                             ForEach(extensionRegistry.loadWarnings, id: \.self) { warning in
                                 Label(warning, systemImage: "exclamationmark.triangle")
                                     .font(.caption)
@@ -384,6 +399,25 @@ struct SettingsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(summary.reviewSummary, forType: .string)
         extensionStatus = "Copied extension dashboard summary"
+    }
+
+    private func copyExtensionWarnings() {
+        let warnings = extensionRegistry.loadWarnings
+        guard !warnings.isEmpty else { return }
+        let body = warnings.map { "- \($0)" }.joined(separator: "\n")
+        let summary = """
+        Cribble extension validation warnings
+
+        \(body)
+
+        Next steps:
+        - Open Settings > Extensions, fix the manifest, then use Check Again.
+        - Use Settings > Extensions > Contribution Guide for read-only, least-writing, native SwiftUI rules.
+        - Share this warning list in an issue, PR, or review thread before broadening permissions.
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(summary, forType: .string)
+        extensionStatus = "Copied extension warnings"
     }
 
     private func copyExtensionProposalTemplate() {

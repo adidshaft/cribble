@@ -1139,6 +1139,10 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("Created \\(folderName) with README checklist"))
         XCTAssertTrue(settings.contains("Created project example \\(folderName) with README checklist"))
         XCTAssertTrue(settings.contains("read-only API v1, least permission, previewed writes, Keychain secrets, native SwiftUI"))
+        XCTAssertTrue(settings.contains("Label(\"Copy Warnings\", systemImage: \"doc.on.doc\")"))
+        XCTAssertTrue(settings.contains("Cribble extension validation warnings"))
+        XCTAssertTrue(settings.contains("Copied extension warnings"))
+        XCTAssertTrue(settings.contains("fix the manifest, then use Check Again"))
     }
 
     func testSettingsExposeProjectIntelligenceControls() throws {

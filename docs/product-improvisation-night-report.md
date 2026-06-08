@@ -733,6 +733,9 @@ Latest pass:
 - Folder scanning now skips more generated/tool-cache directories including
   `.gradle`, `.terraform`, `.turbo`, `coverage`, and `vendor`, reducing large
   code-folder traversal and avoiding starter README writes in dependency caches.
+- Settings > Extensions validation warnings now include Copy Warnings, producing
+  a pasteable review checklist with exact warning text, Check Again guidance,
+  and the strict contribution-guide route.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -805,6 +808,7 @@ Latest pass:
 - Latest `swift test --filter FolderScannerTests/testScannerSkipsHeavyGeneratedDirectories` passed on 2026-06-08 after expanding generated/tool-cache directory skips: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics` passed on 2026-06-08 after adding Copy Reading Trail Summary to the native Help menu: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` passed on 2026-06-08 after aligning Reading Trail panel copy feedback with the native command status: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding Copy Warnings to extension validation issues: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

@@ -1,9 +1,11 @@
+import AppKit
 import SwiftUI
 
 struct UnresolvedTargetView: View {
     let target: UnresolvedTarget
     @EnvironmentObject private var library: MarkdownLibraryStore
     @EnvironmentObject private var settings: AppSettings
+    @State private var copiedWikiLink = false
 
     var body: some View {
         ScrollView {
@@ -37,6 +39,16 @@ struct UnresolvedTargetView: View {
                     .controlSize(.large)
                     .cribbleGlassButton(prominent: true)
                     .help("Review a new \(target.targetName).md proposal before writing it")
+
+                    Button {
+                        copyMissingWikiLink()
+                    } label: {
+                        Label(copiedWikiLink ? "Copied Link" : "Copy Wiki Link",
+                              systemImage: copiedWikiLink ? "checkmark" : "link")
+                    }
+                    .controlSize(.large)
+                    .cribbleGlassButton()
+                    .help("Copy [[\(target.targetName)]] for chat, tasks, or another note")
 
                     Button {
                         library.selectedUnresolvedTarget = nil
@@ -100,5 +112,12 @@ struct UnresolvedTargetView: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .cribbleBackgroundExtension()
+    }
+
+    private func copyMissingWikiLink() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("[[\(target.targetName)]]", forType: .string)
+        copiedWikiLink = true
+        library.statusMessage = "Copied [[\(target.targetName)]]"
     }
 }

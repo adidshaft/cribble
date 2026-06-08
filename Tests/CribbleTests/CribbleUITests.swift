@@ -324,6 +324,22 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(trail.contains("Open notes, follow wiki links, and collect highlights"))
     }
 
+    func testUnresolvedTargetCanCopyMissingWikiLink() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let unresolvedURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/UnresolvedTargetView.swift")
+        let unresolved = try String(contentsOf: unresolvedURL, encoding: .utf8)
+
+        XCTAssertTrue(unresolved.contains("import AppKit"))
+        XCTAssertTrue(unresolved.contains("copyMissingWikiLink()"))
+        XCTAssertTrue(unresolved.contains("Label(copiedWikiLink ? \"Copied Link\" : \"Copy Wiki Link\""))
+        XCTAssertTrue(unresolved.contains("NSPasteboard.general.setString(\"[[\\(target.targetName)]]\""))
+        XCTAssertTrue(unresolved.contains("library.statusMessage = \"Copied [[\\(target.targetName)]]\""))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

@@ -651,6 +651,7 @@ struct ExtensionDashboardSummary: Equatable {
         - Settings > Extensions > Contribution Guide
         - Settings > Extensions > Copy Warnings
         - Settings > Extensions > Import lanes > Copy Review
+        - Settings > Project Intelligence > Copy Review
         - Help > Copy Extension Proposal
         - Help > Copy Import Lane Setup Review
         - Help > Copy Remote Runner Setup Review

@@ -802,6 +802,10 @@ Latest pass:
 - Settings > Project Intelligence now includes Copy Review beside Remote Guide,
   so VPS/team-runner setup can be copied for review from the same native place
   users tune performance, disk budget, and the remote data boundary.
+- Extension dashboard summaries and diagnostics now name Settings > Project
+  Intelligence > Copy Review beside Help > Copy Remote Runner Setup Review, so
+  remote-runner handoffs point to the Settings surface where users configure
+  runner credentials and data-boundary choices.
 - DemoNotes now teach Settings > Project Intelligence > Copy Review beside Help
   > Copy Remote Runner Setup Review, aligning the remote runner guide,
   contribution guide, and Team Extension Kit with the native Settings path.
@@ -913,6 +917,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding schema, contribution, and lane-review routes to copied extension warning handoffs: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the current manifest validation rules for icons, remote URLs, and importer extensions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding the Settings import-lane Copy Review route to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
+- Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot|ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to remote-runner diagnostics and dashboard handoffs: 3 focused tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

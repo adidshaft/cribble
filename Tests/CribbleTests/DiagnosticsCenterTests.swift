@@ -51,8 +51,8 @@ final class DiagnosticsCenterTests: XCTestCase {
         let section = snapshot.formattedReportSection
 
         XCTAssertTrue(section.contains("Credential: none configured"))
-        XCTAssertEqual(snapshot.nextActionSummary, "Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model.")
-        XCTAssertTrue(section.contains("Next action: Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."))
+        XCTAssertEqual(snapshot.nextActionSummary, "Use Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model.")
+        XCTAssertTrue(section.contains("Next action: Use Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."))
     }
 
     func testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential() {
@@ -267,7 +267,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Proposal review: Help > Copy Extension Proposal"))
         XCTAssertTrue(section.contains("Warning handoff: Settings > Extensions > Copy Warnings"))
         XCTAssertTrue(section.contains("Import lane review: Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review"))
-        XCTAssertTrue(section.contains("Remote runner review: Help > Copy Remote Runner Setup Review"))
+        XCTAssertTrue(section.contains("Remote runner review: Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review"))
         XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))
         XCTAssertTrue(section.contains("Quick Review (com.example.quick): Quick Action, User, enabled"))
         XCTAssertTrue(section.contains("Permissions: Read Current Note"))

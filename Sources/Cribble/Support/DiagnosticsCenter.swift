@@ -457,7 +457,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
             "- Proposal review: Help > Copy Extension Proposal",
             "- Warning handoff: Settings > Extensions > Copy Warnings",
             "- Import lane review: Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review",
-            "- Remote runner review: Help > Copy Remote Runner Setup Review"
+            "- Remote runner review: Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review"
         ])
 
         if !warnings.isEmpty {
@@ -614,7 +614,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
             return "Enable Project Intelligence from the Intelligence HUD when this folder should be indexed."
         }
         if isRemoteRunner && !usesKeychainCredential {
-            return "Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."
+            return "Use Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."
         }
         if pendingJobs > 0 {
             return "Keep Cribble open during an idle window so queued intelligence jobs can finish."

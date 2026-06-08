@@ -715,8 +715,8 @@ Latest pass:
   passive.
 - Chat HUD's empty state now surfaces the extension contribution lane when no
   extension slash commands are installed, pointing users from everyday chat into
-  the Help > Open Extension Contribution Guide path without hiding the built-in
-  quick actions.
+  Settings > Extensions > Contribution Guide without hiding the built-in quick
+  actions.
 - Chat HUD's slash-command no-match state now includes a Guide button wired to
   the bundled Extension Contribution Guide, so a failed `/` search can become a
   native extension onboarding path.
@@ -918,6 +918,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the current manifest validation rules for icons, remote URLs, and importer extensions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding the Settings import-lane Copy Review route to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot|ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to remote-runner diagnostics and dashboard handoffs: 3 focused tests, 0 failures.
+- Latest `swift test --filter ChatHUDLogicTests/testExtensionLaneSummaryGuidesEmptyAndInstalledStates` passed on 2026-06-08 after pointing the Chat HUD no-extension summary to Settings > Extensions > Contribution Guide: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

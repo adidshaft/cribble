@@ -128,7 +128,7 @@ final class ChatHUDLogicTests: XCTestCase {
     func testExtensionLaneSummaryGuidesEmptyAndInstalledStates() {
         XCTAssertEqual(
             ChatHUDViewModel.extensionLaneSummary(actionCount: 0),
-            "No extensions yet - start with Help > Open Extension Contribution Guide"
+            "No extensions yet - start with Settings > Extensions > Contribution Guide"
         )
         XCTAssertEqual(ChatHUDViewModel.extensionLaneSummary(actionCount: 1), "1 extension action")
         XCTAssertEqual(ChatHUDViewModel.extensionLaneSummary(actionCount: 3), "3 extension actions")

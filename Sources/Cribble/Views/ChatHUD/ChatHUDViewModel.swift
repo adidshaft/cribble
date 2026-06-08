@@ -334,7 +334,7 @@ final class ChatHUDViewModel: ObservableObject {
         if actionCount > 0 {
             return "\(actionCount) extension action\(actionCount == 1 ? "" : "s")"
         }
-        return "No extensions yet - start with Help > Open Extension Contribution Guide"
+        return "No extensions yet - start with Settings > Extensions > Contribution Guide"
     }
 
     /// Derives a filename from the answer's first heading/line.

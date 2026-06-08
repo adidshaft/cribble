@@ -413,6 +413,7 @@ struct ExtensionRegistryTests {
         #expect(summary.reviewSummary.contains("Next steps:"))
         #expect(summary.reviewSummary.contains("Fix validation warnings"))
         #expect(summary.reviewSummary.contains("Create Project Example"))
+        #expect(summary.reviewSummary.contains("reviewable manifest plus README checklist"))
         #expect(summary.reviewSummary.contains("preview/review/cancel"))
         #expect(summary.reviewSummary.contains("Keychain-only secrets"))
         #expect(summary.reviewSummary.contains("Contributor guide: docs/extension-contributions.md"))

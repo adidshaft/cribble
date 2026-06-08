@@ -2299,6 +2299,15 @@ private struct WelcomeView: View {
                     .controlSize(.large)
                     .cribbleGlassButton()
                     .help("Open or create today's Markdown note")
+
+                    Button {
+                        library.openTasksFile()
+                    } label: {
+                        Label("Tasks", systemImage: "checklist.checked")
+                    }
+                    .controlSize(.large)
+                    .cribbleGlassButton()
+                    .help("Open or create Tasks.md for the current folder")
                 }
             }
 
@@ -2461,6 +2470,7 @@ enum WelcomeStarterChecklist {
     - [ ] Read [[Getting Started]] and highlight one useful sentence.
     - [ ] Open [[Cribble AI]] and choose the model boundary you trust.
     - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
+    - [ ] Use the welcome **Tasks** button or **Command Option T** to open your project task lane.
     - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
     - [ ] Review [[Workflow Playbook]] for a real team workflow.
     - [ ] Use **Help -> Copy Research Review Template** for evidence-heavy work.

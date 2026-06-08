@@ -904,6 +904,20 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("person.crop.circle.badge.plus"))
     }
 
+    func testWelcomeLaunchpadIncludesProjectTaskLane() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let readerViewURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReaderView.swift")
+        let readerView = try String(contentsOf: readerViewURL, encoding: .utf8)
+
+        XCTAssertTrue(readerView.contains("library.openTasksFile()"))
+        XCTAssertTrue(readerView.contains("Label(\"Tasks\", systemImage: \"checklist.checked\")"))
+        XCTAssertTrue(readerView.contains("Open or create Tasks.md for the current folder"))
+    }
+
     func testShortcutPopoverSurfacesHelpRecoveryPaths() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile
@@ -1105,6 +1119,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("[[Getting Started]]"))
         XCTAssertTrue(checklist.contains("[[Cribble AI]]"))
         XCTAssertTrue(checklist.contains("model boundary"))
+        XCTAssertTrue(checklist.contains("welcome **Tasks** button"))
+        XCTAssertTrue(checklist.contains("Command Option T"))
         XCTAssertTrue(checklist.contains("Tasks.md"))
         XCTAssertTrue(checklist.contains("[[Workflow Playbook]]"))
         XCTAssertTrue(checklist.contains("Help -> Copy Research Review Template"))

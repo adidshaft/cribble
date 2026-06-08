@@ -658,6 +658,9 @@ Latest pass:
   Settings > Extensions > Contribution Guide, Help > Copy Extension Proposal,
   Help > Copy Import Lane Setup Review, and Help > Copy Remote Runner Setup
   Review, so new contributors can start from either docs or the app.
+- The first-run welcome launchpad now exposes Tasks beside New Note and Today
+  after a folder is open, turning the empty reader into a faster work surface
+  for project task capture without requiring users to remember the shortcut.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -701,6 +704,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding native review routes to Settings > Extensions Copy Summary: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions` passed on 2026-06-08 after updating the summary/readiness checkpoint to name diagnostics and Settings summary review routes: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding native extension review routes to README and CONTRIBUTING: 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testWelcomeLaunchpadIncludesProjectTaskLane|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour|CribbleUITests/testWelcomeStartGridIncludesContributorPath'` passed on 2026-06-08 after adding the welcome Tasks launchpad action: 3 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

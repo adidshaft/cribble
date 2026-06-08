@@ -227,7 +227,7 @@ struct SettingsView: View {
                                     isEnabled: extensionRegistry.isEnabled(installed),
                                     trustDecision: extensionRegistry.trustDecision(for: installed),
                                     onEnabledChange: { enabled in
-                                        extensionRegistry.setEnabled(enabled, for: installed)
+                                        setExtensionEnabled(enabled, for: installed)
                                     },
                                     onReveal: {
                                         extensionRegistry.reveal(installed)
@@ -382,6 +382,11 @@ struct SettingsView: View {
         } else {
             extensionStatus = "Extension check \(result)"
         }
+    }
+
+    private func setExtensionEnabled(_ enabled: Bool, for installed: InstalledCribbleExtension) {
+        extensionRegistry.setEnabled(enabled, for: installed)
+        extensionStatus = "\(enabled ? "Enabled" : "Disabled") \(installed.manifest.name)"
     }
 
     private func copyReviewSummary(for installed: InstalledCribbleExtension) {

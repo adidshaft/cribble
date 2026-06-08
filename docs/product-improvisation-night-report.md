@@ -745,6 +745,9 @@ Latest pass:
 - Generated extension starter READMEs now also list Settings > Extensions > Copy
   Warnings, so each starter folder carries the same validation handoff beside
   its manifest.
+- Settings > Extensions now confirms enabled/disabled extension toggles in the
+  status strip, making contribution state changes visible just like copy,
+  create, and validation actions.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -821,6 +824,7 @@ Latest pass:
 - Latest `swift test --filter DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings` passed on 2026-06-08 after adding the Copy Warnings route to extension diagnostics: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the Copy Warnings validation loop: 1 XCTest test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding Copy Warnings to generated extension starter READMEs: 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for extension enable/disable toggles: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

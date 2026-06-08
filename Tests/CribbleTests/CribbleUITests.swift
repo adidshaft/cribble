@@ -407,6 +407,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(diffSheet.contains("Label(copiedDiff ? \"Copied Diff\" : \"Copy Diff\""))
         XCTAssertTrue(diffSheet.contains("UnifiedDiffRenderer.render(diff)"))
         XCTAssertTrue(diffSheet.contains("Copy the proposed patch for issue, PR, or teammate review before applying"))
+        XCTAssertTrue(diffSheet.contains("Cribble did not receive a safe patch to review. Nothing has been written"))
     }
 
     func testDiagnosticsSheetCanCopyNextActionsOnly() throws {

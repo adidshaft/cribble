@@ -25,7 +25,11 @@ struct DiffPreviewSheet: View {
             }
 
             if diff.isEmpty {
-                ContentUnavailableView("No Suggested Changes", systemImage: "checkmark.circle")
+                ContentUnavailableView(
+                    "No Suggested Changes",
+                    systemImage: "checkmark.circle",
+                    description: Text("Cribble did not receive a safe patch to review. Nothing has been written; close this sheet or try again with more focused note context.")
+                )
                     .frame(minHeight: 220)
             } else {
                 ScrollView {

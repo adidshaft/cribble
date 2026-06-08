@@ -1040,6 +1040,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testImportLaneChooserStatusPointsToNativeSetupRoutes`
   passed on 2026-06-08 after improving import chooser recovery guidance:
   1 XCTest test, 0 failures.
+- Empty AI diff previews now explain that Cribble did not receive a safe patch
+  and that nothing has been written, so a no-change result remains reassuring
+  instead of looking like a broken review sheet.
+- Latest `swift test --filter CribbleUITests/testDiffPreviewSheetCanCopyPatchForReview`
+  passed on 2026-06-08 after adding the empty-diff safety explanation:
+  1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

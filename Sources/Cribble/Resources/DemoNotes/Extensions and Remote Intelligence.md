@@ -240,8 +240,10 @@ Cribble executes converters.
 
 Before writing the manifest, choose **Help → Copy Import Lane Setup Review** or
 **File → Import → Copy Review** to paste the pre-install safety contract into a
-proposal thread: no converter execution, user-selected files only,
-previewed writes, no secrets, native SwiftUI controls, and clean disabling.
+proposal thread. Once a lane appears in Settings, use
+**Settings → Extensions → Import lanes → Copy Review** for the installed-lane
+handoff: no converter execution, user-selected files only, previewed writes, no
+secrets, native SwiftUI controls, and clean disabling.
 Use bare, unique file extensions like `json` and `txt`; do not include leading
 dots, wildcards, paths, or duplicate casing such as `json` plus `JSON`.
 

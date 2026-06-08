@@ -61,8 +61,10 @@ pull request or handoff note:
 - Are permissions limited to the smallest useful set?
 - If it uses a remote runner, who controls the endpoint?
 - Does the manifest avoid secrets, tokens, and private keys?
-- For importers, did someone paste **Help → Copy Import Lane Setup Review** or
-  **File → Import → Copy Review** before creating or adapting a manifest?
+- For importers, did someone paste
+  **Settings → Extensions → Import lanes → Copy Review** after the lane appears,
+  or **Help → Copy Import Lane Setup Review** / **File → Import → Copy Review**
+  before creating or adapting a manifest?
 - Would a quick action still be useful with only the current note and explicit
   attachments?
 - Is the source URL or signing identity filled in when known?
@@ -97,9 +99,10 @@ Use **Settings → Extensions → Copy Proposal** or **Help → Copy Extension P
 to copy this shape into a GitHub issue, Discussion, or team thread before anyone
 writes implementation code.
 
-Use **Help → Copy Import Lane Setup Review** for chat exports or file importer
-lanes, and **Help → Copy Remote Runner Setup Review** before any VPS or team
-model profile can receive note context.
+Use **Settings → Extensions → Import lanes → Copy Review** for installed chat
+exports or file importer lanes, **Help → Copy Import Lane Setup Review** before
+adding one, and **Help → Copy Remote Runner Setup Review** before any VPS or
+team model profile can receive note context.
 
 The open-source contribution guide keeps ideas open but first PRs strict:
 read-only first, least reading, least writing, no hidden execution,

@@ -441,9 +441,11 @@ Use this as the copy-paste shape for a first extension contribution:
 5. Paste the copied extension details from Settings into the PR so reviewers can
    inspect id, kind, permissions, runtime, trust metadata, and contributions
    without checking out the branch.
-6. For importer ideas, use **Help > Copy Import Lane Setup Review** or
-   **File > Import > Copy Review** before creating or adapting a manifest. Paste
-   that pre-install review into the issue or PR so reviewers can see the
+6. For importer ideas, use
+   **Settings > Extensions > Import lanes > Copy Review** once a lane appears,
+   or **Help > Copy Import Lane Setup Review** / **File > Import > Copy Review**
+   before creating or adapting a manifest. Paste that review into the issue or
+   PR so reviewers can see the
    no-execution, user-selected-files, previewed-writes, no-secrets, native
    SwiftUI, and clean-disable boundaries up front.
 7. For support or release handoff, use **Help > Copy Diagnostic Report** after

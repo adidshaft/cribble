@@ -941,6 +941,12 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to README and CONTRIBUTING contributor routes: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear'` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to the public contribution guide and import-lane review template: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after making DemoNotes and the starter checklist proposal handoffs Settings-first: 2 XCTest tests, 0 failures.
+- Latest importer guidance pass makes
+  **Settings > Extensions > Import lanes > Copy Review** the first installed-lane
+  review route across README, public extension docs, DemoNotes, and the starter
+  checklist while preserving Help/File routes for pre-install proposals and
+  import-sheet handoffs.
+- Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|ExtensionRegistryTests/extensionGuideDocumentsExecutableReadinessGates|ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after aligning importer guidance with the Settings import-lane Copy Review route: 2 XCTest tests and 3 Swift Testing tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

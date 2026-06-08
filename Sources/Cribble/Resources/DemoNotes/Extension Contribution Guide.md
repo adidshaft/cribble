@@ -64,8 +64,9 @@ Answer these in the issue, Discussion, or pull request:
 - Importer `fileExtensions` are bare and unique regardless of case: use `json`
   or `txt`, not `.json`, `*.json`, paths, or both `json` and `JSON`.
 
-For importer ideas, use **Help → Copy Import Lane Setup Review** or
-**File → Import → Copy Review**. For remote runners, use
+For importer ideas, use **Settings → Extensions → Import lanes → Copy Review**
+once a lane appears, or **Help → Copy Import Lane Setup Review** /
+**File → Import → Copy Review** before adding one. For remote runners, use
 **Settings → Project Intelligence → Copy Review** or
 **Help → Copy Remote Runner Setup Review**. Paste the copied review into the
 proposal so reviewers can see data boundaries, writes, secrets, and revocation.

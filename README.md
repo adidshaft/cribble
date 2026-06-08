@@ -310,8 +310,10 @@ contribution lanes. New extension ideas should start with
 declarative, read-only, least-access, least-writing, and native SwiftUI.
 Inside the app, use **Settings > Extensions > Contribution Guide** or
 **Settings > Extensions > Copy Proposal** for the first handoff; the Help menu
-keeps **Help > Copy Extension Proposal** available too. Importer and remote
-runner ideas should also use **Help > Copy Import Lane Setup Review** or
+keeps **Help > Copy Extension Proposal** available too. Importer ideas should
+use **Settings > Extensions > Import lanes > Copy Review** after a lane appears,
+or **Help > Copy Import Lane Setup Review** before adding one. Remote runner
+ideas should use **Settings > Project Intelligence > Copy Review** or
 **Help > Copy Remote Runner Setup Review**.
 
 ## Product Roadmap

@@ -491,6 +491,7 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("Native UI"))
         #expect(guide.contains("Until those gates exist in code and tests"))
         #expect(guide.contains("declarative manifests"))
+        #expect(guide.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(guide.contains("Help > Copy Import Lane Setup Review"))
         #expect(guide.contains("File > Import > Copy Review"))
     }
@@ -515,6 +516,7 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("Clean disable path"))
         #expect(guide.contains("Settings > Extensions > Copy Proposal"))
         #expect(guide.contains("Help > Copy Extension Proposal"))
+        #expect(guide.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(guide.contains("Help > Copy Import Lane Setup Review"))
         #expect(guide.contains("File > Import > Copy Review"))
         #expect(guide.contains("Settings > Project Intelligence > Copy Review"))
@@ -539,6 +541,7 @@ struct ExtensionRegistryTests {
         #expect(combined.contains("Settings > Extensions > Contribution Guide"))
         #expect(combined.contains("Settings > Extensions > Copy Proposal"))
         #expect(combined.contains("Help > Copy Extension Proposal"))
+        #expect(combined.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(combined.contains("Help > Copy Import Lane Setup Review"))
         #expect(combined.contains("Help > Copy Remote Runner Setup Review"))
         #expect(combined.contains("declarative, read-only, least-access, least-writing, and native SwiftUI"))

@@ -67,7 +67,7 @@ Evidence:
 Follow-up:
 
 - [ ] Keep importers declarative until preview/review/cancel writes are designed.
-- [ ] Use **Help → Copy Import Lane Setup Review** or **File → Import → Copy Review** for importer proposals.
+- [ ] Use **Settings → Extensions → Import lanes → Copy Review** after a lane appears, or **Help → Copy Import Lane Setup Review** / **File → Import → Copy Review** for importer proposals.
 - [ ] Use **Help → Copy Remote Runner Setup Review** before enabling a team VPS.
 
 ## How Cribble helps

@@ -153,9 +153,10 @@ model, a private VPS, a team GPU box, or a hosted runner your organization
 controls. Avoid it for casual notes unless the person using Cribble understands
 what context may leave the Mac.
 
-Use **Help → Copy Remote Runner Setup Review** before sharing or enabling a
-runner. Paste it into the review thread so endpoint ownership, retention,
-logging, access controls, Keychain handling, and revocation are visible.
+Use **Settings → Project Intelligence → Copy Review** or
+**Help → Copy Remote Runner Setup Review** before sharing or enabling a runner.
+Paste it into the review thread so endpoint ownership, retention, logging,
+access controls, Keychain handling, and revocation are visible.
 
 Recommended manifest fields:
 

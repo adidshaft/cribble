@@ -148,6 +148,7 @@ token into the Intelligence HUD and store it in Keychain when you choose the
 runner.
 
 Before sharing a remote runner profile, use
+**Settings → Project Intelligence → Copy Review** or
 **Help → Copy Remote Runner Setup Review** and write down:
 
 - who owns the endpoint;

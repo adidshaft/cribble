@@ -56,6 +56,7 @@ Answer these in the issue, Discussion, or pull request:
 
 For importer ideas, use **Help → Copy Import Lane Setup Review** or
 **File → Import → Copy Review**. For remote runners, use
+**Settings → Project Intelligence → Copy Review** or
 **Help → Copy Remote Runner Setup Review**. Paste the copied review into the
 proposal so reviewers can see data boundaries, writes, secrets, and revocation.
 If Settings shows manifest validation warnings, use

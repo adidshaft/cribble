@@ -297,10 +297,11 @@ struct SettingsView: View {
                                         NSPasteboard.general.setString(capability.reviewSummary, forType: .string)
                                         extensionStatus = "Copied \(capability.title) import lane details"
                                     } label: {
-                                        Image(systemName: "doc.on.doc")
-                                            .font(.system(size: 10, weight: .semibold))
+                                        Label("Copy Review", systemImage: "doc.on.doc")
+                                            .font(.caption2.weight(.semibold))
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
                                     .help("Copy import lane details for review")
                                 }
                                 .padding(.horizontal, 8)

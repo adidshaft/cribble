@@ -1165,6 +1165,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("Cribble extension validation warnings"))
         XCTAssertTrue(settings.contains("Copied extension warnings"))
         XCTAssertTrue(settings.contains("fix the manifest, then use Check Again"))
+        XCTAssertTrue(settings.contains("Label(\"Copy Review\", systemImage: \"doc.on.doc\")"))
+        XCTAssertTrue(settings.contains("Copied \\(capability.title) import lane details"))
     }
 
     func testSettingsExposeProjectIntelligenceControls() throws {

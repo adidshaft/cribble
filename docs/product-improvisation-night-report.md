@@ -660,6 +660,9 @@ Latest pass:
 - The Settings > Extensions Copy Summary handoff now includes the same native
   review routes, so extension dashboard summaries can move directly into issues,
   PRs, or team chats without losing the safety path.
+- Settings > Extensions import-lane rows now use a visible Copy Review button
+  instead of an icon-only affordance, making importer handoffs easier to find
+  for first-time extension authors.
 - The product summary and readiness checkpoint now treat copied diagnostics and
   Settings summaries with exact native review routes as explicit product signal,
   keeping the stop/go report aligned with the support handoff work.
@@ -896,6 +899,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionManifestTests/loadsImporterContributions|ExtensionManifestTests/rejectsDuplicateImporterFileExtensionsIgnoringCase'` passed on 2026-06-08 after rejecting duplicate importer file extensions case-insensitively: 2 Swift Testing tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding safe ids, HTTPS-or-localhost URLs, and bare importer extensions to generated starter README checklists: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'ExtensionManifestTests/loadsExplicitDeclarativeRuntime|ExtensionManifestTests/rejectsUnsafeQuickActionIcons|ExtensionManifestTests/rejectsUnsafeQuickActionIDs'` passed on 2026-06-08 after validating quick-action icon tokens before they reach the Chat HUD: 3 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after changing Settings import-lane rows to a visible Copy Review button: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

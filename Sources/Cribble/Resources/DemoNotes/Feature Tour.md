@@ -39,7 +39,7 @@ Cribble remembers the route you take through notes and can turn it into a reusab
 > **Try it**
 > 1. Open [[Cribble AI]], then [[Markdown Showcase]], then come back here.
 > 2. Press **P** to open the Reading Trail panel — watch your path build into a tree, with time spent on each note.
-> 3. Click **Create Trail Note** — Cribble synthesizes your path, highlights, and notes into a new file (shown as a safe diff preview first).
+> 3. Click **Create Trail Note** — Cribble synthesizes your path, highlights, and notes into a new file (shown as a safe diff preview first). Use **Copy Trail Summary** when you want the same Markdown handoff without creating a file.
 
 ## 3. Local semantic search
 

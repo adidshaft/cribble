@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// A minimalist vertical tree of the active reading trail. Rows are tappable to
@@ -10,6 +11,7 @@ struct ReadingTrailPanel: View {
     @EnvironmentObject private var settings: AppSettings
 
     let onClose: () -> Void
+    @State private var copiedTrailSummary = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -120,6 +122,18 @@ struct ReadingTrailPanel: View {
             .cribbleGlassButton(prominent: true)
             .help("Synthesize this trail into a new Markdown note (with a diff preview)")
 
+            Button {
+                copyTrailSummary()
+            } label: {
+                Label(copiedTrailSummary ? "Copied Summary" : "Copy Trail Summary",
+                      systemImage: copiedTrailSummary ? "checkmark" : "doc.on.doc")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Copy this trail as Markdown without creating a note")
+
             Button(role: .destructive) {
                 trail.clear()
             } label: {
@@ -137,6 +151,13 @@ struct ReadingTrailPanel: View {
     private func createTrailNote() {
         guard let note = trail.makeTrailNote(annotations: annotations) else { return }
         library.presentNewNoteProposal(fileName: note.fileName, content: note.content)
+    }
+
+    private func copyTrailSummary() {
+        guard let note = trail.makeTrailNote(annotations: annotations) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(note.content, forType: .string)
+        copiedTrailSummary = true
     }
 }
 

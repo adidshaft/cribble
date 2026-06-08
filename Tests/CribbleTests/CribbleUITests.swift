@@ -321,6 +321,9 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(trail.contains("Label(\"Workflow Guide\", systemImage: \"book.pages\")"))
         XCTAssertTrue(trail.contains("library.proposeBlankNote()"))
         XCTAssertTrue(trail.contains("Label(\"New Note\", systemImage: \"doc.badge.plus\")"))
+        XCTAssertTrue(trail.contains("Copy Trail Summary"))
+        XCTAssertTrue(trail.contains("NSPasteboard.general.setString(note.content"))
+        XCTAssertTrue(trail.contains("Copy this trail as Markdown without creating a note"))
         XCTAssertTrue(trail.contains("Open notes, follow wiki links, and collect highlights"))
     }
 

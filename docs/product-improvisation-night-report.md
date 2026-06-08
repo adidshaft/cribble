@@ -718,6 +718,9 @@ Latest pass:
 - Settings > Extensions creation feedback now confirms that examples were
   created with a README checklist, closing the loop immediately after authors
   use Create Example or Create Project Example.
+- Reading Trail now includes Copy Trail Summary, a zero-file Markdown handoff
+  for research paths, highlights, and dwell-time context when users want to
+  share progress before creating a permanent note.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -780,6 +783,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testExtensionSettingsLinksToContributionGuide|ExtensionRegistryTests/writesAllExampleTemplates'` passed on 2026-06-08 after surfacing starter README checklists in Settings: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding the generated README checklist to Settings > Extensions copied summaries: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after making Settings creation status confirm generated README checklists: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` and `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding Copy Trail Summary to the Reading Trail footer and DemoNotes tour: 2 focused XCTest runs, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

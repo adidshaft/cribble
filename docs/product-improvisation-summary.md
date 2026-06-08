@@ -17,8 +17,8 @@ now reads more like a local-first Mac knowledge workspace:
   now point beginners to the right first action, including direct decision-log
   templates, research-review templates, and team workflow routes.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
-  Link, Copy Wiki Link, Decision Log, and reviewed AI proposals make capture,
-  rationale, and handoff feel native.
+  Link, Copy Wiki Link, Reading Trail summaries, Decision Log, and reviewed AI
+  proposals make capture, rationale, research paths, and handoff feel native.
 - **Use intelligence safely:** Project Intelligence has preflight review,
   source-grounded artifacts, Ask answers, copyable Markdown handoffs, diagnostics,
   and clear local-vs-remote boundaries.
@@ -31,6 +31,9 @@ now reads more like a local-first Mac knowledge workspace:
   declarations without executing extension code, with Help/Settings proposal
   templates and a dedicated open-source extension contribution guide for
   contributors.
+- **Stay smooth in bigger folders:** scanner guardrails now skip more generated
+  dependency and tool-cache folders, while copyable diagnostics/review summaries
+  keep support and contributor loops precise.
 
 ## Strongest Product Signal
 
@@ -42,6 +45,7 @@ The branch has four strong bets:
 | Review-first AI | AI can suggest notes, tasks, links, indexes, and intelligence artifacts without silently writing user files. |
 | Safe extensibility | Contributors can propose useful extensions while API v1 stays declarative, read-only first, least-access, and native SwiftUI. |
 | Trusted remote intelligence | Advanced users can use their own VPS/team runner without hiding that note context may leave the Mac. |
+| Zero-file handoff | Users can copy trails, diffs, tasks, diagnostics, extension warnings, and intelligence artifacts before creating or changing files. |
 
 ## Extension Rules
 
@@ -65,6 +69,9 @@ The extension path is intentionally strict:
   contributor rules are discoverable without leaving Cribble.
 - The welcome Start With grid has a Contribute tile for extension authors and
   open-source contributors.
+- Settings > Extensions can copy exact validation warnings with Check Again and
+  contribution-guide next steps, so extension authors can paste reviewable
+  failures into issues or PRs.
 
 ## What Was Verified
 
@@ -97,11 +104,15 @@ Focused validation passed across the newest work:
 - Settings extension summaries that preserve the same native review routes for
   issues, PRs, and team chats.
 - Intelligence artifact and Ask answer Markdown handoffs.
+- Reading Trail Copy Summary from both the panel and native Help menu.
+- Extension validation Copy Warnings.
+- Folder scanner skips for `.gradle`, `.terraform`, `.turbo`, `coverage`, and
+  `vendor` to keep broad code folders lighter.
 
 Full `swift test` passed after the latest broad Help command, Decision Log
 DemoNotes, remote-runner, diagnostics, and report work: 235 XCTest tests and 43
-Swift Testing tests, 0 failures. The newest Decision Log and Research Review
-template commands were then covered by focused tests.
+Swift Testing tests, 0 failures. Newer Reading Trail, extension warning, remote
+runner guide, and scanner slices were then covered by focused tests.
 
 ## Intentionally Not Done
 

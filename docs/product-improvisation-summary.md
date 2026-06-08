@@ -21,11 +21,11 @@ now reads more like a local-first Mac knowledge workspace:
   proposals make capture, rationale, research paths, and handoff feel native.
 - **Use intelligence safely:** Project Intelligence has preflight review,
   source-grounded artifacts, Ask answers, copyable Markdown handoffs, diagnostics,
-  and clear local-vs-remote boundaries.
+  Settings controls, and clear local-vs-remote boundaries.
 - **Bring stronger compute when needed:** local/VPS/team OpenAI-compatible
   runners can be configured with Keychain secrets, data-boundary warnings,
-  consent review, and copied approval checklists from Help or the Intelligence
-  HUD.
+  consent review, and copied approval checklists from Help, Settings, preflight,
+  or the Intelligence HUD.
 - **Start an extension ecosystem:** `cribble-extension.json` manifests now cover
   quick actions, remote runner profiles, renderer aliases, and import-lane
   declarations without executing extension code, with Help/Settings proposal
@@ -72,6 +72,9 @@ The extension path is intentionally strict:
 - Settings > Extensions can copy exact validation warnings with Check Again and
   contribution-guide next steps, so extension authors can paste reviewable
   failures into issues or PRs.
+- Settings > Extensions copied dashboard summaries include Contribution Guide,
+  Copy Warnings, extension proposal, import-lane setup, and remote-runner setup
+  review routes, so pasted status reports keep contributors oriented.
 
 ## What Was Verified
 
@@ -103,6 +106,8 @@ Focused validation passed across the newest work:
   handoffs.
 - Settings extension summaries that preserve the same native review routes for
   issues, PRs, and team chats.
+- Settings Project Intelligence controls for performance, disk budget, chat
+  context, Remote Guide, and Copy Review.
 - Intelligence artifact and Ask answer Markdown handoffs.
 - Reading Trail Copy Summary from both the panel and native Help menu.
 - Extension validation Copy Warnings.

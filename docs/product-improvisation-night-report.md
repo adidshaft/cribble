@@ -736,6 +736,9 @@ Latest pass:
 - Settings > Extensions validation warnings now include Copy Warnings, producing
   a pasteable review checklist with exact warning text, Check Again guidance,
   and the strict contribution-guide route.
+- Settings > Extensions copied dashboard summaries now list Copy Warnings as a
+  native review route, so pasted extension status reports preserve the warning
+  handoff path.
 - Diagnostic extension reports now name Settings > Extensions > Copy Warnings
   as the warning handoff route, so copied support reports and contributor
   reviews point to the same validation-sharing action.
@@ -836,6 +839,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for future executable trust revoke/clear actions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for extension folder and manifest Reveal actions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls` passed on 2026-06-08 after adding Copy Review to Settings > Project Intelligence: 1 XCTest test, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding Copy Warnings to copied extension dashboard review routes: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

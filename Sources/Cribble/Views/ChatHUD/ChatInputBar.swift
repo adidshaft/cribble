@@ -101,6 +101,14 @@ struct ChatInputBar: View {
                                 .foregroundStyle(.white.opacity(0.45))
                         }
                         Spacer(minLength: 0)
+                        Button("Copy Idea") {
+                            viewModel.copySlashCommandIdea()
+                        }
+                        .font(.system(size: 10, weight: .semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.white.opacity(0.76))
+                        .pointingHandOnHover()
+                        .help("Copy this missing command as an extension idea")
                         if let onOpenExtensionContributionGuide {
                             Button("Guide") {
                                 viewModel.clearSlashCommandQuery()

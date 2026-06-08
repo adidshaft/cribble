@@ -1003,6 +1003,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery`
   passed on 2026-06-08 after adding Copy Trail Starter to the empty Reading
   Trail state: 1 XCTest test, 0 failures.
+- Chat HUD slash-command no-match now offers Copy Idea, turning a missing
+  command search into a guarded extension quick-action proposal with
+  read-current-note-only and native SwiftUI expectations.
+- Latest `swift test --filter 'CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane|ChatHUDLogicTests/testSlashCommandIdeaHandoffKeepsExtensionGuardrails'`
+  passed on 2026-06-08 after adding Copy Idea to the Chat HUD slash-command
+  no-match state: 1 XCTest test and 1 XCTest logic test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

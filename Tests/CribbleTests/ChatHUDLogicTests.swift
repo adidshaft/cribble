@@ -134,6 +134,17 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(ChatHUDViewModel.extensionLaneSummary(actionCount: 3), "3 extension actions")
     }
 
+    func testSlashCommandIdeaHandoffKeepsExtensionGuardrails() {
+        let handoff = ChatHUDViewModel.renderSlashCommandIdea(query: "  /brief  ")
+
+        XCTAssertTrue(handoff.contains("# Extension quick-action idea"))
+        XCTAssertTrue(handoff.contains("Missing command: /brief"))
+        XCTAssertTrue(handoff.contains("declarative quick action"))
+        XCTAssertTrue(handoff.contains("read-current-note only"))
+        XCTAssertTrue(handoff.contains("native SwiftUI surfaces only"))
+        XCTAssertTrue(handoff.contains("Settings > Extensions > Copy Proposal"))
+    }
+
     func testSystemPromptIncludesCurrentNote() {
         let prompt = ContextAssembler.systemPrompt(
             modelName: "Gemma 4",

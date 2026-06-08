@@ -273,6 +273,12 @@ final class ChatHUDViewModel: ObservableObject {
         statusMessage = "Copied context receipt"
     }
 
+    func copySlashCommandIdea() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Self.renderSlashCommandIdea(query: draft), forType: .string)
+        statusMessage = "Copied command idea"
+    }
+
     func saveMessageAsNote(_ message: ChatMessage) {
         library.presentNewNoteProposal(
             fileName: Self.suggestedFileName(for: message.text),
@@ -335,6 +341,19 @@ final class ChatHUDViewModel: ObservableObject {
             return "\(actionCount) extension action\(actionCount == 1 ? "" : "s")"
         }
         return "No extensions yet - start with Settings > Extensions > Contribution Guide"
+    }
+
+    nonisolated static func renderSlashCommandIdea(query: String) -> String {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let command = trimmed.isEmpty ? "/" : trimmed
+        return [
+            "# Extension quick-action idea",
+            "",
+            "Missing command: \(command)",
+            "First version: declarative quick action, read-current-note only.",
+            "UI condition: native SwiftUI surfaces only; no web views or custom chrome.",
+            "Review route: Settings > Extensions > Copy Proposal or Help > Copy Extension Proposal."
+        ].joined(separator: "\n")
     }
 
     /// Derives a filename from the answer's first heading/line.

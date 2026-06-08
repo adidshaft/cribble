@@ -548,6 +548,9 @@ struct ExtensionRegistryTests {
         #expect(combined.contains("Help > Copy Import Lane Setup Review"))
         #expect(combined.contains("Settings > Project Intelligence > Copy Review"))
         #expect(combined.contains("Help > Copy Remote Runner Setup Review"))
+        #expect(combined.contains("copyable README starters"))
+        #expect(combined.contains("search handoffs"))
+        #expect(combined.contains("missing slash-command ideas"))
         #expect(combined.contains("declarative, read-only, least-access, least-writing, and native SwiftUI"))
     }
 

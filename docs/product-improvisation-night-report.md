@@ -1027,6 +1027,12 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions`
   passed on 2026-06-08 after updating the short summary and readiness checkpoint
   with the newest zero-file recovery handoffs: 1 Swift Testing test, 0 failures.
+- The top-level README now names the zero-file recovery affordances directly:
+  copyable README starters, trail starters, search handoffs, missing
+  slash-command ideas, diagnostics, and review summaries.
+- Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes`
+  passed on 2026-06-08 after adding zero-file recovery affordances to the
+  top-level README: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

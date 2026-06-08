@@ -131,6 +131,9 @@ respectful of the user's files.
 - Adds native AI menu commands for summaries, plain-language explanations,
   related-note discovery, reviewed `index.md` proposals, daily notes, and task
   extraction.
+- Keeps recovery zero-file with copyable README starters, trail starters,
+  search handoffs, missing slash-command ideas, diagnostics, and review
+  summaries before users create or change notes.
 - Provides a safe extension foundation with validated `cribble-extension.json`
   manifests, Settings visibility, project-local examples, renderer aliases,
   import lanes, quick actions, remote runner profiles, and copyable proposal /

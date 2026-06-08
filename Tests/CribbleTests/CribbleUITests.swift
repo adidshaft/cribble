@@ -1004,13 +1004,36 @@ final class CribbleUITests: XCTestCase {
             .deletingLastPathComponent()
         let settingsURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SettingsView.swift")
         let settings = try String(contentsOf: settingsURL, encoding: .utf8)
+        let extensionSettings = String(settings[try XCTUnwrap(settings.range(of: "Section(\"Extensions\")")).lowerBound...])
 
-        XCTAssertLessThan(index(of: "Button(\"Open Kit\"", in: settings), index(of: "Button(\"Contribution Guide\"", in: settings))
-        XCTAssertLessThan(index(of: "Button(\"Contribution Guide\"", in: settings), index(of: "Button(\"Remote Guide\"", in: settings))
+        XCTAssertLessThan(index(of: "Button(\"Open Kit\"", in: extensionSettings), index(of: "Button(\"Contribution Guide\"", in: extensionSettings))
+        XCTAssertLessThan(index(of: "Button(\"Contribution Guide\"", in: extensionSettings), index(of: "Button(\"Remote Guide\"", in: extensionSettings))
         XCTAssertTrue(settings.contains("Extension Contribution Guide.md"))
         XCTAssertTrue(settings.contains("read-only-first contribution guide"))
         XCTAssertTrue(settings.contains("onOpenContributionGuide"))
         XCTAssertTrue(settings.contains("Open the read-only-first contribution guide before writing a new extension"))
+    }
+
+    func testSettingsExposeProjectIntelligenceControls() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let settingsURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SettingsView.swift")
+        let appURL = projectRoot.appendingPathComponent("Sources/Cribble/App/CribbleApp.swift")
+        let settings = try String(contentsOf: settingsURL, encoding: .utf8)
+        let app = try String(contentsOf: appURL, encoding: .utf8)
+
+        XCTAssertTrue(settings.contains("Section(\"Project Intelligence\")"))
+        XCTAssertTrue(settings.contains("Picker(\"Performance\""))
+        XCTAssertTrue(settings.contains("Toggle(\"Pause on battery saver\""))
+        XCTAssertTrue(settings.contains("Toggle(\"Use Project Intelligence in chat\""))
+        XCTAssertTrue(settings.contains("Stepper(value: Binding("))
+        XCTAssertTrue(settings.contains("intelligence.settings.diskBudgetMB = $0"))
+        XCTAssertTrue(settings.contains("RemoteRunnerDataBoundary.detail"))
+        XCTAssertTrue(settings.contains("Notes stay on this Mac unless you choose a remote runner or extension profile."))
+        XCTAssertTrue(app.contains(".environmentObject(intelligence)"))
     }
 
     func testRemoteRunnerHandoffStripsExposeCopyReviewLabels() throws {

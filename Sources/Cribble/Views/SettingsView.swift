@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var library: MarkdownLibraryStore
+    @EnvironmentObject private var intelligence: IntelligenceEngine
     @EnvironmentObject private var extensionRegistry: ExtensionRegistry
     @State private var extensionStatus: String?
 
@@ -81,6 +82,62 @@ struct SettingsView: View {
                         .disabled(settings.editorApplicationURL == nil)
                         .help("Clear the configured external editor")
                 }
+            }
+
+            Section("Project Intelligence") {
+                Picker("Performance", selection: Binding(
+                    get: { intelligence.settings.performanceMode },
+                    set: { intelligence.setPerformanceMode($0) }
+                )) {
+                    ForEach(PerformanceMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .help("Choose how much background analysis Cribble may run on this Mac")
+
+                Text(intelligence.settings.performanceMode.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Toggle("Pause on battery saver", isOn: Binding(
+                    get: { intelligence.settings.pauseOnBattery },
+                    set: { intelligence.settings.pauseOnBattery = $0 }
+                ))
+                    .help("Pause background Project Intelligence when macOS Low Power Mode is active")
+
+                Toggle("Use Project Intelligence in chat", isOn: Binding(
+                    get: { intelligence.settings.useInChat },
+                    set: { intelligence.settings.useInChat = $0 }
+                ))
+                    .help("Allow the chat HUD to include the active project's generated intelligence context")
+
+                Stepper(value: Binding(
+                    get: { intelligence.settings.diskBudgetMB },
+                    set: { intelligence.settings.diskBudgetMB = $0 }
+                ), in: 100...5000, step: 100) {
+                    HStack {
+                        Text("Disk budget")
+                        Spacer()
+                        Text("\(intelligence.settings.diskBudgetMB) MB")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                .help("Limit regenerable .cribble/cache artifacts; oldest artifacts are evicted first")
+
+                HStack(alignment: .top, spacing: 8) {
+                    Label(intelligenceRunnerBoundaryTitle, systemImage: intelligence.settings.localRunnerBaseURL == nil ? "macbook" : "network")
+                    Spacer(minLength: 8)
+                    Button("Remote Guide") {
+                        library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode)
+                    }
+                    .help("Open the guide for trusted VPS or team runners")
+                }
+
+                Text(intelligenceRunnerBoundaryDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Extensions") {
@@ -241,13 +298,30 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding(20)
-        .frame(width: 620)
+        .frame(width: 680)
         .onAppear {
             extensionRegistry.reload(projectRoots: library.rootURLs)
         }
         .onChange(of: library.rootURLs) { _, roots in
             extensionRegistry.reload(projectRoots: roots)
         }
+    }
+
+    private var intelligenceRunnerBoundaryTitle: String {
+        if let runner = intelligence.settings.localRunnerBaseURL,
+           !runner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Remote runner configured"
+        }
+        return "On-device runner"
+    }
+
+    private var intelligenceRunnerBoundaryDetail: String {
+        if let runner = intelligence.settings.localRunnerBaseURL,
+           !runner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let keychain = intelligence.settings.runnerUsesKeychain(baseURL: runner) ? "Keychain token marker is on." : "No Keychain token marker is set."
+            return "\(RemoteRunnerDataBoundary.detail) \(keychain)"
+        }
+        return "Notes stay on this Mac unless you choose a remote runner or extension profile."
     }
 
     private func createExample(_ template: ExtensionExampleTemplate) {

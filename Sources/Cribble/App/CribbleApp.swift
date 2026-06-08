@@ -48,6 +48,7 @@ struct CribbleApp: App {
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(library)
+                .environmentObject(intelligence)
                 .environmentObject(extensionRegistry)
                 .preferredColorScheme(settings.appearance.colorScheme)
         }

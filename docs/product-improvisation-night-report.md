@@ -663,6 +663,9 @@ Latest pass:
 - Settings > Extensions import-lane rows now use a visible Copy Review button
   instead of an icon-only affordance, making importer handoffs easier to find
   for first-time extension authors.
+- Copied extension dashboard summaries and diagnostic reports now name
+  Settings > Extensions > Import lanes > Copy Review beside the Help importer
+  template, so support handoffs point to the in-place import-lane review action.
 - The product summary and readiness checkpoint now treat copied diagnostics and
   Settings summaries with exact native review routes as explicit product signal,
   keeping the stop/go report aligned with the support handoff work.
@@ -909,6 +912,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after changing Settings import-lane rows to a visible Copy Review button: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding schema, contribution, and lane-review routes to copied extension warning handoffs: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the current manifest validation rules for icons, remote URLs, and importer extensions: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding the Settings import-lane Copy Review route to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

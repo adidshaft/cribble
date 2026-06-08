@@ -425,6 +425,7 @@ struct ExtensionRegistryTests {
         #expect(summary.reviewSummary.contains("Native review routes:"))
         #expect(summary.reviewSummary.contains("Settings > Extensions > Contribution Guide"))
         #expect(summary.reviewSummary.contains("Settings > Extensions > Copy Warnings"))
+        #expect(summary.reviewSummary.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(summary.reviewSummary.contains("Help > Copy Extension Proposal"))
         #expect(summary.reviewSummary.contains("Help > Copy Import Lane Setup Review"))
         #expect(summary.reviewSummary.contains("Help > Copy Remote Runner Setup Review"))

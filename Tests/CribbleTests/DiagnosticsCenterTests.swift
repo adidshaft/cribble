@@ -266,7 +266,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide"))
         XCTAssertTrue(section.contains("Proposal review: Help > Copy Extension Proposal"))
         XCTAssertTrue(section.contains("Warning handoff: Settings > Extensions > Copy Warnings"))
-        XCTAssertTrue(section.contains("Import lane review: Help > Copy Import Lane Setup Review"))
+        XCTAssertTrue(section.contains("Import lane review: Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review"))
         XCTAssertTrue(section.contains("Remote runner review: Help > Copy Remote Runner Setup Review"))
         XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))
         XCTAssertTrue(section.contains("Quick Review (com.example.quick): Quick Action, User, enabled"))

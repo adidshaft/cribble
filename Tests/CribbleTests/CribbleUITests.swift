@@ -305,6 +305,20 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(sidebar.contains("SidebarEmptySearchHint("))
         XCTAssertTrue(sidebar.contains("emptySearchHint.showsIntelligenceAction"))
         XCTAssertTrue(sidebar.contains("Label(\"Open Project Intelligence\", systemImage: \"brain\")"))
+        XCTAssertTrue(sidebar.contains("Label(\"Copy Search Handoff\", systemImage: \"doc.on.doc\")"))
+        XCTAssertTrue(sidebar.contains("copySearchHandoff(emptySearchHint)"))
+        XCTAssertTrue(sidebar.contains("Copied search handoff"))
+        XCTAssertTrue(sidebar.contains("Copy the failed search and suggested recovery step"))
+    }
+
+    func testSidebarSearchHandoffCopiesRecoveryContext() {
+        let hint = SidebarEmptySearchHint(semanticResultCount: 0, hasFolders: true)
+        let handoff = SidebarSearchHandoff.markdown(query: "  missing thing  ", hint: hint)
+
+        XCTAssertTrue(handoff.contains("# Cribble Search Handoff"))
+        XCTAssertTrue(handoff.contains("Query: missing thing"))
+        XCTAssertTrue(handoff.contains("Project Intelligence can index this folder"))
+        XCTAssertTrue(handoff.contains("Open Project Intelligence to index this folder for deeper semantic search."))
     }
 
     func testReadingTrailEmptyStateOffersWorkflowRecovery() throws {

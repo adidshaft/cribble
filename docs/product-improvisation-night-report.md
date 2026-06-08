@@ -991,6 +991,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy`
   passed on 2026-06-08 after adding the Project Intelligence trust checklist to
   DemoNotes: 1 XCTest test, 0 failures.
+- Sidebar no-match search recovery now includes Copy Search Handoff, a zero-file
+  Markdown handoff with the failed query, result explanation, and suggested
+  Project Intelligence recovery step.
+- Latest `swift test --filter 'CribbleUITests/testSidebarNoMatchEmptyStateOffersProjectIntelligenceRecovery|CribbleUITests/testSidebarSearchHandoffCopiesRecoveryContext'`
+  passed on 2026-06-08 after adding the sidebar no-match Copy Search Handoff:
+  2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

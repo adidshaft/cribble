@@ -155,6 +155,14 @@ struct SidebarView: View {
                         .buttonStyle(.borderedProminent)
                     }
 
+                    Button {
+                        copySearchHandoff(emptySearchHint)
+                    } label: {
+                        Label("Copy Search Handoff", systemImage: "doc.on.doc")
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Copy the failed search and suggested recovery step")
+
                     Button("Clear Search") {
                         library.searchText = ""
                     }
@@ -250,6 +258,16 @@ struct SidebarView: View {
         }
     }
 
+    private func copySearchHandoff(_ hint: SidebarEmptySearchHint) {
+        let handoff = SidebarSearchHandoff.markdown(
+            query: library.searchText,
+            hint: hint
+        )
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(handoff, forType: .string)
+        library.statusMessage = "Copied search handoff"
+    }
+
     private var preflightRunnerSummary: IntelligencePreflightRunnerSummary {
         IntelligencePreflightRunnerSummary.current(
             runnerURL: intelligence.settings.localRunnerBaseURL,
@@ -328,6 +346,23 @@ struct SidebarEmptySearchHint: Equatable {
 
     var showsIntelligenceAction: Bool {
         hasFolders && semanticResultCount == 0
+    }
+}
+
+enum SidebarSearchHandoff {
+    static func markdown(query: String, hint: SidebarEmptySearchHint) -> String {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let queryLine = trimmed.isEmpty ? "(empty search)" : trimmed
+        let nextStep = hint.showsIntelligenceAction
+            ? "Open Project Intelligence to index this folder for deeper semantic search."
+            : "Clear the search or try a broader term."
+        return [
+            "# Cribble Search Handoff",
+            "",
+            "Query: \(queryLine)",
+            "Result: \(hint.description)",
+            "Next step: \(nextStep)"
+        ].joined(separator: "\n")
     }
 }
 

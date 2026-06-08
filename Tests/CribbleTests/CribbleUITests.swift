@@ -307,6 +307,23 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(sidebar.contains("Label(\"Open Project Intelligence\", systemImage: \"brain\")"))
     }
 
+    func testReadingTrailEmptyStateOffersWorkflowRecovery() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let trailURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReadingTrailPanel.swift")
+        let trail = try String(contentsOf: trailURL, encoding: .utf8)
+
+        XCTAssertTrue(trail.contains("@EnvironmentObject private var settings: AppSettings"))
+        XCTAssertTrue(trail.contains("Workflow Playbook.md"))
+        XCTAssertTrue(trail.contains("Label(\"Workflow Guide\", systemImage: \"book.pages\")"))
+        XCTAssertTrue(trail.contains("library.proposeBlankNote()"))
+        XCTAssertTrue(trail.contains("Label(\"New Note\", systemImage: \"doc.badge.plus\")"))
+        XCTAssertTrue(trail.contains("Open notes, follow wiki links, and collect highlights"))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

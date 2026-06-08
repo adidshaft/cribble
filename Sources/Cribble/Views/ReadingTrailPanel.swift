@@ -7,6 +7,7 @@ struct ReadingTrailPanel: View {
     @EnvironmentObject private var trail: ReadingTrailStore
     @EnvironmentObject private var annotations: ReadingAnnotationsStore
     @EnvironmentObject private var library: MarkdownLibraryStore
+    @EnvironmentObject private var settings: AppSettings
 
     let onClose: () -> Void
 
@@ -50,16 +51,38 @@ struct ReadingTrailPanel: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Image(systemName: "signpost.right.and.left")
                 .font(.system(size: 26))
                 .foregroundStyle(.tertiary)
             Text("No trail yet")
                 .font(.system(size: 13, weight: .medium))
-            Text("Open notes and follow wiki links — your path appears here.")
+            Text("Open notes, follow wiki links, and collect highlights — your path appears here.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+
+            HStack(spacing: 8) {
+                Button {
+                    library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode)
+                } label: {
+                    Label("Workflow Guide", systemImage: "book.pages")
+                }
+                .buttonStyle(.bordered)
+                .help("Open the DemoNotes guide for trails, research, and team workflows")
+
+                if library.hasFolders {
+                    Button {
+                        library.proposeBlankNote()
+                    } label: {
+                        Label("New Note", systemImage: "doc.badge.plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .help("Create a note to start a reading path")
+                }
+            }
+            .controlSize(.small)
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)

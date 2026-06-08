@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Textual
 
@@ -60,6 +61,7 @@ private struct TaskRow: View {
     @Environment(\.readerMonospaceFontName) private var monospaceFontName
     @State private var checked: Bool
     @State private var isHovering = false
+    @State private var copiedTask = false
 
     init(
         item: TaskListItem,
@@ -150,6 +152,13 @@ private struct TaskRow: View {
     private var addTaskMenu: some View {
         Menu {
             Button {
+                copyTask()
+            } label: {
+                Label(copiedTask ? "Copied Task" : "Copy Task", systemImage: copiedTask ? "checkmark" : "doc.on.doc")
+            }
+            .help("Copy this task text for any app without creating a Reminder or Calendar event")
+            Divider()
+            Button {
                 onAddTask(nil)
             } label: {
                 Label("Add to Tasks", systemImage: "text.badge.plus")
@@ -172,5 +181,11 @@ private struct TaskRow: View {
         .fixedSize()
         .help("Add this task to Tasks, Reminders, or Calendar")
         .pointingHandOnHover()
+    }
+
+    private func copyTask() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(item.label.trimmingCharacters(in: .whitespacesAndNewlines), forType: .string)
+        copiedTask = true
     }
 }

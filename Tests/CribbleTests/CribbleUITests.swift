@@ -1499,6 +1499,22 @@ final class CribbleUITests: XCTestCase {
         )
     }
 
+    func testTaskMenuCanCopyTaskWithoutExternalExport() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let taskListURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/TaskListView.swift")
+        let taskList = try String(contentsOf: taskListURL, encoding: .utf8)
+
+        XCTAssertTrue(taskList.contains("import AppKit"))
+        XCTAssertTrue(taskList.contains("Label(copiedTask ? \"Copied Task\" : \"Copy Task\""))
+        XCTAssertTrue(taskList.contains("copyTask()"))
+        XCTAssertTrue(taskList.contains("NSPasteboard.general.setString(item.label.trimmingCharacters"))
+        XCTAssertTrue(taskList.contains("without creating a Reminder or Calendar event"))
+    }
+
     func testOpenTasksReportsNameCollisionWithDirectory() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("TasksDirectoryCollision-\(UUID().uuidString)", isDirectory: true)

@@ -697,6 +697,9 @@ Latest pass:
 - The diff review sheet now includes Copy Diff, letting users export an
   AI-generated patch to an issue, PR, or teammate before applying it to notes;
   the renderer also covers empty-diff handoff text.
+- Task checkbox menus now include Copy Task, giving users a zero-permission
+  handoff path for action items before choosing Cribble Tasks, Reminders, or
+  Calendar export.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -752,6 +755,7 @@ Latest pass:
 - Latest `swift test --filter 'ChatHUDLogicTests/testExtensionLaneSummaryGuidesEmptyAndInstalledStates|ChatHUDLogicTests/testSlashCommandsMatchExtensionSourceName|ChatHUDLogicTests/testExtensionQuickActionsSuppressAmbientContext|CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane'` passed on 2026-06-08 after adding the Chat HUD extension contribution empty-state lane: 4 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testImportGuidanceSheetLinksContributionGuide|CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear|CribbleUITests/testDemoNotesUseLocalFirstAICopy'` passed on 2026-06-08 after adding the Contribution Guide route to the Import setup sheet: 3 XCTest tests, 0 failures.
 - Latest `swift test --filter 'UnifiedDiffTests|CribbleUITests/testDiffPreviewSheetCanCopyPatchForReview|CribbleUITests/testPathfinderSheetCanCopySummary'` passed on 2026-06-08 after adding Copy Diff to the review sheet and a reusable diff renderer: 8 XCTest tests, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testTaskMenuCanCopyTaskWithoutExternalExport|CribbleUITests/testTaskExternalExportStatusNamesTasksAndDestination|TaskExporterTests'` passed on 2026-06-08 after adding Copy Task to checkbox menus: 4 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

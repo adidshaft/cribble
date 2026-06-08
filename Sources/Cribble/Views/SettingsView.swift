@@ -236,10 +236,10 @@ struct SettingsView: View {
                                         copyReviewSummary(for: installed)
                                     },
                                     onRevokeTrust: {
-                                        extensionRegistry.revokeTrust(for: installed)
+                                        revokeTrust(for: installed)
                                     },
                                     onClearTrust: {
-                                        extensionRegistry.clearTrustDecision(for: installed)
+                                        clearTrustDecision(for: installed)
                                     }
                                 )
                             }
@@ -387,6 +387,16 @@ struct SettingsView: View {
     private func setExtensionEnabled(_ enabled: Bool, for installed: InstalledCribbleExtension) {
         extensionRegistry.setEnabled(enabled, for: installed)
         extensionStatus = "\(enabled ? "Enabled" : "Disabled") \(installed.manifest.name)"
+    }
+
+    private func revokeTrust(for installed: InstalledCribbleExtension) {
+        extensionRegistry.revokeTrust(for: installed)
+        extensionStatus = "Revoked future consent for \(installed.manifest.name)"
+    }
+
+    private func clearTrustDecision(for installed: InstalledCribbleExtension) {
+        extensionRegistry.clearTrustDecision(for: installed)
+        extensionStatus = "Cleared trust decision for \(installed.manifest.name)"
     }
 
     private func copyReviewSummary(for installed: InstalledCribbleExtension) {

@@ -12,6 +12,7 @@ struct ReadingTrailPanel: View {
 
     let onClose: () -> Void
     @State private var copiedTrailSummary = false
+    @State private var copiedTrailStarter = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -72,6 +73,15 @@ struct ReadingTrailPanel: View {
                 }
                 .buttonStyle(.bordered)
                 .help("Open the DemoNotes guide for trails, research, and team workflows")
+
+                Button {
+                    copyTrailStarter()
+                } label: {
+                    Label(copiedTrailStarter ? "Copied Starter" : "Copy Trail Starter",
+                          systemImage: copiedTrailStarter ? "checkmark" : "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                .help("Copy a short reading-trail workflow before creating a note")
 
                 if library.hasFolders {
                     Button {
@@ -159,6 +169,21 @@ struct ReadingTrailPanel: View {
         NSPasteboard.general.setString(note.content, forType: .string)
         copiedTrailSummary = true
         library.statusMessage = "Copied reading trail summary"
+    }
+
+    private func copyTrailStarter() {
+        let starter = """
+        # Reading Trail Starter
+
+        - Open the first note for this question.
+        - Follow wiki links or related notes that change your understanding.
+        - Highlight evidence worth keeping.
+        - Use Copy Trail Summary once the path has useful context.
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(starter, forType: .string)
+        copiedTrailStarter = true
+        library.statusMessage = "Copied reading trail starter"
     }
 }
 

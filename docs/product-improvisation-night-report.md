@@ -997,6 +997,12 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testSidebarNoMatchEmptyStateOffersProjectIntelligenceRecovery|CribbleUITests/testSidebarSearchHandoffCopiesRecoveryContext'`
   passed on 2026-06-08 after adding the sidebar no-match Copy Search Handoff:
   2 XCTest tests, 0 failures.
+- Empty Reading Trail now includes Copy Trail Starter, a zero-file checklist for
+  opening a first note, following links, highlighting evidence, and using Copy
+  Trail Summary once the path has context.
+- Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery`
+  passed on 2026-06-08 after adding Copy Trail Starter to the empty Reading
+  Trail state: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

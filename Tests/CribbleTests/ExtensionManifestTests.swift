@@ -171,6 +171,46 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsRemoteTrustSourceURLWithoutHTTPS() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.trust",
+            name: "Trust",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares remote trust metadata.",
+            trust: CribbleExtensionTrustDeclaration(
+                developerName: "Example Team",
+                signingIdentifier: "com.example.cribble.trust",
+                teamIdentifier: "ABCDE12345",
+                sourceURL: URL(string: "http://example.com/source")!
+            )
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("http://example.com/source must be an https trust sourceURL unless it targets localhost.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
+    func allowsLocalTrustSourceURLOverHTTP() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.trust",
+            name: "Trust",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares local trust metadata.",
+            trust: CribbleExtensionTrustDeclaration(
+                developerName: "Example Team",
+                signingIdentifier: "com.example.cribble.trust",
+                teamIdentifier: "ABCDE12345",
+                sourceURL: URL(string: "http://localhost:8080/source")!
+            )
+        )
+
+        try ExtensionManifestLoader.validate(manifest)
+    }
+
+    @Test
     func loadsExplicitDeclarativeRuntime() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.declarative",

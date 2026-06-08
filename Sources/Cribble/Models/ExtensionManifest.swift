@@ -546,8 +546,8 @@ enum ExtensionManifestLoader {
            teamIdentifier.range(of: #"^[A-Z0-9]{10}$"#, options: .regularExpression) == nil {
             throw ExtensionManifestError.invalidContribution("Trust teamIdentifier must be a 10-character Apple Team ID.")
         }
-        if let sourceURL = trust.sourceURL, !isHTTPURL(sourceURL) {
-            throw ExtensionManifestError.invalidContribution("\(sourceURL.absoluteString) must be an http or https trust sourceURL.")
+        if let sourceURL = trust.sourceURL, !isSecureProviderURL(sourceURL) {
+            throw ExtensionManifestError.invalidContribution("\(sourceURL.absoluteString) must be an https trust sourceURL unless it targets localhost.")
         }
     }
 

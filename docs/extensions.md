@@ -138,7 +138,8 @@ validates optional `trust` declarations:
 - `developerName`: human-readable developer or team name.
 - `signingIdentifier`: reverse-DNS bundle identifier expected for future signed code.
 - `teamIdentifier`: optional 10-character Apple Team ID.
-- `sourceURL`: optional `http` or `https` URL for the extension source or release page.
+- `sourceURL`: optional `https` URL for the extension source or release page.
+  `http` is accepted only for localhost or loopback development URLs.
 
 Cribble also keeps a local trust-decision store for future executable plugins.
 Settings can revoke or clear a remembered trust decision for manifests that

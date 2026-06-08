@@ -155,7 +155,7 @@ struct SettingsView: View {
                     HStack {
                         Label("Extension folders", systemImage: "puzzlepiece.extension")
                         Spacer()
-                        Button("Reveal", action: extensionRegistry.revealUserExtensionsFolder)
+                        Button("Reveal", action: revealUserExtensionsFolder)
                             .help("Open Cribble's user extension folder in Finder")
                         Button("Check Again") {
                             validateExtensions()
@@ -230,7 +230,7 @@ struct SettingsView: View {
                                         setExtensionEnabled(enabled, for: installed)
                                     },
                                     onReveal: {
-                                        extensionRegistry.reveal(installed)
+                                        revealExtensionManifest(installed)
                                     },
                                     onCopyReviewSummary: {
                                         copyReviewSummary(for: installed)
@@ -382,6 +382,16 @@ struct SettingsView: View {
         } else {
             extensionStatus = "Extension check \(result)"
         }
+    }
+
+    private func revealUserExtensionsFolder() {
+        extensionRegistry.revealUserExtensionsFolder()
+        extensionStatus = "Revealed user extensions folder"
+    }
+
+    private func revealExtensionManifest(_ installed: InstalledCribbleExtension) {
+        extensionRegistry.reveal(installed)
+        extensionStatus = "Revealed \(installed.manifest.name) manifest"
     }
 
     private func setExtensionEnabled(_ enabled: Bool, for installed: InstalledCribbleExtension) {

@@ -54,6 +54,15 @@ Answer these in the issue, Discussion, or pull request:
 | Renderer | Alias for a built-in renderer | No file access |
 | Importer | Declared formats and review copy | No execution; user-selected files only |
 
+## Manifest checks you will hit first
+
+- Quick action ids and icons are safe tokens. Use SF Symbol-style icon names like
+  `checklist` or `text.alignleft`; spaces, slashes, and paths are rejected.
+- Remote runner `baseURL` and trust `sourceURL` values use HTTPS unless they
+  target localhost development.
+- Importer `fileExtensions` are bare and unique regardless of case: use `json`
+  or `txt`, not `.json`, `*.json`, paths, or both `json` and `JSON`.
+
 For importer ideas, use **Help → Copy Import Lane Setup Review** or
 **File → Import → Copy Review**. For remote runners, use
 **Settings → Project Intelligence → Copy Review** or

@@ -802,6 +802,9 @@ Latest pass:
 - DemoNotes now teach Settings > Project Intelligence > Copy Review beside Help
   > Copy Remote Runner Setup Review, aligning the remote runner guide,
   contribution guide, and Team Extension Kit with the native Settings path.
+- DemoNotes now teach the first manifest validation rules contributors will hit:
+  SF Symbol-style quick-action icons, HTTPS-unless-localhost runner/trust URLs,
+  and bare unique importer extensions.
 - The welcome starter checklist now also names Settings > Project Intelligence >
   Copy Review before VPS/team remote-runner use, so first-run guidance matches
   the Settings and DemoNotes handoff.
@@ -905,6 +908,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionManifestTests/loadsExplicitDeclarativeRuntime|ExtensionManifestTests/rejectsUnsafeQuickActionIcons|ExtensionManifestTests/rejectsUnsafeQuickActionIDs'` passed on 2026-06-08 after validating quick-action icon tokens before they reach the Chat HUD: 3 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after changing Settings import-lane rows to a visible Copy Review button: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding schema, contribution, and lane-review routes to copied extension warning handoffs: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the current manifest validation rules for icons, remote URLs, and importer extensions: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

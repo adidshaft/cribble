@@ -242,6 +242,8 @@ Before writing the manifest, choose **Help → Copy Import Lane Setup Review** o
 **File → Import → Copy Review** to paste the pre-install safety contract into a
 proposal thread: no converter execution, user-selected files only,
 previewed writes, no secrets, native SwiftUI controls, and clean disabling.
+Use bare, unique file extensions like `json` and `txt`; do not include leading
+dots, wildcards, paths, or duplicate casing such as `json` plus `JSON`.
 
 ```json
 {

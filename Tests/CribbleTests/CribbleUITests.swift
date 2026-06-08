@@ -1300,6 +1300,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(extensions.contains("Secrets stay out of manifests and notes; use Keychain only"))
         XCTAssertTrue(extensions.contains("user-selected files only"))
         XCTAssertTrue(extensions.contains("previewed writes"))
+        XCTAssertTrue(extensions.contains("Use bare, unique file extensions like `json` and `txt`"))
+        XCTAssertTrue(extensions.contains("duplicate casing such as `json` plus `JSON`"))
 
         let teamKit = try String(contentsOf: demoRoot.appendingPathComponent("Team Extension Kit.md"), encoding: .utf8)
         XCTAssertTrue(teamKit.contains("Help → Copy Extension Proposal"))
@@ -1330,6 +1332,10 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(contributionGuide.contains("Settings → Project Intelligence → Copy Review"))
         XCTAssertTrue(contributionGuide.contains("Help → Copy Remote Runner Setup Review"))
         XCTAssertTrue(contributionGuide.contains("Settings → Extensions → Copy Warnings"))
+        XCTAssertTrue(contributionGuide.contains("Manifest checks you will hit first"))
+        XCTAssertTrue(contributionGuide.contains("SF Symbol-style icon names"))
+        XCTAssertTrue(contributionGuide.contains("HTTPS unless they"))
+        XCTAssertTrue(contributionGuide.contains("bare and unique regardless of case"))
         XCTAssertTrue(contributionGuide.contains("signed bundle identity"))
 
         let researchReview = try String(contentsOf: demoRoot.appendingPathComponent("Research Review.md"), encoding: .utf8)

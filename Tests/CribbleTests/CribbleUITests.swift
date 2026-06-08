@@ -1337,6 +1337,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(review.contains("Copy Proposal"))
     }
 
+    func testImportGuidanceSheetLinksContributionGuide() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let contentURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ContentView.swift")
+        let content = try String(contentsOf: contentURL, encoding: .utf8)
+
+        XCTAssertTrue(content.contains("onOpenContributionGuide"))
+        XCTAssertTrue(content.contains("library.openDemoNote(named: \"Extension Contribution Guide.md\""))
+        XCTAssertTrue(content.contains("Label(\"Open Contribution Guide\", systemImage: \"checkmark.shield\")"))
+        XCTAssertTrue(content.contains("strict read-only, least-writing, native SwiftUI contribution guide"))
+    }
+
     func testNewNoteProposalUsesReviewFlowAndAppliesUniqueFile() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("NewNote-\(UUID().uuidString)", isDirectory: true)

@@ -363,6 +363,10 @@ struct ContentView: View {
                     onOpenTeamKit: {
                         showingImportGuidance = false
                         library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+                    },
+                    onOpenContributionGuide: {
+                        showingImportGuidance = false
+                        library.openDemoNote(named: "Extension Contribution Guide.md", sortMode: settings.fileSortMode)
                     }
                 )
             }
@@ -702,6 +706,7 @@ private struct ImportGuidanceSheet: View {
     let onCreateUserExample: () -> Void
     let onOpenSettings: () -> Void
     let onOpenTeamKit: () -> Void
+    let onOpenContributionGuide: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -776,6 +781,13 @@ private struct ImportGuidanceSheet: View {
                 } label: {
                     Label("Open Team Extension Kit", systemImage: "book.pages")
                 }
+
+                Button {
+                    onOpenContributionGuide()
+                } label: {
+                    Label("Open Contribution Guide", systemImage: "checkmark.shield")
+                }
+                .help("Open the strict read-only, least-writing, native SwiftUI contribution guide")
             }
             .buttonStyle(.bordered)
             .controlSize(.large)

@@ -216,6 +216,7 @@ struct SettingsView: View {
                             canCreateProjectExample: library.activeRootURL != nil,
                             onCreateQuickAction: { createExample(.quickAction) },
                             onCreateProjectQuickAction: { createProjectExample(.quickAction) },
+                            onCopyProposal: copyExtensionProposalTemplate,
                             onOpenKit: {
                                 library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
                             },
@@ -718,6 +719,7 @@ private struct ExtensionEmptyState: View {
     let canCreateProjectExample: Bool
     let onCreateQuickAction: () -> Void
     let onCreateProjectQuickAction: () -> Void
+    let onCopyProposal: () -> Void
     let onOpenKit: () -> Void
     let onOpenContributionGuide: () -> Void
 
@@ -743,6 +745,13 @@ private struct ExtensionEmptyState: View {
                 }
                 .disabled(!canCreateProjectExample)
                 .help(canCreateProjectExample ? "Write a starter quick action into the open folder" : "Open a folder before creating a project-local extension")
+
+                Button {
+                    onCopyProposal()
+                } label: {
+                    Label("Copy Proposal", systemImage: "doc.on.doc")
+                }
+                .help("Copy the extension idea template before creating files")
 
                 Button {
                     onOpenKit()

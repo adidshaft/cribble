@@ -973,6 +973,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testImportGuidanceSheetLinksContributionGuide`
   passed on 2026-06-08 after adding the installed import-lane review step to
   the import setup sheet: 1 XCTest test, 0 failures.
+- The empty Extensions settings state now offers Copy Proposal beside starter
+  creation and guide actions, letting new contributors paste a reviewable idea
+  before creating extension files.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide`
+  passed on 2026-06-08 after adding Copy Proposal to the empty Extensions
+  settings state: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

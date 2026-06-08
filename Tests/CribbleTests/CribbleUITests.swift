@@ -1202,6 +1202,10 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("RemoteRunnerSetupReview.markdown"))
         XCTAssertTrue(settings.contains("Copied remote runner setup review"))
         XCTAssertTrue(settings.contains("Notes stay on this Mac unless you choose a remote runner or extension profile."))
+        XCTAssertTrue(settings.contains("Local by default"))
+        XCTAssertTrue(settings.contains("Secrets stay in Keychain"))
+        XCTAssertTrue(settings.contains("Copy before remote"))
+        XCTAssertTrue(settings.contains("Use Copy Review before a VPS, team GPU, or vendor endpoint receives note context."))
         XCTAssertTrue(app.contains(".environmentObject(intelligence)"))
     }
 

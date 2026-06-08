@@ -979,6 +979,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide`
   passed on 2026-06-08 after adding Copy Proposal to the empty Extensions
   settings state: 1 XCTest test, 0 failures.
+- Settings > Project Intelligence now includes a compact native trust checklist:
+  local by default, Keychain-only secrets, and Copy Review before a VPS, team
+  GPU, or vendor endpoint receives note context.
+- Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls`
+  passed on 2026-06-08 after adding the Project Intelligence trust checklist to
+  Settings: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

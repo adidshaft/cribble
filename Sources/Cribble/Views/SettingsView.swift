@@ -142,6 +142,24 @@ struct SettingsView: View {
                 Text(intelligenceRunnerBoundaryDetail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    SettingsTrustRow(
+                        icon: "lock.shield",
+                        title: "Local by default",
+                        detail: "Project Intelligence uses on-device context until a remote runner is selected."
+                    )
+                    SettingsTrustRow(
+                        icon: "key",
+                        title: "Secrets stay in Keychain",
+                        detail: "Remote runner tokens should never live in notes, manifests, or diagnostics."
+                    )
+                    SettingsTrustRow(
+                        icon: "doc.on.doc",
+                        title: "Copy before remote",
+                        detail: "Use Copy Review before a VPS, team GPU, or vendor endpoint receives note context."
+                    )
+                }
             }
 
             Section("Extensions") {
@@ -771,6 +789,28 @@ private struct ExtensionEmptyState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
+    }
+}
+
+private struct SettingsTrustRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } icon: {
+            Image(systemName: icon)
+                .foregroundStyle(Color.accentColor)
+        }
     }
 }
 

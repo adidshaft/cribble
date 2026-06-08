@@ -371,8 +371,11 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
 
         - Settings > Extensions > Contribution Guide
         - Help > Open Extension Contribution Guide
+        - Settings > Extensions > Copy Proposal
         - Help > Copy Extension Proposal
+        - Settings > Extensions > Import lanes > Copy Review
         - Help > Copy Import Lane Setup Review
+        - Settings > Project Intelligence > Copy Review
         - Help > Copy Remote Runner Setup Review
         - Settings > Extensions > Copy Summary
         - Settings > Extensions > Copy Warnings

@@ -356,6 +356,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(pathfinder.contains("library.statusMessage = \"Copied Pathfinder summary\""))
     }
 
+    func testDiffPreviewSheetCanCopyPatchForReview() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let diffSheetURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/DiffPreviewSheet.swift")
+        let diffSheet = try String(contentsOf: diffSheetURL, encoding: .utf8)
+
+        XCTAssertTrue(diffSheet.contains("import AppKit"))
+        XCTAssertTrue(diffSheet.contains("Label(copiedDiff ? \"Copied Diff\" : \"Copy Diff\""))
+        XCTAssertTrue(diffSheet.contains("UnifiedDiffRenderer.render(diff)"))
+        XCTAssertTrue(diffSheet.contains("Copy the proposed patch for issue, PR, or teammate review before applying"))
+    }
+
     func testOutlineEmptyStateCanCopyHeadingStarter() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

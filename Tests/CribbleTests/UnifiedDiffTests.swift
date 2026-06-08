@@ -79,4 +79,39 @@ final class UnifiedDiffTests: XCTestCase {
             "## Contents\n- [Guide](Guide.md)\n"
         )
     }
+
+    func testRendersDiffForReviewHandoff() {
+        let diff = UnifiedDiff(files: [
+            DiffFile(
+                oldPath: "Note.md",
+                newPath: "Note.md",
+                hunks: [
+                    DiffHunk(
+                        header: "@@ -1,2 +1,2 @@",
+                        lines: [
+                            DiffLine(kind: .context, text: "# Note"),
+                            DiffLine(kind: .removal, text: "This mentions Alpha."),
+                            DiffLine(kind: .addition, text: "This mentions [[Alpha]].")
+                        ]
+                    )
+                ]
+            )
+        ])
+
+        XCTAssertEqual(
+            UnifiedDiffRenderer.render(diff),
+            """
+            --- a/Note.md
+            +++ b/Note.md
+            @@ -1,2 +1,2 @@
+             # Note
+            -This mentions Alpha.
+            +This mentions [[Alpha]].
+            """
+        )
+    }
+
+    func testRendersEmptyDiffForReviewHandoff() {
+        XCTAssertEqual(UnifiedDiffRenderer.render(UnifiedDiff(files: [])), "No suggested changes.")
+    }
 }

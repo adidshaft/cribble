@@ -32,6 +32,37 @@ struct DiffLine: Equatable {
     let text: String
 }
 
+enum UnifiedDiffRenderer {
+    static func render(_ diff: UnifiedDiff) -> String {
+        guard !diff.files.isEmpty else { return "No suggested changes." }
+        return diff.files.map(renderFile).joined(separator: "\n")
+    }
+
+    private static func renderFile(_ file: DiffFile) -> String {
+        var lines = [
+            "--- \(prefixedPath(file.oldPath, prefix: "a"))",
+            "+++ \(prefixedPath(file.newPath, prefix: "b"))"
+        ]
+        for hunk in file.hunks {
+            lines.append(hunk.header)
+            lines.append(contentsOf: hunk.lines.map(renderLine))
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private static func renderLine(_ line: DiffLine) -> String {
+        switch line.kind {
+        case .context: " \(line.text)"
+        case .addition: "+\(line.text)"
+        case .removal: "-\(line.text)"
+        }
+    }
+
+    private static func prefixedPath(_ path: String, prefix: String) -> String {
+        path == "/dev/null" ? path : "\(prefix)/\(path)"
+    }
+}
+
 enum UnifiedDiffParser {
     static func extractDiffText(from text: String) -> String {
         let lines = text.components(separatedBy: .newlines)

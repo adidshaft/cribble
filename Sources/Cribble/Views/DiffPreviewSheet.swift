@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct DiffPreviewSheet: View {
@@ -5,6 +6,7 @@ struct DiffPreviewSheet: View {
     let applyError: String?
     let onApply: () -> Void
     let onCancel: () -> Void
+    @State private var copiedDiff = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -51,6 +53,13 @@ struct DiffPreviewSheet: View {
                 Button("Cancel", role: .cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                     .help(cancelHelp)
+                Button {
+                    copyDiff()
+                } label: {
+                    Label(copiedDiff ? "Copied Diff" : "Copy Diff", systemImage: copiedDiff ? "checkmark" : "doc.on.doc")
+                }
+                .disabled(diff.isEmpty)
+                .help("Copy the proposed patch for issue, PR, or teammate review before applying")
                 Spacer()
                 Button(applyTitle, action: onApply)
                     .keyboardShortcut(.defaultAction)
@@ -90,6 +99,12 @@ struct DiffPreviewSheet: View {
         }
         guard diff.files.count > 1 else { return nil }
         return "Updates \(diff.files.count) files"
+    }
+
+    private func copyDiff() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(UnifiedDiffRenderer.render(diff), forType: .string)
+        copiedDiff = true
     }
 }
 

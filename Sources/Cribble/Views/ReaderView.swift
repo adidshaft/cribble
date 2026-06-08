@@ -116,6 +116,7 @@ private struct ShortcutReferencePopover: View {
                 ("H", "Highlight selected text"),
                 ("B", "Drop a reading bookmark"),
                 ("P", "Toggle Reading Trail"),
+                ("Reading Trail", "Copy Trail Summary for a zero-file handoff"),
                 ("Esc", "Exit highlight mode / close zoom overlay")
             ])
 
@@ -2468,6 +2469,7 @@ enum WelcomeStarterChecklist {
 
     - [ ] Open a Markdown folder or the bundled Demo Tour.
     - [ ] Read [[Getting Started]] and highlight one useful sentence.
+    - [ ] Press **P** after visiting a few notes and use **Copy Trail Summary** for a zero-file research handoff.
     - [ ] Open [[Cribble AI]] and choose the model boundary you trust.
     - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
     - [ ] Use the welcome **Tasks** button or **Command Option T** to open your project task lane.

@@ -1091,6 +1091,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("contribution and remote intelligence guides"))
         XCTAssertTrue(readerView.contains("starter, research, decision, import, and runner reviews"))
         XCTAssertTrue(readerView.contains("Copy diagnostics / report issue"))
+        XCTAssertTrue(readerView.contains("Copy Trail Summary for a zero-file handoff"))
     }
 
     func testHelpMenuGroupsGuidesTemplatesAndDiagnostics() throws {
@@ -1315,6 +1316,8 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertTrue(checklist.contains("Cribble Starter Checklist"))
         XCTAssertTrue(checklist.contains("[[Getting Started]]"))
+        XCTAssertTrue(checklist.contains("Copy Trail Summary"))
+        XCTAssertTrue(checklist.contains("zero-file research handoff"))
         XCTAssertTrue(checklist.contains("[[Cribble AI]]"))
         XCTAssertTrue(checklist.contains("model boundary"))
         XCTAssertTrue(checklist.contains("welcome **Tasks** button"))

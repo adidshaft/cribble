@@ -721,6 +721,9 @@ Latest pass:
 - Reading Trail now includes Copy Trail Summary, a zero-file Markdown handoff
   for research paths, highlights, and dwell-time context when users want to
   share progress before creating a permanent note.
+- The shortcut popover and starter checklist now mention Copy Trail Summary, so
+  first-run users can discover the zero-file research handoff before committing
+  a trail note.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -789,6 +792,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after making Settings creation status confirm generated README checklists: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` and `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding Copy Trail Summary to the Reading Trail footer and DemoNotes tour: 2 focused XCTest runs, 0 failures.
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding the inline Remote Runner Setup Review example to DemoNotes: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after surfacing Copy Trail Summary in native first-run guidance: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

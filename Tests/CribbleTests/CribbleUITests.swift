@@ -1125,6 +1125,9 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("read-only-first contribution guide"))
         XCTAssertTrue(settings.contains("onOpenContributionGuide"))
         XCTAssertTrue(settings.contains("Open the read-only-first contribution guide before writing a new extension"))
+        XCTAssertTrue(settings.contains("Write a starter manifest plus README review checklist"))
+        XCTAssertTrue(settings.contains("New examples include a local README checklist"))
+        XCTAssertTrue(settings.contains("read-only API v1, least permission, previewed writes, Keychain secrets, native SwiftUI"))
     }
 
     func testSettingsExposeProjectIntelligenceControls() throws {

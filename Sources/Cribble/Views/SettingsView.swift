@@ -188,7 +188,7 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                        .help("Write a starter cribble-extension.json manifest")
+                        .help("Write a starter manifest plus README review checklist")
                         Menu("Create Project Example") {
                             ForEach(ExtensionExampleTemplate.allCases) { template in
                                 Button(template.title) {
@@ -197,10 +197,13 @@ struct SettingsView: View {
                             }
                         }
                         .disabled(library.activeRootURL == nil)
-                        .help("Write a starter manifest into the current folder's .cribble/extensions directory")
+                        .help("Write a starter manifest plus README review checklist into the current folder's .cribble/extensions directory")
                     }
 
                     Text("Cribble discovers extension manifests in Application Support and each opened folder's .cribble/extensions directory. API v1 extensions are declarative: manifests are loaded and validated, but extension code is not executed.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("New examples include a local README checklist for read-only API v1, least permission, previewed writes, Keychain secrets, native SwiftUI, and review routes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 

@@ -392,6 +392,11 @@ struct ExtensionRegistryTests {
         #expect(summary.reviewSummary.contains("Keychain-only secrets"))
         #expect(summary.reviewSummary.contains("Contributor guide: docs/extension-contributions.md"))
         #expect(summary.reviewSummary.contains("Manifest reference: docs/extensions.md"))
+        #expect(summary.reviewSummary.contains("Native review routes:"))
+        #expect(summary.reviewSummary.contains("Settings > Extensions > Contribution Guide"))
+        #expect(summary.reviewSummary.contains("Help > Copy Extension Proposal"))
+        #expect(summary.reviewSummary.contains("Help > Copy Import Lane Setup Review"))
+        #expect(summary.reviewSummary.contains("Help > Copy Remote Runner Setup Review"))
     }
 
     @Test

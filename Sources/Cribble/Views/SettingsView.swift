@@ -482,6 +482,11 @@ struct ExtensionDashboardSummary: Equatable {
         - Remote runners need explicit data-boundary review and Keychain-only secrets.
         Contributor guide: docs/extension-contributions.md
         Manifest reference: docs/extensions.md
+        Native review routes:
+        - Settings > Extensions > Contribution Guide
+        - Help > Copy Extension Proposal
+        - Help > Copy Import Lane Setup Review
+        - Help > Copy Remote Runner Setup Review
         """
     }
 }

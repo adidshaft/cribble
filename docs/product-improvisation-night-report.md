@@ -739,6 +739,9 @@ Latest pass:
 - Diagnostic extension reports now name Settings > Extensions > Copy Warnings
   as the warning handoff route, so copied support reports and contributor
   reviews point to the same validation-sharing action.
+- DemoNotes now teach extension authors to use Settings > Extensions > Copy
+  Warnings before editing invalid manifests, keeping the contribution guide,
+  Team Extension Kit, Settings, and diagnostics aligned.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -813,6 +816,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` passed on 2026-06-08 after aligning Reading Trail panel copy feedback with the native command status: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding Copy Warnings to extension validation issues: 1 XCTest test, 0 failures.
 - Latest `swift test --filter DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings` passed on 2026-06-08 after adding the Copy Warnings route to extension diagnostics: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the Copy Warnings validation loop: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

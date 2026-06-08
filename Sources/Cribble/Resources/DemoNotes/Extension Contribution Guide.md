@@ -58,6 +58,9 @@ For importer ideas, use **Help → Copy Import Lane Setup Review** or
 **File → Import → Copy Review**. For remote runners, use
 **Help → Copy Remote Runner Setup Review**. Paste the copied review into the
 proposal so reviewers can see data boundaries, writes, secrets, and revocation.
+If Settings shows manifest validation warnings, use
+**Settings → Extensions → Copy Warnings** before editing so the exact failure and
+next-step checklist can be pasted into the issue, PR, or teammate review.
 
 ## Where to read more
 

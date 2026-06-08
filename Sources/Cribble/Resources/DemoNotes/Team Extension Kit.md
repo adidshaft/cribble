@@ -67,6 +67,8 @@ pull request or handoff note:
   attachments?
 - Is the source URL or signing identity filled in when known?
 - Did someone paste the copied extension details into the review thread?
+- If Settings shows validation warnings, did someone use
+  **Settings → Extensions → Copy Warnings** before fixing the manifest?
 - Did someone attach a copied diagnostic report when debugging install,
   validation, enabled-state, or remote-runner issues? It includes extension
   counts, warnings, permissions, and contribution titles without copying

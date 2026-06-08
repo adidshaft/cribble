@@ -1272,6 +1272,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(teamKit.contains("Help → Copy Extension Proposal"))
         XCTAssertTrue(teamKit.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(teamKit.contains("Help → Copy Remote Runner Setup Review"))
+        XCTAssertTrue(teamKit.contains("Settings → Extensions → Copy Warnings"))
         XCTAssertTrue(teamKit.contains("File → Import → Copy Review"))
         XCTAssertTrue(teamKit.contains("[[Extension Contribution Guide]]"))
         XCTAssertTrue(teamKit.contains("Help → Open Extension Contribution Guide"))
@@ -1293,6 +1294,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(contributionGuide.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(contributionGuide.contains("File → Import → Copy Review"))
         XCTAssertTrue(contributionGuide.contains("Help → Copy Remote Runner Setup Review"))
+        XCTAssertTrue(contributionGuide.contains("Settings → Extensions → Copy Warnings"))
         XCTAssertTrue(contributionGuide.contains("signed bundle identity"))
 
         let researchReview = try String(contentsOf: demoRoot.appendingPathComponent("Research Review.md"), encoding: .utf8)

@@ -221,6 +221,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(store.filteredNodes.isEmpty)
     }
 
+    func testImportLaneChooserStatusPointsToNativeSetupRoutes() {
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+
+        store.chooseImportFile(capabilities: [])
+
+        XCTAssertEqual(store.statusMessage, MarkdownLibraryStore.noImportLanesStatus)
+        XCTAssertTrue(MarkdownLibraryStore.noImportLanesStatus.contains("File > Import > Set Up Import Lane"))
+        XCTAssertTrue(MarkdownLibraryStore.noImportLanesStatus.contains("Settings > Extensions > Import lanes > Copy Review"))
+
+        let mismatch = MarkdownLibraryStore.importLaneMismatchStatus(forExtension: ".JSON")
+        XCTAssertTrue(mismatch.contains("No enabled import lane matches .json"))
+        XCTAssertTrue(mismatch.contains("Settings > Extensions > Import lanes > Copy Review"))
+        XCTAssertTrue(mismatch.contains("before enabling converters"))
+    }
+
     func testSidebarSearchSummaryCountsNestedFileMatches() {
         let root = MarkdownNode(
             id: URL(fileURLWithPath: "/dummy"),

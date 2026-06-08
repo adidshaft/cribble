@@ -32,6 +32,8 @@ now reads more like a local-first Mac knowledge workspace:
   declarations without executing extension code, with Settings-first proposal,
   import-lane review, and Project Intelligence review routes plus Help fallbacks
   and a dedicated open-source extension contribution guide for contributors.
+  Import dead ends now point to native setup and review routes instead of terse
+  failures.
 - **Stay smooth in bigger folders:** scanner guardrails now skip more generated
   dependency and tool-cache folders, while copyable diagnostics/review summaries
   keep support and contributor loops precise.
@@ -102,6 +104,8 @@ Focused validation passed across the newest work:
 - Help-copy templates for extension proposals, import lane setup reviews, and
   remote-runner setup reviews, with Settings-native Copy Review routes for
   installed import lanes and Project Intelligence handoffs.
+- Import chooser guidance for missing or unmatched lanes, including File >
+  Import setup and Settings > Extensions > Import lanes > Copy Review routes.
 - Remote Project Intelligence preflight copy review for team/VPS runner starts.
 - Diagnostics that distinguish local runners from remote runners before asking
   for Keychain credential recovery, and route remote credential issues through

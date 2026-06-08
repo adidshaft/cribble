@@ -37,7 +37,7 @@ branch foundation:
 | Native Help commands | Help recovers onboarding, contributor guides, starter templates, import-lane review, remote-runner review, and extension settings without requiring users to remember file paths. |
 | Declarative extension API v1 | It opens a plugin ecosystem while avoiding hidden execution, source-note writes, and broad ambient access. |
 | Remote runner review | It makes VPS/team intelligence useful while naming what may leave the Mac and where secrets live, with copyable review text from setup and preflight. |
-| Diagnostics and handoffs | Copied reports, Settings summaries, starter/search/README handoffs, and Markdown handoffs make support, PR review, and team sharing easier without leaking credentials, while preserving exact contribution, import, and remote-runner review routes. |
+| Diagnostics and handoffs | Copied reports, Settings summaries, starter/search/README/import handoffs, and Markdown handoffs make support, PR review, and team sharing easier without leaking credentials, while preserving exact contribution, import, and remote-runner review routes. |
 
 ## Stop Conditions
 
@@ -76,6 +76,8 @@ The next change should be small, native, and tied to one of these signals:
 - Later focused tests passed for Decision Log, Research Review, Extension
   Contribution Guide, executable readiness gates, remote-runner reviews,
   diagnostics, Settings summary review routes, and DemoNotes seeded artifacts.
+- Latest focused import recovery test passed after routing missing/unmatched
+  import lanes to File > Import setup and Settings > Extensions review paths.
 - Known residual noise: intermittent CoreData XPC messages in broad macOS test
   runs. They have not failed tests.
 

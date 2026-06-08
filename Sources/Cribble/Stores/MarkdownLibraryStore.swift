@@ -243,7 +243,7 @@ final class MarkdownLibraryStore: ObservableObject {
 
     func chooseImportFile(capabilities: [ExtensionImporterCapability]) {
         guard !capabilities.isEmpty else {
-            statusMessage = "No import lanes are enabled"
+            statusMessage = Self.noImportLanesStatus
             return
         }
 
@@ -271,8 +271,16 @@ final class MarkdownLibraryStore: ObservableObject {
         if let match = matches.first {
             statusMessage = "Matched \(url.lastPathComponent) to \(match.title) (\(match.outputFormat)); converter execution is not enabled yet"
         } else {
-            statusMessage = "No enabled import lane matches .\(ext)"
+            statusMessage = Self.importLaneMismatchStatus(forExtension: ext)
         }
+    }
+
+    static let noImportLanesStatus = "No import lanes are enabled. Use File > Import > Set Up Import Lane or Settings > Extensions > Import lanes > Copy Review."
+
+    static func importLaneMismatchStatus(forExtension fileExtension: String) -> String {
+        let normalized = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ".")).lowercased()
+        let suffix = normalized.isEmpty ? "this file type" : ".\(normalized)"
+        return "No enabled import lane matches \(suffix). Use Settings > Extensions > Import lanes > Copy Review before enabling converters."
     }
 
     func openFolder(_ url: URL, sortMode: FileSortMode) {

@@ -1033,6 +1033,13 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes`
   passed on 2026-06-08 after adding zero-file recovery affordances to the
   top-level README: 1 Swift Testing test, 0 failures.
+- Import chooser dead ends now point users to native setup/review routes:
+  missing lanes name File > Import > Set Up Import Lane and Settings >
+  Extensions > Import lanes > Copy Review, while unmatched file types preserve
+  the extension and remind users to review before enabling converters.
+- Latest `swift test --filter CribbleUITests/testImportLaneChooserStatusPointsToNativeSetupRoutes`
+  passed on 2026-06-08 after improving import chooser recovery guidance:
+  1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

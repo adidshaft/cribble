@@ -50,6 +50,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.copyRemoteRunnerSetupReviewAction) private var copyRemoteRunnerSetupReview
     @FocusedValue(\.copyImportLaneSetupReviewAction) private var copyImportLaneSetupReview
     @FocusedValue(\.copyProductReadinessCheckpointAction) private var copyProductReadinessCheckpoint
+    @FocusedValue(\.copyReadingTrailSummaryAction) private var copyReadingTrailSummary
     @FocusedValue(\.copyStarterChecklistAction) private var copyStarterChecklist
     @FocusedValue(\.resetDemoNotesAction) private var resetDemoNotes
     @FocusedValue(\.dropReadingBookmarkAction) private var dropReadingBookmark
@@ -261,6 +262,9 @@ struct CribbleCommands: Commands {
 
             Button("Copy Product Readiness Checkpoint", action: { copyProductReadinessCheckpoint?() })
                 .disabled(copyProductReadinessCheckpoint == nil)
+
+            Button("Copy Reading Trail Summary", action: { copyReadingTrailSummary?() })
+                .disabled(copyReadingTrailSummary == nil)
 
             Button("Copy Starter Checklist", action: { copyStarterChecklist?() })
                 .disabled(copyStarterChecklist == nil)
@@ -482,6 +486,10 @@ private struct CopyImportLaneSetupReviewActionKey: FocusedValueKey {
 }
 
 private struct CopyProductReadinessCheckpointActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+private struct CopyReadingTrailSummaryActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
@@ -749,6 +757,11 @@ extension FocusedValues {
     var copyProductReadinessCheckpointAction: (() -> Void)? {
         get { self[CopyProductReadinessCheckpointActionKey.self] }
         set { self[CopyProductReadinessCheckpointActionKey.self] = newValue }
+    }
+
+    var copyReadingTrailSummaryAction: (() -> Void)? {
+        get { self[CopyReadingTrailSummaryActionKey.self] }
+        set { self[CopyReadingTrailSummaryActionKey.self] = newValue }
     }
 
     var copyStarterChecklistAction: (() -> Void)? {

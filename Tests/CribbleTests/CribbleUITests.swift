@@ -1109,7 +1109,11 @@ final class CribbleUITests: XCTestCase {
         XCTAssertLessThan(index(of: "Button(\"Open Extension Settings\"", in: commands), index(of: "Button(\"Copy Extension Proposal\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Copy Remote Runner Setup Review\"", in: commands), index(of: "Button(\"Copy Import Lane Setup Review\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Copy Import Lane Setup Review\"", in: commands), index(of: "Button(\"Copy Product Readiness Checkpoint\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Copy Product Readiness Checkpoint\"", in: commands), index(of: "Button(\"Copy Reading Trail Summary\"", in: commands))
+        XCTAssertLessThan(index(of: "Button(\"Copy Reading Trail Summary\"", in: commands), index(of: "Button(\"Copy Starter Checklist\"", in: commands))
         XCTAssertLessThan(index(of: "Button(\"Copy Starter Checklist\"", in: commands), index(of: "Button(\"Show Diagnostic Report\"", in: commands))
+        XCTAssertTrue(commands.contains("@FocusedValue(\\.copyReadingTrailSummaryAction)"))
+        XCTAssertTrue(commands.contains("CopyReadingTrailSummaryActionKey"))
         XCTAssertLessThan(index(of: "Button(\"Reveal Latest Crash Report\"", in: commands), index(of: "Button(\"Report Issue on GitHub\"", in: commands))
     }
 

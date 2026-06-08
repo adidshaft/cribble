@@ -389,6 +389,7 @@ private struct ReaderDocumentView: View {
                 readingTrail.isPanelVisible.toggle()
             }
         })
+        .focusedSceneValue(\.copyReadingTrailSummaryAction, copyReadingTrailSummary)
         // Textual's NSTextInteractionView shows its own NSMenu on right-click
         // over text, which shadowed any SwiftUI `.contextMenu` we attached
         // here. Inject our custom items through Textual's env hook so they
@@ -714,6 +715,13 @@ private struct ReaderDocumentView: View {
             sectionTitle: currentSectionTitle
         )
         library.statusMessage = "Dropped bookmark\(currentSectionTitle.map { " at \($0)" } ?? "")"
+    }
+
+    private func copyReadingTrailSummary() {
+        guard let note = readingTrail.makeTrailNote(annotations: readingAnnotations) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(note.content, forType: .string)
+        library.statusMessage = "Copied reading trail summary"
     }
 
     private func handleHighlightKey() {

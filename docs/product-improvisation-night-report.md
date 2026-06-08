@@ -724,6 +724,9 @@ Latest pass:
 - The shortcut popover and starter checklist now mention Copy Trail Summary, so
   first-run users can discover the zero-file research handoff before committing
   a trail note.
+- The macOS Help menu now exposes Copy Reading Trail Summary when the reader is
+  active, giving the zero-file research handoff a native command route alongside
+  the other review templates.
 - Folder scanning now skips more generated/tool-cache directories including
   `.gradle`, `.terraform`, `.turbo`, `coverage`, and `vendor`, reducing large
   code-folder traversal and avoiding starter README writes in dependency caches.
@@ -797,6 +800,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding the inline Remote Runner Setup Review example to DemoNotes: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after surfacing Copy Trail Summary in native first-run guidance: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter FolderScannerTests/testScannerSkipsHeavyGeneratedDirectories` passed on 2026-06-08 after expanding generated/tool-cache directory skips: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics` passed on 2026-06-08 after adding Copy Reading Trail Summary to the native Help menu: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

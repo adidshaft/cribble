@@ -742,6 +742,9 @@ Latest pass:
 - Diagnostic extension reports now name Settings > Extensions > Copy Warnings
   as the warning handoff route, so copied support reports and contributor
   reviews point to the same validation-sharing action.
+- Intelligence diagnostics for remote runners without credentials now point to
+  Help > Copy Remote Runner Setup Review before Keychain setup or switching back
+  to the on-device model, so support reports preserve the approval path.
 - DemoNotes now teach extension authors to use Settings > Extensions > Copy
   Warnings before editing invalid manifests, keeping the contribution guide,
   Team Extension Kit, Settings, and diagnostics aligned.
@@ -840,6 +843,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for extension folder and manifest Reveal actions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls` passed on 2026-06-08 after adding Copy Review to Settings > Project Intelligence: 1 XCTest test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding Copy Warnings to copied extension dashboard review routes: 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential'` passed on 2026-06-08 after adding the Remote Runner Setup Review route to credential diagnostics: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

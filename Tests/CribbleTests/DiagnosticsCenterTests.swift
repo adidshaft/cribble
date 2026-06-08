@@ -51,8 +51,8 @@ final class DiagnosticsCenterTests: XCTestCase {
         let section = snapshot.formattedReportSection
 
         XCTAssertTrue(section.contains("Credential: none configured"))
-        XCTAssertEqual(snapshot.nextActionSummary, "Store the remote runner credential in Keychain or switch back to an on-device model.")
-        XCTAssertTrue(section.contains("Next action: Store the remote runner credential in Keychain or switch back to an on-device model."))
+        XCTAssertEqual(snapshot.nextActionSummary, "Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model.")
+        XCTAssertTrue(section.contains("Next action: Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."))
     }
 
     func testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential() {
@@ -77,7 +77,7 @@ final class DiagnosticsCenterTests: XCTestCase {
 
         XCTAssertTrue(section.contains("Credential: not required for local runner"))
         XCTAssertEqual(snapshot.nextActionSummary, "No intelligence action needed.")
-        XCTAssertFalse(section.contains("Store the remote runner credential in Keychain"))
+        XCTAssertFalse(section.contains("store the remote runner credential in Keychain"))
     }
 
     @MainActor

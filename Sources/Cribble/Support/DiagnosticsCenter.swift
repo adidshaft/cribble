@@ -614,7 +614,7 @@ struct IntelligenceDiagnosticsSnapshot: Equatable {
             return "Enable Project Intelligence from the Intelligence HUD when this folder should be indexed."
         }
         if isRemoteRunner && !usesKeychainCredential {
-            return "Store the remote runner credential in Keychain or switch back to an on-device model."
+            return "Use Help > Copy Remote Runner Setup Review, store the remote runner credential in Keychain, or switch back to an on-device model."
         }
         if pendingJobs > 0 {
             return "Keep Cribble open during an idle window so queued intelligence jobs can finish."

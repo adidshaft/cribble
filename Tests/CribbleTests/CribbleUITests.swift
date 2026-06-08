@@ -1165,6 +1165,11 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("Cribble extension validation warnings"))
         XCTAssertTrue(settings.contains("Copied extension warnings"))
         XCTAssertTrue(settings.contains("fix the manifest, then use Check Again"))
+        XCTAssertTrue(settings.contains("docs/extensions.md"))
+        XCTAssertTrue(settings.contains("docs/extension-contributions.md"))
+        XCTAssertTrue(settings.contains("Help > Copy Extension Proposal"))
+        XCTAssertTrue(settings.contains("Help > Copy Import Lane Setup Review"))
+        XCTAssertTrue(settings.contains("Help > Copy Remote Runner Setup Review"))
         XCTAssertTrue(settings.contains("Label(\"Copy Review\", systemImage: \"doc.on.doc\")"))
         XCTAssertTrue(settings.contains("Copied \\(capability.title) import lane details"))
     }

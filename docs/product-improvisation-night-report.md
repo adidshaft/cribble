@@ -763,6 +763,10 @@ Latest pass:
 - Settings > Extensions validation warnings now include Copy Warnings, producing
   a pasteable review checklist with exact warning text, Check Again guidance,
   and the strict contribution-guide route.
+- Settings > Extensions copied warning lists now also include the manifest
+  schema, contribution guide, and extension/importer/remote-runner review
+  template routes, so invalid manifest handoffs carry both the failure and the
+  repair path.
 - Settings > Extensions copied dashboard summaries now list Copy Warnings as a
   native review route, so pasted extension status reports preserve the warning
   handoff path.
@@ -900,6 +904,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding safe ids, HTTPS-or-localhost URLs, and bare importer extensions to generated starter README checklists: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'ExtensionManifestTests/loadsExplicitDeclarativeRuntime|ExtensionManifestTests/rejectsUnsafeQuickActionIcons|ExtensionManifestTests/rejectsUnsafeQuickActionIDs'` passed on 2026-06-08 after validating quick-action icon tokens before they reach the Chat HUD: 3 Swift Testing tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after changing Settings import-lane rows to a visible Copy Review button: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding schema, contribution, and lane-review routes to copied extension warning handoffs: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

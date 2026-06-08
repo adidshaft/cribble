@@ -449,6 +449,8 @@ struct SettingsView: View {
         Next steps:
         - Open Settings > Extensions, fix the manifest, then use Check Again.
         - Use Settings > Extensions > Contribution Guide for read-only, least-writing, native SwiftUI rules.
+        - Check docs/extensions.md for the manifest schema and docs/extension-contributions.md for the open-source contribution contract.
+        - Use Help > Copy Extension Proposal, Help > Copy Import Lane Setup Review, or Help > Copy Remote Runner Setup Review for lane-specific review.
         - Share this warning list in an issue, PR, or review thread before broadening permissions.
         """
         NSPasteboard.general.clearContents()

@@ -330,6 +330,13 @@ final class ChatHUDViewModel: ObservableObject {
         return receipt.items.map(contextReceiptLine).joined(separator: "\n")
     }
 
+    nonisolated static func extensionLaneSummary(actionCount: Int) -> String {
+        if actionCount > 0 {
+            return "\(actionCount) extension action\(actionCount == 1 ? "" : "s")"
+        }
+        return "No extensions yet - start with Help > Open Extension Contribution Guide"
+    }
+
     /// Derives a filename from the answer's first heading/line.
     nonisolated static func suggestedFileName(for text: String) -> String {
         let firstLine = text

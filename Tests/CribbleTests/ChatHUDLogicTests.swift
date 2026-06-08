@@ -125,6 +125,15 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(ChatHUDViewModel.renderContextReceipt(receipt).contains("Attachment: Huge.md - needs summary"))
     }
 
+    func testExtensionLaneSummaryGuidesEmptyAndInstalledStates() {
+        XCTAssertEqual(
+            ChatHUDViewModel.extensionLaneSummary(actionCount: 0),
+            "No extensions yet - start with Help > Open Extension Contribution Guide"
+        )
+        XCTAssertEqual(ChatHUDViewModel.extensionLaneSummary(actionCount: 1), "1 extension action")
+        XCTAssertEqual(ChatHUDViewModel.extensionLaneSummary(actionCount: 3), "3 extension actions")
+    }
+
     func testSystemPromptIncludesCurrentNote() {
         let prompt = ContextAssembler.systemPrompt(
             modelName: "Gemma 4",

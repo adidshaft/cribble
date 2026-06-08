@@ -1011,6 +1011,24 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(readerView.contains("Open or create Tasks.md for the current folder"))
     }
 
+    func testChatEmptyStateSurfacesExtensionContributionLane() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let hudURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ChatHUD/ChatHUDView.swift")
+        let hud = try String(contentsOf: hudURL, encoding: .utf8)
+        let viewModelURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ChatHUD/ChatHUDViewModel.swift")
+        let viewModel = try String(contentsOf: viewModelURL, encoding: .utf8)
+
+        XCTAssertTrue(hud.contains("extensionLaneHint"))
+        XCTAssertTrue(hud.contains("puzzlepiece.extension"))
+        XCTAssertTrue(hud.contains("ChatHUDViewModel.extensionLaneSummary"))
+        XCTAssertTrue(viewModel.contains("Extension Contribution Guide"))
+        XCTAssertTrue(hud.contains("Extension manifests can add slash commands"))
+    }
+
     func testSidebarEmptyStateOffersDemoTourAndTaskLane() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

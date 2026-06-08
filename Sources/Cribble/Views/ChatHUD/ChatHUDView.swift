@@ -212,6 +212,7 @@ struct ChatEmptyState: View {
 
             quickActions
             commandHint
+            extensionLaneHint
 
             modelHint
         }
@@ -243,7 +244,7 @@ struct ChatEmptyState: View {
             Text("Type / for \(QuickActions.all.count) commands")
                 .font(.system(size: 11, weight: .medium))
             if !viewModel.extensionQuickActions.isEmpty {
-                Text("\(viewModel.extensionQuickActions.count) extension action\(viewModel.extensionQuickActions.count == 1 ? "" : "s")")
+                Text(ChatHUDViewModel.extensionLaneSummary(actionCount: viewModel.extensionQuickActions.count))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.48))
                     .padding(.leading, 2)
@@ -254,6 +255,26 @@ struct ChatEmptyState: View {
         .padding(.vertical, 6)
         .cribbleMaterialSurface(in: Capsule())
         .help("Slash commands include built-in actions and installed extension actions")
+    }
+
+    @ViewBuilder
+    private var extensionLaneHint: some View {
+        if viewModel.extensionQuickActions.isEmpty {
+            HStack(spacing: 7) {
+                Image(systemName: "puzzlepiece.extension")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(ChatHUDViewModel.extensionLaneSummary(actionCount: viewModel.extensionQuickActions.count))
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(.white.opacity(0.58))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .cribbleMaterialSurface(in: Capsule())
+            .padding(.horizontal, 24)
+            .help("Extension manifests can add slash commands while staying read-only by default")
+        }
     }
 
     private func quickActionGroup<S: Sequence>(

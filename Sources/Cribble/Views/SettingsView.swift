@@ -154,6 +154,9 @@ struct SettingsView: View {
                             onCreateProjectQuickAction: { createProjectExample(.quickAction) },
                             onOpenKit: {
                                 library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+                            },
+                            onOpenContributionGuide: {
+                                library.openDemoNote(named: "Extension Contribution Guide.md", sortMode: settings.fileSortMode)
                             }
                         )
                     } else {
@@ -548,6 +551,7 @@ private struct ExtensionEmptyState: View {
     let onCreateQuickAction: () -> Void
     let onCreateProjectQuickAction: () -> Void
     let onOpenKit: () -> Void
+    let onOpenContributionGuide: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
@@ -577,6 +581,13 @@ private struct ExtensionEmptyState: View {
                 } label: {
                     Label("Open Kit", systemImage: "book.pages")
                 }
+
+                Button {
+                    onOpenContributionGuide()
+                } label: {
+                    Label("Contribution Guide", systemImage: "person.crop.circle.badge.plus")
+                }
+                .help("Open the read-only-first contribution guide before writing a new extension")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)

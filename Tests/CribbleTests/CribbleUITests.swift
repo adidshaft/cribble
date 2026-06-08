@@ -966,6 +966,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertLessThan(index(of: "Button(\"Contribution Guide\"", in: settings), index(of: "Button(\"Remote Guide\"", in: settings))
         XCTAssertTrue(settings.contains("Extension Contribution Guide.md"))
         XCTAssertTrue(settings.contains("read-only-first contribution guide"))
+        XCTAssertTrue(settings.contains("onOpenContributionGuide"))
+        XCTAssertTrue(settings.contains("Open the read-only-first contribution guide before writing a new extension"))
     }
 
     func testRemoteRunnerHandoffStripsExposeCopyReviewLabels() throws {

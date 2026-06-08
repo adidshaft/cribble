@@ -104,9 +104,11 @@ the app, **Help > Copy Extension Proposal**, or the **Extension proposal** issue
 template. It asks for the first read-only version, data contract, native Mac
 surface, and "later, not first PR" scope before anyone writes code. **Settings >
 Extensions > Contribution Guide** opens the same strict rules from the native
-settings surface. Importer proposals should include **Help > Copy Import Lane
-Setup Review**; remote runner proposals should include **Help > Copy Remote
-Runner Setup Review**.
+settings surface. Importer proposals should include
+**Settings > Extensions > Import lanes > Copy Review** after a lane appears or
+**Help > Copy Import Lane Setup Review** before adding one. Remote runner
+proposals should include **Settings > Project Intelligence > Copy Review** or
+**Help > Copy Remote Runner Setup Review**.
 
 ## Security and conduct
 

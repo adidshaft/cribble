@@ -543,6 +543,7 @@ struct ExtensionRegistryTests {
         #expect(combined.contains("Help > Copy Extension Proposal"))
         #expect(combined.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(combined.contains("Help > Copy Import Lane Setup Review"))
+        #expect(combined.contains("Settings > Project Intelligence > Copy Review"))
         #expect(combined.contains("Help > Copy Remote Runner Setup Review"))
         #expect(combined.contains("declarative, read-only, least-access, least-writing, and native SwiftUI"))
     }
@@ -556,6 +557,8 @@ struct ExtensionRegistryTests {
             .deletingLastPathComponent()
         let checkpointURL = projectRoot.appendingPathComponent("docs/product-improvisation-readiness-checkpoint.md")
         let checkpoint = try String(contentsOf: checkpointURL, encoding: .utf8)
+        let summaryURL = projectRoot.appendingPathComponent("docs/product-improvisation-summary.md")
+        let summary = try String(contentsOf: summaryURL, encoding: .utf8)
 
         #expect(checkpoint.contains("Strong Product Signal"))
         #expect(checkpoint.contains("Help > Copy Product Readiness Checkpoint"))
@@ -573,6 +576,9 @@ struct ExtensionRegistryTests {
         #expect(checkpoint.contains("exact contribution, import, and remote-runner review routes"))
         #expect(checkpoint.contains("copied diagnostics or Settings summaries that preserve native review routes"))
         #expect(checkpoint.contains("No executable plugin runtime"))
+        #expect(summary.contains("Settings-first proposal"))
+        #expect(summary.contains("import-lane Copy Review"))
+        #expect(summary.contains("Project Intelligence review routes"))
     }
 }
 

@@ -954,6 +954,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide`
   passed on 2026-06-08 after adding Settings-native review routes to copied
   extension warning handoffs: 1 XCTest test, 0 failures.
+- CONTRIBUTING and the short product-improvisation summary now use the same
+  Settings-first proposal, import-lane review, and Project Intelligence review
+  language as the app handoff surfaces, with Help fallbacks still visible.
+- Latest `swift test --filter 'ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes|ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions'`
+  passed on 2026-06-08 after aligning CONTRIBUTING and the short product summary
+  with Settings-first review routes: 2 Swift Testing tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

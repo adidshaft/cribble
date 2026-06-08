@@ -28,9 +28,9 @@ now reads more like a local-first Mac knowledge workspace:
   or the Intelligence HUD.
 - **Start an extension ecosystem:** `cribble-extension.json` manifests now cover
   quick actions, remote runner profiles, renderer aliases, and import-lane
-  declarations without executing extension code, with Help/Settings proposal
-  templates and a dedicated open-source extension contribution guide for
-  contributors.
+  declarations without executing extension code, with Settings-first proposal,
+  import-lane review, and Project Intelligence review routes plus Help fallbacks
+  and a dedicated open-source extension contribution guide for contributors.
 - **Stay smooth in bigger folders:** scanner guardrails now skip more generated
   dependency and tool-cache folders, while copyable diagnostics/review summaries
   keep support and contributor loops precise.
@@ -73,8 +73,9 @@ The extension path is intentionally strict:
   contribution-guide next steps, so extension authors can paste reviewable
   failures into issues or PRs.
 - Settings > Extensions copied dashboard summaries include Contribution Guide,
-  Copy Warnings, extension proposal, import-lane setup, and remote-runner setup
-  review routes, so pasted status reports keep contributors oriented.
+  Copy Warnings, extension proposal, import-lane Copy Review, and
+  Project Intelligence review routes, so pasted status reports keep
+  contributors oriented.
 - Settings > Extensions now shows least-writing as its own starter rule beside
   read-only first, least access, and native Mac UI.
 
@@ -97,9 +98,9 @@ Focused validation passed across the newest work:
 - Grouped Help menu sections for DemoNotes, guides, extension settings,
   copyable templates, diagnostics, and GitHub actions.
 - Remote-runner consent and handoff checklists.
-- Help-copy templates for extension proposals and remote-runner setup reviews.
-- Help-copy template for import lane setup reviews, exposed from both Help and
-  the import sheet.
+- Help-copy templates for extension proposals, import lane setup reviews, and
+  remote-runner setup reviews, with Settings-native Copy Review routes for
+  installed import lanes and Project Intelligence handoffs.
 - Remote Project Intelligence preflight copy review for team/VPS runner starts.
 - Diagnostics that distinguish local runners from remote runners before asking
   for Keychain credential recovery, and route remote credential issues through

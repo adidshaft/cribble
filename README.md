@@ -308,6 +308,10 @@ improvements, rendering fixes, and reproducible diagnostics are the best first
 contribution lanes. New extension ideas should start with
 `docs/extension-contributions.md`: ideas can be ambitious, while first PRs stay
 declarative, read-only, least-access, least-writing, and native SwiftUI.
+Inside the app, use **Settings > Extensions > Contribution Guide** or
+**Help > Copy Extension Proposal** for the first handoff; importer and remote
+runner ideas should also use **Help > Copy Import Lane Setup Review** or
+**Help > Copy Remote Runner Setup Review**.
 
 ## Product Roadmap
 

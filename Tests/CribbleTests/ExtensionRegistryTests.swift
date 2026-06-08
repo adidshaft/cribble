@@ -489,6 +489,24 @@ struct ExtensionRegistryTests {
     }
 
     @Test
+    func topLevelContributorDocsNameNativeExtensionReviewRoutes() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let readme = try String(contentsOf: projectRoot.appendingPathComponent("README.md"), encoding: .utf8)
+        let contributing = try String(contentsOf: projectRoot.appendingPathComponent("CONTRIBUTING.md"), encoding: .utf8)
+        let combined = readme + "\n" + contributing
+
+        #expect(combined.contains("Settings > Extensions > Contribution Guide"))
+        #expect(combined.contains("Help > Copy Extension Proposal"))
+        #expect(combined.contains("Help > Copy Import Lane Setup Review"))
+        #expect(combined.contains("Help > Copy Remote Runner Setup Review"))
+        #expect(combined.contains("declarative, read-only, least-access, least-writing, and native SwiftUI"))
+    }
+
+    @Test
     func productImprovisationReadinessCheckpointNamesStopConditions() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

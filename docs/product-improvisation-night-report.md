@@ -654,6 +654,10 @@ Latest pass:
 - The product summary and readiness checkpoint now treat copied diagnostics and
   Settings summaries with exact native review routes as explicit product signal,
   keeping the stop/go report aligned with the support handoff work.
+- README and CONTRIBUTING now name the native extension contribution routes:
+  Settings > Extensions > Contribution Guide, Help > Copy Extension Proposal,
+  Help > Copy Import Lane Setup Review, and Help > Copy Remote Runner Setup
+  Review, so new contributors can start from either docs or the app.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -696,6 +700,7 @@ Latest pass:
 - Latest `swift test --filter 'DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding exact extension review routes to copied diagnostics: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding native review routes to Settings > Extensions Copy Summary: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions` passed on 2026-06-08 after updating the summary/readiness checkpoint to name diagnostics and Settings summary review routes: 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding native extension review routes to README and CONTRIBUTING: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

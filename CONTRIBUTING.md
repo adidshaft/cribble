@@ -99,9 +99,13 @@ contribution guide and `docs/extensions.md` for the manifest reference. The
 guide includes read-only-first, least-reading, least-writing, no hidden
 execution, Keychain-only secrets, and hard native SwiftUI expectations.
 
-For new extension ideas, start with the **Extension proposal** issue template.
-It asks for the first read-only version, data contract, native Mac surface, and
-"later, not first PR" scope before anyone writes code.
+For new extension ideas, start with **Help > Copy Extension Proposal** in the
+app or the **Extension proposal** issue template. It asks for the first
+read-only version, data contract, native Mac surface, and "later, not first PR"
+scope before anyone writes code. **Settings > Extensions > Contribution Guide**
+opens the same strict rules from the native settings surface. Importer proposals
+should include **Help > Copy Import Lane Setup Review**; remote runner proposals
+should include **Help > Copy Remote Runner Setup Review**.
 
 ## Security and conduct
 

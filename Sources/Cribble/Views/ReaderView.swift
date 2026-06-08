@@ -2057,6 +2057,8 @@ private struct EmptyReadmePanel: View {
     let onToday: () -> Void
     let onOpenTasksGuide: () -> Void
     let onFillReadme: (AIProvider) -> Void
+    @EnvironmentObject private var library: MarkdownLibraryStore
+    @State private var copiedReadmeStarter = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -2105,6 +2107,16 @@ private struct EmptyReadmePanel: View {
                 .controlSize(.large)
                 .cribbleGlassButton()
                 .help("Open the DemoNotes guide for Tasks and Intelligence")
+
+                Button {
+                    copyReadmeStarter()
+                } label: {
+                    Label(copiedReadmeStarter ? "Copied Starter" : "Copy README Starter",
+                          systemImage: copiedReadmeStarter ? "checkmark" : "doc.on.doc")
+                }
+                .controlSize(.large)
+                .cribbleGlassButton()
+                .help("Copy a README scaffold without writing to disk")
             }
 
             HStack(spacing: 10) {
@@ -2124,6 +2136,32 @@ private struct EmptyReadmePanel: View {
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func copyReadmeStarter() {
+        let starter = """
+        # \(folderName)
+
+        ## Overview
+
+        What this folder is for:
+
+        ## Notes to Review
+
+        - 
+
+        ## Tasks
+
+        - [ ] 
+
+        ## Useful Links
+
+        - 
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(starter, forType: .string)
+        copiedReadmeStarter = true
+        library.statusMessage = "Copied README starter"
     }
 }
 

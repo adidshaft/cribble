@@ -1015,6 +1015,12 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'`
   passed on 2026-06-08 after teaching DemoNotes and the starter checklist the
   newest zero-file recovery actions: 2 XCTest tests, 0 failures.
+- Empty README panels now include Copy README Starter, giving first-time folders
+  a zero-file scaffold for overview, notes to review, tasks, and useful links
+  before choosing AI fill or creating notes.
+- Latest `swift test --filter CribbleUITests/testEmptyReadmePanelCanCopyStarterScaffold`
+  passed on 2026-06-08 after adding Copy README Starter to empty README panels:
+  1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

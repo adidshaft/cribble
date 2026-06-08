@@ -636,6 +636,24 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(store.statusMessage, "No Markdown files in \(rootURL.lastPathComponent)")
     }
 
+    func testEmptyReadmePanelCanCopyStarterScaffold() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let readerURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ReaderView.swift")
+        let reader = try String(contentsOf: readerURL, encoding: .utf8)
+
+        XCTAssertTrue(reader.contains("Label(copiedReadmeStarter ? \"Copied Starter\" : \"Copy README Starter\""))
+        XCTAssertTrue(reader.contains("copyReadmeStarter()"))
+        XCTAssertTrue(reader.contains("Copy a README scaffold without writing to disk"))
+        XCTAssertTrue(reader.contains("## Notes to Review"))
+        XCTAssertTrue(reader.contains("## Useful Links"))
+        XCTAssertTrue(reader.contains("NSPasteboard.general.setString(starter"))
+        XCTAssertTrue(reader.contains("library.statusMessage = \"Copied README starter\""))
+    }
+
     func testRecentDocumentShortcutsUseHistoryOrderAndSkipStaleEntries() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("RecentShortcuts-\(UUID().uuidString)", isDirectory: true)

@@ -330,8 +330,10 @@ struct SettingsView: View {
     private func createExample(_ template: ExtensionExampleTemplate) {
         do {
             let url = try extensionRegistry.writeExampleManifest(template: template)
-            extensionStatus = "Created \(url.deletingLastPathComponent().lastPathComponent)"
-            validateExtensions(successPrefix: "Created \(url.deletingLastPathComponent().lastPathComponent)")
+            let folderName = url.deletingLastPathComponent().lastPathComponent
+            let success = "Created \(folderName) with README checklist"
+            extensionStatus = success
+            validateExtensions(successPrefix: success)
         } catch {
             extensionStatus = error.localizedDescription
         }
@@ -345,8 +347,9 @@ struct SettingsView: View {
         do {
             let url = try extensionRegistry.writeProjectExampleManifest(template: template, projectRoot: root)
             let folderName = url.deletingLastPathComponent().lastPathComponent
-            extensionStatus = "Created project example \(folderName)"
-            validateExtensions(successPrefix: "Created project example \(folderName)")
+            let success = "Created project example \(folderName) with README checklist"
+            extensionStatus = success
+            validateExtensions(successPrefix: success)
         } catch {
             extensionStatus = error.localizedDescription
         }

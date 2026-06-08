@@ -536,6 +536,7 @@ struct ExtensionRegistryTests {
         let combined = readme + "\n" + contributing
 
         #expect(combined.contains("Settings > Extensions > Contribution Guide"))
+        #expect(combined.contains("Settings > Extensions > Copy Proposal"))
         #expect(combined.contains("Help > Copy Extension Proposal"))
         #expect(combined.contains("Help > Copy Import Lane Setup Review"))
         #expect(combined.contains("Help > Copy Remote Runner Setup Review"))

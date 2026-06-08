@@ -673,9 +673,10 @@ Latest pass:
   Settings summaries with exact native review routes as explicit product signal,
   keeping the stop/go report aligned with the support handoff work.
 - README and CONTRIBUTING now name the native extension contribution routes:
-  Settings > Extensions > Contribution Guide, Help > Copy Extension Proposal,
-  Help > Copy Import Lane Setup Review, and Help > Copy Remote Runner Setup
-  Review, so new contributors can start from either docs or the app.
+  Settings > Extensions > Contribution Guide, Settings > Extensions > Copy
+  Proposal, Help > Copy Extension Proposal, Help > Copy Import Lane Setup
+  Review, and Help > Copy Remote Runner Setup Review, so new contributors can
+  start from either docs or the app.
 - The first-run welcome launchpad now exposes Tasks beside New Note and Today
   after a folder is open, turning the empty reader into a faster work surface
   for project task capture without requiring users to remember the shortcut.
@@ -931,6 +932,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding Settings > Extensions > Contribution Guide to generated starter READMEs: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after pointing DemoNotes home and the first-run checklist to Settings > Extensions > Contribution Guide: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to README and CONTRIBUTING contributor routes: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

@@ -513,6 +513,7 @@ struct ExtensionRegistryTests {
         #expect(guide.contains("No hidden execution"))
         #expect(guide.contains("No secrets in files"))
         #expect(guide.contains("Clean disable path"))
+        #expect(guide.contains("Settings > Extensions > Copy Proposal"))
         #expect(guide.contains("Help > Copy Extension Proposal"))
         #expect(guide.contains("Help > Copy Import Lane Setup Review"))
         #expect(guide.contains("File > Import > Copy Review"))

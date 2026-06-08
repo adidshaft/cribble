@@ -1437,6 +1437,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(review.contains("native SwiftUI"))
         XCTAssertTrue(review.contains("disabling the extension removes its import lane"))
         XCTAssertTrue(review.contains("Help > Copy Import Lane Setup Review"))
+        XCTAssertTrue(review.contains("Settings > Extensions > Copy Proposal"))
         XCTAssertTrue(review.contains("Copy Proposal"))
     }
 

@@ -39,8 +39,9 @@ reviewable surface that proves the workflow without surprising the user.
 
 ## Idea-First Proposal
 
-Use **Help > Copy Extension Proposal** or the GitHub **Extension proposal**
-issue template before opening a code PR. A strong proposal should answer:
+Use **Settings > Extensions > Copy Proposal**, **Help > Copy Extension Proposal**,
+or the GitHub **Extension proposal** issue template before opening a code PR. A
+strong proposal should answer:
 
 - who the extension helps;
 - which repeated folder workflow it improves;

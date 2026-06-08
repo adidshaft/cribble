@@ -1173,6 +1173,9 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("Stepper(value: Binding("))
         XCTAssertTrue(settings.contains("intelligence.settings.diskBudgetMB = $0"))
         XCTAssertTrue(settings.contains("RemoteRunnerDataBoundary.detail"))
+        XCTAssertTrue(settings.contains("Button(\"Copy Review\""))
+        XCTAssertTrue(settings.contains("RemoteRunnerSetupReview.markdown"))
+        XCTAssertTrue(settings.contains("Copied remote runner setup review"))
         XCTAssertTrue(settings.contains("Notes stay on this Mac unless you choose a remote runner or extension profile."))
         XCTAssertTrue(app.contains(".environmentObject(intelligence)"))
     }

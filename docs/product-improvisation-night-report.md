@@ -753,6 +753,9 @@ Latest pass:
 - Settings > Extensions now confirms user extension folder and manifest Reveal
   actions in the status strip, keeping Finder handoffs visible like copy and
   toggle actions.
+- Settings > Project Intelligence now includes Copy Review beside Remote Guide,
+  so VPS/team-runner setup can be copied for review from the same native place
+  users tune performance, disk budget, and the remote data boundary.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -832,6 +835,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for extension enable/disable toggles: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for future executable trust revoke/clear actions: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after adding status feedback for extension folder and manifest Reveal actions: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls` passed on 2026-06-08 after adding Copy Review to Settings > Project Intelligence: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

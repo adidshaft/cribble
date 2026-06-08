@@ -129,6 +129,10 @@ struct SettingsView: View {
                 HStack(alignment: .top, spacing: 8) {
                     Label(intelligenceRunnerBoundaryTitle, systemImage: intelligence.settings.localRunnerBaseURL == nil ? "macbook" : "network")
                     Spacer(minLength: 8)
+                    Button("Copy Review") {
+                        copyRemoteRunnerSetupReview()
+                    }
+                    .help("Copy the remote runner setup review for team approval")
                     Button("Remote Guide") {
                         library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode)
                     }
@@ -424,6 +428,12 @@ struct SettingsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(summary.reviewSummary, forType: .string)
         extensionStatus = "Copied extension dashboard summary"
+    }
+
+    private func copyRemoteRunnerSetupReview() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(RemoteRunnerSetupReview.markdown, forType: .string)
+        library.statusMessage = "Copied remote runner setup review"
     }
 
     private func copyExtensionWarnings() {

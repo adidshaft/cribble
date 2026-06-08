@@ -673,6 +673,9 @@ Latest pass:
 - Settings > Extensions now also offers the Contribution Guide directly from
   the no-extension empty state, so first-time authors can read the read-only
   safety contract before creating a starter manifest.
+- Importer manifests now reject dotted or path-like file extensions and explain
+  the bare-extension form (`json`, `txt`) in the public manifest reference, so
+  first-time importer authors get a tighter, less ambiguous starter contract.
 - The sidebar empty state now mirrors the first-run launchpad: no-folder users
   can open the Demo Tour immediately, while opened empty folders offer Tasks
   beside New Note and Today.
@@ -880,6 +883,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionManifestTests/rejectsRemoteProviderProfilesWithoutHTTPS|ExtensionManifestTests/allowsLocalProviderProfilesOverHTTP|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after requiring HTTPS for non-local extension remote-runner provider URLs: 3 Swift Testing tests, 0 failures.
 - Latest `swift test --filter 'ExtensionManifestTests/rejectsUnsafeQuickActionIDs|ExtensionManifestTests/loadsExplicitDeclarativeRuntime'` passed on 2026-06-08 after applying safe-token validation to quick-action extension IDs: 2 Swift Testing tests, 0 failures.
 - Latest `swift test --filter 'ExtensionManifestTests/validatesTrustDeclarations|ExtensionManifestTests/rejectsRemoteTrustSourceURLWithoutHTTPS|ExtensionManifestTests/allowsLocalTrustSourceURLOverHTTP'` passed on 2026-06-08 after requiring HTTPS for non-local trust declaration source URLs: 3 Swift Testing tests, 0 failures.
+- Latest `swift test --filter 'ExtensionManifestTests/loadsImporterContributions|ExtensionManifestTests/rejectsImporterFileExtensionsWithDotsOrPaths|ExtensionManifestTests/rejectsImportersOnWrongKind'` passed on 2026-06-08 after requiring importer file extensions to be bare values without dots or paths: 3 Swift Testing tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

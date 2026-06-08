@@ -525,8 +525,8 @@ enum ExtensionManifestLoader {
             if importer.fileExtensions.isEmpty {
                 throw ExtensionManifestError.invalidContribution("Importer fileExtensions are required.")
             }
-            for ext in importer.fileExtensions where !isSafeToken(ext) {
-                throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) is not valid.")
+            for ext in importer.fileExtensions where !isBareFileExtension(ext) {
+                throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) must be a bare extension like json, without dots or paths.")
             }
             if importer.outputFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Importer outputFormat is required.")
@@ -565,6 +565,10 @@ enum ExtensionManifestLoader {
 
     private static func isSafeToken(_ token: String) -> Bool {
         token.range(of: #"^[A-Za-z0-9][A-Za-z0-9._-]*$"#, options: .regularExpression) != nil
+    }
+
+    private static func isBareFileExtension(_ ext: String) -> Bool {
+        ext.range(of: #"^[A-Za-z0-9][A-Za-z0-9_-]*$"#, options: .regularExpression) != nil
     }
 
     private static func validateNoSecretMaterial(in data: Data) throws {

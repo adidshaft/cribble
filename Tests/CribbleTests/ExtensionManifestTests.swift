@@ -725,6 +725,29 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsImporterFileExtensionsWithDotsOrPaths() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.importer",
+            name: "Research Importers",
+            version: "0.1.0",
+            kind: .importer,
+            summary: "Declares import lanes for future safe conversion.",
+            importers: [
+                CribbleExtensionImporter(
+                    id: "chat-export",
+                    title: "Chat Export",
+                    fileExtensions: [".json"],
+                    outputFormat: "markdown"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Importer file extension .json must be a bare extension like json, without dots or paths.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsImportersOnWrongKind() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.renderer",

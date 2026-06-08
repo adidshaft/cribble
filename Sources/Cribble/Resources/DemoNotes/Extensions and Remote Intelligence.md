@@ -143,6 +143,14 @@ Cribble shows a native review sheet before applying the runner. It names the
 endpoint, model, extension source, trust label, Keychain state, disable path,
 and the fact that note context may leave this Mac.
 
+In **Settings → Project Intelligence**, keep the trust checklist visible:
+
+- **Local by default**: use on-device context until a remote runner is selected.
+- **Secrets stay in Keychain**: tokens should never live in notes, manifests, or
+  diagnostics.
+- **Copy before remote**: use **Copy Review** before a VPS, team GPU, or vendor
+  endpoint receives note context.
+
 Do **not** put API keys in the manifest. Add the profile here, then paste the
 token into the Intelligence HUD and store it in Keychain when you choose the
 runner.

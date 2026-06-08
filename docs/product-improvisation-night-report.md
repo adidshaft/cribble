@@ -985,6 +985,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls`
   passed on 2026-06-08 after adding the Project Intelligence trust checklist to
   Settings: 1 XCTest test, 0 failures.
+- DemoNotes now repeats the same Project Intelligence trust checklist in
+  Extensions and Remote Intelligence, tying local-by-default, Keychain-only
+  secrets, and Copy Review before remote endpoints into the walkthrough.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy`
+  passed on 2026-06-08 after adding the Project Intelligence trust checklist to
+  DemoNotes: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

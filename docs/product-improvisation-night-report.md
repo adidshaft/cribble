@@ -947,6 +947,13 @@ Latest pass:
   checklist while preserving Help/File routes for pre-install proposals and
   import-sheet handoffs.
 - Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|ExtensionRegistryTests/extensionGuideDocumentsExecutableReadinessGates|ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes|CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after aligning importer guidance with the Settings import-lane Copy Review route: 2 XCTest tests and 3 Swift Testing tests, 0 failures.
+- Copied extension warning handoffs now name the native Settings review routes
+  for proposals, import lanes, and Project Intelligence alongside the Help
+  fallbacks, so authors can paste validation failures with the next review
+  action already attached.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide`
+  passed on 2026-06-08 after adding Settings-native review routes to copied
+  extension warning handoffs: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

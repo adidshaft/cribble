@@ -450,7 +450,9 @@ struct SettingsView: View {
         - Open Settings > Extensions, fix the manifest, then use Check Again.
         - Use Settings > Extensions > Contribution Guide for read-only, least-writing, native SwiftUI rules.
         - Check docs/extensions.md for the manifest schema and docs/extension-contributions.md for the open-source contribution contract.
-        - Use Help > Copy Extension Proposal, Help > Copy Import Lane Setup Review, or Help > Copy Remote Runner Setup Review for lane-specific review.
+        - Use Settings > Extensions > Copy Proposal or Help > Copy Extension Proposal for new ideas.
+        - Use Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review for importer review.
+        - Use Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review for remote-runner review.
         - Share this warning list in an issue, PR, or review thread before broadening permissions.
         """
         NSPasteboard.general.clearContents()

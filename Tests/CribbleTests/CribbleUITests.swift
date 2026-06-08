@@ -1153,6 +1153,8 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(settings.contains("read-only API v1, least permission, previewed writes, Keychain secrets, native SwiftUI"))
         XCTAssertTrue(settings.contains("Least writing"))
         XCTAssertTrue(settings.contains("preview/review/cancel"))
+        XCTAssertTrue(settings.contains("LazyVGrid(columns: columns"))
+        XCTAssertTrue(settings.contains("GridItem(.adaptive(minimum: 150)"))
         XCTAssertTrue(settings.contains("setExtensionEnabled(enabled, for: installed)"))
         XCTAssertTrue(settings.contains("\"\\(enabled ? \"Enabled\" : \"Disabled\") \\(installed.manifest.name)\""))
         XCTAssertTrue(settings.contains("revokeTrust(for: installed)"))

@@ -543,8 +543,12 @@ struct ExtensionStarterRule: Identifiable, Equatable {
 }
 
 private struct ExtensionStarterRulesStrip: View {
+    private let columns = [
+        GridItem(.adaptive(minimum: 150), spacing: 6, alignment: .top)
+    ]
+
     var body: some View {
-        HStack(spacing: 6) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
             ForEach(ExtensionStarterRule.defaults) { rule in
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: rule.systemImage)

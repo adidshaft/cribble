@@ -765,6 +765,9 @@ Latest pass:
 - Settings > Extensions starter rules now make least-writing a first-class rule
   beside read-only first, least access, and native Mac UI, so contributors see
   preview/review/cancel expectations before creating examples.
+- Settings > Extensions starter rules now use an adaptive grid instead of a
+  fixed row, keeping the four contribution constraints readable in narrower
+  settings panes.
 - Settings > Project Intelligence now includes Copy Review beside Remote Guide,
   so VPS/team-runner setup can be copied for review from the same native place
   users tune performance, disk budget, and the remote data boundary.
@@ -864,6 +867,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the first-run remote-runner checklist: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the copied remote-runner template and public contribution guide: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane` passed on 2026-06-08 after adding the Chat HUD slash-command Guide recovery action: 1 XCTest test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after making Settings extension starter rules wrap in an adaptive grid: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

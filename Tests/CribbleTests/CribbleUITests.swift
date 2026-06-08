@@ -1061,6 +1061,14 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(hud.contains("ChatHUDViewModel.extensionLaneSummary"))
         XCTAssertTrue(viewModel.contains("Extension Contribution Guide"))
         XCTAssertTrue(hud.contains("Extension manifests can add slash commands"))
+        let inputBarURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ChatHUD/ChatInputBar.swift")
+        let inputBar = try String(contentsOf: inputBarURL, encoding: .utf8)
+        XCTAssertTrue(inputBar.contains("Button(\"Guide\""))
+        XCTAssertTrue(inputBar.contains("onOpenExtensionContributionGuide()"))
+        XCTAssertTrue(inputBar.contains("Open the extension contribution guide"))
+        let panelURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/ChatHUD/CribbleChatPanel.swift")
+        let panel = try String(contentsOf: panelURL, encoding: .utf8)
+        XCTAssertTrue(panel.contains("openDemoNote(named: \"Extension Contribution Guide.md\""))
     }
 
     func testSidebarEmptyStateOffersDemoTourAndTaskLane() throws {

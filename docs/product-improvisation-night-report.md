@@ -690,6 +690,9 @@ Latest pass:
   extension slash commands are installed, pointing users from everyday chat into
   the Help > Open Extension Contribution Guide path without hiding the built-in
   quick actions.
+- Chat HUD's slash-command no-match state now includes a Guide button wired to
+  the bundled Extension Contribution Guide, so a failed `/` search can become a
+  native extension onboarding path.
 - The File > Import setup sheet now links directly to the Extension Contribution
   Guide, so importer authors can move from starter manifest creation to the
   strict read-only, least-writing, native SwiftUI contribution rules without
@@ -860,6 +863,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after teaching DemoNotes the Settings > Project Intelligence > Copy Review remote-runner handoff: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the first-run remote-runner checklist: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'IntelligencePreflightTests/testRemoteRunnerSetupReviewNamesConsentAndRevocation|ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to the copied remote-runner template and public contribution guide: 1 XCTest test and 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane` passed on 2026-06-08 after adding the Chat HUD slash-command Guide recovery action: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

@@ -9,6 +9,7 @@ struct ChatHUDView: View {
     var presentation: ChatHUDPresentation = .floating
     let onClose: () -> Void
     var onToggleMode: () -> Void = {}
+    var onOpenExtensionContributionGuide: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,7 +20,10 @@ struct ChatHUDView: View {
                     .padding(.bottom, 4)
             }
             transcript
-            ChatInputBar(viewModel: viewModel)
+            ChatInputBar(
+                viewModel: viewModel,
+                onOpenExtensionContributionGuide: onOpenExtensionContributionGuide
+            )
         }
         .frame(minWidth: 320, minHeight: 460)
         .hudSurface(for: presentation)

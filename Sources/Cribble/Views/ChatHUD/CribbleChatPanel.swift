@@ -197,7 +197,10 @@ final class ChatHUDController {
             viewModel: viewModel,
             presentation: .floating,
             onClose: { [weak self] in self?.close() },
-            onToggleMode: { [weak self] in self?.toggleMode() }
+            onToggleMode: { [weak self] in self?.toggleMode() },
+            onOpenExtensionContributionGuide: { [weak self] in
+                self?.openExtensionContributionGuide()
+            }
         )
 
         // First-click works even when the panel isn't key (focus stolen by
@@ -223,9 +226,16 @@ final class ChatHUDController {
             viewModel: viewModel,
             presentation: .menuBar,
             onClose: { [weak self] in self?.popover?.performClose(nil) },
-            onToggleMode: { [weak self] in self?.toggleMode() }
+            onToggleMode: { [weak self] in self?.toggleMode() },
+            onOpenExtensionContributionGuide: { [weak self] in
+                self?.openExtensionContributionGuide()
+            }
         )
         popover.contentViewController = NSHostingController(rootView: root)
         return popover
+    }
+
+    private func openExtensionContributionGuide() {
+        library?.openDemoNote(named: "Extension Contribution Guide.md", sortMode: .name)
     }
 }

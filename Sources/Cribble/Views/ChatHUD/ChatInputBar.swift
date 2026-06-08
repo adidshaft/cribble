@@ -4,6 +4,7 @@ import SwiftUI
 /// the pill editor, attach (`+`), model picker, mic placeholder, and send/stop.
 struct ChatInputBar: View {
     @ObservedObject var viewModel: ChatHUDViewModel
+    var onOpenExtensionContributionGuide: (() -> Void)?
     @FocusState private var inputFocused: Bool
     @State private var isPlusHovered = false
 
@@ -100,6 +101,17 @@ struct ChatInputBar: View {
                                 .foregroundStyle(.white.opacity(0.45))
                         }
                         Spacer(minLength: 0)
+                        if let onOpenExtensionContributionGuide {
+                            Button("Guide") {
+                                viewModel.clearSlashCommandQuery()
+                                onOpenExtensionContributionGuide()
+                            }
+                            .font(.system(size: 10, weight: .semibold))
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.white.opacity(0.76))
+                            .pointingHandOnHover()
+                            .help("Open the extension contribution guide")
+                        }
                         Button("Clear") {
                             viewModel.clearSlashCommandQuery()
                         }

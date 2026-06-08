@@ -264,7 +264,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(section.contains("Active contributions: 1 quick actions, 0 remote runners, 0 renderers, 0 importers"))
         XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, use Copy Warnings, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."))
         XCTAssertTrue(section.contains("Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide"))
-        XCTAssertTrue(section.contains("Proposal review: Help > Copy Extension Proposal"))
+        XCTAssertTrue(section.contains("Proposal review: Settings > Extensions > Copy Proposal or Help > Copy Extension Proposal"))
         XCTAssertTrue(section.contains("Warning handoff: Settings > Extensions > Copy Warnings"))
         XCTAssertTrue(section.contains("Import lane review: Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review"))
         XCTAssertTrue(section.contains("Remote runner review: Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review"))
@@ -324,7 +324,7 @@ final class DiagnosticsCenterTests: XCTestCase {
         XCTAssertTrue(report.contains("Installed: 0"))
         XCTAssertTrue(report.contains("Next action: Open Settings > Extensions, read Contribution Guide, then create a read-only project example."))
         XCTAssertTrue(report.contains("Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide"))
-        XCTAssertTrue(report.contains("Proposal review: Help > Copy Extension Proposal"))
+        XCTAssertTrue(report.contains("Proposal review: Settings > Extensions > Copy Proposal or Help > Copy Extension Proposal"))
         XCTAssertTrue(report.contains("No extension manifests are installed."))
     }
 

@@ -454,7 +454,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
         ]
         lines.append(contentsOf: [
             "- Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide",
-            "- Proposal review: Help > Copy Extension Proposal",
+            "- Proposal review: Settings > Extensions > Copy Proposal or Help > Copy Extension Proposal",
             "- Warning handoff: Settings > Extensions > Copy Warnings",
             "- Import lane review: Settings > Extensions > Import lanes > Copy Review or Help > Copy Import Lane Setup Review",
             "- Remote runner review: Settings > Project Intelligence > Copy Review or Help > Copy Remote Runner Setup Review"

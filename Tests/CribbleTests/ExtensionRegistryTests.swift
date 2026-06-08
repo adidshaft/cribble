@@ -425,6 +425,7 @@ struct ExtensionRegistryTests {
         #expect(summary.reviewSummary.contains("Manifest reference: docs/extensions.md"))
         #expect(summary.reviewSummary.contains("Native review routes:"))
         #expect(summary.reviewSummary.contains("Settings > Extensions > Contribution Guide"))
+        #expect(summary.reviewSummary.contains("Settings > Extensions > Copy Proposal"))
         #expect(summary.reviewSummary.contains("Settings > Extensions > Copy Warnings"))
         #expect(summary.reviewSummary.contains("Settings > Extensions > Import lanes > Copy Review"))
         #expect(summary.reviewSummary.contains("Settings > Project Intelligence > Copy Review"))

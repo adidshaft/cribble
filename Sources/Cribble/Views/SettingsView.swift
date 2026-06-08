@@ -649,6 +649,7 @@ struct ExtensionDashboardSummary: Equatable {
         Manifest reference: docs/extensions.md
         Native review routes:
         - Settings > Extensions > Contribution Guide
+        - Settings > Extensions > Copy Proposal
         - Settings > Extensions > Copy Warnings
         - Settings > Extensions > Import lanes > Copy Review
         - Settings > Project Intelligence > Copy Review

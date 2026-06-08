@@ -660,6 +660,9 @@ Latest pass:
 - The Settings > Extensions Copy Summary handoff now includes the same native
   review routes, so extension dashboard summaries can move directly into issues,
   PRs, or team chats without losing the safety path.
+- Extension dashboard summaries and diagnostic reports now name Settings >
+  Extensions > Copy Proposal beside Help > Copy Extension Proposal, so copied
+  handoffs match the native Settings action for early extension ideas.
 - Settings > Extensions import-lane rows now use a visible Copy Review button
   instead of an icon-only affordance, making importer handoffs easier to find
   for first-time extension authors.
@@ -927,6 +930,7 @@ Latest pass:
 - Latest `swift test --filter ChatHUDLogicTests/testExtensionLaneSummaryGuidesEmptyAndInstalledStates` passed on 2026-06-08 after pointing the Chat HUD no-extension summary to Settings > Extensions > Contribution Guide: 1 XCTest test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding Settings > Extensions > Contribution Guide to generated starter READMEs: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after pointing DemoNotes home and the first-run checklist to Settings > Extensions > Contribution Guide: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

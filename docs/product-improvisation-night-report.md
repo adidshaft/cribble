@@ -967,6 +967,12 @@ Latest pass:
   passed on 2026-06-08 after adding Settings-native review routes to the
   import-lane template and generated extension starter READMEs: 1 XCTest test
   and 1 Swift Testing test, 0 failures.
+- Import setup now teaches the full post-create loop in the sheet itself:
+  create a declarative lane, adapt the manifest, open Extension Settings, and
+  copy the installed lane review from Import lanes > Copy Review.
+- Latest `swift test --filter CribbleUITests/testImportGuidanceSheetLinksContributionGuide`
+  passed on 2026-06-08 after adding the installed import-lane review step to
+  the import setup sheet: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

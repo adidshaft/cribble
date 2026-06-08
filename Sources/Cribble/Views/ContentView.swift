@@ -672,7 +672,7 @@ struct ContentView: View {
             let url = try extensionRegistry.writeProjectExampleManifest(template: .importer, projectRoot: root)
             extensionRegistry.reload(projectRoots: library.rootURLs)
             let folderName = url.deletingLastPathComponent().lastPathComponent
-            importGuidanceStatus = "Created \(folderName) in this folder. Import is ready after you adapt the manifest."
+            importGuidanceStatus = "Created \(folderName) in this folder. Adapt the manifest, then open Settings > Extensions > Import lanes > Copy Review."
             library.statusMessage = "Created project import lane example"
         } catch {
             importGuidanceStatus = error.localizedDescription
@@ -684,7 +684,7 @@ struct ContentView: View {
             let url = try extensionRegistry.writeExampleManifest(template: .importer)
             extensionRegistry.reload(projectRoots: library.rootURLs)
             let folderName = url.deletingLastPathComponent().lastPathComponent
-            importGuidanceStatus = "Created \(folderName) in your user extension folder. Import is ready after you adapt the manifest."
+            importGuidanceStatus = "Created \(folderName) in your user extension folder. Adapt the manifest, then open Settings > Extensions > Import lanes > Copy Review."
             library.statusMessage = "Created user import lane example"
         } catch {
             importGuidanceStatus = error.localizedDescription
@@ -741,6 +741,11 @@ private struct ImportGuidanceSheet: View {
                     title: "3. Disable cleanly",
                     detail: "Turning the extension off removes its import lane from the app."
                 )
+                ImportSafetyRow(
+                    icon: "doc.on.doc",
+                    title: "4. Copy the installed review",
+                    detail: "After the lane appears, use Settings > Extensions > Import lanes > Copy Review for the handoff."
+                )
             }
             .padding(12)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
@@ -775,6 +780,7 @@ private struct ImportGuidanceSheet: View {
                 } label: {
                     Label("Open Extension Settings", systemImage: "gearshape")
                 }
+                .help("Open Settings to copy the installed import-lane review")
 
                 Button {
                     onOpenTeamKit()

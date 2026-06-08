@@ -1464,6 +1464,9 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertTrue(content.contains("onOpenContributionGuide"))
         XCTAssertTrue(content.contains("library.openDemoNote(named: \"Extension Contribution Guide.md\""))
+        XCTAssertTrue(content.contains("Settings > Extensions > Import lanes > Copy Review"))
+        XCTAssertTrue(content.contains("4. Copy the installed review"))
+        XCTAssertTrue(content.contains("Open Settings to copy the installed import-lane review"))
         XCTAssertTrue(content.contains("Label(\"Open Contribution Guide\", systemImage: \"checkmark.shield\")"))
         XCTAssertTrue(content.contains("strict read-only, least-writing, native SwiftUI contribution guide"))
     }

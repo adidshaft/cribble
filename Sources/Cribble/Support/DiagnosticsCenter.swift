@@ -455,6 +455,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
         lines.append(contentsOf: [
             "- Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide",
             "- Proposal review: Help > Copy Extension Proposal",
+            "- Warning handoff: Settings > Extensions > Copy Warnings",
             "- Import lane review: Help > Copy Import Lane Setup Review",
             "- Remote runner review: Help > Copy Remote Runner Setup Review"
         ])
@@ -500,7 +501,7 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
 
     var nextActionSummary: String {
         if warningCount > 0 {
-            return "Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."
+            return "Open Settings > Extensions, use Copy Warnings, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."
         }
         if installedCount == 0 {
             return "Open Settings > Extensions, read Contribution Guide, then create a read-only project example."

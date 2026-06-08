@@ -256,15 +256,16 @@ final class DiagnosticsCenterTests: XCTestCase {
         )
         let section = snapshot.formattedReportSection
 
-        XCTAssertEqual(snapshot.nextActionSummary, "Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new.")
+        XCTAssertEqual(snapshot.nextActionSummary, "Open Settings > Extensions, use Copy Warnings, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new.")
         XCTAssertTrue(section.contains("Installed: 2"))
         XCTAssertTrue(section.contains("Enabled: 1"))
         XCTAssertTrue(section.contains("Warnings: 1"))
         XCTAssertTrue(section.contains("Installed contributions: 1 quick actions, 1 remote runners, 0 renderers, 0 importers"))
         XCTAssertTrue(section.contains("Active contributions: 1 quick actions, 0 remote runners, 0 renderers, 0 importers"))
-        XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."))
+        XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, use Copy Warnings, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."))
         XCTAssertTrue(section.contains("Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide"))
         XCTAssertTrue(section.contains("Proposal review: Help > Copy Extension Proposal"))
+        XCTAssertTrue(section.contains("Warning handoff: Settings > Extensions > Copy Warnings"))
         XCTAssertTrue(section.contains("Import lane review: Help > Copy Import Lane Setup Review"))
         XCTAssertTrue(section.contains("Remote runner review: Help > Copy Remote Runner Setup Review"))
         XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))

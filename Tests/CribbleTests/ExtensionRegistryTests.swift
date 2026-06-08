@@ -222,6 +222,7 @@ struct ExtensionRegistryTests {
             #expect(readme.contains("Help > Open Extension Contribution Guide"))
             #expect(readme.contains("Help > Copy Extension Proposal"))
             #expect(readme.contains("Settings > Extensions > Copy Summary"))
+            #expect(readme.contains("Settings > Extensions > Copy Warnings"))
             #expect(readme.contains("declarative"))
             #expect(readme.contains("least permission"))
             #expect(readme.contains("previewed, reviewable, cancellable"))

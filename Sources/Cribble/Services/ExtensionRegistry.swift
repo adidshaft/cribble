@@ -371,6 +371,7 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
         - Help > Copy Import Lane Setup Review
         - Help > Copy Remote Runner Setup Review
         - Settings > Extensions > Copy Summary
+        - Settings > Extensions > Copy Warnings
 
         ## Lane notes
 

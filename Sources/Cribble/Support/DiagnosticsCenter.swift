@@ -494,13 +494,13 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
 
     var nextActionSummary: String {
         if warningCount > 0 {
-            return "Open Settings > Extensions, fix manifest warnings, then run Check Again."
+            return "Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."
         }
         if installedCount == 0 {
-            return "Open Settings > Extensions and create a read-only project example."
+            return "Open Settings > Extensions, read Contribution Guide, then create a read-only project example."
         }
         if enabledCount == 0 {
-            return "Enable a reviewed extension or leave all extensions disabled."
+            return "Enable a reviewed extension, copy its proposal/review details, or leave all extensions disabled."
         }
         return "No extension action needed."
     }

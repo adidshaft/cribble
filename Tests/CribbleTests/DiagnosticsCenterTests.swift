@@ -256,19 +256,54 @@ final class DiagnosticsCenterTests: XCTestCase {
         )
         let section = snapshot.formattedReportSection
 
-        XCTAssertEqual(snapshot.nextActionSummary, "Open Settings > Extensions, fix manifest warnings, then run Check Again.")
+        XCTAssertEqual(snapshot.nextActionSummary, "Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new.")
         XCTAssertTrue(section.contains("Installed: 2"))
         XCTAssertTrue(section.contains("Enabled: 1"))
         XCTAssertTrue(section.contains("Warnings: 1"))
         XCTAssertTrue(section.contains("Installed contributions: 1 quick actions, 1 remote runners, 0 renderers, 0 importers"))
         XCTAssertTrue(section.contains("Active contributions: 1 quick actions, 0 remote runners, 0 renderers, 0 importers"))
-        XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, fix manifest warnings, then run Check Again."))
+        XCTAssertTrue(section.contains("Next action: Open Settings > Extensions, fix manifest warnings, then run Check Again; use Contribution Guide if the manifest is new."))
         XCTAssertTrue(section.contains("bad-extension: The manifest is not valid JSON."))
         XCTAssertTrue(section.contains("Quick Review (com.example.quick): Quick Action, User, enabled"))
         XCTAssertTrue(section.contains("Permissions: Read Current Note"))
         XCTAssertTrue(section.contains("Contributions: Summarize"))
         XCTAssertTrue(section.contains("Team Runner (com.example.runner): Intelligence Provider, CribbleDiagnosticsExtensions, disabled"))
         XCTAssertTrue(section.contains("Contributions: GPU Runner (team-large)"))
+    }
+
+    func testExtensionSnapshotSuggestsReviewForDisabledExtensions() {
+        let root = URL(fileURLWithPath: "/tmp/CribbleDiagnosticsDisabled")
+        let installed = [
+            InstalledCribbleExtension(
+                manifest: CribbleExtensionManifest(
+                    id: "com.example.quick",
+                    name: "Quick Review",
+                    version: "1.0.0",
+                    kind: .quickAction,
+                    summary: "Review action.",
+                    permissions: [.readCurrentNote],
+                    quickActions: [
+                        CribbleExtensionQuickAction(
+                            id: "summarize",
+                            title: "Summarize",
+                            icon: "bolt",
+                            prompt: "Summarize."
+                        )
+                    ]
+                ),
+                manifestURL: root.appendingPathComponent("quick/cribble-extension.json"),
+                location: .user
+            )
+        ]
+
+        let snapshot = ExtensionDiagnosticsSnapshot(
+            installed: installed,
+            disabledIDs: ["com.example.quick"],
+            warnings: []
+        )
+
+        XCTAssertEqual(snapshot.nextActionSummary, "Enable a reviewed extension, copy its proposal/review details, or leave all extensions disabled.")
+        XCTAssertTrue(snapshot.formattedReportSection.contains("Next action: Enable a reviewed extension, copy its proposal/review details, or leave all extensions disabled."))
     }
 
     @MainActor
@@ -282,7 +317,7 @@ final class DiagnosticsCenterTests: XCTestCase {
 
         XCTAssertTrue(report.contains("## Extensions"))
         XCTAssertTrue(report.contains("Installed: 0"))
-        XCTAssertTrue(report.contains("Next action: Open Settings > Extensions and create a read-only project example."))
+        XCTAssertTrue(report.contains("Next action: Open Settings > Extensions, read Contribution Guide, then create a read-only project example."))
         XCTAssertTrue(report.contains("No extension manifests are installed."))
     }
 

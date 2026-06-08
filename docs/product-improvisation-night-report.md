@@ -641,6 +641,10 @@ Latest pass:
 - Remote-runner handoff strips in the Intelligence HUD now show a visible
   Copy Review label, instead of relying on an icon-only control, so custom VPS
   and extension-provided runner review details are easier to discover.
+- Extension diagnostic next actions now point new manifest authors to Settings >
+  Extensions plus Contribution Guide, and tell disabled-extension users to copy
+  proposal/review details before enabling, making support reports double as safe
+  recovery instructions.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -679,6 +683,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testExtensionSettingsLinksToContributionGuide|CribbleUITests/testHelpMenuGroupsGuidesTemplatesAndDiagnostics'` passed on 2026-06-08 after adding the Settings > Extensions Contribution Guide button: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStartGridIncludesContributorPath'` passed on 2026-06-08 after adding Help Menu recovery paths to the in-reader Shortcuts popover: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testRemoteRunnerHandoffStripsExposeCopyReviewLabels` passed on 2026-06-08 after labeling Intelligence HUD runner handoff copy actions as Copy Review: 1 XCTest test, 0 failures.
+- Latest `swift test --filter 'DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings|DiagnosticsCenterTests/testExtensionSnapshotSuggestsReviewForDisabledExtensions|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after improving extension diagnostics next actions for new manifests and disabled extensions: 3 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

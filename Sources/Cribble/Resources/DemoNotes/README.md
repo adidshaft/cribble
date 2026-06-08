@@ -91,7 +91,7 @@ changes in this demo copy only.
 - [ ] Use **Help → Show Diagnostic Report → Copy Next Actions** when you only need the actionable checklist.
 - [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
 - [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.
-- [ ] Press **P** after visiting a few notes and inspect the Reading Trail.
+- [ ] Press **P** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** after visiting a few notes.
 - [ ] Open [[Cribble AI]], press **Command J**, and ask about the current note.
 - [ ] Open **Project Intelligence** and review the preflight before starting.
 - [ ] Copy a generated Intelligence artifact as Markdown, then copy an Ask answer.
@@ -99,10 +99,12 @@ changes in this demo copy only.
 - [ ] Use **Help → Copy Research Review Template**, then open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
 - [ ] Use **Settings → Extensions → Contribution Guide** before proposing an extension PR.
+- [ ] Type a missing slash command in Chat HUD and use **Copy Idea** for a guarded quick-action proposal.
 - [ ] Use **Settings → Extensions → Copy Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Use **Settings → Extensions → Import lanes → Copy Review** after a lane appears, or **Help → Copy Import Lane Setup Review** before proposing a chat export or file importer lane.
 - [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.
 - [ ] Search for `private assistant on my mac` and compare filename results with Related results.
+- [ ] If search misses, use **Copy Search Handoff** before clearing it.
 
 Have fun exploring. When you're done, everything you made stays in these files — yours to keep or delete.

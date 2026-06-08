@@ -1009,6 +1009,12 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testChatEmptyStateSurfacesExtensionContributionLane|ChatHUDLogicTests/testSlashCommandIdeaHandoffKeepsExtensionGuardrails'`
   passed on 2026-06-08 after adding Copy Idea to the Chat HUD slash-command
   no-match state: 1 XCTest test and 1 XCTest logic test, 0 failures.
+- DemoNotes home and the starter checklist now teach the newest zero-file
+  recovery actions: Copy Trail Starter, Copy Search Handoff, and Chat HUD Copy
+  Idea, keeping first-run guidance aligned with the native recovery surfaces.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'`
+  passed on 2026-06-08 after teaching DemoNotes and the starter checklist the
+  newest zero-file recovery actions: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

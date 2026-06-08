@@ -2477,16 +2477,18 @@ enum WelcomeStarterChecklist {
 
     - [ ] Open a Markdown folder or the bundled Demo Tour.
     - [ ] Read [[Getting Started]] and highlight one useful sentence.
-    - [ ] Press **P** after visiting a few notes and use **Copy Trail Summary** for a zero-file research handoff.
+    - [ ] Press **P** and use **Copy Trail Starter** before you have a path, then **Copy Trail Summary** for a zero-file research handoff after visiting a few notes.
     - [ ] Open [[Cribble AI]] and choose the model boundary you trust.
     - [ ] Try **AI -> Find Related Notes** or **AI -> Summarize Current Note**.
     - [ ] Use the welcome **Tasks** button or **Command Option T** to open your project task lane.
     - [ ] Send one checkbox to `Tasks.md`, Reminders, or Calendar.
+    - [ ] Search for something that misses and use **Copy Search Handoff** before clearing it.
     - [ ] Review [[Workflow Playbook]] for a real team workflow.
     - [ ] Use **Help -> Copy Research Review Template** for evidence-heavy work.
     - [ ] Use **Help -> Copy Decision Entry Template** when a decision should survive the week.
     - [ ] Open [[Team Extension Kit]] before designing an extension.
     - [ ] Use **Settings -> Extensions -> Contribution Guide** before proposing an extension PR.
+    - [ ] Type a missing slash command in Chat HUD and use **Copy Idea** for a guarded quick-action proposal.
     - [ ] Use **Settings -> Extensions -> Copy Proposal** or **Help -> Copy Extension Proposal** for new extension ideas.
     - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.
     - [ ] Use **Settings -> Extensions -> Import lanes -> Copy Review** after a lane appears, or **Help -> Copy Import Lane Setup Review** before proposing a chat export or file importer lane.

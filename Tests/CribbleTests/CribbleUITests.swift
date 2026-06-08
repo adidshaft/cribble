@@ -279,6 +279,34 @@ final class CribbleUITests: XCTestCase {
         XCTAssertNil(SidebarSearchSummary(query: " ", filteredNodes: [root], semanticResultCount: 0))
     }
 
+    func testSidebarEmptySearchHintGuidesSemanticAndIntelligenceRecovery() {
+        let related = SidebarEmptySearchHint(semanticResultCount: 2, hasFolders: true)
+        XCTAssertEqual(related.description, "No file names matched, but related results are shown above.")
+        XCTAssertFalse(related.showsIntelligenceAction)
+
+        let indexable = SidebarEmptySearchHint(semanticResultCount: 0, hasFolders: true)
+        XCTAssertEqual(indexable.description, "No file names or related notes matched. Project Intelligence can index this folder for deeper search.")
+        XCTAssertTrue(indexable.showsIntelligenceAction)
+
+        let noFolder = SidebarEmptySearchHint(semanticResultCount: 0, hasFolders: false)
+        XCTAssertEqual(noFolder.description, "No file names matched this search.")
+        XCTAssertFalse(noFolder.showsIntelligenceAction)
+    }
+
+    func testSidebarNoMatchEmptyStateOffersProjectIntelligenceRecovery() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sidebarURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/SidebarView.swift")
+        let sidebar = try String(contentsOf: sidebarURL, encoding: .utf8)
+
+        XCTAssertTrue(sidebar.contains("SidebarEmptySearchHint("))
+        XCTAssertTrue(sidebar.contains("emptySearchHint.showsIntelligenceAction"))
+        XCTAssertTrue(sidebar.contains("Label(\"Open Project Intelligence\", systemImage: \"brain\")"))
+    }
+
     func testRemovingFolderOnlyRemovesItFromCribble() async throws {
         let defaults = UserDefaults.standard
         let oldBookmarks = defaults.array(forKey: "folderBookmarks")

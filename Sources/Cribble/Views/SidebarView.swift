@@ -24,13 +24,7 @@ struct SidebarView: View {
             }
 
             if library.filteredNodes.isEmpty {
-                if semanticIndex.results.isEmpty {
-                    emptyState
-                } else {
-                    // No literal filename matches, but semantic matches exist —
-                    // let the Related section above carry the result.
-                    Spacer(minLength: 0)
-                }
+                emptyState
             } else {
                 if let summary = SidebarSearchSummary(
                     query: library.searchText,
@@ -141,11 +135,26 @@ struct SidebarView: View {
                 }
                 .padding(.vertical, 24)
             } else {
+                let emptySearchHint = SidebarEmptySearchHint(
+                    semanticResultCount: semanticIndex.results.count,
+                    hasFolders: library.hasFolders
+                )
                 ContentUnavailableView {
                     Label("No Matches", systemImage: "magnifyingglass")
                 } description: {
-                    Text("No file names matched this search.")
+                    Text(emptySearchHint.description)
                 } actions: {
+                    if emptySearchHint.showsIntelligenceAction {
+                        Button {
+                            if let root = library.activeRootURL {
+                                openIntelligence(for: root)
+                            }
+                        } label: {
+                            Label("Open Project Intelligence", systemImage: "brain")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+
                     Button("Clear Search") {
                         library.searchText = ""
                     }
@@ -300,6 +309,25 @@ struct SidebarSearchSummary: Equatable {
             let own = node.isMarkdownFile ? 1 : 0
             return count + own + markdownFileCount(in: node.children)
         }
+    }
+}
+
+struct SidebarEmptySearchHint: Equatable {
+    let semanticResultCount: Int
+    let hasFolders: Bool
+
+    var description: String {
+        if semanticResultCount > 0 {
+            return "No file names matched, but related results are shown above."
+        }
+        if hasFolders {
+            return "No file names or related notes matched. Project Intelligence can index this folder for deeper search."
+        }
+        return "No file names matched this search."
+    }
+
+    var showsIntelligenceAction: Bool {
+        hasFolders && semanticResultCount == 0
     }
 }
 

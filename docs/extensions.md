@@ -78,6 +78,8 @@ Required fields:
 - `kind`: one of `quick-action`, `intelligence-provider`, `renderer`, or `importer`.
 - `summary`: short user-facing explanation.
 - `runtime`: use `declarative`.
+- Quick action `icon` values should be SF Symbol-style tokens such as
+  `checklist` or `text.alignleft`; spaces, slashes, and paths are rejected.
 
 Optional fields:
 

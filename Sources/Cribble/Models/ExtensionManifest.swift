@@ -451,6 +451,12 @@ enum ExtensionManifestLoader {
             if action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Quick action title is required.")
             }
+            if action.icon.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ExtensionManifestError.invalidContribution("Quick action icon is required.")
+            }
+            if !isSafeToken(action.icon) {
+                throw ExtensionManifestError.invalidContribution("Quick action icon \(action.icon) is not valid.")
+            }
             if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Quick action prompt is required.")
             }

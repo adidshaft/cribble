@@ -284,6 +284,30 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsUnsafeQuickActionIcons() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.actions",
+            name: "Actions",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares unsafe action icons.",
+            permissions: [.readCurrentNote],
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "summarize",
+                    title: "Summarize",
+                    icon: "../bolt",
+                    prompt: "Summarize the current note."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Quick action icon ../bolt is not valid.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsUnsupportedWritePermission() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.writer",

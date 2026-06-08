@@ -5,7 +5,11 @@ All notable changes to Cribble are documented here. The format follows
 [Semantic Versioning](https://semver.org/) (see the versioning guidance in
 [MAINTAINER_HANDBOOK.md](MAINTAINER_HANDBOOK.md#release-model)).
 
-## Unreleased — Reliability & scale (1.4, in progress)
+## 1.4.0 — Night Shift
+
+Cribble 1.4.0 is the "Night Shift" release: a smoother, safer, more
+Mac-native workspace for beginners, daily note work, local-first AI, trusted
+remote intelligence, and the first serious extension/plugin contribution path.
 
 ### Performance
 - **Lower memory on big vaults** — Cribble no longer keeps every note's full
@@ -13,16 +17,37 @@ All notable changes to Cribble are documented here. The format follows
 - **Adaptive performance modes** — Light / Balanced / Power, auto-selected from
   your Mac's memory and core count and adjustable in the intelligence model
   menu. Light keeps background analysis idle until you ask for it.
+- **Cleaner large-folder scans** — generated dependency and tool-cache folders
+  are skipped more aggressively, so broad project folders stay quieter.
 
 ### Safety
 - **Recoverable edits** — every change Cribble makes to a note (AI diffs, task
   exports, checkbox toggles, new notes) is now backed up first, can't silently
   overwrite an existing file, and never hard-deletes. A new **File → Undo Last
   Note Change** (⇧⌘Z) reverts the open note to its previous version.
+- **Review-first AI stays explicit** — empty AI diff previews now explain that
+  no safe patch was received and that nothing has been written.
+- **Trusted remote intelligence** — local, VPS, and team OpenAI-compatible
+  runners now have clearer consent, Keychain-secret, diagnostics, and copied
+  review handoffs before note context leaves the Mac.
+- **Extension guardrails** — extension contribution docs and in-app guidance now
+  require read-only first versions, least access, least writing, clean disable
+  behavior, and native SwiftUI/system-control surfaces.
 
 ### Quality of life
 - **Reopens where you left off** — launching restores the note you were last
   reading instead of jumping to the first file.
+- **Better first-run recovery** — DemoNotes, Help, welcome cards, and starter
+  checklists now guide users into tasks, research review, decisions, Project
+  Intelligence, remote runners, and extension contribution.
+- **Zero-file handoffs** — copy README starters, reading trail starters and
+  summaries, search-miss handoffs, missing slash-command ideas, diagnostics,
+  task snippets, diffs, and review templates before creating or changing notes.
+- **Import-lane setup guidance** — failed import attempts now point to native
+  setup and Settings review routes instead of stopping at terse errors.
+- **Open-source extension guide** — a bundled and documented contribution path
+  helps people propose useful plugins/extensions while API v1 remains
+  declarative and safe.
 
 ## 1.3.1 — Generic intelligence & tasks (experimental)
 

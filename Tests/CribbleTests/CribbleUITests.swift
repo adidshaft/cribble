@@ -1361,6 +1361,7 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(checklist.contains("Copy Proposal"))
         XCTAssertTrue(checklist.contains("read-only, least-access, and native SwiftUI"))
         XCTAssertTrue(checklist.contains("Help -> Copy Import Lane Setup Review"))
+        XCTAssertTrue(checklist.contains("Settings -> Project Intelligence -> Copy Review"))
         XCTAssertTrue(checklist.contains("Help -> Copy Remote Runner Setup Review"))
         XCTAssertTrue(checklist.contains("VPS or remote runner"))
     }

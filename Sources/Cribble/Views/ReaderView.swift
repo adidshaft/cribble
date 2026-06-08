@@ -2490,6 +2490,6 @@ enum WelcomeStarterChecklist {
     - [ ] Use **Help -> Copy Extension Proposal** or **Settings -> Extensions -> Copy Proposal** for new extension ideas.
     - [ ] Keep extension v1 read-only, least-access, and native SwiftUI.
     - [ ] Use **Help -> Copy Import Lane Setup Review** before proposing a chat export or file importer lane.
-    - [ ] Use **Help -> Copy Remote Runner Setup Review** before using a VPS or remote runner.
+    - [ ] Use **Settings -> Project Intelligence -> Copy Review** or **Help -> Copy Remote Runner Setup Review** before using a VPS or remote runner.
     """
 }

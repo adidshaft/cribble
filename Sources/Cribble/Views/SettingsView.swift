@@ -524,8 +524,14 @@ struct ExtensionStarterRule: Identifiable, Equatable {
         ExtensionStarterRule(
             id: "least-access",
             title: "Least access",
-            detail: "Prefer current-note reads, previewed writes, and Keychain-backed secrets.",
+            detail: "Prefer current-note reads and Keychain-backed secrets.",
             systemImage: "lock"
+        ),
+        ExtensionStarterRule(
+            id: "least-writing",
+            title: "Least writing",
+            detail: "Start read-only; any writes must use preview/review/cancel.",
+            systemImage: "pencil.and.outline"
         ),
         ExtensionStarterRule(
             id: "native-mac",
@@ -563,7 +569,7 @@ private struct ExtensionStarterRulesStrip: View {
         }
         .padding(8)
         .background(.quaternary.opacity(0.28), in: RoundedRectangle(cornerRadius: 8))
-        .help("Starter extension rules: read-only first, least access, and native Mac UI")
+        .help("Starter extension rules: read-only first, least access, least writing, and native Mac UI")
     }
 }
 

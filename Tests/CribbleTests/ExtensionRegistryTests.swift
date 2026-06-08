@@ -432,11 +432,11 @@ struct ExtensionRegistryTests {
         let rules = ExtensionStarterRule.defaults
         let combined = rules.map { "\($0.title) \($0.detail)" }.joined(separator: "\n")
 
-        #expect(rules.map(\.id) == ["read-only", "least-access", "native-mac"])
+        #expect(rules.map(\.id) == ["read-only", "least-access", "least-writing", "native-mac"])
         #expect(combined.contains("declarative manifests"))
         #expect(combined.contains("current-note reads"))
-        #expect(combined.contains("previewed writes"))
         #expect(combined.contains("Keychain-backed secrets"))
+        #expect(combined.contains("preview/review/cancel"))
         #expect(combined.contains("SwiftUI settings"))
         #expect(combined.contains("SF Symbols"))
     }

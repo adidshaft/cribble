@@ -759,6 +759,9 @@ Latest pass:
 - Settings > Extensions now confirms user extension folder and manifest Reveal
   actions in the status strip, keeping Finder handoffs visible like copy and
   toggle actions.
+- Settings > Extensions starter rules now make least-writing a first-class rule
+  beside read-only first, least access, and native Mac UI, so contributors see
+  preview/review/cancel expectations before creating examples.
 - Settings > Project Intelligence now includes Copy Review beside Remote Guide,
   so VPS/team-runner setup can be copied for review from the same native place
   users tune performance, disk budget, and the remote data boundary.
@@ -844,6 +847,7 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testSettingsExposeProjectIntelligenceControls` passed on 2026-06-08 after adding Copy Review to Settings > Project Intelligence: 1 XCTest test, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding Copy Warnings to copied extension dashboard review routes: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testIntelligenceSnapshotDoesNotRequestKeychainForLocalRunnerWithoutCredential'` passed on 2026-06-08 after adding the Remote Runner Setup Review route to credential diagnostics: 2 XCTest tests, 0 failures.
+- Latest `swift test --filter 'ExtensionRegistryTests/extensionStarterRulesSurfaceContributionConstraints|CribbleUITests/testExtensionSettingsLinksToContributionGuide'` passed on 2026-06-08 after making least-writing a first-class Settings extension starter rule: 1 XCTest test and 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

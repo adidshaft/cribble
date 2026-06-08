@@ -159,6 +159,29 @@ Before sharing a remote runner profile, use
 - how to disable the extension or revoke the runner;
 - when people should choose the on-device model instead.
 
+Paste the copied review into an issue, PR, or team note before people enable the
+runner:
+
+```md
+# Remote Runner Setup Review
+
+Runner name:
+Endpoint:
+Model:
+Embeddings:
+Trust label:
+
+Context boundary:
+Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac for the selected runner.
+
+Approval checklist:
+- Endpoint is controlled by the user, team, or trusted vendor.
+- Retention policy, logging, and access controls are understood before use.
+- Requested note context is appropriate for this runner.
+- Secrets stay out of manifests and notes; use Keychain only.
+- Disable path is understood before approval.
+```
+
 ```json
 {
   "apiVersion": 1,

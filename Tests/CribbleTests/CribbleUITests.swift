@@ -1251,6 +1251,10 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(extensions.contains("Help → Copy Import Lane Setup Review"))
         XCTAssertTrue(extensions.contains("File → Import → Copy Review"))
         XCTAssertTrue(extensions.contains("Help → Copy Remote Runner Setup Review"))
+        XCTAssertTrue(extensions.contains("# Remote Runner Setup Review"))
+        XCTAssertTrue(extensions.contains("Prompts, note excerpts, generated summaries, and embedding requests may leave this Mac"))
+        XCTAssertTrue(extensions.contains("Retention policy, logging, and access controls are understood before use"))
+        XCTAssertTrue(extensions.contains("Secrets stay out of manifests and notes; use Keychain only"))
         XCTAssertTrue(extensions.contains("user-selected files only"))
         XCTAssertTrue(extensions.contains("previewed writes"))
 

@@ -725,6 +725,10 @@ Latest pass:
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
   prompts before starting a VPS/team intelligence run.
+- Extensions and Remote Intelligence now shows a paste-ready Remote Runner Setup
+  Review example inline, so VPS/team-runner users can see endpoint ownership,
+  data boundary, retention/logging, Keychain, and disable checks before enabling
+  anything.
 - `docs/extensions.md` now defines executable-plugin readiness gates: signed
   bundle identity, process isolation, Cribble-mediated permissions, native
   consent, previewed writes, Keychain-only secrets, revocation, audit trails, and
@@ -784,6 +788,7 @@ Latest pass:
 - Latest `swift test --filter ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings` passed on 2026-06-08 after adding the generated README checklist to Settings > Extensions copied summaries: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testExtensionSettingsLinksToContributionGuide` passed on 2026-06-08 after making Settings creation status confirm generated README checklists: 1 XCTest test, 0 failures.
 - Latest `swift test --filter CribbleUITests/testReadingTrailEmptyStateOffersWorkflowRecovery` and `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding Copy Trail Summary to the Reading Trail footer and DemoNotes tour: 2 focused XCTest runs, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding the inline Remote Runner Setup Review example to DemoNotes: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

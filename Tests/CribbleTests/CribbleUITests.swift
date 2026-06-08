@@ -371,6 +371,21 @@ final class CribbleUITests: XCTestCase {
         XCTAssertTrue(diffSheet.contains("Copy the proposed patch for issue, PR, or teammate review before applying"))
     }
 
+    func testDiagnosticsSheetCanCopyNextActionsOnly() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let diagnosticsURL = projectRoot.appendingPathComponent("Sources/Cribble/Views/DiagnosticsReportSheet.swift")
+        let diagnostics = try String(contentsOf: diagnosticsURL, encoding: .utf8)
+
+        XCTAssertTrue(diagnostics.contains("Label(\"Copy Next Actions\", systemImage: \"checklist\")"))
+        XCTAssertTrue(diagnostics.contains(".disabled(actionableNextActions.isEmpty)"))
+        XCTAssertTrue(diagnostics.contains("NSPasteboard.general.setString(actionable.map { \"- \\($0)\" }.joined(separator: \"\\n\")"))
+        XCTAssertTrue(diagnostics.contains("Copy only the actionable diagnostics checklist"))
+    }
+
     func testOutlineEmptyStateCanCopyHeadingStarter() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let projectRoot = testFile

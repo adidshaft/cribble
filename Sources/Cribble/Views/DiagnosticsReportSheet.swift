@@ -14,6 +14,7 @@ struct DiagnosticsReportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var didCopy = false
     @State private var didCopyCrashReport = false
+    @State private var didCopyNextActions = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -50,6 +51,10 @@ struct DiagnosticsReportSheet: View {
                     Label("Crash report copied", systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else if didCopyNextActions {
+                    Label("Next actions copied", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -67,8 +72,17 @@ struct DiagnosticsReportSheet: View {
                 .help("Open GitHub's pull request flow and copy this report")
 
                 Button {
+                    copyNextActions()
+                } label: {
+                    Label("Copy Next Actions", systemImage: "checklist")
+                }
+                .disabled(actionableNextActions.isEmpty)
+                .help("Copy only the actionable diagnostics checklist")
+
+                Button {
                     if onRevealCrashReport() {
                         didCopy = false
+                        didCopyNextActions = false
                     }
                 } label: {
                     Label("Reveal Crash File", systemImage: "doc.badge.magnifyingglass")
@@ -79,6 +93,7 @@ struct DiagnosticsReportSheet: View {
                 Button {
                     didCopyCrashReport = onCopyCrashReport()
                     didCopy = false
+                    didCopyNextActions = false
                 } label: {
                     Label("Copy Crash File", systemImage: "doc.text")
                 }
@@ -95,6 +110,8 @@ struct DiagnosticsReportSheet: View {
                 Button {
                     onCopy()
                     didCopy = true
+                    didCopyCrashReport = false
+                    didCopyNextActions = false
                 } label: {
                     Label("Copy Report", systemImage: "doc.on.doc")
                 }
@@ -108,6 +125,10 @@ struct DiagnosticsReportSheet: View {
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18))
     }
 
+    private var actionableNextActions: [String] {
+        nextActions.filter { !$0.lowercased().hasPrefix("no ") }
+    }
+
     private var crashReportStatus: String {
         guard let crashReport else {
             return "Copy this report when Cribble crashes, gets stuck, or behaves strangely."
@@ -118,7 +139,7 @@ struct DiagnosticsReportSheet: View {
 
     @ViewBuilder
     private var nextActionSummary: some View {
-        let actionable = nextActions.filter { !$0.lowercased().hasPrefix("no ") }
+        let actionable = actionableNextActions
         if !actionable.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Next Actions", systemImage: "checklist")
@@ -164,5 +185,15 @@ struct DiagnosticsReportSheet: View {
             .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
             .help("Latest folder refresh performance")
         }
+    }
+
+    private func copyNextActions() {
+        let actionable = actionableNextActions
+        guard !actionable.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(actionable.map { "- \($0)" }.joined(separator: "\n"), forType: .string)
+        didCopyNextActions = true
+        didCopy = false
+        didCopyCrashReport = false
     }
 }

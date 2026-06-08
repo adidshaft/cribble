@@ -195,6 +195,10 @@ final class ExtensionRegistry: ObservableObject {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(template.manifest).write(to: manifestURL, options: .atomic)
         }
+        let readmeURL = exampleFolder.appendingPathComponent("README.md")
+        if !fileManager.fileExists(atPath: readmeURL.path) {
+            try template.readme.write(to: readmeURL, atomically: true, encoding: .utf8)
+        }
         return manifestURL
     }
 
@@ -343,6 +347,47 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
                     )
                 ]
             )
+        }
+    }
+
+    var readme: String {
+        """
+        # \(title) starter
+
+        Edit `cribble-extension.json`, then review it before enabling or sharing.
+
+        ## First safe version
+
+        - Keep API v1 declarative; Cribble must not run extension code.
+        - Keep note access to the least permission this lane needs.
+        - Keep writes previewed, reviewable, cancellable, and disabled by default.
+        - Keep secrets out of this folder; use Keychain-backed app flows.
+        - Keep any UI native SwiftUI with standard macOS controls and SF Symbols.
+
+        ## Review routes
+
+        - Help > Open Extension Contribution Guide
+        - Help > Copy Extension Proposal
+        - Help > Copy Import Lane Setup Review
+        - Help > Copy Remote Runner Setup Review
+        - Settings > Extensions > Copy Summary
+
+        ## Lane notes
+
+        \(laneNotes)
+        """
+    }
+
+    private var laneNotes: String {
+        switch self {
+        case .quickAction:
+            return "Quick actions may read the current note only, and they appear in the Chat HUD slash-command surface."
+        case .intelligenceProvider:
+            return "Remote runners need explicit review of endpoint ownership, retention, logging, Keychain credentials, and revoke/disable behavior before note context leaves the Mac."
+        case .renderer:
+            return "Renderer aliases map team fence names to built-in native renderers; no file access or network permission is needed."
+        case .importer:
+            return "Import lanes declare user-selected file formats only; converter execution is not enabled in API v1."
         }
     }
 }

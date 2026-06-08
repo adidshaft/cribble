@@ -217,12 +217,37 @@ struct ExtensionRegistryTests {
             let url = try registry.writeExampleManifest(template: template)
             #expect(url.lastPathComponent == "cribble-extension.json")
             #expect(url.deletingLastPathComponent().lastPathComponent == template.folderName)
+            let readme = try String(contentsOf: url.deletingLastPathComponent().appendingPathComponent("README.md"), encoding: .utf8)
+            #expect(readme.contains("# \(template.title) starter"))
+            #expect(readme.contains("Help > Open Extension Contribution Guide"))
+            #expect(readme.contains("Help > Copy Extension Proposal"))
+            #expect(readme.contains("Settings > Extensions > Copy Summary"))
+            #expect(readme.contains("declarative"))
+            #expect(readme.contains("least permission"))
+            #expect(readme.contains("previewed, reviewable, cancellable"))
+            #expect(readme.contains("Keychain"))
+            #expect(readme.contains("native SwiftUI"))
         }
 
         #expect(registry.quickActions.contains { $0.title == "Explain jargon" })
         #expect(registry.intelligenceProviderProfiles.contains { $0.title == "Research GPU" })
         #expect(registry.rendererResolver.resolvedLanguage(for: "workflow") == "mermaid")
         #expect(registry.importerCapabilities.contains { $0.title == "Chat Export" })
+    }
+
+    @Test
+    func exampleTemplateReadmePreservesExistingContributorNotes() throws {
+        let fixture = try ExtensionRegistryFixture()
+        defer { fixture.cleanUp() }
+
+        let registry = fixture.makeRegistry()
+        let first = try registry.writeExampleManifest(template: .quickAction)
+        let readmeURL = first.deletingLastPathComponent().appendingPathComponent("README.md")
+        try "custom contributor notes".write(to: readmeURL, atomically: true, encoding: .utf8)
+
+        _ = try registry.writeExampleManifest(template: .quickAction)
+
+        #expect(try String(contentsOf: readmeURL, encoding: .utf8) == "custom contributor notes")
     }
 
     @Test

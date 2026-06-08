@@ -11,7 +11,7 @@ Cribble is a fast, native Markdown reader for your notes — with highlights, re
 > Nothing here is permanent. Highlight, bookmark, link, and chat freely — it's a sandbox.
 > You can return here anytime from **Help → Open DemoNotes Tour**.
 > Contributors can start from the welcome screen's **Contribute** tile or
-> **Help → Open Extension Contribution Guide**.
+> **Settings → Extensions → Contribution Guide**.
 
 ## Start here
 
@@ -98,7 +98,7 @@ changes in this demo copy only.
 - [ ] Read [[Workflow Playbook]] and pick the flow closest to your real notes.
 - [ ] Use **Help → Copy Research Review Template**, then open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
-- [ ] Use **Help → Open Extension Contribution Guide** before proposing an extension PR.
+- [ ] Use **Settings → Extensions → Contribution Guide** before proposing an extension PR.
 - [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Use **Help → Copy Import Lane Setup Review** before proposing a chat export or file importer lane.

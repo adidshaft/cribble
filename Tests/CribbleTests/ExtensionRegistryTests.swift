@@ -219,6 +219,7 @@ struct ExtensionRegistryTests {
             #expect(url.deletingLastPathComponent().lastPathComponent == template.folderName)
             let readme = try String(contentsOf: url.deletingLastPathComponent().appendingPathComponent("README.md"), encoding: .utf8)
             #expect(readme.contains("# \(template.title) starter"))
+            #expect(readme.contains("Settings > Extensions > Contribution Guide"))
             #expect(readme.contains("Help > Open Extension Contribution Guide"))
             #expect(readme.contains("Help > Copy Extension Proposal"))
             #expect(readme.contains("Settings > Extensions > Copy Summary"))

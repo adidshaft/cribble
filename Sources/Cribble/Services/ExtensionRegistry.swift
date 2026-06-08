@@ -369,6 +369,7 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
 
         ## Review routes
 
+        - Settings > Extensions > Contribution Guide
         - Help > Open Extension Contribution Guide
         - Help > Copy Extension Proposal
         - Help > Copy Import Lane Setup Review

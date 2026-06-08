@@ -785,6 +785,9 @@ Latest pass:
 - Generated extension starter READMEs now also list Settings > Extensions > Copy
   Warnings, so each starter folder carries the same validation handoff beside
   its manifest.
+- Generated extension starter READMEs now point to Settings > Extensions >
+  Contribution Guide before the Help route, so copied project/user starter
+  folders match the native authoring path in Settings.
 - Settings > Extensions now confirms enabled/disabled extension toggles in the
   status strip, making contribution state changes visible just like copy,
   create, and validation actions.
@@ -919,6 +922,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding the Settings import-lane Copy Review route to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot|ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings'` passed on 2026-06-08 after adding Settings > Project Intelligence > Copy Review to remote-runner diagnostics and dashboard handoffs: 3 focused tests, 0 failures.
 - Latest `swift test --filter ChatHUDLogicTests/testExtensionLaneSummaryGuidesEmptyAndInstalledStates` passed on 2026-06-08 after pointing the Chat HUD no-extension summary to Settings > Extensions > Contribution Guide: 1 XCTest test, 0 failures.
+- Latest `swift test --filter ExtensionRegistryTests/writesAllExampleTemplates` passed on 2026-06-08 after adding Settings > Extensions > Contribution Guide to generated starter READMEs: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

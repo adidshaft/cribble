@@ -447,17 +447,12 @@ enum ExtensionManifestLoader {
 
         var seen: Set<String> = []
         for action in actions {
-            if action.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                throw ExtensionManifestError.invalidContribution("Quick action id is required.")
-            }
+            try validateContributionID(action.id, label: "Quick action", seen: &seen)
             if action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Quick action title is required.")
             }
             if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Quick action prompt is required.")
-            }
-            if !seen.insert(action.id).inserted {
-                throw ExtensionManifestError.invalidContribution("Quick action id \(action.id) is duplicated.")
             }
         }
     }

@@ -220,6 +220,30 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsUnsafeQuickActionIDs() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.actions",
+            name: "Actions",
+            version: "1.0.0",
+            kind: .quickAction,
+            summary: "Declares unsafe action ids.",
+            permissions: [.readCurrentNote],
+            quickActions: [
+                CribbleExtensionQuickAction(
+                    id: "../summarize",
+                    title: "Summarize",
+                    icon: "text.alignleft",
+                    prompt: "Summarize the current note."
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Quick action id ../summarize is not valid.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsUnsupportedWritePermission() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.writer",

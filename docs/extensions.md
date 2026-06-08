@@ -282,6 +282,8 @@ Permission rules are intentionally narrow in API v1:
   `read-current-note`; when run, they receive the current note plus any
   user-selected attachments for that send, but not automatic related-note or
   Project Intelligence context;
+- quick-action `id` values must be safe slash-command tokens: letters or
+  numbers first, then letters, numbers, `.`, `_`, or `-`;
 - intelligence-provider extensions that contribute remote runner profiles must
   request exactly `network-openai-compatible`;
 - intelligence-provider `baseURL` values must use `https` for remote hosts;

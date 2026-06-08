@@ -531,8 +531,15 @@ enum ExtensionManifestLoader {
             if importer.fileExtensions.isEmpty {
                 throw ExtensionManifestError.invalidContribution("Importer fileExtensions are required.")
             }
-            for ext in importer.fileExtensions where !isBareFileExtension(ext) {
-                throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) must be a bare extension like json, without dots or paths.")
+            var seenExtensions: Set<String> = []
+            for ext in importer.fileExtensions {
+                if !isBareFileExtension(ext) {
+                    throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) must be a bare extension like json, without dots or paths.")
+                }
+                let normalized = ext.lowercased()
+                if !seenExtensions.insert(normalized).inserted {
+                    throw ExtensionManifestError.invalidContribution("Importer file extension \(ext) is duplicated.")
+                }
             }
             if importer.outputFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 throw ExtensionManifestError.invalidContribution("Importer outputFormat is required.")

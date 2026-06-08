@@ -772,6 +772,29 @@ struct ExtensionManifestTests {
     }
 
     @Test
+    func rejectsDuplicateImporterFileExtensionsIgnoringCase() throws {
+        let manifest = CribbleExtensionManifest(
+            id: "com.example.cribble.importer",
+            name: "Research Importers",
+            version: "0.1.0",
+            kind: .importer,
+            summary: "Declares import lanes for future safe conversion.",
+            importers: [
+                CribbleExtensionImporter(
+                    id: "chat-export",
+                    title: "Chat Export",
+                    fileExtensions: ["json", "JSON"],
+                    outputFormat: "markdown"
+                )
+            ]
+        )
+
+        #expect(throws: ExtensionManifestError.invalidContribution("Importer file extension JSON is duplicated.")) {
+            try ExtensionManifestLoader.validate(manifest)
+        }
+    }
+
+    @Test
     func rejectsImportersOnWrongKind() throws {
         let manifest = CribbleExtensionManifest(
             id: "com.example.cribble.renderer",

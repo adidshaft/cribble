@@ -247,7 +247,7 @@ Markdown. Today they appear as import lanes in Settings so teams can agree on
 formats before converter execution exists. The File > Import command can choose
 a matching file and show which enabled lane it would use. Declare extensions as
 bare values such as `json` or `txt`; do not include leading dots, paths, or
-wildcards.
+wildcards. Keep them unique regardless of case.
 
 ```json
 {

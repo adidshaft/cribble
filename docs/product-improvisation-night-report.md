@@ -1021,6 +1021,12 @@ Latest pass:
 - Latest `swift test --filter CribbleUITests/testEmptyReadmePanelCanCopyStarterScaffold`
   passed on 2026-06-08 after adding Copy README Starter to empty README panels:
   1 XCTest test, 0 failures.
+- The short product summary and readiness checkpoint now include the newer
+  zero-file recovery set: trail starters, search handoffs, README starters, and
+  missing slash-command ideas.
+- Latest `swift test --filter ExtensionRegistryTests/productImprovisationReadinessCheckpointNamesStopConditions`
+  passed on 2026-06-08 after updating the short summary and readiness checkpoint
+  with the newest zero-file recovery handoffs: 1 Swift Testing test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

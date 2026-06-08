@@ -578,10 +578,18 @@ struct ExtensionRegistryTests {
         #expect(checkpoint.contains("Settings summaries"))
         #expect(checkpoint.contains("exact contribution, import, and remote-runner review routes"))
         #expect(checkpoint.contains("copied diagnostics or Settings summaries that preserve native review routes"))
+        #expect(checkpoint.contains("starter/search/README handoffs"))
+        #expect(checkpoint.contains("empty-state recovery"))
         #expect(checkpoint.contains("No executable plugin runtime"))
         #expect(summary.contains("Settings-first proposal"))
         #expect(summary.contains("import-lane Copy Review"))
         #expect(summary.contains("Project Intelligence review routes"))
+        #expect(summary.contains("Search Handoffs"))
+        #expect(summary.contains("README starters"))
+        #expect(summary.contains("missing command ideas"))
+        #expect(summary.contains("Copy Search Handoff"))
+        #expect(summary.contains("Copy README Starter"))
+        #expect(summary.contains("Chat HUD Copy Idea"))
     }
 }
 

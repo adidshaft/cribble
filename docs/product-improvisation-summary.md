@@ -17,8 +17,9 @@ now reads more like a local-first Mac knowledge workspace:
   now point beginners to the right first action, including direct decision-log
   templates, research-review templates, and team workflow routes.
 - **Work daily:** New Note, Today notes, Tasks, Copy Markdown, Copy Markdown
-  Link, Copy Wiki Link, Reading Trail summaries, Decision Log, and reviewed AI
-  proposals make capture, rationale, research paths, and handoff feel native.
+  Link, Copy Wiki Link, Reading Trail starters/summaries, Search Handoffs,
+  README starters, Decision Log, and reviewed AI proposals make capture,
+  rationale, research paths, and handoff feel native.
 - **Use intelligence safely:** Project Intelligence has preflight review,
   source-grounded artifacts, Ask answers, copyable Markdown handoffs, diagnostics,
   Settings controls, and clear local-vs-remote boundaries.
@@ -45,7 +46,7 @@ The branch has four strong bets:
 | Review-first AI | AI can suggest notes, tasks, links, indexes, and intelligence artifacts without silently writing user files. |
 | Safe extensibility | Contributors can propose useful extensions while API v1 stays declarative, read-only first, least-access, and native SwiftUI. |
 | Trusted remote intelligence | Advanced users can use their own VPS/team runner without hiding that note context may leave the Mac. |
-| Zero-file handoff | Users can copy trails, diffs, tasks, diagnostics, extension warnings, and intelligence artifacts before creating or changing files. |
+| Zero-file handoff | Users can copy trail starters/summaries, search misses, README scaffolds, missing command ideas, diffs, tasks, diagnostics, extension warnings, and intelligence artifacts before creating or changing files. |
 
 ## Extension Rules
 
@@ -113,7 +114,13 @@ Focused validation passed across the newest work:
 - Settings Project Intelligence controls for performance, disk budget, chat
   context, Remote Guide, and Copy Review.
 - Intelligence artifact and Ask answer Markdown handoffs.
-- Reading Trail Copy Summary from both the panel and native Help menu.
+- Reading Trail Copy Starter and Copy Summary from the panel, plus native Help
+  menu trail summary.
+- Sidebar Copy Search Handoff for no-match searches that should move into
+  Project Intelligence.
+- Empty README Copy README Starter scaffolds.
+- Chat HUD Copy Idea for missing slash commands that should become guarded
+  extension quick-action proposals.
 - Extension validation Copy Warnings.
 - Folder scanner skips for `.gradle`, `.terraform`, `.turbo`, `coverage`, and
   `vendor` to keep broad code folders lighter.

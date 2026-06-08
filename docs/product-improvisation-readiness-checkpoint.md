@@ -18,7 +18,8 @@ Cribble now has a clearer shape:
 - A beginner can open DemoNotes, follow Help entries, copy starter templates,
   create notes safely, and understand the local-first AI boundary.
 - A daily user can collect tasks, open Today, copy Markdown/wiki links, resume
-  reading, and use Project Intelligence without hidden source-note writes.
+  reading, copy starter/search/README handoffs, and use Project Intelligence
+  without hidden source-note writes.
 - A power user can configure local, VPS, or team OpenAI-compatible intelligence
   runners with consent, Keychain secrets, diagnostics redaction, and revocation.
 - A contributor can propose extensions through declarative manifests, copied
@@ -36,7 +37,7 @@ branch foundation:
 | Native Help commands | Help recovers onboarding, contributor guides, starter templates, import-lane review, remote-runner review, and extension settings without requiring users to remember file paths. |
 | Declarative extension API v1 | It opens a plugin ecosystem while avoiding hidden execution, source-note writes, and broad ambient access. |
 | Remote runner review | It makes VPS/team intelligence useful while naming what may leave the Mac and where secrets live, with copyable review text from setup and preflight. |
-| Diagnostics and handoffs | Copied reports, Settings summaries, and Markdown handoffs make support, PR review, and team sharing easier without leaking credentials, while preserving exact contribution, import, and remote-runner review routes. |
+| Diagnostics and handoffs | Copied reports, Settings summaries, starter/search/README handoffs, and Markdown handoffs make support, PR review, and team sharing easier without leaking credentials, while preserving exact contribution, import, and remote-runner review routes. |
 
 ## Stop Conditions
 
@@ -63,6 +64,7 @@ The next change should be small, native, and tied to one of these signals:
 - clearer local-vs-remote AI boundaries;
 - safer extension proposal/review loops;
 - better copied handoffs for teams and maintainers;
+- better empty-state recovery before users create files;
 - reduced warning/noise in build, test, diagnostics, or support reports;
 - copied diagnostics or Settings summaries that preserve native review routes;
 - measurable refresh/indexing smoothness.

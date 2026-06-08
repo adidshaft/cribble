@@ -99,7 +99,7 @@ changes in this demo copy only.
 - [ ] Use **Help → Copy Research Review Template**, then open [[Research Review]] and inspect the evidence-review quick action.
 - [ ] Use **Help → Copy Decision Entry Template**, then open [[Decision Log]] and compare the example.
 - [ ] Use **Settings → Extensions → Contribution Guide** before proposing an extension PR.
-- [ ] Use **Help → Copy Extension Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
+- [ ] Use **Settings → Extensions → Copy Proposal**, then open [[Team Extension Kit]] and skim the manifest review checklist.
 - [ ] Visit [[Extensions and Remote Intelligence]] and create the example manifest from Settings.
 - [ ] Use **Help → Copy Import Lane Setup Review** before proposing a chat export or file importer lane.
 - [ ] Use **Help → Copy Remote Runner Setup Review** and notice which data may leave the Mac.

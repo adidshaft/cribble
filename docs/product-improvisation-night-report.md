@@ -680,6 +680,9 @@ Latest pass:
 - The public extension contribution guide and Import Lane Setup Review template
   now name Settings > Extensions > Copy Proposal, keeping proposal handoffs
   Settings-first across public docs, in-app templates, and copied reviews.
+- Bundled DemoNotes and the first-run starter checklist now also put Settings >
+  Extensions > Copy Proposal before the Help proposal route, so in-app
+  onboarding matches the Settings-first contributor flow.
 - The first-run welcome launchpad now exposes Tasks beside New Note and Today
   after a folder is open, turning the empty reader into a faster work surface
   for project task capture without requiring users to remember the shortcut.
@@ -937,6 +940,7 @@ Latest pass:
 - Latest `swift test --filter 'ExtensionRegistryTests/extensionDashboardSummaryCountsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to copied dashboard and diagnostic handoffs: 2 focused tests, 0 failures.
 - Latest `swift test --filter ExtensionRegistryTests/topLevelContributorDocsNameNativeExtensionReviewRoutes` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to README and CONTRIBUTING contributor routes: 1 Swift Testing test, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/openSourceExtensionContributionGuideKeepsFirstPRsStrict|CribbleUITests/testImportLaneSetupReviewKeepsExecutionBoundariesClear'` passed on 2026-06-08 after adding Settings > Extensions > Copy Proposal to the public contribution guide and import-lane review template: 1 XCTest test and 1 Swift Testing test, 0 failures.
+- Latest `swift test --filter 'CribbleUITests/testDemoNotesUseLocalFirstAICopy|CribbleUITests/testWelcomeStarterChecklistGuidesCoreProductTour'` passed on 2026-06-08 after making DemoNotes and the starter checklist proposal handoffs Settings-first: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

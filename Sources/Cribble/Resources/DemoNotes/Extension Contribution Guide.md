@@ -31,7 +31,8 @@ Start with a useful idea. Merge the smallest declarative version that proves it.
 
 ## First proposal
 
-Use **Help → Copy Extension Proposal** before opening a code PR.
+Use **Settings → Extensions → Copy Proposal** or
+**Help → Copy Extension Proposal** before opening a code PR.
 
 Answer these in the issue, Discussion, or pull request:
 

@@ -452,6 +452,12 @@ struct ExtensionDiagnosticsSnapshot: Equatable {
             "- Active contributions: \(activeQuickActionCount) quick actions, \(activeRemoteRunnerCount) remote runners, \(activeRendererCount) renderers, \(activeImporterCount) importers",
             "- Next action: \(nextActionSummary)"
         ]
+        lines.append(contentsOf: [
+            "- Contribution guide: Settings > Extensions > Contribution Guide or Help > Open Extension Contribution Guide",
+            "- Proposal review: Help > Copy Extension Proposal",
+            "- Import lane review: Help > Copy Import Lane Setup Review",
+            "- Remote runner review: Help > Copy Remote Runner Setup Review"
+        ])
 
         if !warnings.isEmpty {
             lines.append("")

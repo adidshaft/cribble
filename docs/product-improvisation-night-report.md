@@ -645,6 +645,9 @@ Latest pass:
   Extensions plus Contribution Guide, and tell disabled-extension users to copy
   proposal/review details before enabling, making support reports double as safe
   recovery instructions.
+- Extension diagnostic reports now include exact review routes for Contribution
+  Guide, Copy Extension Proposal, Copy Import Lane Setup Review, and Copy Remote
+  Runner Setup Review, so copied support reports can become actionable handoffs.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -684,6 +687,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testShortcutPopoverSurfacesHelpRecoveryPaths|CribbleUITests/testWelcomeStartGridIncludesContributorPath'` passed on 2026-06-08 after adding Help Menu recovery paths to the in-reader Shortcuts popover: 2 XCTest tests, 0 failures.
 - Latest `swift test --filter CribbleUITests/testRemoteRunnerHandoffStripsExposeCopyReviewLabels` passed on 2026-06-08 after labeling Intelligence HUD runner handoff copy actions as Copy Review: 1 XCTest test, 0 failures.
 - Latest `swift test --filter 'DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings|DiagnosticsCenterTests/testExtensionSnapshotSuggestsReviewForDisabledExtensions|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after improving extension diagnostics next actions for new manifests and disabled extensions: 3 XCTest tests, 0 failures.
+- Latest `swift test --filter 'DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot'` passed on 2026-06-08 after adding exact extension review routes to copied diagnostics: 2 XCTest tests, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

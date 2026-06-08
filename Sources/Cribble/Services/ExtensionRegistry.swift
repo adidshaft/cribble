@@ -363,6 +363,9 @@ enum ExtensionExampleTemplate: String, CaseIterable, Identifiable {
         - Keep writes previewed, reviewable, cancellable, and disabled by default.
         - Keep secrets out of this folder; use Keychain-backed app flows.
         - Keep any UI native SwiftUI with standard macOS controls and SF Symbols.
+        - Keep contribution ids to letters, numbers, dots, underscores, and hyphens.
+        - Keep remote runner and trust source URLs on HTTPS, except localhost development.
+        - Keep importer `fileExtensions` bare, like `json` or `txt`, without dots or paths.
 
         ## Review routes
 

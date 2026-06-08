@@ -228,6 +228,9 @@ struct ExtensionRegistryTests {
             #expect(readme.contains("previewed, reviewable, cancellable"))
             #expect(readme.contains("Keychain"))
             #expect(readme.contains("native SwiftUI"))
+            #expect(readme.contains("letters, numbers, dots, underscores, and hyphens"))
+            #expect(readme.contains("HTTPS, except localhost development"))
+            #expect(readme.contains("bare, like `json` or `txt`, without dots or paths"))
         }
 
         #expect(registry.quickActions.contains { $0.title == "Explain jargon" })

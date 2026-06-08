@@ -706,6 +706,9 @@ Latest pass:
 - Extension starter manifests now generate a neighboring `README.md` with
   read-only, least-permission, previewed-write, Keychain, native SwiftUI, and
   review-route guidance, while preserving contributor edits on repeat creation.
+- DemoNotes now points users to Copy Task, Copy Diff, and Diagnostics > Copy
+  Next Actions in the relevant tour steps, making the newer lightweight handoff
+  paths easier to discover.
 - Project Intelligence preflight now offers Copy Review when a remote runner is
   selected, letting users paste folder scope, endpoint/model/trust, context
   boundary, performance mode, Keychain-secret expectations, and revocation
@@ -764,6 +767,7 @@ Latest pass:
 - Latest `swift test --filter 'CribbleUITests/testTaskMenuCanCopyTaskWithoutExternalExport|CribbleUITests/testTaskExternalExportStatusNamesTasksAndDestination|TaskExporterTests'` passed on 2026-06-08 after adding Copy Task to checkbox menus: 4 XCTest tests, 0 failures.
 - Latest `swift test --filter 'CribbleUITests/testDiagnosticsSheetCanCopyNextActionsOnly|DiagnosticsCenterTests/testDiagnosticReportIncludesExtensionSnapshot|DiagnosticsCenterTests/testExtensionSnapshotFormatsInstalledLanesAndWarnings|DiagnosticsCenterTests/testIntelligenceSnapshotRecommendsKeychainForRemoteRunnerWithoutCredential'` passed on 2026-06-08 after adding Copy Next Actions to diagnostics: 4 XCTest tests, 0 failures.
 - Latest `swift test --filter 'ExtensionRegistryTests/writesAllExampleTemplates|ExtensionRegistryTests/exampleTemplateReadmePreservesExistingContributorNotes|ExtensionRegistryTests/extensionStarterRulesSurfaceContributionConstraints'` passed on 2026-06-08 after adding generated README checklists to extension starter folders: 3 Swift Testing tests, 0 failures.
+- Latest `swift test --filter CribbleUITests/testDemoNotesUseLocalFirstAICopy` passed on 2026-06-08 after adding Copy Task, Copy Diff, and Copy Next Actions to DemoNotes onboarding: 1 XCTest test, 0 failures.
 - Full `swift test` passed on 2026-06-08 after the latest Help command,
   Decision Log DemoNotes, remote-runner, diagnostics, and report work: 235
   XCTest tests and 43 Swift Testing tests, 0 failures. The run printed the

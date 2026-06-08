@@ -67,9 +67,10 @@ A local-first AI assistant that can keep notes on this Mac with on-device models
 8. Choose **AI → Create Index Note** to propose a reviewed `index.md` map.
 9. Choose **AI → Draft Today with AI** (or press **Command J** and choose **Draft today**) and notice the AI still returns a reviewed `CREATE:` note instead of writing directly.
 10. Choose **AI → Extract Tasks from Current Note** (or press **Command J** and choose **Extract tasks**) and review the proposed `Tasks.md` update before writing.
-11. Use **File → Copy Markdown** or **Copy Markdown Link** to hand the current note to another app.
-12. Press **Command J** and ask *"what is this library about?"*
-13. Open **Settings → Extensions** and create the example manifest.
+11. Use **Copy Diff** in the review sheet when you want a teammate to inspect an AI patch before you apply it.
+12. Use **File → Copy Markdown** or **Copy Markdown Link** to hand the current note to another app.
+13. Press **Command J** and ask *"what is this library about?"*
+14. Open **Settings → Extensions** and create the example manifest.
 
 ## Tour checklist
 
@@ -85,7 +86,9 @@ changes in this demo copy only.
 - [ ] Try **AI → Create Index Note** for a reviewed folder map proposal.
 - [ ] Try **AI → Draft Today with AI** for an AI-assisted daily note proposal.
 - [ ] Try **AI → Extract Tasks from Current Note** to turn prose into a reviewed `Tasks.md` proposal.
+- [ ] Use **Copy Diff** in a review sheet before applying a generated patch.
 - [ ] Use **File → Copy Markdown**, **Copy Markdown Link**, or right-click a note and copy Markdown for handoff.
+- [ ] Use **Help → Show Diagnostic Report → Copy Next Actions** when you only need the actionable checklist.
 - [ ] Drop a reading bookmark with **B**, leave the note, then resume from the strip.
 - [ ] Open [[Feature Tour]] and double-click the Mermaid diagram to zoom.
 - [ ] Press **P** after visiting a few notes and inspect the Reading Trail.

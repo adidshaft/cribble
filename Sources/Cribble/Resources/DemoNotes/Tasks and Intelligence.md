@@ -12,8 +12,9 @@ leaves your Mac.
 
 ## Tasks you can send anywhere
 
-Hover any checkbox below — an **⋯** menu appears on the right. Send the item to
-**Reminders**, **Calendar**, or Cribble's own **Tasks** list.
+Hover any checkbox below — an **⋯** menu appears on the right. Use **Copy Task**
+for a zero-permission handoff, or send the item to **Reminders**, **Calendar**,
+or Cribble's own **Tasks** list.
 
 - [ ] Try sending this task to Reminders
 - [ ] Add this one to Calendar (lands as an all-day event today)
@@ -27,6 +28,8 @@ Hover any checkbox below — an **⋯** menu appears on the right. Send the item
 >    everything you've flagged.
 > 3. Each collected task links back to the exact line it came from. Following
 >    that link scrolls you right to this section.
+> 4. Try **⋯ → Copy Task** when you just want the action text for Slack, Mail,
+>    an issue, or another task manager without granting Reminders/Calendar access.
 
 Behind the scenes Cribble adds a tiny, invisible anchor to the source line so
 the backlink is precise — your Markdown stays clean in the reader.
@@ -37,7 +40,8 @@ Not every action item starts life as a checkbox. Choose **AI → Extract Tasks
 from Current Note**, or open **Cribble AI** with `Command J` and choose
 **Extract tasks**. Cribble will ask the model to propose a reviewed `Tasks.md`
 update from the current note. You still get the preview sheet first, so nothing
-is written until you approve it.
+is written until you approve it. Use **Copy Diff** in that sheet when you want
+the proposed change reviewed elsewhere before applying it.
 
 ## Insights across a whole folder
 

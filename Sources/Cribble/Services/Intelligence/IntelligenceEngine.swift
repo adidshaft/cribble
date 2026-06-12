@@ -44,6 +44,7 @@ final class IntelligenceEngine: ObservableObject {
     /// Whether the configured provider can currently run model-backed jobs, plus
     /// the next action the HUD should offer when it cannot.
     @Published private(set) var providerHealth: ProviderHealth = .ready
+    @Published private(set) var currentJobDescription: String?
 
     let settings: IntelligenceSettings
 
@@ -147,6 +148,7 @@ final class IntelligenceEngine: ObservableObject {
         hasCodeFiles = false
         staleCount = 0
         providerHealth = .ready
+        currentJobDescription = nil
         lastActivity = "Preparing \(allFolders ? "all folders" : nominalRoot.lastPathComponent)"
 
         guard let database = try? IntelligenceDatabase(path: cacheDir.appendingPathComponent("intelligence.db").path) else {
@@ -179,7 +181,10 @@ final class IntelligenceEngine: ObservableObject {
         let runner = JobRunner(
             db: database, scheduler: scheduler, artifacts: artifactStore,
             provider: provider, projectID: projectID, rootURL: nominalRoot,
-            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
+            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) },
+            onJobStart: { [weak self] job in
+                self?.currentJobDescription = IntelligenceJobActivity.describe(job)
+            }
         )
 
         self.db = database
@@ -294,6 +299,7 @@ final class IntelligenceEngine: ObservableObject {
         staleCount = 0
         resourceDecision = nil
         providerHealth = .ready
+        currentJobDescription = nil
     }
 
     /// Re-enables intelligence for a project on app launch if the user had it on.
@@ -313,6 +319,7 @@ final class IntelligenceEngine: ObservableObject {
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
         projectID = nil; rootURL = nil; scanRoots = []
         providerHealth = .ready
+        currentJobDescription = nil
     }
 
     /// Wipes this project's artifacts, jobs, and cached content, then rebuilds.
@@ -414,6 +421,7 @@ final class IntelligenceEngine: ObservableObject {
             allowedTier: decision.allowedTier,
             providerUsable: providerUsable
         )   // bounded per tick so the loop stays responsive
+        currentJobDescription = nil
         if drain.ranJobs > 0 {
             await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
         }
@@ -968,7 +976,10 @@ final class IntelligenceEngine: ObservableObject {
         self.runner = JobRunner(
             db: db, scheduler: scheduler, artifacts: artifactStore,
             provider: provider, projectID: projectID, rootURL: rootURL,
-            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
+            mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) },
+            onJobStart: { [weak self] job in
+                self?.currentJobDescription = IntelligenceJobActivity.describe(job)
+            }
         )
         await refreshProviderHealth()
     }

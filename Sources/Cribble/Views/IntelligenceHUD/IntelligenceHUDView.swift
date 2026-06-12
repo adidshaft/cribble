@@ -158,7 +158,7 @@ struct IntelligenceHUDView: View {
             case .off: return ("Off", .gray)
             case .ready: return ("Ready", .blue)
             case .scanning: return ("Scanning", .blue)
-            case .working(let s): return (s, .orange)
+            case .working(let s): return (engine.currentJobDescription ?? s, .orange)
             case .idle: return ("Idle", .green)
             case .driftDetected(let n): return ("Drift ×\(n)", .yellow)
             }
@@ -737,7 +737,7 @@ struct IntelligenceHUDView: View {
                     .foregroundStyle(.white.opacity(0.7))
                 Spacer()
                 if engine.pendingJobs > 0 {
-                    Text("\(engine.pendingJobs) queued")
+                    Text(pendingJobsLabel)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -796,9 +796,20 @@ struct IntelligenceHUDView: View {
         .background(tint.opacity(0.12), in: Capsule())
     }
 
+    private var pendingJobsLabel: String {
+        if let description = engine.currentJobDescription {
+            return "\(engine.pendingJobs) queued · \(description)"
+        }
+        return "\(engine.pendingJobs) queued"
+    }
+
     private var feedTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                if case .unavailable = engine.providerHealth {
+                    providerHealthBanner
+                }
+
                 projectPulseCard
 
                 if !engine.failedJobs.isEmpty {
@@ -876,6 +887,72 @@ struct IntelligenceHUDView: View {
             .padding(14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var providerHealthBanner: some View {
+        let payload = providerHealthPayload
+        return HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 18)
+                .foregroundStyle(.orange.opacity(0.92))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(payload.reason)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(2)
+                if let detail = payload.detail {
+                    Text(detail)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            Button {
+                performProviderFix(payload.fix)
+            } label: {
+                Label(payload.actionTitle, systemImage: payload.actionIcon)
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .cribbleGlassCapsuleButton(prominent: true)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.orange.opacity(0.18), lineWidth: 0.5)
+        }
+    }
+
+    private var providerHealthPayload: (reason: String, detail: String?, actionTitle: String, actionIcon: String, fix: ProviderFix) {
+        guard case .unavailable(let reason, let fix) = engine.providerHealth else {
+            return ("Provider ready", nil, "Done", "checkmark", .openModelPicker)
+        }
+        switch fix {
+        case .downloadModel(let model):
+            return (reason, model.approximateSize, "Download", "arrow.down.circle", fix)
+        case .openModelPicker:
+            return (reason, nil, "Choose model", "cpu", fix)
+        case .startLocalRunner(let name, let url):
+            return (reason, url, "Configure \(name)", "network", fix)
+        case .authenticateCLI(_, let command):
+            return (reason, command, "Copy command", "doc.on.doc", fix)
+        }
+    }
+
+    private func performProviderFix(_ fix: ProviderFix) {
+        switch fix {
+        case .downloadModel:
+            Task { await engine.downloadModelIfNeeded() }
+        case .openModelPicker:
+            showModelPicker = true
+        case .startLocalRunner(let name, let url):
+            configureLocalRunner(name: name, baseURL: url)
+        case .authenticateCLI(_, let command):
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(command, forType: .string)
+        }
     }
 
     private var needsAttentionSection: some View {

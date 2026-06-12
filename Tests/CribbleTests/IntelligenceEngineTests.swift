@@ -210,6 +210,25 @@ final class IntelligenceEngineTests: XCTestCase {
         )
     }
 
+    func testIntelligenceJobActivityDescriptions() {
+        XCTAssertEqual(
+            IntelligenceJobActivity.describe(IntelligenceJob(projectID: "p", type: .summarizeFile, inputHash: "h", inputPaths: ["Notes/Plan.md"])),
+            "Summarizing Plan.md"
+        )
+        XCTAssertEqual(
+            IntelligenceJobActivity.describe(IntelligenceJob(projectID: "p", type: .buildGlossary, inputHash: "h", inputPaths: ["A.md", "B.md"])),
+            "Building glossary (2 documents)"
+        )
+        XCTAssertEqual(
+            IntelligenceJobActivity.describe(IntelligenceJob(projectID: "p", type: .summarizeCommit, inputHash: "h", inputPaths: ["abcdef1234567890"])),
+            "Summarizing commit abcdef12"
+        )
+        XCTAssertEqual(
+            IntelligenceJobActivity.describe(IntelligenceJob(projectID: "p", type: .detectContradictions, inputHash: "h")),
+            "Checking for contradictions"
+        )
+    }
+
     // MARK: - SwiftSymbolExtractor
 
     func testSymbolExtractionFindsTypesFunctionsImports() {

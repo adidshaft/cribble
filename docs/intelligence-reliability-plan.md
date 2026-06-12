@@ -327,7 +327,7 @@ Run `bash script/build_and_run.sh`, open a folder, enable intelligence:
 |-------|-------------|--------|--------|
 | 1 | Provider preflight gate | ☑ | `Gate intelligence drains on provider health` |
 | 2 | Failure ledger + retry | ☑ | `Surface failed intelligence jobs with one-click retry` |
-| 3 | Live activity + health banner | ☐ | — |
+| 3 | Live activity + health banner | ☑ | `Show live per-job intelligence activity and provider-health banner` |
 | 4 | Actionable stale artifacts | ☐ | — |
 | 5 | First-run polish | ☐ | — |
 

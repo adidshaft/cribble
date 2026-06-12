@@ -61,6 +61,55 @@ enum JobFailureExplainer {
     }
 }
 
+enum IntelligenceJobActivity {
+    static func describe(_ job: IntelligenceJob) -> String {
+        let firstPath = job.inputPaths.first.map(displayName(for:))
+        switch job.type {
+        case .analyzeFile, .summarizeFile:
+            return "Summarizing \(firstPath ?? "file")"
+        case .extractFallbackLogic:
+            return "Auditing fallbacks in \(firstPath ?? "file")"
+        case .extractIOBehavior:
+            return "Mapping I/O in \(firstPath ?? "file")"
+        case .summarizeDiff:
+            return "Summarizing working changes"
+        case .summarizeCommit:
+            let sha = job.inputPaths.first.map { String($0.prefix(8)) } ?? "commit"
+            return "Summarizing commit \(sha)"
+        case .updateProjectIndex:
+            return "Updating project index"
+        case .buildDependencyDiagram:
+            return "Building dependency map"
+        case .buildConnectionsGraph:
+            return "Mapping note connections"
+        case .buildArchitectureDiagram:
+            return "Drawing architecture"
+        case .detectArchitectureDrift:
+            return "Checking architecture drift"
+        case .discoverConnections:
+            return "Finding related notes"
+        case .detectContradictions:
+            return "Checking for contradictions"
+        case .buildGlossary:
+            return "Building glossary (\(job.inputPaths.count) documents)"
+        case .buildTimeline:
+            return "Building timeline"
+        case .scanWorkspace:
+            return "Scanning workspace"
+        case .detectChangedFiles:
+            return "Checking changed files"
+        case .parseCodeSymbols:
+            return "Parsing code symbols"
+        case .extractImports:
+            return "Extracting imports"
+        }
+    }
+
+    private static func displayName(for path: String) -> String {
+        (path as NSString).lastPathComponent
+    }
+}
+
 extension IntelligenceJobType {
     var displayName: String {
         rawValue

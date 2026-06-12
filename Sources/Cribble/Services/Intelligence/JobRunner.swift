@@ -49,6 +49,7 @@ actor JobRunner {
     private let graphDirectory: URL
     /// Optional headless Mermaid validator (best-effort; see MermaidRenderValidator).
     private let mermaidValidator: (@Sendable (String) async -> Bool)?
+    var onJobStart: (@MainActor @Sendable (IntelligenceJob) -> Void)?
 
     init(
         db: IntelligenceDatabase,
@@ -59,9 +60,11 @@ actor JobRunner {
         rootURL: URL,
         maxInputChars: Int = 12_000,
         jobTimeoutSeconds: TimeInterval = 120,
-        mermaidValidator: (@Sendable (String) async -> Bool)? = nil
+        mermaidValidator: (@Sendable (String) async -> Bool)? = nil,
+        onJobStart: (@MainActor @Sendable (IntelligenceJob) -> Void)? = nil
     ) {
         self.mermaidValidator = mermaidValidator
+        self.onJobStart = onJobStart
         self.db = db
         self.scheduler = scheduler
         self.artifacts = artifacts
@@ -92,6 +95,10 @@ actor JobRunner {
         // diagram/drift jobs behind it until a model arrives.
         guard let job = await db.dequeueNextJob(projectID: projectID, maxTier: tier, deterministicOnly: !providerUsable) else {
             return false
+        }
+
+        if let onJobStart {
+            await onJobStart(job)
         }
 
         do {

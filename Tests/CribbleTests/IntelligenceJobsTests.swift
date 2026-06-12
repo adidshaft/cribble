@@ -425,6 +425,42 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertEqual(cancelledAfterDismiss.count, 1)
     }
 
+    @MainActor
+    func testRunnerPublishesJobStartBeforeProviderCompletes() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-job-start-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Alpha\n\nA note to summarize.".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let started = expectation(description: "job start callback")
+        var startedJob: IntelligenceJob?
+        let runner = JobRunner(
+            db: db,
+            scheduler: scheduler,
+            artifacts: artifacts,
+            provider: SlowStubProvider(),
+            projectID: "p",
+            rootURL: root,
+            jobTimeoutSeconds: 0.05,
+            onJobStart: { job in
+                startedJob = job
+                started.fulfill()
+            }
+        )
+
+        await runner.drain(limit: 1, allowedTier: .tier3, providerUsable: true)
+
+        await fulfillment(of: [started], timeout: 1)
+        XCTAssertEqual(startedJob?.type, .summarizeFile)
+        XCTAssertEqual(IntelligenceJobActivity.describe(try XCTUnwrap(startedJob)), "Summarizing Alpha.md")
+    }
+
     func testProjectIndexFallsBackWhenProviderReturnsEmptyOutput() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-index-fallback-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

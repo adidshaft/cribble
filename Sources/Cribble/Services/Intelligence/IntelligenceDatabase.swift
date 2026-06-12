@@ -703,6 +703,32 @@ actor IntelligenceDatabase {
         return count
     }
 
+    func staleArtifacts(projectID: String) -> [IntelligenceArtifact] {
+        var rows: [IntelligenceArtifact] = []
+        query("""
+        SELECT id, project_id, artifact_type, relative_path, title, content_hash, source_hashes, is_published
+        FROM artifacts
+        WHERE project_id = ? AND is_stale = 1
+        ORDER BY artifact_type, relative_path;
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            let hashesJSON = Self.columnText(stmt, 6) ?? "[]"
+            let hashes = (try? JSONDecoder().decode([String].self, from: Data(hashesJSON.utf8))) ?? []
+            rows.append(IntelligenceArtifact(
+                id: Self.columnText(stmt, 0) ?? "",
+                projectID: Self.columnText(stmt, 1) ?? "",
+                type: IntelligenceArtifactType(rawValue: Self.columnText(stmt, 2) ?? "") ?? .fileSummary,
+                relativePath: Self.columnText(stmt, 3) ?? "",
+                title: Self.columnText(stmt, 4),
+                contentHash: Self.columnText(stmt, 5) ?? "",
+                sourceHashes: hashes,
+                isPublished: sqlite3_column_int(stmt, 7) == 1
+            ))
+        }
+        return rows
+    }
+
     // MARK: - Git commits
 
     /// Records a commit if not already present. Returns true if newly inserted.

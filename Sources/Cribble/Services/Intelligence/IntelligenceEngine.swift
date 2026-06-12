@@ -34,6 +34,7 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var filesIndexed = 0
     @Published private(set) var hasCodeFiles = false
     @Published private(set) var staleCount = 0
+    @Published private(set) var staleArtifacts: [IntelligenceArtifact] = []
     @Published private(set) var lastActivity: String?
     @Published private(set) var isEnabled = false
     @Published private(set) var resourceDecision: BackgroundScheduler.Decision?
@@ -142,11 +143,14 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeEdges = []
         researchInsights = []
         failedJobs = []
+        staleArtifacts = []
+        staleCount = 0
         resetDirtyGates()
         pendingJobs = 0
         filesIndexed = 0
         hasCodeFiles = false
         staleCount = 0
+        staleArtifacts = []
         providerHealth = .ready
         currentJobDescription = nil
         lastActivity = "Preparing \(allFolders ? "all folders" : nominalRoot.lastPathComponent)"
@@ -297,6 +301,7 @@ final class IntelligenceEngine: ObservableObject {
         filesIndexed = 0
         hasCodeFiles = false
         staleCount = 0
+        staleArtifacts = []
         resourceDecision = nil
         providerHealth = .ready
         currentJobDescription = nil
@@ -390,6 +395,7 @@ final class IntelligenceEngine: ObservableObject {
                 filesIndexed = await db.files(projectID: projectID).count
                 pendingJobs = await db.pendingJobCount(projectID: projectID)
                 staleCount = await db.staleArtifactCount(projectID: projectID)
+                staleArtifacts = await db.staleArtifacts(projectID: projectID)
             } else {
                 needsScan = false
                 if initialScan { status = .scanning(done: 0, total: 0) }
@@ -410,6 +416,7 @@ final class IntelligenceEngine: ObservableObject {
                 filesIndexed = managedFileCount
                 pendingJobs = await db.pendingJobCount(projectID: projectID)
                 staleCount = await db.staleArtifactCount(projectID: projectID)
+                staleArtifacts = await db.staleArtifacts(projectID: projectID)
                 await enqueueAggregateJobs()
             }
         }
@@ -705,6 +712,7 @@ final class IntelligenceEngine: ObservableObject {
         filesIndexed = files.count
         hasCodeFiles = Self.containsCodeFiles(files)
         staleCount = await db.staleArtifactCount(projectID: projectID)
+        staleArtifacts = await db.staleArtifacts(projectID: projectID)
 
         let driftReports = hasCodeFiles ? artifacts.filter { $0.type == .driftReport } : []
         if let drift = driftReports.first, let content = artifactStore?.content(for: drift),
@@ -785,6 +793,83 @@ final class IntelligenceEngine: ObservableObject {
     func dismissFailedJob(id: String) async {
         await db?.dismissJob(id: id)
         await refreshState()
+    }
+
+    func refreshArtifact(id: String) async {
+        guard let artifact = staleArtifacts.first(where: { $0.id == id }) ?? artifacts.first(where: { $0.id == id }) else { return }
+        await enqueueRefresh(for: artifact)
+        await refreshState()
+        await runNow()
+    }
+
+    func refreshAllStale() async {
+        guard !staleArtifacts.isEmpty else { return }
+        for artifact in staleArtifacts {
+            await enqueueRefresh(for: artifact)
+        }
+        await refreshState()
+        await runNow()
+    }
+
+    private func enqueueRefresh(for artifact: IntelligenceArtifact) async {
+        guard let db, let projectID else { return }
+        switch artifact.type {
+        case .fileSummary, .fallbackAudit, .ioBehavior:
+            guard let path = artifact.title ?? sourcePathHint(for: artifact),
+                  let file = await db.file(projectID: projectID, path: path)
+            else { return }
+            let language = file.language.flatMap(SourceLanguage.init(rawValue:))
+            let type: IntelligenceJobType = language?.isCode == true ? .analyzeFile : .summarizeFile
+            await db.enqueueJobIfNeeded(IntelligenceJob(
+                projectID: projectID,
+                type: type,
+                inputHash: file.hash,
+                inputPaths: [path],
+                priority: 80
+            ))
+        case .projectIndex:
+            lastAggregateJobSignatures[.updateProjectIndex] = nil
+            await enqueueAggregateJobs()
+        case .glossary:
+            lastAggregateJobSignatures[.buildGlossary] = nil
+            await enqueueAggregateJobs()
+        case .timeline:
+            lastAggregateJobSignatures[.buildTimeline] = nil
+            await enqueueAggregateJobs()
+        case .contradictionReport:
+            lastAggregateJobSignatures[.detectContradictions] = nil
+            await enqueueAggregateJobs()
+        case .dependencyDiagram:
+            lastAggregateJobSignatures[.buildDependencyDiagram] = nil
+            await enqueueAggregateJobs()
+        case .connectionsGraph:
+            lastAggregateJobSignatures[.buildConnectionsGraph] = nil
+            await enqueueAggregateJobs()
+        case .architectureDiagram:
+            lastAggregateJobSignatures[.buildArchitectureDiagram] = nil
+            await enqueueAggregateJobs()
+        case .driftReport:
+            lastAggregateJobSignatures[.detectArchitectureDrift] = nil
+            await enqueueAggregateJobs()
+        case .researchInsight:
+            lastAggregateJobSignatures[.discoverConnections] = nil
+            await enqueueAggregateJobs()
+        case .diffSummary:
+            lastGitProbeSignature = nil
+            await enqueueAggregateJobs()
+        case .commitSummary:
+            lastGitProbeSignature = nil
+            await enqueueAggregateJobs()
+        }
+    }
+
+    private func sourcePathHint(for artifact: IntelligenceArtifact) -> String? {
+        guard artifact.type == .fileSummary || artifact.type == .fallbackAudit || artifact.type == .ioBehavior else {
+            return nil
+        }
+        let filename = (artifact.relativePath as NSString).lastPathComponent
+        guard !filename.isEmpty else { return nil }
+        return filename.replacingOccurrences(of: ".md", with: "")
     }
 
     func provenance(for artifact: IntelligenceArtifact) async -> [ArtifactProvenance] {

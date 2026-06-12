@@ -32,6 +32,7 @@ struct IntelligenceHUDView: View {
     @State private var zoomRequest: ZoomOverlayRequest?
     @State private var selectedGraphLens: IntelligenceGraphLens = .visual
     @State private var showLocalRunnerConfig = false
+    @State private var showStaleArtifacts = false
     @State private var localRunnerName = OpenAICompatibleProvider.knownLocalEndpoints.first?.name ?? "Local Runner"
     @State private var localRunnerBaseURL = OpenAICompatibleProvider.knownLocalEndpoints.first?.url.absoluteString ?? ""
     @State private var localRunnerModelID = ""
@@ -827,12 +828,7 @@ struct IntelligenceHUDView: View {
                 }
 
                 if engine.staleCount > 0 {
-                    Label("\(engine.staleCount) artifacts may be stale", systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.orange.opacity(0.9))
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                    staleArtifactsSection
                 }
 
                 if !activeResearchInsights.isEmpty || !suggestedEdges.isEmpty {
@@ -1020,6 +1016,71 @@ struct IntelligenceHUDView: View {
             }
             .cribbleGlassCapsuleButton()
             .foregroundStyle(.white.opacity(0.62))
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var staleArtifactsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    showStaleArtifacts.toggle()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: showStaleArtifacts ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                        Label("\(engine.staleCount) artifacts may be stale", systemImage: "exclamationmark.triangle")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Button {
+                    Task { await engine.refreshAllStale() }
+                } label: {
+                    Label("Refresh all", systemImage: "arrow.clockwise")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .cribbleGlassCapsuleButton()
+            }
+            .foregroundStyle(.orange.opacity(0.9))
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+
+            if showStaleArtifacts {
+                ForEach(engine.staleArtifacts) { artifact in
+                    staleArtifactRow(artifact)
+                }
+            }
+        }
+    }
+
+    private func staleArtifactRow(_ artifact: IntelligenceArtifact) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: artifact.type.icon)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 18)
+                .foregroundStyle(.yellow.opacity(0.84))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(artifact.title ?? artifact.relativePath)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                Text(artifact.type.rawValue.replacingOccurrences(of: "_", with: " "))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.44))
+            }
+            Spacer()
+            Button {
+                Task { await engine.refreshArtifact(id: artifact.id) }
+            } label: {
+                Text("Refresh")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .cribbleGlassCapsuleButton()
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1347,6 +1408,8 @@ struct IntelligenceHUDView: View {
                     }
                     ArtifactBodyView(content: body, onOpenSource: onOpenSource, onExpand: { source in
                         zoomRequest = ZoomOverlayRequest(title: artifact.title ?? "Diagram", content: .mermaid(source: source))
+                    }, isStale: staleArtifactIDs.contains(artifact.id), onRefresh: {
+                        Task { await engine.refreshArtifact(id: artifact.id) }
                     })
                     if !provenance.isEmpty {
                         provenanceFooter
@@ -1740,6 +1803,10 @@ struct IntelligenceHUDView: View {
 
     private var visibleFileSummaries: [IntelligenceArtifact] {
         visibleArtifacts.filter { $0.type == .fileSummary }
+    }
+
+    private var staleArtifactIDs: Set<String> {
+        Set(engine.staleArtifacts.map(\.id))
     }
 
     private static let codeOnlyArtifactTypes: Set<IntelligenceArtifactType> = [

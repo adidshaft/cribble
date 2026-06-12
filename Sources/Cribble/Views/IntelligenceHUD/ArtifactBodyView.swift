@@ -12,9 +12,27 @@ struct ArtifactBodyView: View {
     var onOpenSource: (String) -> Void = { _ in }
     /// Called with a Mermaid source to open the full-screen zoom inspector.
     var onExpand: (String) -> Void = { _ in }
+    var isStale = false
+    var onRefresh: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if isStale {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Built from an older version of the source")
+                        .font(.system(size: 11, weight: .medium))
+                    Spacer()
+                    Button("Refresh", action: onRefresh)
+                        .font(.system(size: 10, weight: .semibold))
+                        .cribbleGlassCapsuleButton()
+                }
+                .foregroundStyle(.yellow.opacity(0.9))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.yellow.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+            }
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 switch segment {
                 case .text(let markdown):

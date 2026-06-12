@@ -392,6 +392,9 @@ final class IntelligenceEngineTests: XCTestCase {
         await db.markArtifactsStale(projectID: "p", containingSourceHash: "h1")
         let stale1 = await db.staleArtifactCount(projectID: "p")
         XCTAssertEqual(stale1, 1)
+        let staleArtifacts = await db.staleArtifacts(projectID: "p")
+        XCTAssertEqual(staleArtifacts.map(\.id), ["art1"])
+        XCTAssertEqual(staleArtifacts.first?.title, "a.swift")
         // Re-insert clears stale; an unrelated hash should not flip it.
         await db.insertArtifact(artifact)
         await db.markArtifactsStale(projectID: "p", containingSourceHash: "other")

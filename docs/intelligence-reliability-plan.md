@@ -325,7 +325,7 @@ Run `bash script/build_and_run.sh`, open a folder, enable intelligence:
 
 | Phase | Description | Status | Commit |
 |-------|-------------|--------|--------|
-| 1 | Provider preflight gate | ☐ | — |
+| 1 | Provider preflight gate | ☑ | `Gate intelligence drains on provider health` |
 | 2 | Failure ledger + retry | ☐ | — |
 | 3 | Live activity + health banner | ☐ | — |
 | 4 | Actionable stale artifacts | ☐ | — |

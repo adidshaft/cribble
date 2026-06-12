@@ -309,6 +309,42 @@ final class IntelligenceJobsTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.path == "Net.swift" })
     }
 
+    func testDrainRunsDeterministicJobsAndHoldsProviderJobsWhenProviderUnavailable() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-mixed-gate-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Alpha\n\nSee [[Beta]].".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+        try "# Beta".write(to: root.appendingPathComponent("Beta.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        await db.enqueueJobIfNeeded(IntelligenceJob(projectID: "p", type: .buildConnectionsGraph, inputHash: "links", priority: 0))
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let runner = JobRunner(db: db, scheduler: scheduler, artifacts: artifacts, provider: StubProvider(text: "# Summary"), projectID: "p", rootURL: root)
+
+        let unavailableDrain = await runner.drain(limit: 10, allowedTier: .tier3, providerUsable: false)
+
+        XCTAssertEqual(unavailableDrain.ranJobs, 1)
+        XCTAssertFalse(unavailableDrain.providerUsable)
+        let connectionGraphs = await db.artifacts(projectID: "p", type: .connectionsGraph)
+        XCTAssertEqual(connectionGraphs.count, 1)
+        let heldProviderJobs = await db.jobs(projectID: "p", status: .pending).filter(\.type.requiresProvider)
+        XCTAssertEqual(heldProviderJobs.count, 2)
+        XCTAssertTrue(heldProviderJobs.allSatisfy { $0.attemptCount == 0 })
+
+        let availableDrain = await runner.drain(limit: 10, allowedTier: .tier3, providerUsable: true)
+
+        XCTAssertEqual(availableDrain.providerUsable, true)
+        XCTAssertGreaterThanOrEqual(availableDrain.ranJobs, 2)
+        let remainingProviderJobs = await db.jobs(projectID: "p", status: .pending).filter(\.type.requiresProvider)
+        let failedJobs = await db.jobs(projectID: "p", status: .failed)
+        XCTAssertEqual(remainingProviderJobs.count, 0)
+        XCTAssertEqual(failedJobs.count, 0)
+    }
+
     func testProjectIndexFallsBackWhenProviderReturnsEmptyOutput() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-index-fallback-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -133,6 +133,56 @@ final class IntelligenceEngineTests: XCTestCase {
         XCTAssertTrue(questions.contains("What context leaves my Mac?"))
     }
 
+    func testProviderHealthMapsMissingModelToDownloadFix() {
+        let model = ModelCatalog.localModels[0]
+        let health = ProviderHealthMapper.health(
+            availability: .unavailable(reason: "Model not downloaded"),
+            modelID: model.id,
+            localRunnerBaseURL: nil
+        )
+
+        XCTAssertEqual(health, .unavailable(reason: "Model not downloaded", fix: .downloadModel(model)))
+    }
+
+    func testProviderHealthMapsUnknownModelToPickerFix() {
+        let health = ProviderHealthMapper.health(
+            availability: .unavailable(reason: "Model not downloaded"),
+            modelID: "missing-model",
+            localRunnerBaseURL: nil
+        )
+
+        XCTAssertEqual(health, .unavailable(reason: "Model not downloaded", fix: .openModelPicker))
+    }
+
+    func testProviderHealthMapsLocalRunnerToStartFix() {
+        let health = ProviderHealthMapper.health(
+            availability: .unavailable(reason: "Can't reach 127.0.0.1: Connection refused"),
+            modelID: "llama3.2",
+            localRunnerBaseURL: "http://localhost:11434/v1"
+        )
+
+        XCTAssertEqual(
+            health,
+            .unavailable(
+                reason: "Can't reach 127.0.0.1: Connection refused",
+                fix: .startLocalRunner(name: "Ollama", url: "http://localhost:11434/v1")
+            )
+        )
+    }
+
+    func testProviderHealthMapsCLIToAuthenticateFix() {
+        let health = ProviderHealthMapper.health(
+            availability: .unavailable(reason: "CLI is not authenticated"),
+            modelID: "cloud:claude",
+            localRunnerBaseURL: nil
+        )
+
+        XCTAssertEqual(
+            health,
+            .unavailable(reason: "CLI is not authenticated", fix: .authenticateCLI(name: "Claude", command: "claude login"))
+        )
+    }
+
     // MARK: - SwiftSymbolExtractor
 
     func testSymbolExtractionFindsTypesFunctionsImports() {

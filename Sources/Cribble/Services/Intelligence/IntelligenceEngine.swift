@@ -40,6 +40,9 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var performanceMode: PerformanceMode = .balanced
     /// Download progress (0...1) while fetching the on-device model, else nil.
     @Published private(set) var modelDownloadFraction: Double?
+    /// Whether the configured provider can currently run model-backed jobs, plus
+    /// the next action the HUD should offer when it cannot.
+    @Published private(set) var providerHealth: ProviderHealth = .ready
 
     let settings: IntelligenceSettings
 
@@ -141,6 +144,7 @@ final class IntelligenceEngine: ObservableObject {
         filesIndexed = 0
         hasCodeFiles = false
         staleCount = 0
+        providerHealth = .ready
         lastActivity = "Preparing \(allFolders ? "all folders" : nominalRoot.lastPathComponent)"
 
         guard let database = try? IntelligenceDatabase(path: cacheDir.appendingPathComponent("intelligence.db").path) else {
@@ -286,6 +290,7 @@ final class IntelligenceEngine: ObservableObject {
         hasCodeFiles = false
         staleCount = 0
         resourceDecision = nil
+        providerHealth = .ready
     }
 
     /// Re-enables intelligence for a project on app launch if the user had it on.
@@ -304,6 +309,7 @@ final class IntelligenceEngine: ObservableObject {
         resetDirtyGates()
         db = nil; scheduler = nil; runner = nil; artifactStore = nil; provider = nil
         projectID = nil; rootURL = nil; scanRoots = []
+        providerHealth = .ready
     }
 
     /// Wipes this project's artifacts, jobs, and cached content, then rebuilds.
@@ -397,8 +403,13 @@ final class IntelligenceEngine: ObservableObject {
             }
         }
 
+        let providerUsable = await preflightProviderIfNeeded(database: db, projectID: projectID)
         status = .working(decision.allowedTier >= .tier2 ? "Processing" : decision.userFacingSummary)
-        let drain = await runner.drain(limit: performanceMode.drainLimit, allowedTier: decision.allowedTier)   // bounded per tick so the loop stays responsive
+        let drain = await runner.drain(
+            limit: performanceMode.drainLimit,
+            allowedTier: decision.allowedTier,
+            providerUsable: providerUsable
+        )   // bounded per tick so the loop stays responsive
         if drain.ranJobs > 0 {
             await enqueueAggregateJobs()   // coverage-gated jobs may become eligible as summaries complete
         }
@@ -408,6 +419,45 @@ final class IntelligenceEngine: ObservableObject {
 
     func runNow() async {
         await tick(initialScan: false, forceFullRun: true)
+    }
+
+    private func preflightProviderIfNeeded(database: IntelligenceDatabase, projectID: String) async -> Bool {
+        guard await database.pendingProviderJobCount(projectID: projectID) > 0 else {
+            providerHealth = .ready
+            return false
+        }
+        guard let provider else {
+            providerHealth = ProviderHealthMapper.health(
+                availability: nil,
+                modelID: settings.modelID,
+                localRunnerBaseURL: settings.localRunnerBaseURL
+            )
+            return false
+        }
+        let availability = await provider.checkAvailability()
+        providerHealth = ProviderHealthMapper.health(
+            availability: availability,
+            modelID: settings.modelID,
+            localRunnerBaseURL: settings.localRunnerBaseURL
+        )
+        return availability.isUsable
+    }
+
+    private func refreshProviderHealth() async {
+        guard let provider else {
+            providerHealth = ProviderHealthMapper.health(
+                availability: nil,
+                modelID: settings.modelID,
+                localRunnerBaseURL: settings.localRunnerBaseURL
+            )
+            return
+        }
+        let availability = await provider.checkAvailability()
+        providerHealth = ProviderHealthMapper.health(
+            availability: availability,
+            modelID: settings.modelID,
+            localRunnerBaseURL: settings.localRunnerBaseURL
+        )
     }
 
     // MARK: - Aggregate scheduling
@@ -895,6 +945,7 @@ final class IntelligenceEngine: ObservableObject {
             provider: provider, projectID: projectID, rootURL: rootURL,
             mermaidValidator: { source in await MermaidRenderValidator.shared.validate(source) }
         )
+        await refreshProviderHealth()
     }
 
     // MARK: - On-device model

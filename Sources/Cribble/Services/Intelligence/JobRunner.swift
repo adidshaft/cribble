@@ -132,7 +132,11 @@ actor JobRunner {
 
     /// Drains up to `limit` jobs, stopping early when nothing is eligible.
     @discardableResult
-    func drain(limit: Int = 100, allowedTier suppliedTier: IntelligenceJobTier? = nil) async -> JobDrainResult {
+    func drain(
+        limit: Int = 100,
+        allowedTier suppliedTier: IntelligenceJobTier? = nil,
+        providerUsable suppliedProviderUsable: Bool? = nil
+    ) async -> JobDrainResult {
         let tier: IntelligenceJobTier
         if let suppliedTier {
             tier = suppliedTier
@@ -143,10 +147,15 @@ actor JobRunner {
             return JobDrainResult(ranJobs: 0, allowedTier: tier, providerUsable: false)
         }
 
-        // Provider checks can touch model inventory or a local runner. Do it once
-        // per drain, and skip it entirely when the current resource policy allows
-        // only deterministic Tier-1 work.
-        let providerUsable = tier >= .tier2 ? await isProviderUsable() : false
+        // Provider checks can touch model inventory or a local runner. The engine
+        // normally supplies one preflight result per tick so it can publish
+        // health; direct test/headless drains keep the old once-per-drain probe.
+        let providerUsable: Bool
+        if let suppliedProviderUsable {
+            providerUsable = suppliedProviderUsable
+        } else {
+            providerUsable = tier >= .tier2 ? await isProviderUsable() : false
+        }
         var ran = 0
         while ran < limit {
             let didRun = await runNext(allowedTier: tier, providerUsable: providerUsable)

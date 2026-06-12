@@ -525,6 +525,25 @@ actor IntelligenceDatabase {
         return count
     }
 
+    func pendingProviderJobCount(projectID: String) -> Int {
+        let providerTypes = IntelligenceJobType.allCases
+            .filter(\.requiresProvider)
+            .map { "'\($0.rawValue)'" }
+            .joined(separator: ",")
+        guard !providerTypes.isEmpty else { return 0 }
+
+        var count = 0
+        query("""
+        SELECT COUNT(*) FROM jobs
+        WHERE project_id = ? AND status = 'pending' AND job_type IN (\(providerTypes));
+        """) { stmt in
+            bindText(stmt, 1, projectID)
+        } each: { stmt in
+            count = Int(sqlite3_column_int64(stmt, 0))
+        }
+        return count
+    }
+
     private static func readJob(_ stmt: OpaquePointer?) -> IntelligenceJob {
         let pathsJSON = columnText(stmt, 4) ?? "[]"
         let paths = (try? JSONDecoder().decode([String].self, from: Data(pathsJSON.utf8))) ?? []

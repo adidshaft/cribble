@@ -1419,14 +1419,20 @@ struct IntelligenceHUDView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(spacing: 8) {
+                    let copy = artifactEmptyStateCopy
                     if visibleArtifacts.isEmpty {
-                        ProgressView().controlSize(.small)
-                        Text(engine.pendingJobs > 0
-                             ? "Building intelligence… \(engine.pendingJobs) job(s) queued."
-                             : "Scanning \(engine.enabledProjectName ?? "project")…")
-                        Text("Summaries and diagrams will appear here as they're generated.")
+                        if engine.pendingJobs > 0 {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: copy.icon)
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                        Text(copy.title)
+                        Text(copy.detail)
                             .font(.system(size: 10))
                             .foregroundStyle(.white.opacity(0.35))
+                            .frame(maxWidth: 320)
                     } else {
                         Image(systemName: "sidebar.left").font(.system(size: 20)).foregroundStyle(.white.opacity(0.3))
                         Text("Select an artifact from the left")
@@ -1803,6 +1809,17 @@ struct IntelligenceHUDView: View {
 
     private var visibleFileSummaries: [IntelligenceArtifact] {
         visibleArtifacts.filter { $0.type == .fileSummary }
+    }
+
+    private var artifactEmptyStateCopy: IntelligenceEmptyStateCopy {
+        IntelligenceFirstRunCopy.artifactEmptyState(
+            status: engine.status,
+            filesIndexed: engine.filesIndexed,
+            analyzedCount: analyzedCount,
+            pendingJobs: engine.pendingJobs,
+            providerHealth: engine.providerHealth,
+            projectName: engine.enabledProjectName
+        )
     }
 
     private var staleArtifactIDs: Set<String> {

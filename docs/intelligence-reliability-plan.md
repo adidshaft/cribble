@@ -329,7 +329,7 @@ Run `bash script/build_and_run.sh`, open a folder, enable intelligence:
 | 2 | Failure ledger + retry | ☑ | `Surface failed intelligence jobs with one-click retry` |
 | 3 | Live activity + health banner | ☑ | `Show live per-job intelligence activity and provider-health banner` |
 | 4 | Actionable stale artifacts | ☑ | `Make stale artifacts visible and refreshable` |
-| 5 | First-run polish | ☐ | — |
+| 5 | First-run polish | ☑ | `Guide the first intelligence run with live progress copy` |
 
 ## 11. Non-goals
 

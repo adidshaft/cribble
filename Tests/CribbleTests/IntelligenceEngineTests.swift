@@ -229,6 +229,72 @@ final class IntelligenceEngineTests: XCTestCase {
         )
     }
 
+    func testFirstRunArtifactEmptyStateCopy() {
+        XCTAssertEqual(
+            IntelligenceFirstRunCopy.artifactEmptyState(
+                status: .scanning(done: 0, total: 0),
+                filesIndexed: 7,
+                analyzedCount: 0,
+                pendingJobs: 0,
+                providerHealth: .ready,
+                projectName: "Notes"
+            ),
+            IntelligenceEmptyStateCopy(
+                icon: "doc.text.magnifyingglass",
+                title: "Reading your folder — 7 files so far",
+                detail: "Cribble is finding notes and source files it can turn into local intelligence."
+            )
+        )
+
+        XCTAssertEqual(
+            IntelligenceFirstRunCopy.artifactEmptyState(
+                status: .working("Processing"),
+                filesIndexed: 10,
+                analyzedCount: 3,
+                pendingJobs: 5,
+                providerHealth: .ready,
+                projectName: "Notes"
+            ),
+            IntelligenceEmptyStateCopy(
+                icon: "hourglass",
+                title: "Analyzing 3 of 10 files",
+                detail: "Deterministic maps can appear first while model-backed summaries fill in."
+            )
+        )
+
+        XCTAssertEqual(
+            IntelligenceFirstRunCopy.artifactEmptyState(
+                status: .idle,
+                filesIndexed: 10,
+                analyzedCount: 0,
+                pendingJobs: 2,
+                providerHealth: .unavailable(reason: "Model not downloaded", fix: .openModelPicker),
+                projectName: "Notes"
+            ),
+            IntelligenceEmptyStateCopy(
+                icon: "exclamationmark.triangle",
+                title: "AI engine needs attention",
+                detail: "Model not downloaded"
+            )
+        )
+
+        XCTAssertEqual(
+            IntelligenceFirstRunCopy.artifactEmptyState(
+                status: .idle,
+                filesIndexed: 0,
+                analyzedCount: 0,
+                pendingJobs: 0,
+                providerHealth: .ready,
+                projectName: "Notes"
+            ),
+            IntelligenceEmptyStateCopy(
+                icon: "tray",
+                title: "Waiting for artifacts",
+                detail: "Summaries and diagrams will appear here as Notes is indexed."
+            )
+        )
+    }
+
     // MARK: - SwiftSymbolExtractor
 
     func testSymbolExtractionFindsTypesFunctionsImports() {

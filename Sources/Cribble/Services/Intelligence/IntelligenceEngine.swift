@@ -198,6 +198,7 @@ final class IntelligenceEngine: ObservableObject {
         self.runner = runner
         self.isEnabled = true
         self.status = .ready
+        await refreshProviderHealth()
 
         let repairedOnStart = await recoverIfPoisoned(database: database, store: artifactStore, projectID: projectID)
         await database.removeCompletedJobsWithMissingArtifacts(projectID: projectID)

@@ -20,6 +20,17 @@ private final class SlowStubProvider: IntelligenceProvider {
     func embed(text: String) async throws -> [Float]? { nil }
 }
 
+private final class ThrowingStubProvider: IntelligenceProvider {
+    let displayName = "Throwing Stub"
+    let message: String
+    init(message: String) { self.message = message }
+    func checkAvailability() async -> ProviderAvailability { .available }
+    func generate(prompt: [EngineMessage], schema: JSONSchemaHint?, maxTokens: Int) async throws -> String {
+        throw LocalChatEngineError.generationFailed(message)
+    }
+    func embed(text: String) async throws -> [Float]? { nil }
+}
+
 final class IntelligenceJobsTests: XCTestCase {
 
     // MARK: - DependencyGraph
@@ -343,6 +354,75 @@ final class IntelligenceJobsTests: XCTestCase {
         let failedJobs = await db.jobs(projectID: "p", status: .failed)
         XCTAssertEqual(remainingProviderJobs.count, 0)
         XCTAssertEqual(failedJobs.count, 0)
+    }
+
+    func testFailedJobCanBeRetriedAndDismissed() async throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("cribble-failure-ledger-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Alpha\n\nA note to summarize.".write(to: root.appendingPathComponent("Alpha.md"), atomically: true, encoding: .utf8)
+
+        let db = try IntelligenceDatabase(path: ":memory:")
+        _ = await WorkspaceScanner(db: db, projectID: "p", rootURL: root).scan()
+        let pending = await db.jobs(projectID: "p", status: .pending)
+        let job = try XCTUnwrap(pending.first)
+        await db.retryJob(id: job.id)
+        let scheduler = BackgroundScheduler(conditionsProvider: {
+            .init(userIdleSeconds: 9999, thermalState: .nominal, isOnBattery: false, appIsActive: false, appIsForeground: false)
+        })
+        let artifacts = ArtifactStore(db: db, projectID: "p", cacheDirectory: root.appendingPathComponent(".cribble/cache/artifacts"))
+        let failingRunner = JobRunner(
+            db: db,
+            scheduler: scheduler,
+            artifacts: artifacts,
+            provider: ThrowingStubProvider(message: "API Error: 401"),
+            projectID: "p",
+            rootURL: root
+        )
+
+        await failingRunner.drain(limit: 3, allowedTier: .tier3, providerUsable: true)
+
+        var failed = await db.failedJobs(projectID: "p")
+        XCTAssertEqual(failed.count, 1)
+        XCTAssertEqual(failed.first?.attemptCount, 3)
+        XCTAssertTrue(failed.first?.errorMessage?.contains("API Error: 401") == true)
+
+        await db.retryJob(id: job.id)
+        let pendingAfterRetry = await db.jobs(projectID: "p", status: .pending)
+        let retried = try XCTUnwrap(pendingAfterRetry.first)
+        XCTAssertEqual(retried.attemptCount, 0)
+        XCTAssertNil(retried.errorMessage)
+
+        let successfulRunner = JobRunner(
+            db: db,
+            scheduler: scheduler,
+            artifacts: artifacts,
+            provider: StubProvider(text: "# Alpha\n\nSummarized."),
+            projectID: "p",
+            rootURL: root
+        )
+        await successfulRunner.drain(limit: 1, allowedTier: .tier3, providerUsable: true)
+        let failedAfterSuccess = await db.failedJobs(projectID: "p")
+        let completedAfterSuccess = await db.jobs(projectID: "p", status: .completed)
+        XCTAssertEqual(failedAfterSuccess.count, 0)
+        XCTAssertEqual(completedAfterSuccess.count, 1)
+
+        await db.enqueueJobIfNeeded(IntelligenceJob(
+            projectID: "p",
+            type: .summarizeFile,
+            inputHash: "manual-failure",
+            inputPaths: ["Missing.md"],
+            status: .failed,
+            attemptCount: 3,
+            errorMessage: "Job had no usable input."
+        ))
+        failed = await db.failedJobs(projectID: "p")
+        let dismissable = try XCTUnwrap(failed.first { $0.inputHash == "manual-failure" })
+        await db.dismissJob(id: dismissable.id)
+        let failedAfterDismiss = await db.failedJobs(projectID: "p")
+        let cancelledAfterDismiss = await db.jobs(projectID: "p", status: .cancelled)
+        XCTAssertEqual(failedAfterDismiss.count, 0)
+        XCTAssertEqual(cancelledAfterDismiss.count, 1)
     }
 
     func testProjectIndexFallsBackWhenProviderReturnsEmptyOutput() async throws {

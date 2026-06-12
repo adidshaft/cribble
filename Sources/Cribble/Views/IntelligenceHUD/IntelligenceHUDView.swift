@@ -774,6 +774,9 @@ struct IntelligenceHUDView: View {
             if engine.staleCount > 0 {
                 pulseChip(icon: "clock.arrow.circlepath", text: "\(engine.staleCount) may be stale", tint: .yellow)
             }
+            if !engine.failedJobs.isEmpty {
+                pulseChip(icon: "exclamationmark.triangle.fill", text: "\(engine.failedJobs.count) need attention", tint: .orange)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -797,6 +800,10 @@ struct IntelligenceHUDView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 projectPulseCard
+
+                if !engine.failedJobs.isEmpty {
+                    needsAttentionSection
+                }
 
                 HStack(spacing: 10) {
                     metricTile(title: "Files", value: "\(engine.filesIndexed)", icon: "doc.text.magnifyingglass")
@@ -869,6 +876,112 @@ struct IntelligenceHUDView: View {
             .padding(14)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var needsAttentionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                sectionHeader("NEEDS ATTENTION")
+                Spacer()
+                Button {
+                    Task { await engine.retryAllFailed() }
+                } label: {
+                    Label("Retry all", systemImage: "arrow.clockwise")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .cribbleGlassCapsuleButton()
+                .foregroundStyle(.white.opacity(0.74))
+            }
+
+            ForEach(Array(engine.failedJobs.prefix(8))) { job in
+                failedJobRow(job)
+            }
+
+            if engine.failedJobs.count > 8 {
+                Text("…and \(engine.failedJobs.count - 8) more")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.44))
+                    .padding(.horizontal, 2)
+            }
+        }
+    }
+
+    private func failedJobRow(_ job: IntelligenceJob) -> some View {
+        let source = job.inputPaths.first.map(Self.displayName(forJobPath:)) ?? job.type.displayName
+        let explanation = JobFailureExplainer.explain(
+            type: job.type,
+            errorMessage: job.errorMessage,
+            inputPath: job.inputPaths.first
+        )
+        return HStack(alignment: .top, spacing: 9) {
+            Image(systemName: icon(for: job.type))
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 18)
+                .foregroundStyle(.orange.opacity(0.88))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(source)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                Text(explanation.summary)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.52))
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+            Button {
+                Task { await engine.retryFailedJob(id: job.id) }
+            } label: {
+                Text("Retry")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .cribbleGlassCapsuleButton(prominent: explanation.suggestion == .providerFix)
+            Button {
+                Task { await engine.dismissFailedJob(id: job.id) }
+            } label: {
+                Text("Dismiss")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .cribbleGlassCapsuleButton()
+            .foregroundStyle(.white.opacity(0.62))
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func icon(for type: IntelligenceJobType) -> String {
+        switch type {
+        case .analyzeFile, .summarizeFile:
+            return IntelligenceArtifactType.fileSummary.icon
+        case .extractFallbackLogic:
+            return IntelligenceArtifactType.fallbackAudit.icon
+        case .extractIOBehavior:
+            return IntelligenceArtifactType.ioBehavior.icon
+        case .summarizeDiff:
+            return IntelligenceArtifactType.diffSummary.icon
+        case .summarizeCommit:
+            return IntelligenceArtifactType.commitSummary.icon
+        case .updateProjectIndex:
+            return IntelligenceArtifactType.projectIndex.icon
+        case .buildDependencyDiagram:
+            return IntelligenceArtifactType.dependencyDiagram.icon
+        case .buildConnectionsGraph:
+            return IntelligenceArtifactType.connectionsGraph.icon
+        case .buildArchitectureDiagram:
+            return IntelligenceArtifactType.architectureDiagram.icon
+        case .detectArchitectureDrift:
+            return IntelligenceArtifactType.driftReport.icon
+        case .detectContradictions:
+            return IntelligenceArtifactType.contradictionReport.icon
+        case .buildGlossary:
+            return IntelligenceArtifactType.glossary.icon
+        case .buildTimeline:
+            return IntelligenceArtifactType.timeline.icon
+        case .discoverConnections:
+            return IntelligenceArtifactType.researchInsight.icon
+        case .scanWorkspace, .detectChangedFiles, .parseCodeSymbols, .extractImports:
+            return "gearshape"
+        }
     }
 
     private func metricTile(title: String, value: String, icon: String) -> some View {
@@ -1567,6 +1680,10 @@ struct IntelligenceHUDView: View {
             let key = artifact.title ?? artifact.relativePath
             return seenSummaryTitles.insert(key).inserted
         }
+    }
+
+    private static func displayName(forJobPath path: String) -> String {
+        (path as NSString).lastPathComponent
     }
 
     private var selectedArtifact: IntelligenceArtifact? {

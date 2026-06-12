@@ -183,6 +183,33 @@ final class IntelligenceEngineTests: XCTestCase {
         )
     }
 
+    func testJobFailureExplainerMappings() {
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .summarizeFile, errorMessage: "Output failed validation: missing heading"),
+            JobFailureExplanation(summary: "The model's output didn't pass Cribble's checks.", suggestion: .retry)
+        )
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .summarizeFile, errorMessage: "Intelligence provider unavailable: Model not downloaded"),
+            JobFailureExplanation(summary: "The AI engine wasn't reachable.", suggestion: .providerFix)
+        )
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .summarizeFile, errorMessage: "Intelligence job timed out after 120 seconds."),
+            JobFailureExplanation(summary: "This took too long — the file may be very large.", suggestion: .retry)
+        )
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .summarizeFile, errorMessage: "Model returned empty output."),
+            JobFailureExplanation(summary: "The model returned nothing for this file.", suggestion: .retry)
+        )
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .summarizeFile, errorMessage: "Job had no usable input.", inputPath: "Notes/Old.md"),
+            JobFailureExplanation(summary: "The source file moved or was deleted.", suggestion: .skipFile("Notes/Old.md"))
+        )
+        XCTAssertEqual(
+            JobFailureExplainer.explain(type: .buildGlossary, errorMessage: "Something unexpected happened."),
+            JobFailureExplanation(summary: "Build Glossary needs another try.", suggestion: .retry)
+        )
+    }
+
     // MARK: - SwiftSymbolExtractor
 
     func testSymbolExtractionFindsTypesFunctionsImports() {

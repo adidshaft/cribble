@@ -29,6 +29,7 @@ final class IntelligenceEngine: ObservableObject {
     @Published private(set) var knowledgeNodes: [KnowledgeNode] = []
     @Published private(set) var knowledgeEdges: [KnowledgeEdge] = []
     @Published private(set) var researchInsights: [ResearchInsight] = []
+    @Published private(set) var failedJobs: [IntelligenceJob] = []
     @Published private(set) var pendingJobs = 0
     @Published private(set) var filesIndexed = 0
     @Published private(set) var hasCodeFiles = false
@@ -139,6 +140,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = []
         knowledgeEdges = []
         researchInsights = []
+        failedJobs = []
         resetDirtyGates()
         pendingJobs = 0
         filesIndexed = 0
@@ -285,6 +287,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = []
         knowledgeEdges = []
         researchInsights = []
+        failedJobs = []
         pendingJobs = 0
         filesIndexed = 0
         hasCodeFiles = false
@@ -322,6 +325,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = []
         knowledgeEdges = []
         researchInsights = []
+        failedJobs = []
         resetDirtyGates()
         needsScan = true
         for _ in 0..<50 where isTicking {
@@ -687,6 +691,7 @@ final class IntelligenceEngine: ObservableObject {
         knowledgeNodes = await db.knowledgeNodes(projectID: projectID)
         knowledgeEdges = await db.knowledgeEdges(projectID: projectID)
         researchInsights = await db.researchInsights(projectID: projectID)
+        failedJobs = await db.failedJobs(projectID: projectID)
         pendingJobs = await db.pendingJobCount(projectID: projectID)
         let files = await db.files(projectID: projectID)
         filesIndexed = files.count
@@ -751,6 +756,26 @@ final class IntelligenceEngine: ObservableObject {
 
     func dismissInsight(_ insight: ResearchInsight) async {
         await db?.setResearchInsightStatus(id: insight.id, status: .dismissed)
+        await refreshState()
+    }
+
+    func retryFailedJob(id: String) async {
+        await db?.retryJob(id: id)
+        await refreshState()
+        await runNow()
+    }
+
+    func retryAllFailed() async {
+        guard !failedJobs.isEmpty else { return }
+        for job in failedJobs {
+            await db?.retryJob(id: job.id)
+        }
+        await refreshState()
+        await runNow()
+    }
+
+    func dismissFailedJob(id: String) async {
+        await db?.dismissJob(id: id)
         await refreshState()
     }
 

@@ -492,6 +492,26 @@ actor IntelligenceDatabase {
         }
     }
 
+    func retryJob(id: String) {
+        run("""
+        UPDATE jobs SET
+            status = 'pending',
+            attempt_count = 0,
+            error_message = NULL,
+            started_at = NULL,
+            finished_at = NULL
+        WHERE id = ?;
+        """) { stmt in
+            bindText(stmt, 1, id)
+        }
+    }
+
+    func dismissJob(id: String) {
+        run("UPDATE jobs SET status = 'cancelled', finished_at = datetime('now') WHERE id = ?;") { stmt in
+            bindText(stmt, 1, id)
+        }
+    }
+
     func cancelJobs(projectID: String) {
         run("UPDATE jobs SET status = 'cancelled' WHERE project_id = ? AND status IN ('pending', 'running');") { stmt in
             bindText(stmt, 1, projectID)
@@ -513,6 +533,10 @@ actor IntelligenceDatabase {
             rows.append(Self.readJob(stmt))
         }
         return rows
+    }
+
+    func failedJobs(projectID: String) -> [IntelligenceJob] {
+        jobs(projectID: projectID, status: .failed).sorted { $0.createdAt > $1.createdAt }
     }
 
     func pendingJobCount(projectID: String) -> Int {

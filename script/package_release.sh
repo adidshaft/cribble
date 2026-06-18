@@ -8,6 +8,7 @@ MIN_SYSTEM_VERSION="15.0"
 VERSION="${1:-$(<VERSION)}"
 BUILD_NUMBER="${BUILD_NUMBER:-$(/usr/bin/awk -F. '{ printf "%d%02d%02d", $1, $2, $3 }' <<<"$VERSION")}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+CODESIGN_TIMESTAMP="${CODESIGN_TIMESTAMP:-1}"
 # Architectures to build, space-separated. Default to a universal binary so
 # Intel Macs aren't silently locked out. Set ARCHS="arm64" to opt back into
 # Apple-Silicon-only.
@@ -65,6 +66,8 @@ mkdir -p "$APP_MACOS" "$APP_FRAMEWORKS" "$APP_RESOURCES" "$OUT_DIR"
 
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
   CODESIGN_ARGS=(--force --options runtime --sign -)
+elif [[ "$CODESIGN_TIMESTAMP" == "0" ]]; then
+  CODESIGN_ARGS=(--force --options runtime --sign "$SIGN_IDENTITY")
 else
   CODESIGN_ARGS=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
 fi

@@ -115,6 +115,8 @@ final class RichMarkdownBlockTests: XCTestCase {
         XCTAssertEqual(callout.type, "warning")
         XCTAssertEqual(callout.title, "Custom title")
         XCTAssertEqual(callout.fold, .collapsed)
+        XCTAssertTrue(callout.isFoldable)
+        XCTAssertFalse(callout.isInitiallyExpanded)
         XCTAssertEqual(callout.bodyMarkdown, "First line\n- nested item")
         XCTAssertEqual(callout.originalMarkdown, "> [!warning]- Custom title\n> First line\n> - nested item")
     }
@@ -128,6 +130,7 @@ final class RichMarkdownBlockTests: XCTestCase {
         XCTAssertEqual(callout?.type, "tip")
         XCTAssertEqual(callout?.title, "Tip")
         XCTAssertEqual(callout?.fold, .expanded)
+        XCTAssertTrue(callout?.isInitiallyExpanded == true)
         XCTAssertEqual(callout?.bodyMarkdown, "Body")
     }
 

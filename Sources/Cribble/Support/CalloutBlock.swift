@@ -14,6 +14,14 @@ struct CalloutBlock: Equatable, Identifiable {
     let bodyMarkdown: String
     let originalMarkdown: String
 
+    var isFoldable: Bool {
+        fold != .none
+    }
+
+    var isInitiallyExpanded: Bool {
+        fold != .collapsed
+    }
+
     static func parse(id: String, blockquoteLines: [String]) -> CalloutBlock? {
         guard let firstLine = blockquoteLines.first else { return nil }
         let first = stripBlockquoteMarker(firstLine)

@@ -18,6 +18,8 @@ All notable changes to Cribble are documented here. The format follows
   callouts can land cleanly in the render pass.
 - Rendered callouts as native material cards with semantic SF Symbols and
   nested Markdown body rendering.
+- Added foldable callout behavior for `[!type]+` / `[!type]-`, including
+  Reduce Motion-aware toggles and expanded/collapsed accessibility labels.
 
 ## 1.4.0 — Night Shift
 

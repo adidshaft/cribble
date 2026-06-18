@@ -30,6 +30,8 @@ All notable changes to Cribble are documented here. The format follows
   resolved, unresolved, cyclic, and depth-limited embed states.
 - Added the pure fuzzy-match scoring foundation for quick switcher and command
   palette ranking.
+- Added a native Quick Switcher overlay on `⌘O` for fuzzy note navigation with
+  recent notes first.
 
 ## 1.4.0 — Night Shift
 

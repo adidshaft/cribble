@@ -32,6 +32,7 @@ struct CribbleCommands: Commands {
     @FocusedValue(\.navigateForwardAction) private var navigateForward
     @FocusedValue(\.toggleOutlineAction) private var toggleOutline
     @FocusedValue(\.toggleFocusModeAction) private var toggleFocusMode
+    @FocusedValue(\.openQuickSwitcherAction) private var openQuickSwitcher
     @FocusedValue(\.focusSearchAction) private var focusSearch
     @FocusedValue(\.clearSearchAction) private var clearSearch
     @FocusedValue(\.openDemoNotesAction) private var openDemoNotes
@@ -127,6 +128,10 @@ struct CribbleCommands: Commands {
                 .disabled(navigateForward == nil)
 
             Divider()
+
+            Button("Quick Switcher…", action: { openQuickSwitcher?() })
+                .keyboardShortcut("o", modifiers: [.command])
+                .disabled(openQuickSwitcher == nil)
 
             Button("Toggle Outline", action: { toggleOutline?() })
                 .disabled(toggleOutline == nil)
@@ -405,6 +410,10 @@ private struct ToggleFocusModeActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct OpenQuickSwitcherActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 private struct FocusSearchActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
@@ -655,6 +664,11 @@ extension FocusedValues {
     var toggleFocusModeAction: (() -> Void)? {
         get { self[ToggleFocusModeActionKey.self] }
         set { self[ToggleFocusModeActionKey.self] = newValue }
+    }
+
+    var openQuickSwitcherAction: (() -> Void)? {
+        get { self[OpenQuickSwitcherActionKey.self] }
+        set { self[OpenQuickSwitcherActionKey.self] = newValue }
     }
 
     var focusSearchAction: (() -> Void)? {

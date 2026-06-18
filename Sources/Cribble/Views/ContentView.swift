@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var showingLLMUnlockSheet = false
     @State private var showingDiagnosticsReport = false
     @State private var showingImportGuidance = false
+    @State private var showingQuickSwitcher = false
     @State private var importGuidanceStatus: String?
     @State private var showingPreviousSessionIssue = false
     @State private var pendingRestoreRunnerConsent: ExtensionRunnerConsentRequest?
@@ -90,6 +91,7 @@ struct ContentView: View {
             .focusedSceneValue(\.navigateForwardAction, navigateForwardAction)
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
+            .focusedSceneValue(\.openQuickSwitcherAction, { showingQuickSwitcher = true })
             .focusedSceneValue(\.focusSearchAction, {
                 isSearchFocused = true
             })
@@ -480,11 +482,42 @@ struct ContentView: View {
                 }
             }
         }
+        .overlay {
+            if showingQuickSwitcher {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture { dismissQuickSwitcher() }
+
+                QuickSwitcherView(
+                    items: quickSwitcherItems,
+                    onSelect: { item in
+                        library.select(url: item.url)
+                        dismissQuickSwitcher()
+                    },
+                    onDismiss: dismissQuickSwitcher
+                )
+                .padding()
+            }
+        }
         // Selecting a note in the overlay sidebar dismisses it.
         .onChange(of: library.selectedURL) {
             if isCompactWidth, showCompactSidebar {
                 withAnimation(.easeInOut(duration: 0.2)) { showCompactSidebar = false }
             }
+        }
+    }
+
+    private var quickSwitcherItems: [QuickSwitcherItem] {
+        QuickSwitcherModel.items(
+            documents: library.documents,
+            recentURLs: library.history,
+            relativePath: { library.relativePath(for: $0) }
+        )
+    }
+
+    private func dismissQuickSwitcher() {
+        withAnimation(.snappy(duration: 0.16)) {
+            showingQuickSwitcher = false
         }
     }
 

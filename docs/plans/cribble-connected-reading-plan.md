@@ -355,7 +355,7 @@ the per-directory READMEs as each track lands.
 | C | C2 view+style | ☑ | `Render native callout cards` | `swift test` | semantic styles; nested body render |
 | C | C3 fold/a11y | ☑ | `Add foldable callout behavior` | `swift test` | Reduce Motion-aware; a11y state labels |
 | D Palettes | D1 fuzzy | ☑ | `Add fuzzy match scoring` | `swift test` | exact/prefix/acronym/scattered; recency tiebreak |
-| D | D2 switcher | ☐ | | | |
+| D | D2 switcher | ☑ | `Add quick switcher overlay` | `swift test` | notes by title/alias/path; recents first; ⌘O |
 | D | D3 command palette | ☐ | | | |
 | D | D4 a11y/focus | ☐ | | | |
 | E Tags | E1 index | ☐ | | | |

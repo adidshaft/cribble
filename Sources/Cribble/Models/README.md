@@ -15,5 +15,6 @@ These hold no behavior beyond derivation — the engine lives in `Services/`.
 | `Backlink.swift` | Reverse wiki-link mentions grouped by source note. |
 | `UnresolvedTarget.swift` | A wiki link that did not resolve to a file. |
 | `LinkedFileSummary.swift` | Summary of an inbound/outbound linked file. |
+| `QuickSwitcherItem.swift` | Note rows and ranking helpers for the quick switcher. |
 | `ReadingAnnotation.swift` | A highlight or reading bookmark. |
 | `PathfinderRequest.swift` | Input for the note pathfinder feature. |

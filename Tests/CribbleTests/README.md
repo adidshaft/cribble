@@ -16,6 +16,7 @@ helpers; fixtures on disk live in [`Fixtures/`](../../Fixtures).
 | `FuzzyMatchTests` | Pure fuzzy ranking and recency scoring. |
 | `QuickSwitcherTests` | Quick switcher source filtering and recents. |
 | `CommandPaletteTests` | Command palette filtering, enabled-state handling, and shortcut metadata. |
+| `TagIndexTests` | Frontmatter/inline tag indexing, normalization, and nested tag queries. |
 | `WikiLinkParserTests` / `LinkIndexTests` | Wiki-link parsing and resolution. |
 | `NavigationHistoryTests` | Back/forward navigation. |
 | `TaskCheckboxTests` | Task-marker parse/toggle. |

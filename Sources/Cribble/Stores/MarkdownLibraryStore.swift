@@ -77,6 +77,7 @@ final class MarkdownLibraryStore: ObservableObject {
     private var documentRefreshSignatures: [String: RefreshFileSignature] = [:]
     private var linkIndex: LinkIndex?
     var backlinkIndex: BacklinkIndex?
+    var tagIndex: TagIndex?
     private var currentSortMode: FileSortMode = .name
     private var renderTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
@@ -429,6 +430,7 @@ final class MarkdownLibraryStore: ObservableObject {
             documents = []
             linkIndex = nil
             backlinkIndex = nil
+            tagIndex = nil
             statusMessage = "Removed \(standardized.lastPathComponent)"
             return
         }
@@ -512,7 +514,7 @@ final class MarkdownLibraryStore: ObservableObject {
         let concurrency = Self.loadConcurrency
         loadTask = Task {
             let refreshStartedAt = Date()
-            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, backlinkIndex: BacklinkIndex?, reusedCount: Int, loadedCount: Int, skippedFiles: [URL], failedRoots: [URL]) in
+            let result = await Task.detached(priority: .userInitiated) { () -> (nodes: [MarkdownNode], documents: [MarkdownDocumentMeta], signatures: [String: RefreshFileSignature], linkIndex: LinkIndex?, backlinkIndex: BacklinkIndex?, tagIndex: TagIndex?, reusedCount: Int, loadedCount: Int, skippedFiles: [URL], failedRoots: [URL]) in
                     var nodesList: [MarkdownNode] = []
                     var failedRoots: [URL] = []
                     for rootURL in roots {
@@ -612,15 +614,18 @@ final class MarkdownLibraryStore: ObservableObject {
 
                     let index: LinkIndex?
                     let backlinkIndex: BacklinkIndex?
+                    let tagIndex: TagIndex?
                     if let firstRoot = roots.first {
                         index = LinkIndex(documentMetas: metas, rootURL: firstRoot)
                         backlinkIndex = BacklinkIndex(documentMetas: metas, rootURL: firstRoot)
+                        tagIndex = TagIndex(documents: metas)
                     } else {
                         index = nil
                         backlinkIndex = nil
+                        tagIndex = nil
                     }
 
-                    return (nodesList, metas, fileSignatures, index, backlinkIndex, reusedDocuments.count, loadedMetas.count, skippedFiles, failedRoots)
+                    return (nodesList, metas, fileSignatures, index, backlinkIndex, tagIndex, reusedDocuments.count, loadedMetas.count, skippedFiles, failedRoots)
                 }.value
 
                 guard !Task.isCancelled else { return }
@@ -630,6 +635,7 @@ final class MarkdownLibraryStore: ObservableObject {
                 self.documentRefreshSignatures = result.signatures
                 self.linkIndex = result.linkIndex
                 self.backlinkIndex = result.backlinkIndex
+                self.tagIndex = result.tagIndex
                 // Render cache keys by URL, so prune entries whose file changed
                 // or disappeared while preserving unchanged notes across a full
                 // folder refresh. This keeps back/forward navigation warm after

@@ -36,6 +36,8 @@ All notable changes to Cribble are documented here. The format follows
   with visible shortcuts and existing command actions.
 - Improved palette focus handling so Quick Switcher and Command Palette support
   arrow-key row movement, Return activation, and Esc/outside-click dismissal.
+- Added a read-only tag index that unifies frontmatter and inline tags,
+  including nested tag lookup and code/heading exclusion.
 
 ## 1.4.0 — Night Shift
 

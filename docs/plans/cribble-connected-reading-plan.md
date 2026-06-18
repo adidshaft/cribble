@@ -358,7 +358,7 @@ the per-directory READMEs as each track lands.
 | D | D2 switcher | ☑ | `Add quick switcher overlay` | `swift test` | notes by title/alias/path; recents first; ⌘O |
 | D | D3 command palette | ☑ | `Add command palette overlay` | `swift test` | command registry; visible shortcuts; ⌘P |
 | D | D4 a11y/focus | ☑ | `Polish palette keyboard focus` | `swift test` | arrow movement; Return/Esc; no keyboard trap |
-| E Tags | E1 index | ☐ | | | |
+| E Tags | E1 index | ☑ | `Add read-only tag index` | `swift test` | frontmatter+inline; nested; code/headings ignored |
 | E | E2 inline chips | ☐ | | | |
 | E | E3 pane | ☐ | | | |
 | F Related | F1 query | ☐ | | | |

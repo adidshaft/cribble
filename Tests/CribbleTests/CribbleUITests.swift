@@ -282,6 +282,7 @@ final class CribbleUITests: XCTestCase {
 
         let summary = SidebarSearchSummary(
             query: " project ",
+            selectedTag: nil,
             filteredNodes: [root],
             semanticResultCount: 3
         )
@@ -291,7 +292,16 @@ final class CribbleUITests: XCTestCase {
         XCTAssertEqual(summary?.semanticResultCount, 3)
         XCTAssertEqual(summary?.title, "2 visible file results")
         XCTAssertEqual(summary?.detail, "3 related results")
-        XCTAssertNil(SidebarSearchSummary(query: " ", filteredNodes: [root], semanticResultCount: 0))
+        XCTAssertNil(SidebarSearchSummary(query: " ", selectedTag: nil, filteredNodes: [root], semanticResultCount: 0))
+
+        let tagSummary = SidebarSearchSummary(
+            query: " ",
+            selectedTag: TagIndex.Tag(name: "project", normalized: "project", count: 2),
+            filteredNodes: [root],
+            semanticResultCount: 0
+        )
+        XCTAssertEqual(tagSummary?.title, "2 notes tagged #project")
+        XCTAssertNil(tagSummary?.detail)
     }
 
     func testSidebarEmptySearchHintGuidesSemanticAndIntelligenceRecovery() {

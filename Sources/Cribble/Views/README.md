@@ -10,6 +10,7 @@ sub-folders.
 | --- | --- |
 | `ContentView.swift` | Root layout (sidebar + reader). |
 | `SidebarView.swift` | Folder/file library navigation. |
+| `TagPaneView.swift` | Compact sidebar tag filter pane. |
 | `ReaderView.swift` | The rendered Markdown reading surface, including embedded-note cards. |
 | `QuickSwitcherView.swift` | Native fuzzy note switcher overlay. |
 | `CommandPaletteView.swift` | Native fuzzy app-command palette overlay. |

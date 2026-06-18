@@ -23,16 +23,25 @@ struct SidebarView: View {
                 }
             }
 
+            TagPaneView(
+                tags: library.allTags(),
+                selectedTag: library.selectedTag,
+                onSelect: { library.selectTag($0.normalized) },
+                onClear: { library.clearSelectedTag() }
+            )
+
             if library.filteredNodes.isEmpty {
                 emptyState
             } else {
                 if let summary = SidebarSearchSummary(
                     query: library.searchText,
+                    selectedTag: library.selectedTag,
                     filteredNodes: library.filteredNodes,
                     semanticResultCount: semanticIndex.results.count
                 ) {
                     SidebarSearchSummaryStrip(summary: summary) {
                         library.searchText = ""
+                        library.clearSelectedTag()
                     }
                 }
 
@@ -90,7 +99,7 @@ struct SidebarView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            if library.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if library.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, library.selectedTag == nil {
                 ContentUnavailableView {
                     Label("No Markdown Files", systemImage: "doc.text.magnifyingglass")
                 } description: {
@@ -164,6 +173,7 @@ struct SidebarView: View {
 
                     Button("Clear Search") {
                         library.searchText = ""
+                        library.clearSelectedTag()
                     }
                     .buttonStyle(.bordered)
                 }
@@ -294,22 +304,31 @@ struct SidebarView: View {
 
 struct SidebarSearchSummary: Equatable {
     let query: String
+    let selectedTag: TagIndex.Tag?
     let fileMatchCount: Int
     let semanticResultCount: Int
 
     init?(
         query rawQuery: String,
+        selectedTag: TagIndex.Tag?,
         filteredNodes: [MarkdownNode],
         semanticResultCount: Int
     ) {
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return nil }
+        guard !query.isEmpty || selectedTag != nil else { return nil }
         self.query = query
+        self.selectedTag = selectedTag
         self.fileMatchCount = Self.markdownFileCount(in: filteredNodes)
         self.semanticResultCount = semanticResultCount
     }
 
     var title: String {
+        if let selectedTag, query.isEmpty {
+            return "\(fileMatchCount) note\(fileMatchCount == 1 ? "" : "s") tagged #\(selectedTag.name)"
+        }
+        if let selectedTag {
+            return "\(fileMatchCount) result\(fileMatchCount == 1 ? "" : "s") for #\(selectedTag.name)"
+        }
         if fileMatchCount == 0 {
             return "No visible file results"
         }
@@ -317,6 +336,9 @@ struct SidebarSearchSummary: Equatable {
     }
 
     var detail: String? {
+        if !query.isEmpty, selectedTag != nil {
+            return "Filtered by search and tag"
+        }
         guard semanticResultCount > 0 else { return nil }
         return "\(semanticResultCount) related result\(semanticResultCount == 1 ? "" : "s")"
     }
@@ -391,7 +413,7 @@ private struct SidebarSearchSummaryStrip: View {
                 .font(.caption)
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .help("Clear sidebar search")
+                .help("Clear sidebar filters")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)

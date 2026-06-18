@@ -360,7 +360,7 @@ the per-directory READMEs as each track lands.
 | D | D4 a11y/focus | ☑ | `Polish palette keyboard focus` | `swift test` | arrow movement; Return/Esc; no keyboard trap |
 | E Tags | E1 index | ☑ | `Add read-only tag index` | `swift test` | frontmatter+inline; nested; code/headings ignored |
 | E | E2 inline chips | ☑ | `Render clickable tag chips` | `swift test` | inline chip links; local tag filter; code skipped |
-| E | E3 pane | ☐ | | | |
+| E | E3 pane | ☑ | `Add sidebar tag pane` | `swift test` | sidebar pane; counts; filtered results; a11y labels |
 | F Related | F1 query | ☐ | | | |
 | F | F2 UI | ☐ | | | |
 | F | F3 why (opt) | ☐ | | | |

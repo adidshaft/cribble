@@ -363,7 +363,7 @@ the per-directory READMEs as each track lands.
 | E | E3 pane | ☑ | `Add sidebar tag pane` | `swift test` | sidebar pane; counts; filtered results; a11y labels |
 | F Related | F1 query | ☑ | `Add related notes semantic query` | `swift test` | stored vectors; excludes self/near-duplicates; K cap |
 | F | F2 UI | ☑ | `Show related notes in the reader` | `swift test` | lazy debounced refresh; hidden empty; previews + score bars |
-| F | F3 why (opt) | ☐ | | | |
+| F | F3 why (opt) | ☑ | `Add local related note explanations` | `swift test` | explicit local-only action; entitlement+download gated; no cloud CLI |
 | F | F4 a11y/perf | ☐ | | | |
 | G Local Graph | G1 neighborhood | ☐ | | | stretch |
 | G | G2 render | ☐ | | | |

@@ -17,5 +17,9 @@ locally installed Claude / Codex CLI — never a hosted Cribble service.
 | `LLMEntitlementStore.swift` | Local AI unlock state (DMG unlocked; App Store IAP). |
 | `LocalLLM.swift` | Shared entry points and configuration. |
 
+Reader-side related-note explanations use this stack only when the entitlement
+is unlocked and a local MLX model is already downloaded; cloud CLI models are
+not used for that inline reader feature.
+
 See [`Views/ChatHUD`](../../Views/ChatHUD) for the UI and the
 [Chat HUD design handoff](../../../../docs/CHAT_HUD_DESIGN_HANDOFF.md).

@@ -46,6 +46,8 @@ All notable changes to Cribble are documented here. The format follows
   cosine similarity while excluding the current note and near-duplicates.
 - Surfaced Related Notes in the reader as a lazy, debounced, collapsible local
   semantic section with hover previews and subtle similarity bars.
+- Added an explicit local-only "Why" explanation path for Related Notes that
+  appears only when a downloaded on-device model is already available.
 
 ## 1.4.0 — Night Shift
 

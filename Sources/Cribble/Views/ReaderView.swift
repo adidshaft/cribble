@@ -279,7 +279,7 @@ private struct ReaderDocumentView: View {
                         }
 
                         if !relatedNotes.isEmpty {
-                            RelatedNotesSection(hits: relatedNotes) { url in
+                            RelatedNotesSection(sourceURL: document.url, hits: relatedNotes) { url in
                                 library.select(url: url)
                             }
                         }

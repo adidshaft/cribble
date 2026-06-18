@@ -103,7 +103,7 @@ private struct ShortcutReferencePopover: View {
                 ("O", "Outline"),
                 ("I", "Intelligence window"),
                 ("C", "AI chat"),
-                ("N", "New note"),
+                ("N", "Add note to hovered highlight / New note"),
                 ("Command N", "Open today's note"),
                 ("T", "Open Tasks"),
                 ("E", "Open current file in your editor"),
@@ -197,6 +197,8 @@ private struct ReaderDocumentView: View {
     @State private var restoredDocumentURL: URL?
     @State private var isHighlightMode = false
     @State private var lastHighlightedQuote: String?
+    @State private var hoveredHighlightIDForShortcut: UUID?
+    @State private var highlightNoteEditRequestID: UUID?
     @State private var shortcutToken = UUID()
     @State private var zoomRequest: ZoomOverlayRequest?
     @State private var relatedNotes: [SemanticHit] = []
@@ -328,6 +330,15 @@ private struct ReaderDocumentView: View {
                                         onUpdateHighlightNote: { highlightID, note in
                                             updateHighlightNote(id: highlightID, note: note)
                                         },
+                                        highlightNoteEditRequestID: highlightNoteEditRequestID,
+                                        onHighlightNoteEditRequestHandled: { handledID in
+                                            if highlightNoteEditRequestID == handledID {
+                                                highlightNoteEditRequestID = nil
+                                            }
+                                        },
+                                        onHoverHighlightChange: { highlightID in
+                                            hoveredHighlightIDForShortcut = highlightID
+                                        },
                                         taskOrdinalBase: sectionPlan.taskBases[section.anchor] ?? 0,
                                         onToggleTask: { ordinal, currentlyChecked in
                                             library.toggleTaskCheckbox(
@@ -426,7 +437,13 @@ private struct ReaderDocumentView: View {
                 },
                 onToggleIntelligence: { shortcutActions?.toggleIntelligence() },
                 onToggleChat: { shortcutActions?.toggleChat() },
-                onNewNote: { shortcutActions?.newNote?() },
+                onNewNote: {
+                    if let hoveredHighlightIDForShortcut {
+                        highlightNoteEditRequestID = hoveredHighlightIDForShortcut
+                    } else {
+                        shortcutActions?.newNote?()
+                    }
+                },
                 onOpenTasks: { shortcutActions?.openTasks?() },
                 onOpenInEditor: { shortcutActions?.openInEditor?() },
                 onRunAILinking: { shortcutActions?.runAILinking?() },
@@ -1235,6 +1252,9 @@ private struct ReaderMarkdownSection: View {
     let onOpenURL: (URL) -> OpenURLAction.Result
     let onResolveEmbed: (EmbedReference, URL, Int, Set<URL>) -> ResolvedEmbed
     let onUpdateHighlightNote: (UUID, String) -> Void
+    let highlightNoteEditRequestID: UUID?
+    let onHighlightNoteEditRequestHandled: (UUID) -> Void
+    let onHoverHighlightChange: (UUID?) -> Void
     // Number of task checkboxes in all sections before this one — added to a
     // block's in-section base to get each checkbox's document-global ordinal.
     let taskOrdinalBase: Int
@@ -1286,7 +1306,13 @@ private struct ReaderMarkdownSection: View {
                         .environment(\.textInteractionSectionAnchor, section.anchor)
                         .environment(\.textInteractionBlockIndex, idx)
                         .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: markdown))
-                        .highlightInteractionOverlay(blockHighlights, onUpdateNote: onUpdateHighlightNote)
+                        .highlightInteractionOverlay(
+                            blockHighlights,
+                            onUpdateNote: onUpdateHighlightNote,
+                            editRequestID: highlightNoteEditRequestID,
+                            onEditRequestHandled: onHighlightNoteEditRequestHandled,
+                            onHoverHighlightChange: onHoverHighlightChange
+                        )
                         .fixedSize(horizontal: false, vertical: true)
                         .mathZoomAffordance(Self.displayMathSource(markdown))
                     }
@@ -1312,7 +1338,10 @@ private struct ReaderMarkdownSection: View {
                         highlightsByBlock: highlightsByBlock,
                         onToggle: onToggleTask,
                         onAddTask: onAddTask,
-                        onUpdateHighlightNote: onUpdateHighlightNote
+                        onUpdateHighlightNote: onUpdateHighlightNote,
+                        highlightNoteEditRequestID: highlightNoteEditRequestID,
+                        onHighlightNoteEditRequestHandled: onHighlightNoteEditRequestHandled,
+                        onHoverHighlightChange: onHoverHighlightChange
                     )
                 case .callout(_, let callout):
                     CalloutView(
@@ -1453,6 +1482,9 @@ private struct EmbeddedNoteView: View {
                             onOpenURL: onOpenURL,
                             onResolveEmbed: onResolveEmbed,
                             onUpdateHighlightNote: { _, _ in },
+                            highlightNoteEditRequestID: nil,
+                            onHighlightNoteEditRequestHandled: { _ in },
+                            onHoverHighlightChange: { _ in },
                             taskOrdinalBase: 0,
                             onToggleTask: { _, _ in },
                             onAddTask: { _, _ in }

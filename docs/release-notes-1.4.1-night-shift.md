@@ -36,7 +36,7 @@ The main shortcuts are now simple single keys while you are reading:
 | `O` | Outline |
 | `I` | Intelligence window |
 | `C` | AI chat |
-| `N` | New note |
+| `N` | Add note to hovered highlight / New note |
 | `T` | Open Tasks |
 | `E` | Open current file in your editor |
 | `L` | AI Link Notes |

@@ -19,6 +19,9 @@ struct TaskListView: View {
     let onToggle: (_ globalOrdinal: Int, _ currentlyChecked: Bool) -> Void
     let onAddTask: (_ globalOrdinal: Int, _ target: TaskExportTarget?) -> Void
     let onUpdateHighlightNote: (UUID, String) -> Void
+    let highlightNoteEditRequestID: UUID?
+    let onHighlightNoteEditRequestHandled: (UUID) -> Void
+    let onHoverHighlightChange: (UUID?) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -37,7 +40,10 @@ struct TaskListView: View {
                     highlights: highlights,
                     onToggle: { currentlyChecked in onToggle(globalOrdinal, currentlyChecked) },
                     onAddTask: { target in onAddTask(globalOrdinal, target) },
-                    onUpdateHighlightNote: onUpdateHighlightNote
+                    onUpdateHighlightNote: onUpdateHighlightNote,
+                    highlightNoteEditRequestID: highlightNoteEditRequestID,
+                    onHighlightNoteEditRequestHandled: onHighlightNoteEditRequestHandled,
+                    onHoverHighlightChange: onHoverHighlightChange
                 )
             }
         }
@@ -56,6 +62,9 @@ private struct TaskRow: View {
     let onToggle: (_ currentlyChecked: Bool) -> Void
     let onAddTask: (_ target: TaskExportTarget?) -> Void
     let onUpdateHighlightNote: (UUID, String) -> Void
+    let highlightNoteEditRequestID: UUID?
+    let onHighlightNoteEditRequestHandled: (UUID) -> Void
+    let onHoverHighlightChange: (UUID?) -> Void
 
     @Environment(\.readerPrimaryFontName) private var primaryFontName
     @Environment(\.readerMonospaceFontName) private var monospaceFontName
@@ -73,7 +82,10 @@ private struct TaskRow: View {
         highlights: [ResolvedHighlight],
         onToggle: @escaping (Bool) -> Void,
         onAddTask: @escaping (TaskExportTarget?) -> Void,
-        onUpdateHighlightNote: @escaping (UUID, String) -> Void
+        onUpdateHighlightNote: @escaping (UUID, String) -> Void,
+        highlightNoteEditRequestID: UUID?,
+        onHighlightNoteEditRequestHandled: @escaping (UUID) -> Void,
+        onHoverHighlightChange: @escaping (UUID?) -> Void
     ) {
         self.item = item
         self.baseURL = baseURL
@@ -85,6 +97,9 @@ private struct TaskRow: View {
         self.onToggle = onToggle
         self.onAddTask = onAddTask
         self.onUpdateHighlightNote = onUpdateHighlightNote
+        self.highlightNoteEditRequestID = highlightNoteEditRequestID
+        self.onHighlightNoteEditRequestHandled = onHighlightNoteEditRequestHandled
+        self.onHoverHighlightChange = onHoverHighlightChange
         _checked = State(initialValue: item.isChecked)
     }
 
@@ -132,7 +147,13 @@ private struct TaskRow: View {
             .environment(\.textInteractionSectionAnchor, sectionAnchor)
             .environment(\.textInteractionBlockIndex, blockIndex)
             .environment(\.textInteractionBlockSignature, TextInteractionSelectionSnapshot.signature(for: item.label))
-            .highlightInteractionOverlay(highlights, onUpdateNote: onUpdateHighlightNote)
+            .highlightInteractionOverlay(
+                highlights,
+                onUpdateNote: onUpdateHighlightNote,
+                editRequestID: highlightNoteEditRequestID,
+                onEditRequestHandled: onHighlightNoteEditRequestHandled,
+                onHoverHighlightChange: onHoverHighlightChange
+            )
             .opacity(checked ? 0.55 : 1)
             .fixedSize(horizontal: false, vertical: true)
 

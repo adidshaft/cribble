@@ -36,7 +36,8 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 
 ## Focus, outline & folders
 
-- **N** proposes a new `Untitled.md` note. Review it before Cribble writes anything.
+- **N** adds or edits the note on the highlight you are hovering. Away from a
+  highlight, it still proposes a new `Untitled.md` note.
 - **Command N** opens or proposes today's note in `Daily/YYYY-MM-DD.md`.
 - **Space** toggles Focus Mode (hides the sidebar for distraction-free reading).
 - **O** toggles the headings outline.
@@ -57,7 +58,7 @@ Type in the toolbar search field. Cribble matches filenames *and* runs an on-dev
 | `O` | Toggle outline |
 | `I` | Project Intelligence |
 | `C` | Open Cribble AI chat |
-| `N` | New note |
+| `N` | Add note to hovered highlight / New note |
 | `⌘ N` | Open today's note |
 | `T` | Open Tasks |
 | `E` | Open current file in your editor |

@@ -10,6 +10,9 @@ private struct HighlightHoverRegion: Equatable {
 struct HighlightInteractionOverlay: ViewModifier {
     let highlights: [ResolvedHighlight]
     let onUpdateNote: (UUID, String) -> Void
+    let editRequestID: UUID?
+    let onEditRequestHandled: (UUID) -> Void
+    let onHoverHighlightChange: (UUID?) -> Void
     @State private var model: TextSelectionModel?
     @State private var regions: [TextInteractionCursorRegion] = []
     @State private var hoverRegions: [HighlightHoverRegion] = []
@@ -85,6 +88,13 @@ struct HighlightInteractionOverlay: ViewModifier {
                                 self.hoverRegions = newHoverRegions
                                 self.hoverNoteRegions = newHoverNoteRegions
                             }
+                            .onChange(of: editRequestID) { _, requestedID in
+                                guard let requestedID,
+                                      let highlight = highlights.first(where: { $0.id == requestedID })
+                                else { return }
+                                beginInlineEditing(highlight, anchorRect: rectsByHighlight[requestedID]?.first)
+                                onEditRequestHandled(requestedID)
+                            }
 
                         if editingHighlightID == nil {
                             hoverTrackingSurface
@@ -127,19 +137,6 @@ struct HighlightInteractionOverlay: ViewModifier {
                                     }
                                     .allowsHitTesting(editingHighlightID == nil)
                             }
-                        }
-
-                        if let h = activeHoverHighlight(
-                            rectsByHighlight: rectsByHighlight
-                        ), editingHighlightID == nil {
-                            HighlightNoteHoverCard(note: h.note)
-                                .position(
-                                    x: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).x,
-                                    y: cardPosition(for: rectsByHighlight[h.id, default: []], in: geometry.size).y
-                                )
-                                .onTapGesture {
-                                    beginInlineEditing(h, anchorRect: rectsByHighlight[h.id]?.first)
-                                }
                         }
 
                         if editingHighlightID != nil {
@@ -258,6 +255,7 @@ struct HighlightInteractionOverlay: ViewModifier {
             pendingHoverClear = nil
             if hoveredHighlightID != highlightID {
                 hoveredHighlightID = highlightID
+                onHoverHighlightChange(highlightID)
             }
             return
         }
@@ -265,6 +263,7 @@ struct HighlightInteractionOverlay: ViewModifier {
         guard hoveredHighlightID != nil, pendingHoverClear == nil else { return }
         let clear = DispatchWorkItem {
             hoveredHighlightID = nil
+            onHoverHighlightChange(nil)
             pendingHoverClear = nil
         }
         pendingHoverClear = clear
@@ -295,6 +294,7 @@ struct HighlightInteractionOverlay: ViewModifier {
         pendingHoverClear?.cancel()
         pendingHoverClear = nil
         hoveredHighlightID = nil
+        onHoverHighlightChange(nil)
         editingNote = highlight.note
         editingAnchorRect = anchorRect
         editingHighlightID = highlight.id
@@ -309,15 +309,6 @@ struct HighlightInteractionOverlay: ViewModifier {
         DispatchQueue.main.async {
             NSApp.keyWindow?.makeFirstResponder(nil)
         }
-    }
-
-    private func cardPosition(for rects: [CGRect], in size: CGSize) -> CGPoint {
-        let anchor = rects.first ?? .zero
-        let width: CGFloat = 320
-        let height: CGFloat = 96
-        let x = min(max(anchor.midX, width / 2 + 12), max(width / 2 + 12, size.width - width / 2 - 12))
-        let y = max(anchor.minY - height / 2 - 12, height / 2 + 12)
-        return CGPoint(x: x, y: y)
     }
 
     private func editorPosition(for rects: [CGRect], in size: CGSize) -> CGPoint {
@@ -355,9 +346,18 @@ struct HighlightInteractionOverlay: ViewModifier {
 extension View {
     func highlightInteractionOverlay(
         _ highlights: [ResolvedHighlight],
-        onUpdateNote: @escaping (UUID, String) -> Void
+        onUpdateNote: @escaping (UUID, String) -> Void,
+        editRequestID: UUID? = nil,
+        onEditRequestHandled: @escaping (UUID) -> Void = { _ in },
+        onHoverHighlightChange: @escaping (UUID?) -> Void = { _ in }
     ) -> some View {
-        modifier(HighlightInteractionOverlay(highlights: highlights, onUpdateNote: onUpdateNote))
+        modifier(HighlightInteractionOverlay(
+            highlights: highlights,
+            onUpdateNote: onUpdateNote,
+            editRequestID: editRequestID,
+            onEditRequestHandled: onEditRequestHandled,
+            onHoverHighlightChange: onHoverHighlightChange
+        ))
     }
 }
 
@@ -483,29 +483,6 @@ private struct HighlightHoverTrackingSurface: NSViewRepresentable {
                 return rects.contains { $0.insetBy(dx: -2, dy: -2).contains(point) }
             }?.key
         }
-    }
-}
-
-private struct HighlightNoteHoverCard: View {
-    let note: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Highlight Note")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.primary)
-
-            Text(note)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.86))
-                .lineLimit(5)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(14)
-        .frame(width: 320, alignment: .leading)
-        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 18, style: .continuous), strokeOpacity: 0.12)
-        .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
     }
 }
 

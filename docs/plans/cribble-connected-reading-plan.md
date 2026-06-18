@@ -370,10 +370,9 @@ the per-directory READMEs as each track lands.
 | G | G3 interact/a11y | ☑ | `Make local graph nodes navigable` | `swift test` | node buttons; current-note label; Reduce Motion static |
 
 **Open questions for the maintainer**
-1. Block-reference (`^blockid`) support in Track B now, or note-/heading-embeds first?
-2. Track F "why related" on-device one-liner: ship behind the AI entitlement, or omit in v1?
-3. Track G: native `Canvas` simulation vs reuse the bundled Mermaid renderer?
-4. Include the optional read-only Properties header (with Track E)?
+1. Confirm whether to add optional A4 unlinked mentions (copy-only), or leave Linked
+   Mentions strictly wiki-link based.
+2. Include the optional read-only Properties header (with Track E)?
 
 ## 15. Definition of done (per track)
 

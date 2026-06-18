@@ -12,6 +12,8 @@ This small Night Shift refresh keeps the same user-facing 1.4 experience and
 tightens the downloadable app package.
 
 - Sparkle now loads correctly in the Developer ID build.
+- Highlight-note hover now shows only one note card, and `N` edits the hovered
+  highlight note before falling back to a blank note.
 - The public DMG is rebuilt, signed, notarized, stapled, and ready for AppCast.
 - Website links and checksums point at the refreshed Night Shift download.
 

@@ -50,6 +50,8 @@ All notable changes to Cribble are documented here. The format follows
   appears only when a downloaded on-device model is already available.
 - Added a bounded reader-side Related Notes cache plus clearer VoiceOver hints
   for expanding, opening, and explaining related-note rows.
+- Added the model-free local note graph neighborhood builder over forward
+  wiki links and backlinks.
 
 ## 1.4.0 — Night Shift
 

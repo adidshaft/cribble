@@ -15,6 +15,7 @@ unit-tested in [`Tests/CribbleTests`](../../../Tests/CribbleTests).
 | `LinkIndex.swift` | Resolves wiki links across the library to real files. |
 | `EmbedResolver.swift` | Resolves read-only `![[note]]` embed slices for rendering. |
 | `BacklinkIndex.swift` | Builds reverse wiki-link mentions for the selected note. |
+| `LocalNoteGraph.swift` | Builds bounded reader-neighborhood graphs from wiki links and backlinks. |
 | `TagIndex.swift` | Indexes frontmatter and inline tags for read-only filtering. |
 | `RelatedNotesCache.swift` | Bounded in-memory cache for reader related-note hits. |
 | `RelatedNoteReasoner.swift` | Gated local-only one-line explanations for related notes. |

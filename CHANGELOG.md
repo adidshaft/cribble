@@ -34,6 +34,8 @@ All notable changes to Cribble are documented here. The format follows
   recent notes first.
 - Added a native Command Palette overlay on `⌘P` for fuzzy command discovery
   with visible shortcuts and existing command actions.
+- Improved palette focus handling so Quick Switcher and Command Palette support
+  arrow-key row movement, Return activation, and Esc/outside-click dismissal.
 
 ## 1.4.0 — Night Shift
 

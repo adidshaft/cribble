@@ -69,6 +69,16 @@ struct QuickSwitcherView: View {
         .onChange(of: query) {
             selectedID = results.first?.id
         }
+        .onMoveCommand { direction in
+            switch direction {
+            case .up:
+                moveSelection(by: -1)
+            case .down:
+                moveSelection(by: 1)
+            default:
+                break
+            }
+        }
         .onExitCommand(perform: onDismiss)
         .transition(reduceMotion ? .opacity : .scale(scale: 0.98).combined(with: .opacity))
         .accessibilityElement(children: .contain)
@@ -109,5 +119,18 @@ struct QuickSwitcherView: View {
             return
         }
         onSelect(item)
+    }
+
+    private func moveSelection(by delta: Int) {
+        guard !results.isEmpty else {
+            selectedID = nil
+            return
+        }
+
+        let currentIndex = selectedID.flatMap { id in
+            results.firstIndex(where: { $0.id == id })
+        } ?? 0
+        let nextIndex = min(max(currentIndex + delta, 0), results.count - 1)
+        selectedID = results[nextIndex].id
     }
 }

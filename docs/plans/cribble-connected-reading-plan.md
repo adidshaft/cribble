@@ -357,7 +357,7 @@ the per-directory READMEs as each track lands.
 | D Palettes | D1 fuzzy | ☑ | `Add fuzzy match scoring` | `swift test` | exact/prefix/acronym/scattered; recency tiebreak |
 | D | D2 switcher | ☑ | `Add quick switcher overlay` | `swift test` | notes by title/alias/path; recents first; ⌘O |
 | D | D3 command palette | ☑ | `Add command palette overlay` | `swift test` | command registry; visible shortcuts; ⌘P |
-| D | D4 a11y/focus | ☐ | | | |
+| D | D4 a11y/focus | ☑ | `Polish palette keyboard focus` | `swift test` | arrow movement; Return/Esc; no keyboard trap |
 | E Tags | E1 index | ☐ | | | |
 | E | E2 inline chips | ☐ | | | |
 | E | E3 pane | ☐ | | | |

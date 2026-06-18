@@ -32,6 +32,8 @@ All notable changes to Cribble are documented here. The format follows
   palette ranking.
 - Added a native Quick Switcher overlay on `⌘O` for fuzzy note navigation with
   recent notes first.
+- Added a native Command Palette overlay on `⌘P` for fuzzy command discovery
+  with visible shortcuts and existing command actions.
 
 ## 1.4.0 — Night Shift
 

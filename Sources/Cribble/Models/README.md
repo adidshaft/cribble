@@ -16,5 +16,6 @@ These hold no behavior beyond derivation — the engine lives in `Services/`.
 | `UnresolvedTarget.swift` | A wiki link that did not resolve to a file. |
 | `LinkedFileSummary.swift` | Summary of an inbound/outbound linked file. |
 | `QuickSwitcherItem.swift` | Note rows and ranking helpers for the quick switcher. |
+| `PaletteCommand.swift` | Command palette command rows and fuzzy filtering helpers. |
 | `ReadingAnnotation.swift` | A highlight or reading bookmark. |
 | `PathfinderRequest.swift` | Input for the note pathfinder feature. |

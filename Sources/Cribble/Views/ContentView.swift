@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showingDiagnosticsReport = false
     @State private var showingImportGuidance = false
     @State private var showingQuickSwitcher = false
+    @State private var showingCommandPalette = false
     @State private var importGuidanceStatus: String?
     @State private var showingPreviousSessionIssue = false
     @State private var pendingRestoreRunnerConsent: ExtensionRunnerConsentRequest?
@@ -92,6 +93,7 @@ struct ContentView: View {
             .focusedSceneValue(\.toggleOutlineAction, { settings.showOutline.toggle() })
             .focusedSceneValue(\.toggleFocusModeAction, { settings.isFocusMode.toggle() })
             .focusedSceneValue(\.openQuickSwitcherAction, { showingQuickSwitcher = true })
+            .focusedSceneValue(\.openCommandPaletteAction, { showingCommandPalette = true })
             .focusedSceneValue(\.focusSearchAction, {
                 isSearchFocused = true
             })
@@ -483,11 +485,13 @@ struct ContentView: View {
             }
         }
         .overlay {
-            if showingQuickSwitcher {
+            if showingQuickSwitcher || showingCommandPalette {
                 Color.black.opacity(0.18)
                     .ignoresSafeArea()
-                    .onTapGesture { dismissQuickSwitcher() }
+                    .onTapGesture { dismissOverlays() }
+            }
 
+            if showingQuickSwitcher {
                 QuickSwitcherView(
                     items: quickSwitcherItems,
                     onSelect: { item in
@@ -495,6 +499,14 @@ struct ContentView: View {
                         dismissQuickSwitcher()
                     },
                     onDismiss: dismissQuickSwitcher
+                )
+                .padding()
+            }
+
+            if showingCommandPalette {
+                CommandPaletteView(
+                    commands: commandPaletteCommands,
+                    onDismiss: dismissCommandPalette
                 )
                 .padding()
             }
@@ -519,6 +531,146 @@ struct ContentView: View {
         withAnimation(.snappy(duration: 0.16)) {
             showingQuickSwitcher = false
         }
+    }
+
+    private func dismissCommandPalette() {
+        withAnimation(.snappy(duration: 0.16)) {
+            showingCommandPalette = false
+        }
+    }
+
+    private func dismissOverlays() {
+        withAnimation(.snappy(duration: 0.16)) {
+            showingQuickSwitcher = false
+            showingCommandPalette = false
+        }
+    }
+
+    private var commandPaletteCommands: [PaletteCommand] {
+        [
+            paletteCommand(id: "new-note", title: "New Note", subtitle: "Create a note in the current folder", keywords: ["file", "create"], action: newNoteAction),
+            paletteCommand(id: "open-today", title: "Open Today Note", subtitle: "Jump to today's daily note", shortcut: "⌘N", keywords: ["daily", "today"], action: openTodayNoteAction),
+            paletteCommand(id: "open-folder", title: "Open Folder", subtitle: "Choose a Markdown folder", keywords: ["vault", "library"]) {
+                library.chooseFolder(sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "import", title: "Import", subtitle: "Import a folder or supported file", shortcut: "⌘I", keywords: ["folder", "file"], action: importFileAction),
+            paletteCommand(id: "refresh", title: "Refresh", subtitle: "Rescan open folders", keywords: ["reload", "folder"]) {
+                library.refresh(sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "open-tasks", title: "Open Tasks", subtitle: "Open the project task note", keywords: ["todo"], action: openTasksAction),
+            paletteCommand(id: "open-editor", title: "Open in Editor", subtitle: "Open the current Markdown file in your editor", keywords: ["external"], action: selectedDocumentAction { library.openSelectedInEditor(settings: settings) }),
+            paletteCommand(id: "reveal-finder", title: "Reveal in Finder", subtitle: "Show the current file in Finder", keywords: ["folder", "file"], action: selectedDocumentAction(library.revealSelectedDocumentInFinder)),
+            paletteCommand(id: "copy-path", title: "Copy File Path", subtitle: "Copy the current file path", shortcut: "⌥⇧⌘C", keywords: ["clipboard"], action: selectedDocumentAction(library.copySelectedDocumentPath)),
+            paletteCommand(id: "copy-markdown", title: "Copy Markdown", subtitle: "Copy the current note as Markdown", shortcut: "⌘M", keywords: ["clipboard", "md"], action: selectedDocumentAction(library.copySelectedDocumentMarkdown)),
+            paletteCommand(id: "copy-markdown-link", title: "Copy Markdown Link", subtitle: "Copy a Markdown link to the current note", shortcut: "⌘L", keywords: ["clipboard", "link"], action: selectedDocumentAction(library.copySelectedDocumentMarkdownLink)),
+            paletteCommand(id: "copy-wiki-link", title: "Copy Wiki Link", subtitle: "Copy a wiki link to the current note", shortcut: "⌘W", keywords: ["clipboard", "wikilink"], action: selectedDocumentAction(library.copySelectedDocumentWikiLink)),
+            paletteCommand(id: "undo-note-change", title: "Undo Last Note Change", subtitle: "Undo the last safe note change", shortcut: "⇧⌘Z", keywords: ["restore"]) {
+                library.undoLastChangeToSelectedNote()
+            },
+            paletteCommand(id: "back", title: "Back", subtitle: "Navigate to the previous note", shortcut: "⌘←", keywords: ["history"], action: navigateBackAction),
+            paletteCommand(id: "forward", title: "Forward", subtitle: "Navigate to the next note", shortcut: "⌘→", keywords: ["history"], action: navigateForwardAction),
+            paletteCommand(id: "quick-switcher", title: "Quick Switcher", subtitle: "Open a note by fuzzy search", shortcut: "⌘O", keywords: ["note", "open"]) {
+                showingQuickSwitcher = true
+            },
+            paletteCommand(id: "command-palette", title: "Command Palette", subtitle: "Search every command", shortcut: "⌘P", keywords: ["actions"]) {
+                showingCommandPalette = true
+            },
+            paletteCommand(id: "toggle-outline", title: "Toggle Outline", subtitle: "Show or hide the document outline", keywords: ["view"]) {
+                settings.showOutline.toggle()
+            },
+            paletteCommand(id: "toggle-focus", title: "Toggle Focus Mode", subtitle: "Focus the reader", keywords: ["view", "reading"]) {
+                settings.isFocusMode.toggle()
+            },
+            paletteCommand(id: "find-files", title: "Find in Files", subtitle: "Focus the file search field", keywords: ["search"]) {
+                isSearchFocused = true
+            },
+            paletteCommand(id: "clear-search", title: "Clear Search", subtitle: "Clear file search", shortcut: "Esc", keywords: ["search"], action: clearSearchAction),
+            paletteCommand(id: "ai-link", title: "AI Link Notes", subtitle: "Suggest wiki links with local review", keywords: ["intelligence", "links"], action: library.hasFolders && !library.isRunningAI ? { showingAIProviderSheet = true } : nil),
+            paletteCommand(id: "cribble-ai", title: "Cribble AI Chat", subtitle: "Open the local-first AI chat", keywords: ["assistant", "chat"]) {
+                openChatHUD()
+            },
+            paletteCommand(id: "summarize", title: "Summarize Current Note", subtitle: "Ask local AI for a summary", keywords: ["ai"], action: summarizeWithAIAction),
+            paletteCommand(id: "explain", title: "Explain Current Note Simply", subtitle: "Ask local AI for a simpler explanation", keywords: ["ai"], action: explainSimplyWithAIAction),
+            paletteCommand(id: "related-ai", title: "Find Related Notes", subtitle: "Ask local AI for related notes", keywords: ["ai"], action: findRelatedWithAIAction),
+            paletteCommand(id: "index-ai", title: "Create Index Note", subtitle: "Draft an index note with AI", keywords: ["ai"], action: createIndexWithAIAction),
+            paletteCommand(id: "draft-today", title: "Draft Today with AI", subtitle: "Draft today's note with AI", keywords: ["daily", "ai"], action: draftTodayWithAIAction),
+            paletteCommand(id: "extract-tasks", title: "Extract Tasks from Current Note", subtitle: "Find tasks in the current note", keywords: ["ai", "todo"], action: extractTasksWithAIAction),
+            paletteCommand(id: "intelligence", title: "Project Intelligence", subtitle: "Open the intelligence window", keywords: ["ai", "runner"]) {
+                openIntelligenceHUD()
+            },
+            paletteCommand(id: "demo-tour", title: "Open DemoNotes Tour", subtitle: "Open the bundled DemoNotes folder", keywords: ["help", "guide"]) {
+                library.openDemoLibrary(sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "reset-demo", title: "Reset DemoNotes Tour", subtitle: "Restore the bundled DemoNotes folder", keywords: ["help", "guide"]) {
+                library.openDemoLibrary(sortMode: settings.fileSortMode, reset: true)
+            },
+            paletteCommand(id: "guide-cribble-ai", title: "Open Cribble AI Guide", subtitle: "Open the bundled AI guide", keywords: ["help", "guide"]) {
+                library.openDemoNote(named: "Cribble AI.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-workflow", title: "Open Workflow Playbook", subtitle: "Open the bundled workflow guide", keywords: ["help", "guide"]) {
+                library.openDemoNote(named: "Workflow Playbook.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-tasks", title: "Open Tasks & Intelligence Guide", subtitle: "Open the bundled tasks guide", keywords: ["help", "guide"]) {
+                library.openDemoNote(named: "Tasks and Intelligence.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-research", title: "Open Research Review Guide", subtitle: "Open the bundled research guide", keywords: ["help", "guide"]) {
+                library.openDemoNote(named: "Research Review.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-decision", title: "Open Decision Log Guide", subtitle: "Open the bundled decision guide", keywords: ["help", "guide"]) {
+                library.openDemoNote(named: "Decision Log.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-team-extension", title: "Open Team Extension Kit", subtitle: "Open the bundled extension guide", keywords: ["help", "guide", "plugin"]) {
+                library.openDemoNote(named: "Team Extension Kit.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-extension-contribution", title: "Open Extension Contribution Guide", subtitle: "Open the bundled contribution guide", keywords: ["help", "guide", "plugin"]) {
+                library.openDemoNote(named: "Extension Contribution Guide.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "guide-remote-intelligence", title: "Open Remote Intelligence Guide", subtitle: "Open the bundled remote intelligence guide", keywords: ["help", "guide", "runner"]) {
+                library.openDemoNote(named: "Extensions and Remote Intelligence.md", sortMode: settings.fileSortMode)
+            },
+            paletteCommand(id: "settings-extensions", title: "Open Extension Settings", subtitle: "Configure extensions", keywords: ["plugins", "preferences"], action: openSettingsWindow),
+            paletteCommand(id: "copy-extension-proposal", title: "Copy Extension Proposal", subtitle: "Copy the extension proposal template", keywords: ["help", "clipboard"], action: copyExtensionProposal),
+            paletteCommand(id: "copy-decision-template", title: "Copy Decision Entry Template", subtitle: "Copy the decision log template", keywords: ["help", "clipboard"], action: copyDecisionEntryTemplate),
+            paletteCommand(id: "copy-research-template", title: "Copy Research Review Template", subtitle: "Copy the research review template", keywords: ["help", "clipboard"], action: copyResearchReviewTemplate),
+            paletteCommand(id: "copy-remote-review", title: "Copy Remote Runner Setup Review", subtitle: "Copy the remote runner review", keywords: ["help", "clipboard"], action: copyRemoteRunnerSetupReview),
+            paletteCommand(id: "copy-import-review", title: "Copy Import Lane Setup Review", subtitle: "Copy the import lane review", keywords: ["help", "clipboard"], action: copyImportLaneSetupReview),
+            paletteCommand(id: "copy-product-checkpoint", title: "Copy Product Readiness Checkpoint", subtitle: "Copy the readiness checklist", keywords: ["help", "clipboard"], action: copyProductReadinessCheckpoint),
+            paletteCommand(id: "copy-starter-checklist", title: "Copy Starter Checklist", subtitle: "Copy the starter checklist", keywords: ["help", "clipboard"], action: copyStarterChecklist),
+            paletteCommand(id: "diagnostics", title: "Show Diagnostic Report", subtitle: "Open diagnostics", shortcut: "⇧⌘D", keywords: ["help", "report"]) {
+                showingDiagnosticsReport = true
+            },
+            paletteCommand(id: "copy-diagnostics", title: "Copy Diagnostic Report", subtitle: "Copy diagnostics to the clipboard", shortcut: "⌥⌘C", keywords: ["help", "report"]) {
+                diagnostics.copyReport(library: library, settings: settings, intelligence: intelligenceDiagnostics, extensions: extensionDiagnostics)
+            },
+            paletteCommand(id: "reveal-crash", title: "Reveal Latest Crash Report", subtitle: "Show the latest crash report in Finder", keywords: ["help", "diagnostics"]) {
+                _ = diagnostics.revealLatestCrashReportInFinder()
+            },
+            paletteCommand(id: "report-issue", title: "Report Issue on GitHub", subtitle: "Open a prefilled issue", keywords: ["help", "bug"]) {
+                reportIssueOnGitHub()
+            },
+            paletteCommand(id: "open-pr", title: "Open Pull Request on GitHub", subtitle: "Open the project pull request page", keywords: ["help", "github"]) {
+                openPullRequestOnGitHub()
+            }
+        ]
+    }
+
+    private func paletteCommand(
+        id: String,
+        title: String,
+        subtitle: String? = nil,
+        shortcut: String? = nil,
+        keywords: [String] = [],
+        action: (() -> Void)?
+    ) -> PaletteCommand {
+        PaletteCommand(
+            id: id,
+            title: title,
+            subtitle: subtitle,
+            shortcut: shortcut,
+            keywords: keywords,
+            isEnabled: action != nil,
+            action: action ?? {}
+        )
     }
 
     private var splitLayout: some View {

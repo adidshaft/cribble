@@ -15,6 +15,7 @@ helpers; fixtures on disk live in [`Fixtures/`](../../Fixtures).
 | `EmbedResolverTests` | Read-only Obsidian embed slice resolution and guards. |
 | `FuzzyMatchTests` | Pure fuzzy ranking and recency scoring. |
 | `QuickSwitcherTests` | Quick switcher source filtering and recents. |
+| `CommandPaletteTests` | Command palette filtering, enabled-state handling, and shortcut metadata. |
 | `WikiLinkParserTests` / `LinkIndexTests` | Wiki-link parsing and resolution. |
 | `NavigationHistoryTests` | Back/forward navigation. |
 | `TaskCheckboxTests` | Task-marker parse/toggle. |

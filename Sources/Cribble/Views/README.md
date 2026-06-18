@@ -12,6 +12,7 @@ sub-folders.
 | `SidebarView.swift` | Folder/file library navigation. |
 | `ReaderView.swift` | The rendered Markdown reading surface, including embedded-note cards. |
 | `QuickSwitcherView.swift` | Native fuzzy note switcher overlay. |
+| `CommandPaletteView.swift` | Native fuzzy app-command palette overlay. |
 | `CalloutView.swift` | Native rendering for Obsidian-style callout/admonition blocks. |
 | `LinkedMentionsSection.swift` | Collapsible backlinks/linked-mentions reader section. |
 | `OutlineView.swift` | Document outline / heading navigation. |

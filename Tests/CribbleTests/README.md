@@ -13,6 +13,7 @@ helpers; fixtures on disk live in [`Fixtures/`](../../Fixtures).
 | `MarkdownDisplayPreprocessorTests` | Display preprocessing. |
 | `RichMarkdownBlockTests` | Fenced-block splitting (code/Mermaid/charts/math). |
 | `EmbedResolverTests` | Read-only Obsidian embed slice resolution and guards. |
+| `FuzzyMatchTests` | Pure fuzzy ranking and recency scoring. |
 | `WikiLinkParserTests` / `LinkIndexTests` | Wiki-link parsing and resolution. |
 | `NavigationHistoryTests` | Back/forward navigation. |
 | `TaskCheckboxTests` | Task-marker parse/toggle. |

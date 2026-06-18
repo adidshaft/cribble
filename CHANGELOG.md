@@ -28,6 +28,8 @@ All notable changes to Cribble are documented here. The format follows
   recursive rich Markdown body rendering.
 - Added bounded embed-resolution caching and clearer accessibility labels for
   resolved, unresolved, cyclic, and depth-limited embed states.
+- Added the pure fuzzy-match scoring foundation for quick switcher and command
+  palette ranking.
 
 ## 1.4.0 — Night Shift
 

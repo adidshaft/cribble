@@ -1019,17 +1019,12 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func fuzzyMatches(for targetName: String) -> [MarkdownDocumentMeta] {
-        let normalizedQuery = LinkIndex.normalize(targetName)
-        return documents.filter { doc in
-            let filename = doc.url.deletingPathExtension().lastPathComponent
-            let normalizedFile = LinkIndex.normalize(filename)
-            let title = doc.title
-            let normalizedTitle = LinkIndex.normalize(title)
-            
-            return normalizedFile.contains(normalizedQuery) ||
-                   normalizedQuery.contains(normalizedFile) ||
-                   normalizedTitle.contains(normalizedQuery) ||
-                   normalizedQuery.contains(normalizedTitle)
+        FuzzyMatch.ranked(query: targetName, candidates: documents) { doc in
+            [
+                doc.title,
+                doc.url.deletingPathExtension().lastPathComponent,
+                relativePath(for: doc.url) ?? doc.url.lastPathComponent
+            ] + doc.linkAliases
         }
     }
 

@@ -8,6 +8,7 @@ Cross-cutting helpers and extensions used throughout the app.
 | `CalloutBlock.swift` | Parses Obsidian-style callout/admonition blockquotes. |
 | `CalloutStyle.swift` | Maps callout types to native symbols and semantic accents. |
 | `RichMarkdownBlock.swift` | Splits a document into rich reader blocks (code, tasks, callouts, embeds). |
+| `FuzzyMatch.swift` | Pure fuzzy subsequence scoring for switchers and suggestions. |
 | `ReaderTypographyEnvironment.swift` | Reader fonts, sizing, and spacing (Roobert + Monaco). |
 | `CompatibilityStyles.swift` | Liquid Glass on macOS 26+ with native fallbacks. |
 | `DiagnosticsCenter.swift` | Collects diagnostic info for user reports. |

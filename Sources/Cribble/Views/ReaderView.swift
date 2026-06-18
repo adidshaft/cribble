@@ -1196,7 +1196,8 @@ private struct ReaderMarkdownSection: View {
                             markdown,
                             parser: HighlightedMarkdownParser(
                                 baseURL: baseURL,
-                                highlights: blockHighlights
+                                highlights: blockHighlights,
+                                linkTags: true
                             ),
                             // Re-parse in place when this block's highlights
                             // change. Previously the whole section VStack used
@@ -1907,6 +1908,7 @@ private struct MermaidPieSlice: Identifiable, Equatable {
 struct HighlightedMarkdownParser: MarkupParser {
     let baseURL: URL
     let highlights: [ResolvedHighlight]
+    var linkTags: Bool = false
 
     func attributedString(for input: String) throws -> AttributedString {
         var attributed = try AttributedStringMarkdownParser.markdown(
@@ -1915,10 +1917,44 @@ struct HighlightedMarkdownParser: MarkupParser {
         )
         .attributedString(for: input)
 
+        if linkTags {
+            applyTagLinks(to: &attributed)
+        }
+
         for highlight in highlights {
             apply(highlight, to: &attributed)
         }
         return attributed
+    }
+
+    private func applyTagLinks(to attributed: inout AttributedString) {
+        let plain = String(attributed.characters)
+        for occurrence in TagIndex.tagOccurrences(in: plain) {
+            guard let lower = AttributedString.Index(occurrence.range.lowerBound, within: attributed),
+                  let upper = AttributedString.Index(occurrence.range.upperBound, within: attributed),
+                  let url = tagURL(for: occurrence.tag)
+            else { continue }
+
+            let range = lower..<upper
+            guard !isInlineCode(range, in: attributed) else { continue }
+            attributed[range].link = url
+            attributed[range].foregroundColor = NSColor.controlAccentColor
+            attributed[range].backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.14)
+        }
+    }
+
+    private func isInlineCode(_ range: Range<AttributedString.Index>, in attributed: AttributedString) -> Bool {
+        attributed.runs.contains { run in
+            run.range.overlaps(range) && run.inlinePresentationIntent == .code
+        }
+    }
+
+    private func tagURL(for tag: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "cribble"
+        components.host = "tag"
+        components.queryItems = [URLQueryItem(name: "name", value: tag)]
+        return components.url
     }
 
     private func apply(_ h: ResolvedHighlight, to attributed: inout AttributedString) {

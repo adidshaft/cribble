@@ -359,7 +359,7 @@ the per-directory READMEs as each track lands.
 | D | D3 command palette | ☑ | `Add command palette overlay` | `swift test` | command registry; visible shortcuts; ⌘P |
 | D | D4 a11y/focus | ☑ | `Polish palette keyboard focus` | `swift test` | arrow movement; Return/Esc; no keyboard trap |
 | E Tags | E1 index | ☑ | `Add read-only tag index` | `swift test` | frontmatter+inline; nested; code/headings ignored |
-| E | E2 inline chips | ☐ | | | |
+| E | E2 inline chips | ☑ | `Render clickable tag chips` | `swift test` | inline chip links; local tag filter; code skipped |
 | E | E3 pane | ☐ | | | |
 | F Related | F1 query | ☐ | | | |
 | F | F2 UI | ☐ | | | |

@@ -34,6 +34,9 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var searchText = "" {
         didSet { cachedFilteredNodes = nil }
     }
+    @Published var selectedTag: TagIndex.Tag? {
+        didSet { cachedFilteredNodes = nil }
+    }
     @Published var history: [URL] = []
     @Published var historyIndex: Int = -1
     @Published var activeScrollAnchor: String?
@@ -176,11 +179,13 @@ final class MarkdownLibraryStore: ObservableObject {
     var filteredNodes: [MarkdownNode] {
         if let cachedFilteredNodes { return cachedFilteredNodes }
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let taggedURLs = selectedTag.map { Set(notes(forTag: $0.normalized)) }
         let base: [MarkdownNode]
         if query.isEmpty {
-            base = nodes
+            base = taggedURLs.map { urls in nodes.compactMap { filter($0, includedURLs: urls) } } ?? nodes
         } else {
-            base = nodes.compactMap { filter($0, query: query) }
+            let taggedNodes = taggedURLs.map { urls in nodes.compactMap { filter($0, includedURLs: urls) } } ?? nodes
+            base = taggedNodes.compactMap { filter($0, query: query) }
         }
         let result = pinnedPaths.isEmpty ? base : floatingPinnedFolders(in: base)
         cachedFilteredNodes = result
@@ -953,6 +958,11 @@ final class MarkdownLibraryStore: ObservableObject {
                 selectedLinkedFiles = []
                 selectedUnresolvedTarget = UnresolvedTarget(targetName: target, folderURL: root)
             }
+            return .handled
+        }
+
+        if url.host == "tag", let tag = components.queryItems?.first(where: { $0.name == "name" })?.value {
+            selectTag(tag)
             return .handled
         }
 
@@ -2062,6 +2072,27 @@ final class MarkdownLibraryStore: ObservableObject {
         }
 
         let children = node.children.compactMap { filter($0, query: query) }
+        if !children.isEmpty {
+            return MarkdownNode(
+                id: node.id,
+                name: node.name,
+                url: node.url,
+                kind: node.kind,
+                createdAt: node.createdAt,
+                modifiedAt: node.modifiedAt,
+                readmeURL: node.readmeURL,
+                children: children
+            )
+        }
+        return nil
+    }
+
+    private func filter(_ node: MarkdownNode, includedURLs: Set<URL>) -> MarkdownNode? {
+        if node.kind == .markdown, includedURLs.contains(node.url.standardizedFileURL) {
+            return node
+        }
+
+        let children = node.children.compactMap { filter($0, includedURLs: includedURLs) }
         if !children.isEmpty {
             return MarkdownNode(
                 id: node.id,

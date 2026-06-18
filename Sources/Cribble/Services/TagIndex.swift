@@ -7,6 +7,11 @@ struct TagIndex: Sendable {
         let count: Int
     }
 
+    struct TagOccurrence: Equatable, Sendable {
+        let tag: String
+        let range: Range<String.Index>
+    }
+
     private var displayNames: [String: String] = [:]
     private var urlsByTag: [String: Set<URL>] = [:]
 
@@ -49,12 +54,18 @@ struct TagIndex: Sendable {
     }
 
     static func tags(in markdown: String) -> [String] {
-        var foundTags: [String] = []
+        uniqued(tagOccurrences(in: markdown).map(\.tag))
+    }
+
+    static func tagOccurrences(in markdown: String) -> [TagOccurrence] {
+        var foundTags: [TagOccurrence] = []
         var isInFence = false
         var isFrontMatter = false
         var isFirstLine = true
 
-        markdown.enumerateLines { line, _ in
+        markdown.enumerateSubstrings(in: markdown.startIndex..<markdown.endIndex, options: [.byLines, .substringNotRequired]) { _, lineRange, _, _ in
+            let line = String(markdown[lineRange])
+
             if isFirstLine {
                 isFirstLine = false
                 if line == "---" {
@@ -75,10 +86,10 @@ struct TagIndex: Sendable {
             }
             guard !isInFence, !trimmed.hasPrefix("#") else { return }
 
-            foundTags.append(contentsOf: tags(inLine: line))
+            foundTags.append(contentsOf: tagOccurrences(inLine: line, lineStart: lineRange.lowerBound, source: markdown))
         }
 
-        return uniqued(foundTags)
+        return foundTags
     }
 
     static func normalize(_ tag: String) -> String {
@@ -90,59 +101,64 @@ struct TagIndex: Sendable {
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
 
-    private static func tags(inLine line: String) -> [String] {
-        let scalars = Array(line.unicodeScalars)
-        var tags: [String] = []
-        var index = 0
+    private static func tagOccurrences(inLine line: String, lineStart: String.Index, source: String) -> [TagOccurrence] {
+        var occurrences: [TagOccurrence] = []
+        var index = line.startIndex
         var isInInlineCode = false
 
-        while index < scalars.count {
-            let scalar = scalars[index]
-            if scalar == "`" {
+        while index < line.endIndex {
+            let character = line[index]
+            if character == "`" {
                 isInInlineCode.toggle()
-                index += 1
+                index = line.index(after: index)
                 continue
             }
 
-            guard !isInInlineCode, scalar == "#" else {
-                index += 1
+            guard !isInInlineCode, character == "#" else {
+                index = line.index(after: index)
                 continue
             }
 
-            let previous = index > 0 ? scalars[index - 1] : nil
+            let previous = index > line.startIndex ? line[line.index(before: index)] : nil
             guard previous == nil || isTagBoundary(previous!) else {
-                index += 1
+                index = line.index(after: index)
                 continue
             }
 
-            var cursor = index + 1
-            while cursor < scalars.count, isTagCharacter(scalars[cursor]) {
-                cursor += 1
+            var cursor = line.index(after: index)
+            while cursor < line.endIndex, isTagCharacter(line[cursor]) {
+                cursor = line.index(after: cursor)
             }
 
-            if cursor > index + 1 {
-                let value = String(String.UnicodeScalarView(scalars[index + 1..<cursor]))
-                tags.append(value)
+            if cursor > line.index(after: index) {
+                let value = String(line[line.index(after: index)..<cursor])
+                let lower = source.index(lineStart, offsetBy: line.distance(from: line.startIndex, to: index))
+                let upper = source.index(lineStart, offsetBy: line.distance(from: line.startIndex, to: cursor))
+                occurrences.append(TagOccurrence(tag: value, range: lower..<upper))
                 index = cursor
             } else {
-                index += 1
+                index = line.index(after: index)
             }
         }
 
-        return tags
+        return occurrences
     }
 
-    private static func isTagBoundary(_ scalar: UnicodeScalar) -> Bool {
-        CharacterSet.whitespacesAndNewlines.contains(scalar)
-            || CharacterSet.punctuationCharacters.contains(scalar)
-            || CharacterSet.symbols.contains(scalar)
+    private static func isTagBoundary(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { scalar in
+            CharacterSet.whitespacesAndNewlines.contains(scalar)
+                || CharacterSet.punctuationCharacters.contains(scalar)
+                || CharacterSet.symbols.contains(scalar)
+        }
     }
 
-    private static func isTagCharacter(_ scalar: UnicodeScalar) -> Bool {
-        CharacterSet.alphanumerics.contains(scalar)
-            || scalar == "-"
-            || scalar == "_"
-            || scalar == "/"
+    private static func isTagCharacter(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { scalar in
+            CharacterSet.alphanumerics.contains(scalar)
+                || scalar == "-"
+                || scalar == "_"
+                || scalar == "/"
+        }
     }
 
     private static func displayName(for tag: String) -> String {

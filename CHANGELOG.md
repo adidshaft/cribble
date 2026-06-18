@@ -38,6 +38,8 @@ All notable changes to Cribble are documented here. The format follows
   arrow-key row movement, Return activation, and Esc/outside-click dismissal.
 - Added a read-only tag index that unifies frontmatter and inline tags,
   including nested tag lookup and code/heading exclusion.
+- Rendered inline tags in the reader as clickable chips that apply the local
+  tag filter without writing notes.
 
 ## 1.4.0 — Night Shift
 

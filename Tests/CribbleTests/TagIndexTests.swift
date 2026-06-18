@@ -88,4 +88,34 @@ final class TagIndexTests: XCTestCase {
         XCTAssertEqual(store.allTags().map(\.normalized), ["project", "project/next"])
         XCTAssertEqual(store.notes(forTag: "project"), [note.standardizedFileURL])
     }
+
+    func testTagURLSelectsTagFilter() async throws {
+        let root = try Fixture.makeFolder()
+        let project = root.appendingPathComponent("Project.md")
+        let archive = root.appendingPathComponent("Archive.md")
+        try "# Project\nBody #project/next.".write(to: project, atomically: true, encoding: .utf8)
+        try "# Archive\nBody #archive.".write(to: archive, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(root, sortMode: .name)
+        await store.waitForLoadToComplete()
+
+        var components = URLComponents()
+        components.scheme = "cribble"
+        components.host = "tag"
+        components.queryItems = [URLQueryItem(name: "name", value: "project")]
+
+        _ = store.handleOpenURL(try XCTUnwrap(components.url))
+        XCTAssertEqual(store.selectedTag?.normalized, "project")
+        XCTAssertEqual(markdownURLs(in: store.filteredNodes), [project.standardizedFileURL])
+    }
+
+    private func markdownURLs(in nodes: [MarkdownNode]) -> [URL] {
+        nodes.flatMap { node -> [URL] in
+            if node.kind == .markdown {
+                return [node.url.standardizedFileURL]
+            }
+            return markdownURLs(in: node.children)
+        }
+    }
 }

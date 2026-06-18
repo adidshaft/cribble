@@ -4,6 +4,42 @@ import AppKit
 
 @MainActor
 final class HighlightedMarkdownParserOffsetTests: XCTestCase {
+    func testTagLinksAreAppliedWhenEnabled() throws {
+        let parser = HighlightedMarkdownParser(
+            baseURL: URL(fileURLWithPath: "/"),
+            highlights: [],
+            linkTags: true
+        )
+
+        let attributed = try parser.attributedString(for: "Read #project/next today")
+        let plain = String(attributed.characters)
+        let range = try XCTUnwrap(plain.range(of: "#project/next"))
+        let lower = try XCTUnwrap(AttributedString.Index(range.lowerBound, within: attributed))
+        let upper = try XCTUnwrap(AttributedString.Index(range.upperBound, within: attributed))
+        let slice = attributed[lower..<upper]
+
+        XCTAssertEqual(slice.link?.scheme, "cribble")
+        XCTAssertEqual(slice.link?.host, "tag")
+        XCTAssertEqual(URLComponents(url: try XCTUnwrap(slice.link), resolvingAgainstBaseURL: false)?.queryItems?.first?.value, "project/next")
+        XCTAssertNotNil(slice.appKit.backgroundColor)
+    }
+
+    func testTagLinksSkipInlineCode() throws {
+        let parser = HighlightedMarkdownParser(
+            baseURL: URL(fileURLWithPath: "/"),
+            highlights: [],
+            linkTags: true
+        )
+
+        let attributed = try parser.attributedString(for: "Read #project and `#code`")
+        let plain = String(attributed.characters)
+        let codeRange = try XCTUnwrap(plain.range(of: "#code"))
+        let lower = try XCTUnwrap(AttributedString.Index(codeRange.lowerBound, within: attributed))
+        let upper = try XCTUnwrap(AttributedString.Index(codeRange.upperBound, within: attributed))
+
+        XCTAssertNil(attributed[lower..<upper].link)
+    }
+
     func testColoringAcrossStyleBoundaries() throws {
         let baseURL = URL(fileURLWithPath: "/")
         

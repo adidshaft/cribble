@@ -44,6 +44,8 @@ All notable changes to Cribble are documented here. The format follows
   clear filter control.
 - Added a stored-vector related-notes query that ranks indexed notes by local
   cosine similarity while excluding the current note and near-duplicates.
+- Surfaced Related Notes in the reader as a lazy, debounced, collapsible local
+  semantic section with hover previews and subtle similarity bars.
 
 ## 1.4.0 — Night Shift
 

@@ -362,7 +362,7 @@ the per-directory READMEs as each track lands.
 | E | E2 inline chips | ☑ | `Render clickable tag chips` | `swift test` | inline chip links; local tag filter; code skipped |
 | E | E3 pane | ☑ | `Add sidebar tag pane` | `swift test` | sidebar pane; counts; filtered results; a11y labels |
 | F Related | F1 query | ☑ | `Add related notes semantic query` | `swift test` | stored vectors; excludes self/near-duplicates; K cap |
-| F | F2 UI | ☐ | | | |
+| F | F2 UI | ☑ | `Show related notes in the reader` | `swift test` | lazy debounced refresh; hidden empty; previews + score bars |
 | F | F3 why (opt) | ☐ | | | |
 | F | F4 a11y/perf | ☐ | | | |
 | G Local Graph | G1 neighborhood | ☐ | | | stretch |

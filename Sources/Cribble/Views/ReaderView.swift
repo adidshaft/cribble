@@ -187,6 +187,7 @@ private struct ReaderDocumentView: View {
     @EnvironmentObject private var readingAnnotations: ReadingAnnotationsStore
     @EnvironmentObject private var readingTrail: ReadingTrailStore
     @EnvironmentObject private var extensionRegistry: ExtensionRegistry
+    @EnvironmentObject private var semanticIndex: SemanticSearchIndex
     // Reference type so the bridge's per-scroll-tick writes don't invalidate
     // this view's body (which used to re-trigger LazyVStack diffing and
     // updateNSView on every pixel of scrolling — the dominant lag source).
@@ -198,6 +199,8 @@ private struct ReaderDocumentView: View {
     @State private var lastHighlightedQuote: String?
     @State private var shortcutToken = UUID()
     @State private var zoomRequest: ZoomOverlayRequest?
+    @State private var relatedNotes: [SemanticHit] = []
+    @State private var relatedNotesTask: Task<Void, Never>?
     // Cached section partitioning + highlight assignments. Rebuilt only when
     // the document body or its highlight set changes, so scroll-triggered
     // re-renders no longer pay O(sections * highlights * text-length) for
@@ -272,6 +275,12 @@ private struct ReaderDocumentView: View {
                         if !backlinks.isEmpty {
                             LinkedMentionsSection(backlinks: backlinks) { backlink in
                                 library.select(url: backlink.sourceURL)
+                            }
+                        }
+
+                        if !relatedNotes.isEmpty {
+                            RelatedNotesSection(hits: relatedNotes) { url in
+                                library.select(url: url)
                             }
                         }
 
@@ -387,6 +396,7 @@ private struct ReaderDocumentView: View {
         .environment(\.textInteractionCursorOverride, isHighlightMode ? NSCursor.cribbleHighlightLine : nil)
         .onAppear {
             readingTrail.recordVisit(url: document.url, title: document.title)
+            scheduleRelatedNotesRefresh()
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,
                 isHighlightMode: $isHighlightMode,
@@ -427,7 +437,18 @@ private struct ReaderDocumentView: View {
             )
         }
         .onDisappear {
+            relatedNotesTask?.cancel()
+            relatedNotesTask = nil
             ReaderShortcutHub.shared.deactivate(token: shortcutToken)
+        }
+        .onChange(of: document.url) { _, _ in
+            scheduleRelatedNotesRefresh()
+        }
+        .onChange(of: semanticIndex.indexedCount) { _, _ in
+            scheduleRelatedNotesRefresh()
+        }
+        .onChange(of: semanticIndex.availability) { _, _ in
+            scheduleRelatedNotesRefresh()
         }
         .animation(.snappy(duration: 0.2), value: settings.showOutline)
         .animation(.snappy(duration: 0.2), value: settings.isFocusMode)
@@ -463,6 +484,24 @@ private struct ReaderDocumentView: View {
         }
         .animation(.easeOut(duration: 0.18), value: zoomRequest)
         .navigationTitle(document.title)
+    }
+
+    private func scheduleRelatedNotesRefresh() {
+        relatedNotesTask?.cancel()
+        let url = document.url
+
+        guard semanticIndex.isReady else {
+            relatedNotes = []
+            return
+        }
+
+        relatedNotesTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+            let hits = await library.relatedNotesOffMain(for: url, semanticIndex: semanticIndex, limit: 5)
+            guard !Task.isCancelled else { return }
+            relatedNotes = hits
+        }
     }
 
     private func restoreBookmarkIfNeeded() {

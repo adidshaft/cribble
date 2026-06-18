@@ -243,6 +243,26 @@ final class SemanticSearchIndex: ObservableObject {
         )
     }
 
+    func relatedNotesOffMain(to url: URL, limit: Int) async -> [SemanticHit] {
+        let sourcePath = url.standardizedFileURL.path
+        guard limit > 0,
+              availability == .available,
+              let source = entries[sourcePath],
+              !entries.isEmpty
+        else { return [] }
+
+        let sourceVector = source.vector
+        let snapshot = entries
+        return await Task.detached(priority: .utility) {
+            Self.relatedHits(
+                sourcePath: sourcePath,
+                sourceVector: sourceVector,
+                entries: snapshot,
+                limit: limit
+            )
+        }.value
+    }
+
     /// Returns the top semantically-related notes for a free-text query — used by
     /// the chat assistant to pull relevant notes into context automatically.
     /// Excludes the given URLs (e.g. the note already in context).
@@ -265,7 +285,7 @@ final class SemanticSearchIndex: ObservableObject {
         .map { $0 }
     }
 
-    private static func relatedHits(
+    nonisolated private static func relatedHits(
         sourcePath: String,
         sourceVector: [Float],
         entries: [String: Entry],
@@ -370,7 +390,7 @@ final class SemanticSearchIndex: ObservableObject {
         return output
     }
 
-    static func cosine(_ lhs: [Float], _ rhs: [Float]) -> Float {
+    nonisolated static func cosine(_ lhs: [Float], _ rhs: [Float]) -> Float {
         // Vectors are stored normalized, so cosine similarity is the dot product.
         guard lhs.count == rhs.count else { return 0 }
         var dot: Float = 0

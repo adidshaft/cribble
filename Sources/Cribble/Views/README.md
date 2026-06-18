@@ -16,6 +16,7 @@ sub-folders.
 | `CommandPaletteView.swift` | Native fuzzy app-command palette overlay. |
 | `CalloutView.swift` | Native rendering for Obsidian-style callout/admonition blocks. |
 | `LinkedMentionsSection.swift` | Collapsible backlinks/linked-mentions reader section. |
+| `RelatedNotesSection.swift` | Collapsible reader section for local semantic related-note matches. |
 | `OutlineView.swift` | Document outline / heading navigation. |
 | `ReadingTrailPanel.swift` | Reading trail and resume strip. |
 | `TaskListView.swift` | Interactive task-list rendering. |

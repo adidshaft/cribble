@@ -12,6 +12,8 @@ All notable changes to Cribble are documented here. The format follows
   source-range-aware wiki-link parsing and code-aware link exclusion.
 - Surfaced Linked Mentions in the reader as a calm collapsible section with
   source-note navigation and hover previews.
+- Improved Linked Mentions snippets with nearest-heading context and
+  VoiceOver-friendly row labels.
 
 ## 1.4.0 — Night Shift
 

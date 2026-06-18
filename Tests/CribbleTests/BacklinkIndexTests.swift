@@ -37,7 +37,7 @@ final class BacklinkIndexTests: XCTestCase {
 
         let backlinks = index.backlinks(for: target) { sourceURL, range in
             let markdown = (try? DocumentLoader.readText(at: sourceURL)) ?? ""
-            return BacklinkIndex.snippet(in: markdown, around: range)
+            return BacklinkIndex.context(in: markdown, around: range)
         }
 
         XCTAssertEqual(backlinks.map(\.sourceTitle), ["Alias Source", "Heading Source"])
@@ -45,6 +45,7 @@ final class BacklinkIndexTests: XCTestCase {
         XCTAssertEqual(backlinks[0].occurrences.map(\.linkLabel), ["project", "target-keyword"])
         XCTAssertEqual(backlinks[1].occurrences.map(\.linkLabel), ["the roadmap"])
         XCTAssertTrue(backlinks[0].occurrences[0].snippet.contains("See project and target-keyword in context."))
+        XCTAssertEqual(backlinks[1].occurrences[0].headingContext, "Heading Source")
     }
 
     func testLinksInsideCodeAndSelfLinksAreIgnored() throws {
@@ -82,6 +83,21 @@ final class BacklinkIndexTests: XCTestCase {
         XCTAssertFalse(snippet.contains("[["))
         XCTAssertTrue(snippet.hasSuffix("…"))
         XCTAssertLessThanOrEqual(snippet.count, 40)
+    }
+
+    func testHeadingContextUsesNearestPreviousHeading() throws {
+        let markdown = """
+        # Top
+        Intro
+        ## Specific Section
+        Mentions [[Target]] here.
+        """
+        let link = try XCTUnwrap(WikiLinkParser.parse(markdown).first)
+
+        XCTAssertEqual(
+            BacklinkIndex.headingContext(in: markdown, before: try XCTUnwrap(link.sourceRange)),
+            "Specific Section"
+        )
     }
 
     func testStoreExposesBacklinksAfterRefresh() async throws {

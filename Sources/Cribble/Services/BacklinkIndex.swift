@@ -1,7 +1,12 @@
 import Foundation
 
 struct BacklinkIndex: Sendable {
-    typealias SnippetProvider = @Sendable (URL, NSRange) -> String?
+    struct OccurrenceContext: Sendable {
+        let snippet: String
+        let headingContext: String?
+    }
+
+    typealias ContextProvider = @Sendable (URL, NSRange) -> OccurrenceContext?
 
     private struct IndexedOccurrence: Sendable {
         let link: WikiLink
@@ -49,7 +54,7 @@ struct BacklinkIndex: Sendable {
         }
     }
 
-    func backlinks(for targetURL: URL, snippetProvider: SnippetProvider? = nil) -> [Backlink] {
+    func backlinks(for targetURL: URL, contextProvider: ContextProvider? = nil) -> [Backlink] {
         let targetPath = targetURL.standardizedFileURL.path
         guard let entries = backlinksByTargetPath[targetPath] else { return [] }
 
@@ -58,15 +63,23 @@ struct BacklinkIndex: Sendable {
                 sourceURL: entry.sourceURL,
                 sourceTitle: entry.sourceTitle,
                 occurrences: entry.occurrences.enumerated().map { index, occurrence in
-                    BacklinkOccurrence(
+                    let context = contextProvider?(entry.sourceURL, occurrence.sourceRange)
+                    return BacklinkOccurrence(
                         id: "\(entry.sourceURL.standardizedFileURL.path)#\(occurrence.sourceRange.location)-\(index)",
                         linkLabel: occurrence.link.label,
-                        snippet: snippetProvider?(entry.sourceURL, occurrence.sourceRange) ?? "",
-                        headingContext: nil
+                        snippet: context?.snippet ?? "",
+                        headingContext: context?.headingContext
                     )
                 }
             )
         }
+    }
+
+    static func context(in markdown: String, around sourceRange: NSRange, maxSnippetLength: Int = 160) -> OccurrenceContext {
+        OccurrenceContext(
+            snippet: snippet(in: markdown, around: sourceRange, maxLength: maxSnippetLength),
+            headingContext: headingContext(in: markdown, before: sourceRange)
+        )
     }
 
     static func snippet(in markdown: String, around sourceRange: NSRange, maxLength: Int = 160) -> String {
@@ -81,6 +94,33 @@ struct BacklinkIndex: Sendable {
         guard text.count > maxLength else { return text }
         let end = text.index(text.startIndex, offsetBy: max(0, maxLength - 1))
         return String(text[..<end]).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+    }
+
+    static func headingContext(in markdown: String, before sourceRange: NSRange) -> String? {
+        guard let mentionRange = Range(sourceRange, in: markdown) else { return nil }
+        var best: String?
+        var lineStart = markdown.startIndex
+
+        while lineStart < mentionRange.lowerBound {
+            let lineEnd = markdown[lineStart...].firstIndex(of: "\n") ?? markdown.endIndex
+            defer {
+                lineStart = lineEnd < markdown.endIndex ? markdown.index(after: lineEnd) : markdown.endIndex
+            }
+
+            let line = String(markdown[lineStart..<lineEnd])
+            guard line.hasPrefix("#") else { continue }
+            let markerCount = line.prefix { $0 == "#" }.count
+            guard (1...6).contains(markerCount),
+                  line.dropFirst(markerCount).first == " " else {
+                continue
+            }
+            let title = line.dropFirst(markerCount).trimmingCharacters(in: .whitespaces)
+            if !title.isEmpty {
+                best = title
+            }
+        }
+
+        return best
     }
 
     private static func replaceWikiLinksWithLabels(in text: String) -> String {

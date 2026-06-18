@@ -33,11 +33,10 @@ struct LinkedMentionsSection: View {
                         .foregroundStyle(.secondary)
 
                     Text("Linked Mentions")
-                        .font(.system(size: 14))
-                        .fontWeight(.semibold)
+                        .font(.subheadline.weight(.semibold))
 
                     Text("\(mentionCount)")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.caption2.monospaced())
                         .fontWeight(.bold)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
@@ -67,7 +66,8 @@ struct LinkedMentionsSection: View {
                         .pointingHandOnHover()
                         .notePreviewPopover(url: backlink.sourceURL)
                         .help("Open \(backlink.sourceTitle)")
-                        .accessibilityLabel("\(backlink.sourceTitle), \(backlink.occurrences.count) linked mentions")
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(accessibilityLabel(for: backlink))
                     }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -75,6 +75,13 @@ struct LinkedMentionsSection: View {
         }
         .padding(12)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func accessibilityLabel(for backlink: Backlink) -> String {
+        let count = backlink.occurrences.count
+        let noun = count == 1 ? "linked mention" : "linked mentions"
+        let heading = backlink.occurrences.compactMap(\.headingContext).first.map { ", under \($0)" } ?? ""
+        return "\(backlink.sourceTitle), \(count) \(noun)\(heading)"
     }
 }
 
@@ -90,21 +97,28 @@ private struct LinkedMentionRow: View {
                     .frame(width: 18)
 
                 Text(backlink.sourceTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Spacer(minLength: 8)
 
                 Text("\(backlink.occurrences.count)")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.caption2.monospaced())
                     .fontWeight(.bold)
                     .foregroundStyle(.secondary)
             }
 
             ForEach(backlink.occurrences.prefix(2)) { occurrence in
+                if let heading = occurrence.headingContext {
+                    Label(heading, systemImage: "number")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
                 Text(occurrence.snippet.isEmpty ? occurrence.linkLabel : occurrence.snippet)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)

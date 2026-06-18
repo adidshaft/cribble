@@ -345,7 +345,7 @@ the per-directory READMEs as each track lands.
 |-------|-------|--------|--------|-------|-------|
 | A Linked Mentions | A1 index+store | ☑ | `Add backlink index foundation for linked mentions` | `swift test` | parser ranges verified; code links ignored |
 | A | A2 panel | ☑ | `Show linked mentions in the reader` | `swift test` | hidden when empty; row opens source |
-| A | A3 snippets/preview/a11y | ☐ | | | |
+| A | A3 snippets/preview/a11y | ☑ | `Polish linked mention context and accessibility` | `swift test` | heading context; previews; VO labels |
 | A | A4 unlinked (opt) | ☐ | | | confirm w/ maintainer |
 | B Transclusion | B1 parse | ☐ | | | |
 | B | B2 resolve+guards | ☐ | | | |

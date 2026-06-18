@@ -9,7 +9,7 @@ extension MarkdownLibraryStore {
         guard let backlinkIndex = index else { return [] }
         return backlinkIndex.backlinks(for: url) { sourceURL, range in
             guard let markdown = try? DocumentLoader.readText(at: sourceURL) else { return nil }
-            return BacklinkIndex.snippet(in: markdown, around: range)
+            return BacklinkIndex.context(in: markdown, around: range)
         }
     }
 }

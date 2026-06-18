@@ -23,7 +23,7 @@ unit-tested in [`Tests/CribbleTests`](../../../Tests/CribbleTests).
 
 | File | Responsibility |
 | --- | --- |
-| `SemanticSearchIndex.swift` | Local embedding-based semantic search. |
+| `SemanticSearchIndex.swift` | Local embedding-based semantic search and related-note ranking. |
 | `AIService.swift` | Provider-agnostic AI link suggestions (preview-first). |
 | `UnifiedDiff.swift` | Parse + safely apply unified diffs from AI output. |
 | [`LocalLLM/`](LocalLLM) | On-device (MLX) and CLI chat engines + model catalog. |

@@ -224,6 +224,25 @@ final class SemanticSearchIndex: ObservableObject {
         results = []
     }
 
+    /// Returns top semantically-related indexed notes for an existing note URL.
+    /// Reuses the stored vector for the current note, excludes the note itself
+    /// and near-duplicates, and bounds the result count for reader-side use.
+    func relatedNotes(to url: URL, limit: Int) -> [SemanticHit] {
+        let sourcePath = url.standardizedFileURL.path
+        guard limit > 0,
+              availability == .available,
+              let source = entries[sourcePath],
+              !entries.isEmpty
+        else { return [] }
+
+        return Self.relatedHits(
+            sourcePath: sourcePath,
+            sourceVector: source.vector,
+            entries: entries,
+            limit: limit
+        )
+    }
+
     /// Returns the top semantically-related notes for a free-text query — used by
     /// the chat assistant to pull relevant notes into context automatically.
     /// Excludes the given URLs (e.g. the note already in context).
@@ -243,6 +262,26 @@ final class SemanticSearchIndex: ObservableObject {
         }
         .sorted { $0.score > $1.score }
         .prefix(limit)
+        .map { $0 }
+    }
+
+    private static func relatedHits(
+        sourcePath: String,
+        sourceVector: [Float],
+        entries: [String: Entry],
+        limit: Int
+    ) -> [SemanticHit] {
+        entries.compactMap { path, entry -> SemanticHit? in
+            guard path != sourcePath else { return nil }
+            let score = Self.cosine(sourceVector, entry.vector)
+            guard score > 0.16, score < 0.985 else { return nil }
+            return SemanticHit(url: URL(fileURLWithPath: path), title: entry.title, score: Double(score))
+        }
+        .sorted {
+            if $0.score != $1.score { return $0.score > $1.score }
+            return $0.url.path.localizedCaseInsensitiveCompare($1.url.path) == .orderedAscending
+        }
+        .prefix(max(0, limit))
         .map { $0 }
     }
 
@@ -290,6 +329,18 @@ final class SemanticSearchIndex: ObservableObject {
     }
 
     var isReady: Bool { availability == .available && !entries.isEmpty }
+
+    func replaceIndexForTesting(_ items: [(url: URL, title: String, vector: [Float])]) {
+        entries = Dictionary(uniqueKeysWithValues: items.map { item in
+            (
+                item.url.standardizedFileURL.path,
+                Entry(hash: 0, title: item.title, vector: item.vector)
+            )
+        })
+        availability = .available
+        indexedCount = entries.count
+        indexedDocumentSignature = nil
+    }
 
     // MARK: - Text & math helpers
 

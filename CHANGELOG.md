@@ -42,6 +42,8 @@ All notable changes to Cribble are documented here. The format follows
   tag filter without writing notes.
 - Added a compact sidebar Tags pane with counts, selected-tag filtering, and a
   clear filter control.
+- Added a stored-vector related-notes query that ranks indexed notes by local
+  cosine similarity while excluding the current note and near-duplicates.
 
 ## 1.4.0 — Night Shift
 

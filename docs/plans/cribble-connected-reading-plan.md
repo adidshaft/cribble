@@ -361,7 +361,7 @@ the per-directory READMEs as each track lands.
 | E Tags | E1 index | ☑ | `Add read-only tag index` | `swift test` | frontmatter+inline; nested; code/headings ignored |
 | E | E2 inline chips | ☑ | `Render clickable tag chips` | `swift test` | inline chip links; local tag filter; code skipped |
 | E | E3 pane | ☑ | `Add sidebar tag pane` | `swift test` | sidebar pane; counts; filtered results; a11y labels |
-| F Related | F1 query | ☐ | | | |
+| F Related | F1 query | ☑ | `Add related notes semantic query` | `swift test` | stored vectors; excludes self/near-duplicates; K cap |
 | F | F2 UI | ☐ | | | |
 | F | F3 why (opt) | ☐ | | | |
 | F | F4 a11y/perf | ☐ | | | |

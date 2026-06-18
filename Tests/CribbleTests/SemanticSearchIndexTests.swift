@@ -87,8 +87,62 @@ final class SemanticSearchIndexTests: XCTestCase {
         XCTAssertEqual(SemanticSearchIndex.cosine([1, 0], [1, 0, 0]), 0)
     }
 
+    func testRelatedNotesForURLRanksByCosineAndExcludesSelf() {
+        let source = URL(fileURLWithPath: "/tmp/source.md")
+        let near = URL(fileURLWithPath: "/tmp/near.md")
+        let far = URL(fileURLWithPath: "/tmp/far.md")
+        let index = SemanticSearchIndex(fileURL: temporaryIndexURL())
+        index.replaceIndexForTesting([
+            (source, "Source", normalize([1, 0, 0])),
+            (near, "Near", normalize([0.8, 0.2, 0])),
+            (far, "Far", normalize([0.2, 0.8, 0]))
+        ])
+
+        let hits = index.relatedNotes(to: source, limit: 5)
+
+        XCTAssertEqual(hits.map(\.url), [near.standardizedFileURL, far.standardizedFileURL])
+        XCTAssertGreaterThan(hits[0].score, hits[1].score)
+    }
+
+    func testRelatedNotesForURLRespectsLimitAndStableTieOrdering() {
+        let source = URL(fileURLWithPath: "/tmp/source.md")
+        let a = URL(fileURLWithPath: "/tmp/a.md")
+        let b = URL(fileURLWithPath: "/tmp/b.md")
+        let index = SemanticSearchIndex(fileURL: temporaryIndexURL())
+        index.replaceIndexForTesting([
+            (source, "Source", normalize([1, 0])),
+            (b, "B", normalize([0.6, 0.8])),
+            (a, "A", normalize([0.6, 0.8]))
+        ])
+
+        XCTAssertEqual(index.relatedNotes(to: source, limit: 1).map(\.url), [a.standardizedFileURL])
+        XCTAssertEqual(index.relatedNotes(to: source, limit: 2).map(\.url), [a.standardizedFileURL, b.standardizedFileURL])
+    }
+
+    func testRelatedNotesForURLSkipsNearDuplicatesAndMissingIndexes() {
+        let source = URL(fileURLWithPath: "/tmp/source.md")
+        let duplicate = URL(fileURLWithPath: "/tmp/duplicate.md")
+        let index = SemanticSearchIndex(fileURL: temporaryIndexURL())
+
+        XCTAssertEqual(index.relatedNotes(to: source, limit: 5), [])
+
+        index.replaceIndexForTesting([
+            (source, "Source", normalize([1, 0])),
+            (duplicate, "Duplicate", normalize([1, 0]))
+        ])
+
+        XCTAssertEqual(index.relatedNotes(to: source, limit: 5), [])
+        XCTAssertEqual(index.relatedNotes(to: source, limit: 0), [])
+    }
+
     private func normalize(_ vector: [Float]) -> [Float] {
         let magnitude = vector.reduce(0) { $0 + $1 * $1 }.squareRoot()
         return magnitude > 0 ? vector.map { $0 / magnitude } : vector
+    }
+
+    private func temporaryIndexURL() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("json")
     }
 }

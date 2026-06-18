@@ -54,6 +54,8 @@ All notable changes to Cribble are documented here. The format follows
   wiki links and backlinks.
 - Rendered the current note's local graph as a bounded native Canvas section in
   the reader.
+- Made local graph nodes native controls with click-to-navigate behavior,
+  keyboard focus, and VoiceOver labels.
 
 ## 1.4.0 — Night Shift
 

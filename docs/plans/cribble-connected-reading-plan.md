@@ -367,7 +367,7 @@ the per-directory READMEs as each track lands.
 | F | F4 a11y/perf | ☑ | `Polish related notes accessibility and caching` | `swift test` | bounded per-note cache; cache invalidates with index; VO hints |
 | G Local Graph | G1 neighborhood | ☑ | `Add local note graph neighborhoods` | `swift test` | forward+reverse links; hop/node caps; deterministic |
 | G | G2 render | ☑ | `Render local note graph in the reader` | `swift test` | native Canvas; deterministic radial layout; bounded graph |
-| G | G3 interact/a11y | ☐ | | | |
+| G | G3 interact/a11y | ☑ | `Make local graph nodes navigable` | `swift test` | node buttons; current-note label; Reduce Motion static |
 
 **Open questions for the maintainer**
 1. Block-reference (`^blockid`) support in Track B now, or note-/heading-embeds first?

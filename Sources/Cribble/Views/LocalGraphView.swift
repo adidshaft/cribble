@@ -32,8 +32,21 @@ enum LocalGraphLayout {
     }
 }
 
+enum LocalGraphAccessibility {
+    static func label(for node: LocalNoteGraph.Node) -> String {
+        if node.isCurrent {
+            return "\(node.title), current note"
+        }
+        let hopLabel = node.distance == 1 ? "1 hop away" : "\(node.distance) hops away"
+        return "\(node.title), \(hopLabel)"
+    }
+}
+
 struct LocalGraphView: View {
     let graph: LocalNoteGraph
+    let onSelect: (URL) -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -62,13 +75,26 @@ struct LocalGraphView: View {
 
             GeometryReader { proxy in
                 let positions = LocalGraphLayout.positions(for: graph, in: proxy.size)
-                Canvas { context, _ in
-                    drawEdges(context: context, positions: positions)
-                    drawNodes(context: context, positions: positions)
+                ZStack {
+                    Canvas { context, _ in
+                        drawEdges(context: context, positions: positions)
+                    }
+                    .accessibilityHidden(true)
+
+                    ForEach(graph.nodes) { node in
+                        if let point = positions[node.url] {
+                            LocalGraphNodeButton(node: node) {
+                                guard !node.isCurrent else { return }
+                                onSelect(node.url)
+                            }
+                            .position(point)
+                        }
+                    }
                 }
             }
             .frame(height: 220)
-            .accessibilityHidden(true)
+            .accessibilityElement(children: .contain)
+            .accessibilityHint(reduceMotion ? "Static graph layout" : "Graph layout is static and does not animate")
         }
         .padding(12)
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
@@ -83,22 +109,34 @@ struct LocalGraphView: View {
             context.stroke(path, with: .color(.secondary.opacity(0.26)), lineWidth: 1)
         }
     }
+}
 
-    private func drawNodes(context: GraphicsContext, positions: [URL: CGPoint]) {
-        for node in graph.nodes {
-            guard let point = positions[node.url] else { continue }
-            let radius: CGFloat = node.isCurrent ? 13 : 9
-            let rect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
-            context.fill(
-                Path(ellipseIn: rect),
-                with: .color(node.isCurrent ? .accentColor.opacity(0.82) : .secondary.opacity(0.42))
-            )
-            context.stroke(Path(ellipseIn: rect), with: .color(.primary.opacity(0.14)), lineWidth: 1)
+private struct LocalGraphNodeButton: View {
+    let node: LocalNoteGraph.Node
+    let onSelect: () -> Void
 
-            let label = Text(node.title)
-                .font(.caption2.weight(node.isCurrent ? .semibold : .regular))
-                .foregroundStyle(node.isCurrent ? .primary : .secondary)
-            context.draw(label, at: CGPoint(x: point.x, y: point.y + radius + 11), anchor: .center)
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 4) {
+                Circle()
+                    .fill(node.isCurrent ? Color.accentColor.opacity(0.82) : Color.secondary.opacity(0.42))
+                    .overlay {
+                        Circle().strokeBorder(.primary.opacity(0.14), lineWidth: 1)
+                    }
+                    .frame(width: node.isCurrent ? 26 : 20, height: node.isCurrent ? 26 : 20)
+
+                Text(node.title)
+                    .font(.caption2.weight(node.isCurrent ? .semibold : .regular))
+                    .foregroundStyle(node.isCurrent ? .primary : .secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(width: 92)
+            }
         }
+        .buttonStyle(.plain)
+        .disabled(node.isCurrent)
+        .accessibilityLabel(LocalGraphAccessibility.label(for: node))
+        .accessibilityHint(node.isCurrent ? "This is the open note" : "Opens this note")
+        .help(node.isCurrent ? "Current note" : "Open \(node.title)")
     }
 }

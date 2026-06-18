@@ -287,7 +287,9 @@ private struct ReaderDocumentView: View {
                         }
 
                         if let localGraph, localGraph.nodes.count > 1 {
-                            LocalGraphView(graph: localGraph)
+                            LocalGraphView(graph: localGraph) { url in
+                                library.select(url: url)
+                            }
                         }
 
                         if document.isEssentiallyEmptyReadme {

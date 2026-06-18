@@ -42,6 +42,9 @@ struct ReaderView: View {
                     isRunningAI: library.isRunningAI,
                     onSelectLink: { library.select(url: $0.url) },
                     onOpenURL: { library.handleOpenURL($0) },
+                    onResolveEmbed: { reference, sourceURL, depth, visited in
+                        library.resolveEmbed(reference, sourceURL: sourceURL, depth: depth, visited: visited)
+                    },
                     onFillReadme: { provider in
                         library.runAILinking(provider: provider, mode: .updateReadme)
                     },
@@ -210,6 +213,7 @@ private struct ReaderDocumentView: View {
     let isRunningAI: Bool
     let onSelectLink: (LinkedFileSummary) -> Void
     let onOpenURL: (URL) -> OpenURLAction.Result
+    let onResolveEmbed: (EmbedReference, URL, Int, Set<URL>) -> ResolvedEmbed
     let onFillReadme: (AIProvider) -> Void
     let shortcutActions: ReaderView.ShortcutActions?
 
@@ -299,6 +303,11 @@ private struct ReaderDocumentView: View {
                                         rendererResolver: extensionRegistry.rendererResolver,
                                         isHighlightMode: isHighlightMode,
                                         highlightsByBlock: sectionPlan.highlightsByBlock,
+                                        sourceURL: document.url,
+                                        embedDepth: 0,
+                                        embedVisited: [],
+                                        onOpenURL: onOpenURL,
+                                        onResolveEmbed: onResolveEmbed,
                                         onUpdateHighlightNote: { highlightID, note in
                                             updateHighlightNote(id: highlightID, note: note)
                                         },
@@ -1156,6 +1165,11 @@ private struct ReaderMarkdownSection: View {
     let rendererResolver: ExtensionRendererResolver
     let isHighlightMode: Bool
     let highlightsByBlock: [BlockKey: [ResolvedHighlight]]
+    let sourceURL: URL
+    let embedDepth: Int
+    let embedVisited: Set<URL>
+    let onOpenURL: (URL) -> OpenURLAction.Result
+    let onResolveEmbed: (EmbedReference, URL, Int, Set<URL>) -> ResolvedEmbed
     let onUpdateHighlightNote: (UUID, String) -> Void
     // Number of task checkboxes in all sections before this one — added to a
     // block's in-section base to get each checkbox's document-global ordinal.
@@ -1244,11 +1258,17 @@ private struct ReaderMarkdownSection: View {
                         monospaceFontName: monospaceFontName
                     )
                 case .embed(_, let reference):
-                    StructuredText(markdown: reference.original)
-                        .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
-                        .textual.structuredTextStyle(.gitHub)
-                        .textual.lineSpacing(.fontScaled(0.3))
-                        .cribbleTextualSelection(false)
+                    EmbeddedNoteView(
+                        reference: reference,
+                        sourceURL: sourceURL,
+                        depth: embedDepth,
+                        visited: embedVisited,
+                        baseURL: baseURL,
+                        fontScale: fontScale,
+                        rendererResolver: rendererResolver,
+                        onOpenURL: onOpenURL,
+                        onResolveEmbed: onResolveEmbed
+                    )
                 }
             }
         }
@@ -1300,6 +1320,111 @@ private struct ReaderMarkdownSection: View {
             .sorted()
             .joined(separator: "|")
         return "\(section.id)#\(ids)"
+    }
+}
+
+private struct EmbeddedNoteView: View {
+    let reference: EmbedReference
+    let sourceURL: URL
+    let depth: Int
+    let visited: Set<URL>
+    let baseURL: URL
+    let fontScale: Double
+    let rendererResolver: ExtensionRendererResolver
+    let onOpenURL: (URL) -> OpenURLAction.Result
+    let onResolveEmbed: (EmbedReference, URL, Int, Set<URL>) -> ResolvedEmbed
+
+    @Environment(\.readerPrimaryFontName) private var primaryFontName
+    @Environment(\.readerMonospaceFontName) private var monospaceFontName
+
+    private var resolved: ResolvedEmbed {
+        onResolveEmbed(reference, sourceURL, depth, visited)
+    }
+
+    var body: some View {
+        let resolved = resolved
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                if let targetURL = resolved.targetURL {
+                    var components = URLComponents()
+                    components.scheme = "cribble"
+                    components.host = "open"
+                    components.queryItems = [URLQueryItem(name: "path", value: targetURL.path)]
+                    if let url = components.url {
+                        _ = onOpenURL(url)
+                    }
+                }
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: iconName(for: resolved.state))
+                        .font(.caption.weight(.semibold))
+                    Text(resolved.title)
+                        .font(ReaderTypography.primary(primaryFontName, size: 13 * fontScale))
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(resolved.targetURL == nil ? .secondary : .primary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(resolved.targetURL == nil)
+            .help(resolved.targetURL == nil ? "Embedded note could not be opened" : "Open embedded note")
+
+            if resolved.state == .resolved {
+                let sections = ReadingSection.sections(from: resolved.markdown)
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(sections) { section in
+                        ReaderMarkdownSection(
+                            section: section,
+                            baseURL: resolved.targetURL?.deletingLastPathComponent() ?? baseURL,
+                            fontScale: fontScale,
+                            rendererResolver: rendererResolver,
+                            isHighlightMode: false,
+                            highlightsByBlock: [:],
+                            sourceURL: resolved.targetURL ?? sourceURL,
+                            embedDepth: depth + 1,
+                            embedVisited: visited.union([sourceURL.standardizedFileURL]),
+                            onOpenURL: onOpenURL,
+                            onResolveEmbed: onResolveEmbed,
+                            onUpdateHighlightNote: { _, _ in },
+                            taskOrdinalBase: 0,
+                            onToggleTask: { _, _ in },
+                            onAddTask: { _, _ in }
+                        )
+                    }
+                }
+            } else {
+                Text(resolved.markdown)
+                    .font(ReaderTypography.primary(primaryFontName, size: 14 * fontScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(.tint.opacity(0.55))
+                .frame(width: 2)
+                .padding(.vertical, 8)
+        }
+        .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Embedded note: \(resolved.title)")
+    }
+
+    private func iconName(for state: ResolvedEmbed.State) -> String {
+        switch state {
+        case .resolved:
+            return "rectangle.on.rectangle"
+        case .unresolved:
+            return "questionmark.square"
+        case .cyclic:
+            return "arrow.triangle.2.circlepath"
+        case .depthLimited:
+            return "arrow.down.right.and.arrow.up.left"
+        }
     }
 }
 

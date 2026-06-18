@@ -1332,6 +1332,57 @@ final class MarkdownLibraryStore: ObservableObject {
             ?? url.deletingPathExtension().lastPathComponent
     }
 
+    func resolveEmbed(_ reference: EmbedReference, sourceURL: URL, depth: Int, visited: Set<URL>) -> ResolvedEmbed {
+        guard depth <= EmbedResolver.defaultMaxDepth else {
+            return ResolvedEmbed(
+                reference: reference,
+                state: .depthLimited,
+                targetURL: nil,
+                title: reference.label,
+                markdown: "Embed depth limit reached for ![[\(reference.label)]]."
+            )
+        }
+        guard let targetURL = linkIndex?.resolve(reference)?.standardizedFileURL else {
+            return ResolvedEmbed(
+                reference: reference,
+                state: .unresolved,
+                targetURL: nil,
+                title: reference.label,
+                markdown: "Cannot resolve \(reference.original)."
+            )
+        }
+
+        let visited = visited.union([sourceURL.standardizedFileURL])
+        guard !visited.contains(targetURL) else {
+            let title = title(for: targetURL)
+            return ResolvedEmbed(
+                reference: reference,
+                state: .cyclic,
+                targetURL: targetURL,
+                title: title,
+                markdown: "Cyclic embed: \(title)."
+            )
+        }
+
+        guard let document = try? loader.load(url: targetURL) else {
+            return ResolvedEmbed(
+                reference: reference,
+                state: .unresolved,
+                targetURL: targetURL,
+                title: title(for: targetURL),
+                markdown: "Cannot load \(reference.original)."
+            )
+        }
+
+        return ResolvedEmbed(
+            reference: reference,
+            state: .resolved,
+            targetURL: targetURL,
+            title: document.title,
+            markdown: EmbedResolver.markdownSlice(for: reference, in: document)
+        )
+    }
+
     /// Breadth-first shortest path between two notes over the (undirected)
     /// wiki-link graph. Returns the chain of URLs including both endpoints, or
     /// nil when no link path connects them.

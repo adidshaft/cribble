@@ -55,7 +55,7 @@ struct EmbedResolver: Sendable {
             state: .resolved,
             targetURL: targetURL,
             title: document.title,
-            markdown: markdownSlice(for: reference, in: document)
+            markdown: Self.markdownSlice(for: reference, in: document)
         )
     }
 
@@ -76,7 +76,7 @@ struct EmbedResolver: Sendable {
         return false
     }
 
-    private func markdownSlice(for reference: EmbedReference, in document: MarkdownDocument) -> String {
+    static func markdownSlice(for reference: EmbedReference, in document: MarkdownDocument) -> String {
         if let blockID = reference.blockID {
             return Self.blockSlice(blockID: blockID, in: document.rawMarkdown) ?? ""
         }

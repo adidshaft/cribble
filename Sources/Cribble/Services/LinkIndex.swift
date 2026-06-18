@@ -53,6 +53,16 @@ struct LinkIndex: Sendable {
         return ResolvedLink(link: link, targetURL: url, anchor: link.anchor.map(Slugger.slug))
     }
 
+    func resolve(_ reference: EmbedReference) -> URL? {
+        let link = WikiLink(
+            original: reference.original,
+            target: reference.target,
+            label: reference.label,
+            anchor: reference.heading
+        )
+        return resolve(link).targetURL
+    }
+
     static func normalize(_ value: String) -> String {
         let stripped = value
             .trimmingCharacters(in: .whitespacesAndNewlines)

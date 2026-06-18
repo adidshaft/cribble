@@ -24,6 +24,8 @@ All notable changes to Cribble are documented here. The format follows
   `![[note#heading]]`, and `![[note^block]]` embeds.
 - Added read-only embed resolution for whole-note, heading, and block slices
   with bounded cycle/depth guards.
+- Rendered resolved embeds as calm native inset cards with a source chip and
+  recursive rich Markdown body rendering.
 
 ## 1.4.0 — Night Shift
 

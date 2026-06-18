@@ -349,7 +349,7 @@ the per-directory READMEs as each track lands.
 | A | A4 unlinked (opt) | ☐ | | | confirm w/ maintainer |
 | B Transclusion | B1 parse | ☑ | `Parse Obsidian embed references` | `swift test` | VERIFY: `WikiLinkParser` + `RichMarkdownBlock` |
 | B | B2 resolve+guards | ☑ | `Resolve Obsidian embed slices` | `swift test` | heading/block slices; cycle/depth guards |
-| B | B3 render | ☐ | | | |
+| B | B3 render | ☑ | `Render embedded note cards` | `swift test` | native card; recursive rich render; source chip |
 | B | B4 perf/a11y | ☐ | | | |
 | C Callouts | C1 parse | ☑ | `Parse Obsidian callout blocks` | `swift test` | render hook verified in `RichMarkdownBlock` |
 | C | C2 view+style | ☑ | `Render native callout cards` | `swift test` | semantic styles; nested body render |

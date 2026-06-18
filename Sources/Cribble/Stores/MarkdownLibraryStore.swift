@@ -98,6 +98,9 @@ final class MarkdownLibraryStore: ObservableObject {
     private var renderCache: [URL: RenderCacheEntry] = [:]
     private var renderCacheOrder: [URL] = []
     private static let renderCacheLimit = 20
+    private var embedResolutionCache: [String: ResolvedEmbed] = [:]
+    private var embedResolutionCacheOrder: [String] = []
+    private static let embedResolutionCacheLimit = 80
 
     // Memoized result of `filteredNodes`. Invalidated whenever `nodes` or
     // `searchText` change (see their didSet).
@@ -633,6 +636,8 @@ final class MarkdownLibraryStore: ObservableObject {
                 // a single external edit without depending on fragile changed
                 // path delivery from FSEvents.
                 let prunedRenderCacheEntries = self.pruneRenderCache(using: result.documents)
+                self.embedResolutionCache.removeAll(keepingCapacity: true)
+                self.embedResolutionCacheOrder.removeAll(keepingCapacity: true)
                 self.filterHistory()
 
                 if let selectedURL = self.selectedURL {
@@ -1333,54 +1338,91 @@ final class MarkdownLibraryStore: ObservableObject {
     }
 
     func resolveEmbed(_ reference: EmbedReference, sourceURL: URL, depth: Int, visited: Set<URL>) -> ResolvedEmbed {
+        let cacheKey = embedResolutionCacheKey(reference: reference, sourceURL: sourceURL, depth: depth, visited: visited)
+        if let cached = embedResolutionCache[cacheKey] {
+            return cached
+        }
+
+        let resolved: ResolvedEmbed
         guard depth <= EmbedResolver.defaultMaxDepth else {
-            return ResolvedEmbed(
+            resolved = ResolvedEmbed(
                 reference: reference,
                 state: .depthLimited,
                 targetURL: nil,
                 title: reference.label,
                 markdown: "Embed depth limit reached for ![[\(reference.label)]]."
             )
+            rememberEmbedResolution(resolved, for: cacheKey)
+            return resolved
         }
         guard let targetURL = linkIndex?.resolve(reference)?.standardizedFileURL else {
-            return ResolvedEmbed(
+            resolved = ResolvedEmbed(
                 reference: reference,
                 state: .unresolved,
                 targetURL: nil,
                 title: reference.label,
                 markdown: "Cannot resolve \(reference.original)."
             )
+            rememberEmbedResolution(resolved, for: cacheKey)
+            return resolved
         }
 
         let visited = visited.union([sourceURL.standardizedFileURL])
         guard !visited.contains(targetURL) else {
             let title = title(for: targetURL)
-            return ResolvedEmbed(
+            resolved = ResolvedEmbed(
                 reference: reference,
                 state: .cyclic,
                 targetURL: targetURL,
                 title: title,
                 markdown: "Cyclic embed: \(title)."
             )
+            rememberEmbedResolution(resolved, for: cacheKey)
+            return resolved
         }
 
         guard let document = try? loader.load(url: targetURL) else {
-            return ResolvedEmbed(
+            resolved = ResolvedEmbed(
                 reference: reference,
                 state: .unresolved,
                 targetURL: targetURL,
                 title: title(for: targetURL),
                 markdown: "Cannot load \(reference.original)."
             )
+            rememberEmbedResolution(resolved, for: cacheKey)
+            return resolved
         }
 
-        return ResolvedEmbed(
+        resolved = ResolvedEmbed(
             reference: reference,
             state: .resolved,
             targetURL: targetURL,
             title: document.title,
             markdown: EmbedResolver.markdownSlice(for: reference, in: document)
         )
+        rememberEmbedResolution(resolved, for: cacheKey)
+        return resolved
+    }
+
+    private func embedResolutionCacheKey(reference: EmbedReference, sourceURL: URL, depth: Int, visited: Set<URL>) -> String {
+        let visitedKey = visited.map(\.standardizedFileURL.path).sorted().joined(separator: "|")
+        return [
+            sourceURL.standardizedFileURL.path,
+            reference.original,
+            String(depth),
+            visitedKey
+        ].joined(separator: "\u{1f}")
+    }
+
+    private func rememberEmbedResolution(_ resolved: ResolvedEmbed, for key: String) {
+        if embedResolutionCache[key] == nil {
+            embedResolutionCacheOrder.append(key)
+        }
+        embedResolutionCache[key] = resolved
+        while embedResolutionCacheOrder.count > Self.embedResolutionCacheLimit {
+            let evicted = embedResolutionCacheOrder.removeFirst()
+            embedResolutionCache.removeValue(forKey: evicted)
+        }
     }
 
     /// Breadth-first shortest path between two notes over the (undirected)

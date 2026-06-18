@@ -26,6 +26,8 @@ All notable changes to Cribble are documented here. The format follows
   with bounded cycle/depth guards.
 - Rendered resolved embeds as calm native inset cards with a source chip and
   recursive rich Markdown body rendering.
+- Added bounded embed-resolution caching and clearer accessibility labels for
+  resolved, unresolved, cyclic, and depth-limited embed states.
 
 ## 1.4.0 — Night Shift
 

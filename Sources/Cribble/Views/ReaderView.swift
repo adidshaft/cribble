@@ -1411,7 +1411,7 @@ private struct EmbeddedNoteView: View {
         }
         .cribbleMaterialSurface(in: RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Embedded note: \(resolved.title)")
+        .accessibilityLabel(accessibilityLabel(for: resolved))
     }
 
     private func iconName(for state: ResolvedEmbed.State) -> String {
@@ -1424,6 +1424,19 @@ private struct EmbeddedNoteView: View {
             return "arrow.triangle.2.circlepath"
         case .depthLimited:
             return "arrow.down.right.and.arrow.up.left"
+        }
+    }
+
+    private func accessibilityLabel(for resolved: ResolvedEmbed) -> String {
+        switch resolved.state {
+        case .resolved:
+            return "Embedded note: \(resolved.title)"
+        case .unresolved:
+            return "Unresolved embedded note: \(resolved.title)"
+        case .cyclic:
+            return "Cyclic embedded note: \(resolved.title)"
+        case .depthLimited:
+            return "Embedded note depth limit reached: \(resolved.title)"
         }
     }
 }

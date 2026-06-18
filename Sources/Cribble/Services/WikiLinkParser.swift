@@ -4,19 +4,30 @@ enum WikiLinkParser {
     static func parse(_ markdown: String) -> [WikiLink] {
         guard let regex = Self.regex else { return [] }
         let nsRange = NSRange(markdown.startIndex..<markdown.endIndex, in: markdown)
+        let codeRanges = Self.codeRanges(in: markdown)
         return regex.matches(in: markdown, range: nsRange).compactMap { match in
+            guard !codeRanges.contains(where: { NSIntersectionRange($0, match.range(at: 0)).length > 0 }) else {
+                return nil
+            }
             guard let innerRange = Range(match.range(at: 1), in: markdown),
                   let outerRange = Range(match.range(at: 0), in: markdown) else {
                 return nil
             }
-            return parseInner(String(markdown[innerRange]), original: String(markdown[outerRange]))
+            return parseInner(
+                String(markdown[innerRange]),
+                original: String(markdown[outerRange]),
+                sourceRange: match.range(at: 0)
+            )
         }
     }
 
     static func renderForMarkdown(_ markdown: String, index: LinkIndex?) -> String {
         guard let regex = Self.regex else { return markdown }
         let nsRange = NSRange(markdown.startIndex..<markdown.endIndex, in: markdown)
-        let matches = regex.matches(in: markdown, range: nsRange)
+        let codeRanges = Self.codeRanges(in: markdown)
+        let matches = regex.matches(in: markdown, range: nsRange).filter { match in
+            !codeRanges.contains { NSIntersectionRange($0, match.range(at: 0)).length > 0 }
+        }
         guard !matches.isEmpty else { return markdown }
 
         var result = markdown
@@ -62,7 +73,7 @@ enum WikiLinkParser {
         return "[\(prefix)\(escapeMarkdownLabel(link.label))](\(destination))"
     }
 
-    private static func parseInner(_ inner: String, original: String) -> WikiLink {
+    private static func parseInner(_ inner: String, original: String, sourceRange: NSRange? = nil) -> WikiLink {
         let parts = inner.components(separatedBy: "|")
         let targetPart = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
         let label = parts.dropFirst().joined(separator: "|").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -75,7 +86,8 @@ enum WikiLinkParser {
             original: original,
             target: target,
             label: label.isEmpty ? target : label,
-            anchor: anchor.isEmpty ? nil : anchor
+            anchor: anchor.isEmpty ? nil : anchor,
+            sourceRange: sourceRange
         )
     }
 
@@ -88,4 +100,90 @@ enum WikiLinkParser {
     private static let regex: NSRegularExpression? = {
         try? NSRegularExpression(pattern: #"\[\[([^\]\n]+)\]\]"#)
     }()
+
+    private static func codeRanges(in markdown: String) -> [NSRange] {
+        var ranges: [NSRange] = []
+        var inFence = false
+        var fenceMarker: String?
+        var lineStart = markdown.startIndex
+
+        while lineStart < markdown.endIndex {
+            let lineEnd = markdown[lineStart...].firstIndex(of: "\n") ?? markdown.endIndex
+            let nextLineStart = lineEnd < markdown.endIndex ? markdown.index(after: lineEnd) : markdown.endIndex
+            let line = String(markdown[lineStart..<lineEnd])
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let marker = fenceStartMarker(in: trimmed)
+
+            if inFence {
+                ranges.append(NSRange(lineStart..<nextLineStart, in: markdown))
+                if let marker, marker == fenceMarker {
+                    inFence = false
+                    fenceMarker = nil
+                }
+            } else if let marker {
+                inFence = true
+                fenceMarker = marker
+                ranges.append(NSRange(lineStart..<nextLineStart, in: markdown))
+            } else {
+                ranges.append(contentsOf: inlineCodeRanges(in: markdown, lineStart: lineStart, lineEnd: lineEnd))
+            }
+
+            lineStart = nextLineStart
+        }
+
+        return ranges
+    }
+
+    private static func fenceStartMarker(in trimmedLine: String) -> String? {
+        if trimmedLine.hasPrefix("```") { return "```" }
+        if trimmedLine.hasPrefix("~~~") { return "~~~" }
+        return nil
+    }
+
+    private static func inlineCodeRanges(in markdown: String, lineStart: String.Index, lineEnd: String.Index) -> [NSRange] {
+        var ranges: [NSRange] = []
+        var cursor = lineStart
+
+        while cursor < lineEnd {
+            guard markdown[cursor] == "`" else {
+                cursor = markdown.index(after: cursor)
+                continue
+            }
+
+            let tickStart = cursor
+            var tickEnd = cursor
+            while tickEnd < lineEnd, markdown[tickEnd] == "`" {
+                tickEnd = markdown.index(after: tickEnd)
+            }
+            let tickCount = markdown.distance(from: tickStart, to: tickEnd)
+            var search = tickEnd
+            var closingEnd: String.Index?
+
+            while search < lineEnd {
+                guard markdown[search] == "`" else {
+                    search = markdown.index(after: search)
+                    continue
+                }
+                let closeStart = search
+                var closeEnd = search
+                while closeEnd < lineEnd, markdown[closeEnd] == "`" {
+                    closeEnd = markdown.index(after: closeEnd)
+                }
+                if markdown.distance(from: closeStart, to: closeEnd) == tickCount {
+                    closingEnd = closeEnd
+                    break
+                }
+                search = closeEnd
+            }
+
+            if let closingEnd {
+                ranges.append(NSRange(tickStart..<closingEnd, in: markdown))
+                cursor = closingEnd
+            } else {
+                cursor = tickEnd
+            }
+        }
+
+        return ranges
+    }
 }

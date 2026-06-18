@@ -5,6 +5,12 @@ All notable changes to Cribble are documented here. The format follows
 [Semantic Versioning](https://semver.org/) (see the versioning guidance in
 [MAINTAINER_HANDBOOK.md](MAINTAINER_HANDBOOK.md#release-model)).
 
+## Unreleased
+
+### Connected Reading
+- Added the local backlink index foundation for Linked Mentions, including
+  source-range-aware wiki-link parsing and code-aware link exclusion.
+
 ## 1.4.0 — Night Shift
 
 Cribble 1.4.0 is the "Night Shift" release: a smoother, safer, more

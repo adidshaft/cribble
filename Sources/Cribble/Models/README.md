@@ -11,6 +11,7 @@ These hold no behavior beyond derivation — the engine lives in `Services/`.
 | `FileSortMode.swift` | Name / created / updated sort options. |
 | `ReaderFontSizePreset.swift` | XXS–XXL reader text sizes. |
 | `WikiLink.swift` | A parsed `[[wiki link]]` reference. |
+| `Backlink.swift` | Reverse wiki-link mentions grouped by source note. |
 | `UnresolvedTarget.swift` | A wiki link that did not resolve to a file. |
 | `LinkedFileSummary.swift` | Summary of an inbound/outbound linked file. |
 | `ReadingAnnotation.swift` | A highlight or reading bookmark. |

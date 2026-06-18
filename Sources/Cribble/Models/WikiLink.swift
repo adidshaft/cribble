@@ -5,6 +5,9 @@ struct WikiLink: Equatable, Hashable, Sendable {
     let target: String
     let label: String
     let anchor: String?
+    /// UTF-16 range of the original `[[...]]` token in the source markdown.
+    /// Nil for synthetic links constructed by tests or callers.
+    var sourceRange: NSRange? = nil
 
     var normalizedTarget: String {
         LinkIndex.normalize(target)

@@ -11,6 +11,7 @@ sub-folders.
 | `ContentView.swift` | Root layout (sidebar + reader). |
 | `SidebarView.swift` | Folder/file library navigation. |
 | `ReaderView.swift` | The rendered Markdown reading surface. |
+| `LinkedMentionsSection.swift` | Collapsible backlinks/linked-mentions reader section. |
 | `OutlineView.swift` | Document outline / heading navigation. |
 | `ReadingTrailPanel.swift` | Reading trail and resume strip. |
 | `TaskListView.swift` | Interactive task-list rendering. |

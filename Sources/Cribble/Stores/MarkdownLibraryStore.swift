@@ -30,6 +30,7 @@ final class MarkdownLibraryStore: ObservableObject {
     @Published var selectedDocument: MarkdownDocument?
     @Published var selectedRenderedMarkdown: String = ""
     @Published var selectedLinkedFiles: [LinkedFileSummary] = []
+    @Published var selectedBacklinks: [Backlink] = []
     @Published var searchText = "" {
         didSet { cachedFilteredNodes = nil }
     }
@@ -697,6 +698,7 @@ final class MarkdownLibraryStore: ObservableObject {
             selectedDocument = nil
             selectedRenderedMarkdown = ""
             selectedLinkedFiles = []
+            selectedBacklinks = []
             selectedUnresolvedTarget = nil
             renderTask?.cancel()
             return
@@ -710,6 +712,7 @@ final class MarkdownLibraryStore: ObservableObject {
             selectedDocument = nil
             selectedRenderedMarkdown = ""
             selectedLinkedFiles = []
+            selectedBacklinks = []
             return
         }
 
@@ -726,6 +729,7 @@ final class MarkdownLibraryStore: ObservableObject {
         if selectedDocument?.url != documentURL {
             selectedRenderedMarkdown = ""
             selectedLinkedFiles = []
+            selectedBacklinks = []
         }
 
         do {
@@ -764,15 +768,17 @@ final class MarkdownLibraryStore: ObservableObject {
                 index: linkIndex,
                 allDocuments: documents
             )
+            selectedBacklinks = Self.backlinks(for: document.url, index: backlinkIndex)
             touchRenderCacheEntry(for: document.url)
             return
         }
 
         let index = linkIndex
+        let backlinkIndex = backlinkIndex
         let documentsSnapshot = documents
         let documentURL = document.url
-        renderTask = Task { [document, index, documentsSnapshot, documentURL, contentHash, documentRoot, loadRemoteImages] in
-            let result = await Task.detached(priority: .userInitiated) { () -> (rendered: String, linkedFiles: [LinkedFileSummary]) in
+        renderTask = Task { [document, index, backlinkIndex, documentsSnapshot, documentURL, contentHash, documentRoot, loadRemoteImages] in
+            let result = await Task.detached(priority: .userInitiated) { () -> (rendered: String, linkedFiles: [LinkedFileSummary], backlinks: [Backlink]) in
                 let preprocessed = MarkdownDisplayPreprocessor.prepare(
                     document.rawMarkdown,
                     documentTitle: document.title
@@ -792,12 +798,14 @@ final class MarkdownLibraryStore: ObservableObject {
                     index: index,
                     allDocuments: documentsSnapshot
                 )
-                return (rendered, linkedFiles)
+                let backlinks = MarkdownLibraryStore.backlinks(for: document.url, index: backlinkIndex)
+                return (rendered, linkedFiles, backlinks)
             }.value
             guard !Task.isCancelled else { return }
             guard selectedDocument?.url == documentURL else { return }
             selectedRenderedMarkdown = result.rendered
             selectedLinkedFiles = result.linkedFiles
+            selectedBacklinks = result.backlinks
             storeRenderCacheEntry(
                 url: documentURL,
                 entry: RenderCacheEntry(

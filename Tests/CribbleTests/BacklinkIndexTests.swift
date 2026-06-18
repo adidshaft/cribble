@@ -100,4 +100,21 @@ final class BacklinkIndexTests: XCTestCase {
         XCTAssertEqual(backlinks.map(\.sourceTitle), ["Source"])
         XCTAssertEqual(backlinks.first?.occurrences.first?.snippet, "Mentions Target here.")
     }
+
+    func testSelectingDocumentPublishesSelectedBacklinks() async throws {
+        let root = try Fixture.makeFolder()
+        let target = root.appendingPathComponent("Target.md")
+        let source = root.appendingPathComponent("Source.md")
+        try "# Target\n".write(to: target, atomically: true, encoding: .utf8)
+        try "# Source\nMentions [[Target]] here.".write(to: source, atomically: true, encoding: .utf8)
+
+        let store = MarkdownLibraryStore(restore: false, includeBundledDemo: false)
+        store.openFolder(root, sortMode: .name)
+        await store.waitForLoadToComplete()
+        store.select(url: target)
+        await store.waitForRenderToComplete()
+
+        XCTAssertEqual(store.selectedBacklinks.map(\.sourceTitle), ["Source"])
+        XCTAssertEqual(store.selectedBacklinks.first?.occurrences.first?.snippet, "Mentions Target here.")
+    }
 }

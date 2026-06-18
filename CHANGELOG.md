@@ -10,6 +10,8 @@ All notable changes to Cribble are documented here. The format follows
 ### Connected Reading
 - Added the local backlink index foundation for Linked Mentions, including
   source-range-aware wiki-link parsing and code-aware link exclusion.
+- Surfaced Linked Mentions in the reader as a calm collapsible section with
+  source-note navigation and hover previews.
 
 ## 1.4.0 — Night Shift
 

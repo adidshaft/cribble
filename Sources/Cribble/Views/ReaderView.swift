@@ -36,6 +36,7 @@ struct ReaderView: View {
                     document: document,
                     rendered: library.selectedRenderedMarkdown,
                     linkedFiles: library.selectedLinkedFiles,
+                    backlinks: library.selectedBacklinks,
                     showLinkedFileCards: settings.showLinkedFileCards,
                     fontScale: settings.readerFontScale,
                     isRunningAI: library.isRunningAI,
@@ -203,6 +204,7 @@ private struct ReaderDocumentView: View {
     let document: MarkdownDocument
     let rendered: String
     let linkedFiles: [LinkedFileSummary]
+    let backlinks: [Backlink]
     let showLinkedFileCards: Bool
     let fontScale: Double
     let isRunningAI: Bool
@@ -261,6 +263,12 @@ private struct ReaderDocumentView: View {
 
                         if showLinkedFileCards, !linkedFiles.isEmpty {
                             LinkedFilesCardPanel(links: linkedFiles, onSelect: onSelectLink)
+                        }
+
+                        if !backlinks.isEmpty {
+                            LinkedMentionsSection(backlinks: backlinks) { backlink in
+                                library.select(url: backlink.sourceURL)
+                            }
                         }
 
                         if document.isEssentiallyEmptyReadme {

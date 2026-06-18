@@ -16,6 +16,7 @@ unit-tested in [`Tests/CribbleTests`](../../../Tests/CribbleTests).
 | `EmbedResolver.swift` | Resolves read-only `![[note]]` embed slices for rendering. |
 | `BacklinkIndex.swift` | Builds reverse wiki-link mentions for the selected note. |
 | `TagIndex.swift` | Indexes frontmatter and inline tags for read-only filtering. |
+| `RelatedNotesCache.swift` | Bounded in-memory cache for reader related-note hits. |
 | `RelatedNoteReasoner.swift` | Gated local-only one-line explanations for related notes. |
 | `TaskCheckbox.swift` | Parses and toggles `- [ ]` / `- [x]` task markers. |
 | `FileChangeMonitor.swift` | Watches files on disk and triggers auto-reload. |

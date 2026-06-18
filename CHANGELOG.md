@@ -48,6 +48,8 @@ All notable changes to Cribble are documented here. The format follows
   semantic section with hover previews and subtle similarity bars.
 - Added an explicit local-only "Why" explanation path for Related Notes that
   appears only when a downloaded on-device model is already available.
+- Added a bounded reader-side Related Notes cache plus clearer VoiceOver hints
+  for expanding, opening, and explaining related-note rows.
 
 ## 1.4.0 — Night Shift
 

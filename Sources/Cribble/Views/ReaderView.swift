@@ -201,6 +201,7 @@ private struct ReaderDocumentView: View {
     @State private var zoomRequest: ZoomOverlayRequest?
     @State private var relatedNotes: [SemanticHit] = []
     @State private var relatedNotesTask: Task<Void, Never>?
+    @State private var relatedNotesCache = RelatedNotesCache()
     // Cached section partitioning + highlight assignments. Rebuilt only when
     // the document body or its highlight set changes, so scroll-triggered
     // re-renders no longer pay O(sections * highlights * text-length) for
@@ -445,10 +446,10 @@ private struct ReaderDocumentView: View {
             scheduleRelatedNotesRefresh()
         }
         .onChange(of: semanticIndex.indexedCount) { _, _ in
-            scheduleRelatedNotesRefresh()
+            clearRelatedNotesCacheAndRefresh()
         }
         .onChange(of: semanticIndex.availability) { _, _ in
-            scheduleRelatedNotesRefresh()
+            clearRelatedNotesCacheAndRefresh()
         }
         .animation(.snappy(duration: 0.2), value: settings.showOutline)
         .animation(.snappy(duration: 0.2), value: settings.isFocusMode)
@@ -495,13 +496,24 @@ private struct ReaderDocumentView: View {
             return
         }
 
+        if let cached = relatedNotesCache.hits(for: url) {
+            relatedNotes = cached
+            return
+        }
+
         relatedNotesTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 220_000_000)
             guard !Task.isCancelled else { return }
             let hits = await library.relatedNotesOffMain(for: url, semanticIndex: semanticIndex, limit: 5)
             guard !Task.isCancelled else { return }
+            relatedNotesCache.store(hits, for: url)
             relatedNotes = hits
         }
+    }
+
+    private func clearRelatedNotesCacheAndRefresh() {
+        relatedNotesCache.removeAll()
+        scheduleRelatedNotesRefresh()
     }
 
     private func restoreBookmarkIfNeeded() {

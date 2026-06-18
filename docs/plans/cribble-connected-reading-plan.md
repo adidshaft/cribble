@@ -364,7 +364,7 @@ the per-directory READMEs as each track lands.
 | F Related | F1 query | ☑ | `Add related notes semantic query` | `swift test` | stored vectors; excludes self/near-duplicates; K cap |
 | F | F2 UI | ☑ | `Show related notes in the reader` | `swift test` | lazy debounced refresh; hidden empty; previews + score bars |
 | F | F3 why (opt) | ☑ | `Add local related note explanations` | `swift test` | explicit local-only action; entitlement+download gated; no cloud CLI |
-| F | F4 a11y/perf | ☐ | | | |
+| F | F4 a11y/perf | ☑ | `Polish related notes accessibility and caching` | `swift test` | bounded per-note cache; cache invalidates with index; VO hints |
 | G Local Graph | G1 neighborhood | ☐ | | | stretch |
 | G | G2 render | ☐ | | | |
 | G | G3 interact/a11y | ☐ | | | |

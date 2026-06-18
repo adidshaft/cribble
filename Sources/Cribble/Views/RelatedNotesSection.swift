@@ -62,6 +62,7 @@ struct RelatedNotesSection: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Related Notes, \(hits.count) notes")
+            .accessibilityHint(isExpanded ? "Collapses the related notes list" : "Expands the related notes list")
             .help(isExpanded ? "Collapse related notes" : "Expand related notes")
 
             if isExpanded {
@@ -148,6 +149,7 @@ private struct RelatedNoteRow: View {
                 .pointingHandOnHover()
                 .notePreviewPopover(url: hit.url)
                 .help("Open \(hit.title)")
+                .accessibilityHint("Opens this related note")
             }
 
             GeometryReader { proxy in
@@ -184,6 +186,7 @@ private struct RelatedNoteRow: View {
                 .buttonStyle(.borderless)
                 .controlSize(.small)
                 .disabled(isLoadingReason)
+                .accessibilityHint("Generates one local explanation for this connection")
                 .help("Explain this connection with the downloaded on-device model")
             }
         }

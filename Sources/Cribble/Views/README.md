@@ -17,6 +17,7 @@ sub-folders.
 | `CalloutView.swift` | Native rendering for Obsidian-style callout/admonition blocks. |
 | `LinkedMentionsSection.swift` | Collapsible backlinks/linked-mentions reader section. |
 | `RelatedNotesSection.swift` | Collapsible reader section for local semantic related-note matches. |
+| `LocalGraphView.swift` | Native reader-scoped graph visualization for nearby linked notes. |
 | `OutlineView.swift` | Document outline / heading navigation. |
 | `ReadingTrailPanel.swift` | Reading trail and resume strip. |
 | `TaskListView.swift` | Interactive task-list rendering. |

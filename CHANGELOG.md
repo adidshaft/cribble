@@ -52,6 +52,8 @@ All notable changes to Cribble are documented here. The format follows
   for expanding, opening, and explaining related-note rows.
 - Added the model-free local note graph neighborhood builder over forward
   wiki links and backlinks.
+- Rendered the current note's local graph as a bounded native Canvas section in
+  the reader.
 
 ## 1.4.0 — Night Shift
 

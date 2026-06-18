@@ -202,6 +202,7 @@ private struct ReaderDocumentView: View {
     @State private var relatedNotes: [SemanticHit] = []
     @State private var relatedNotesTask: Task<Void, Never>?
     @State private var relatedNotesCache = RelatedNotesCache()
+    @State private var localGraph: LocalNoteGraph?
     // Cached section partitioning + highlight assignments. Rebuilt only when
     // the document body or its highlight set changes, so scroll-triggered
     // re-renders no longer pay O(sections * highlights * text-length) for
@@ -283,6 +284,10 @@ private struct ReaderDocumentView: View {
                             RelatedNotesSection(sourceURL: document.url, hits: relatedNotes) { url in
                                 library.select(url: url)
                             }
+                        }
+
+                        if let localGraph, localGraph.nodes.count > 1 {
+                            LocalGraphView(graph: localGraph)
                         }
 
                         if document.isEssentiallyEmptyReadme {
@@ -398,6 +403,7 @@ private struct ReaderDocumentView: View {
         .onAppear {
             readingTrail.recordVisit(url: document.url, title: document.title)
             scheduleRelatedNotesRefresh()
+            refreshLocalGraph()
             ReaderShortcutHub.shared.activate(
                 token: shortcutToken,
                 isHighlightMode: $isHighlightMode,
@@ -444,6 +450,7 @@ private struct ReaderDocumentView: View {
         }
         .onChange(of: document.url) { _, _ in
             scheduleRelatedNotesRefresh()
+            refreshLocalGraph()
         }
         .onChange(of: semanticIndex.indexedCount) { _, _ in
             clearRelatedNotesCacheAndRefresh()
@@ -514,6 +521,10 @@ private struct ReaderDocumentView: View {
     private func clearRelatedNotesCacheAndRefresh() {
         relatedNotesCache.removeAll()
         scheduleRelatedNotesRefresh()
+    }
+
+    private func refreshLocalGraph() {
+        localGraph = library.localGraph(for: document.url, hops: 2, maxNodes: 40)
     }
 
     private func restoreBookmarkIfNeeded() {

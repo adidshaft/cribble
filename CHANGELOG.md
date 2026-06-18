@@ -16,6 +16,8 @@ All notable changes to Cribble are documented here. The format follows
   VoiceOver-friendly row labels.
 - Added parser support for Obsidian-style callout blocks so styled native
   callouts can land cleanly in the render pass.
+- Rendered callouts as native material cards with semantic SF Symbols and
+  nested Markdown body rendering.
 
 ## 1.4.0 — Night Shift
 

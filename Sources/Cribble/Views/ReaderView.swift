@@ -1236,17 +1236,13 @@ private struct ReaderMarkdownSection: View {
                         onUpdateHighlightNote: onUpdateHighlightNote
                     )
                 case .callout(_, let callout):
-                    StructuredText(markdown: callout.originalMarkdown)
-                        .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
-                        .textual.structuredTextStyle(.gitHub)
-                        .textual.lineSpacing(.fontScaled(0.3))
-                        .textual.inlineStyle(
-                            InlineStyle()
-                                .code(.font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale)))
-                                .strong(.fontWeight(.semibold))
-                        )
-                        .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
-                        .fixedSize(horizontal: false, vertical: true)
+                    CalloutView(
+                        callout: callout,
+                        baseURL: baseURL,
+                        fontScale: fontScale,
+                        primaryFontName: primaryFontName,
+                        monospaceFontName: monospaceFontName
+                    )
                 }
             }
         }

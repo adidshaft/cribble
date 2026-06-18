@@ -352,7 +352,7 @@ the per-directory READMEs as each track lands.
 | B | B3 render | ☐ | | | |
 | B | B4 perf/a11y | ☐ | | | |
 | C Callouts | C1 parse | ☑ | `Parse Obsidian callout blocks` | `swift test` | render hook verified in `RichMarkdownBlock` |
-| C | C2 view+style | ☐ | | | |
+| C | C2 view+style | ☑ | `Render native callout cards` | `swift test` | semantic styles; nested body render |
 | C | C3 fold/a11y | ☐ | | | |
 | D Palettes | D1 fuzzy | ☐ | | | |
 | D | D2 switcher | ☐ | | | |

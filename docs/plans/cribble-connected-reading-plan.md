@@ -348,7 +348,7 @@ the per-directory READMEs as each track lands.
 | A | A3 snippets/preview/a11y | ☑ | `Polish linked mention context and accessibility` | `swift test` | heading context; previews; VO labels |
 | A | A4 unlinked (opt) | ☐ | | | confirm w/ maintainer |
 | B Transclusion | B1 parse | ☑ | `Parse Obsidian embed references` | `swift test` | VERIFY: `WikiLinkParser` + `RichMarkdownBlock` |
-| B | B2 resolve+guards | ☐ | | | |
+| B | B2 resolve+guards | ☑ | `Resolve Obsidian embed slices` | `swift test` | heading/block slices; cycle/depth guards |
 | B | B3 render | ☐ | | | |
 | B | B4 perf/a11y | ☐ | | | |
 | C Callouts | C1 parse | ☑ | `Parse Obsidian callout blocks` | `swift test` | render hook verified in `RichMarkdownBlock` |

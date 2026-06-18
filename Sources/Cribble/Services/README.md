@@ -13,6 +13,7 @@ unit-tested in [`Tests/CribbleTests`](../../../Tests/CribbleTests).
 | `FrontMatterParser.swift` | Parses YAML front matter (aliases, tags, keywords). |
 | `WikiLinkParser.swift` | Extracts `[[Note]]`, `[[Note#Heading]]`, `[[Note|Label]]`. |
 | `LinkIndex.swift` | Resolves wiki links across the library to real files. |
+| `EmbedResolver.swift` | Resolves read-only `![[note]]` embed slices for rendering. |
 | `BacklinkIndex.swift` | Builds reverse wiki-link mentions for the selected note. |
 | `TaskCheckbox.swift` | Parses and toggles `- [ ]` / `- [x]` task markers. |
 | `FileChangeMonitor.swift` | Watches files on disk and triggers auto-reload. |

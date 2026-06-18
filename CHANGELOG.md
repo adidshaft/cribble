@@ -22,6 +22,8 @@ All notable changes to Cribble are documented here. The format follows
   Reduce Motion-aware toggles and expanded/collapsed accessibility labels.
 - Added the Transclusion parser foundation for Obsidian-style `![[note]]`,
   `![[note#heading]]`, and `![[note^block]]` embeds.
+- Added read-only embed resolution for whole-note, heading, and block slices
+  with bounded cycle/depth guards.
 
 ## 1.4.0 — Night Shift
 

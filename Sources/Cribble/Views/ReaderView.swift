@@ -1235,6 +1235,18 @@ private struct ReaderMarkdownSection: View {
                         onAddTask: onAddTask,
                         onUpdateHighlightNote: onUpdateHighlightNote
                     )
+                case .callout(_, let callout):
+                    StructuredText(markdown: callout.originalMarkdown)
+                        .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
+                        .textual.structuredTextStyle(.gitHub)
+                        .textual.lineSpacing(.fontScaled(0.3))
+                        .textual.inlineStyle(
+                            InlineStyle()
+                                .code(.font(ReaderTypography.monospace(monospaceFontName, size: 14 * fontScale)))
+                                .strong(.fontWeight(.semibold))
+                        )
+                        .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -1270,7 +1282,7 @@ private struct ReaderMarkdownSection: View {
             case .markdown:
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: markdownCount))
                 markdownCount += 1
-            case .fencedCode:
+            case .fencedCode, .callout:
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil))
             case .taskList(_, let items):
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil, taskBaseInSection: taskCount))
@@ -1961,7 +1973,7 @@ struct ReaderSectionPlan {
                         )
                         taskIdxInSection += 1
                     }
-                case .fencedCode:
+                case .fencedCode, .callout:
                     break
                 }
             }

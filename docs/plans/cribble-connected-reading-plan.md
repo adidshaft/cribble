@@ -351,7 +351,7 @@ the per-directory READMEs as each track lands.
 | B | B2 resolve+guards | ☐ | | | |
 | B | B3 render | ☐ | | | |
 | B | B4 perf/a11y | ☐ | | | |
-| C Callouts | C1 parse | ☐ | | | |
+| C Callouts | C1 parse | ☑ | `Parse Obsidian callout blocks` | `swift test` | render hook verified in `RichMarkdownBlock` |
 | C | C2 view+style | ☐ | | | |
 | C | C3 fold/a11y | ☐ | | | |
 | D Palettes | D1 fuzzy | ☐ | | | |

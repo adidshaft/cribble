@@ -4,10 +4,11 @@ enum RichMarkdownBlock: Identifiable, Equatable {
     case markdown(id: String, text: String)
     case fencedCode(id: String, language: String?, code: String)
     case taskList(id: String, items: [TaskListItem])
+    case callout(id: String, callout: CalloutBlock)
 
     var id: String {
         switch self {
-        case .markdown(let id, _), .fencedCode(let id, _, _), .taskList(let id, _):
+        case .markdown(let id, _), .fencedCode(let id, _, _), .taskList(let id, _), .callout(let id, _):
             id
         }
     }
@@ -37,7 +38,29 @@ enum RichMarkdownBlock: Identifiable, Equatable {
                     blockIndex += 1
                 }
 
-                for line in proseLines {
+                var lineIndex = 0
+                while lineIndex < proseLines.count {
+                    let line = proseLines[lineIndex]
+
+                    if line.isCalloutStartLine {
+                        emit(current)
+                        current.removeAll(keepingCapacity: true)
+
+                        var quoteLines: [String] = []
+                        while lineIndex < proseLines.count, proseLines[lineIndex].isBlockquoteLine {
+                            quoteLines.append(proseLines[lineIndex])
+                            lineIndex += 1
+                        }
+
+                        if let callout = CalloutBlock.parse(id: "callout-\(blockIndex)", blockquoteLines: quoteLines) {
+                            blocks.append(.callout(id: callout.id, callout: callout))
+                            blockIndex += 1
+                        } else {
+                            emit(quoteLines)
+                        }
+                        continue
+                    }
+
                     if line.isStandaloneMarkdownImageLine {
                         emit(current)
                         current.removeAll(keepingCapacity: true)
@@ -45,6 +68,7 @@ enum RichMarkdownBlock: Identifiable, Equatable {
                     } else {
                         current.append(line)
                     }
+                    lineIndex += 1
                 }
                 emit(current)
             }
@@ -128,6 +152,17 @@ private extension String {
         let openParen = trimmed.index(after: closeAlt)
         guard trimmed[openParen] == "(" else { return false }
         return trimmed.hasSuffix(")")
+    }
+
+    var isBlockquoteLine: Bool {
+        trimmingCharacters(in: .whitespaces).hasPrefix(">")
+    }
+
+    var isCalloutStartLine: Bool {
+        let trimmed = trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix(">") else { return false }
+        let stripped = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces)
+        return stripped.range(of: #"^\[![\w-]+\][+-]?\s*.*$"#, options: .regularExpression) != nil
     }
 }
 

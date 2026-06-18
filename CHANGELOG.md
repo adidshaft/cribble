@@ -14,6 +14,8 @@ All notable changes to Cribble are documented here. The format follows
   source-note navigation and hover previews.
 - Improved Linked Mentions snippets with nearest-heading context and
   VoiceOver-friendly row labels.
+- Added parser support for Obsidian-style callout blocks so styled native
+  callouts can land cleanly in the render pass.
 
 ## 1.4.0 — Night Shift
 

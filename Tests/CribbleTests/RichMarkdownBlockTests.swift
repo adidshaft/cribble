@@ -93,4 +93,54 @@ final class RichMarkdownBlockTests: XCTestCase {
             )
         )
     }
+
+    func testParsesObsidianCalloutBlocks() {
+        let blocks = RichMarkdownBlock.blocks(
+            from: """
+            Intro
+
+            > [!warning]- Custom title
+            > First line
+            > - nested item
+
+            Outro
+            """
+        )
+
+        XCTAssertEqual(blocks.count, 3)
+        guard case .callout(_, let callout) = blocks[1] else {
+            return XCTFail("expected callout block")
+        }
+
+        XCTAssertEqual(callout.type, "warning")
+        XCTAssertEqual(callout.title, "Custom title")
+        XCTAssertEqual(callout.fold, .collapsed)
+        XCTAssertEqual(callout.bodyMarkdown, "First line\n- nested item")
+        XCTAssertEqual(callout.originalMarkdown, "> [!warning]- Custom title\n> First line\n> - nested item")
+    }
+
+    func testCalloutDefaultsTitleAndExpandedFold() {
+        let callout = CalloutBlock.parse(id: "callout-test", blockquoteLines: [
+            "> [!tip]+",
+            "> Body"
+        ])
+
+        XCTAssertEqual(callout?.type, "tip")
+        XCTAssertEqual(callout?.title, "Tip")
+        XCTAssertEqual(callout?.fold, .expanded)
+        XCTAssertEqual(callout?.bodyMarkdown, "Body")
+    }
+
+    func testPlainBlockquoteRemainsMarkdown() {
+        let blocks = RichMarkdownBlock.blocks(
+            from: """
+            > A plain quoted paragraph
+            > without a callout marker.
+            """
+        )
+
+        XCTAssertEqual(blocks, [
+            .markdown(id: "markdown-0", text: "> A plain quoted paragraph\n> without a callout marker.")
+        ])
+    }
 }

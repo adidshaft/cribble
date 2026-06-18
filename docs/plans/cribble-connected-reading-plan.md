@@ -347,7 +347,7 @@ the per-directory READMEs as each track lands.
 | A | A2 panel | ☑ | `Show linked mentions in the reader` | `swift test` | hidden when empty; row opens source |
 | A | A3 snippets/preview/a11y | ☑ | `Polish linked mention context and accessibility` | `swift test` | heading context; previews; VO labels |
 | A | A4 unlinked (opt) | ☐ | | | confirm w/ maintainer |
-| B Transclusion | B1 parse | ☐ | | | |
+| B Transclusion | B1 parse | ☑ | `Parse Obsidian embed references` | `swift test` | VERIFY: `WikiLinkParser` + `RichMarkdownBlock` |
 | B | B2 resolve+guards | ☐ | | | |
 | B | B3 render | ☐ | | | |
 | B | B4 perf/a11y | ☐ | | | |

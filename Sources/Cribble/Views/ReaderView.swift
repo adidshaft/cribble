@@ -1243,6 +1243,12 @@ private struct ReaderMarkdownSection: View {
                         primaryFontName: primaryFontName,
                         monospaceFontName: monospaceFontName
                     )
+                case .embed(_, let reference):
+                    StructuredText(markdown: reference.original)
+                        .font(ReaderTypography.primary(primaryFontName, size: 17 * fontScale))
+                        .textual.structuredTextStyle(.gitHub)
+                        .textual.lineSpacing(.fontScaled(0.3))
+                        .cribbleTextualSelection(false)
                 }
             }
         }
@@ -1278,7 +1284,7 @@ private struct ReaderMarkdownSection: View {
             case .markdown:
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: markdownCount))
                 markdownCount += 1
-            case .fencedCode, .callout:
+            case .fencedCode, .callout, .embed:
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil))
             case .taskList(_, let items):
                 result.append(IndexedBlock(id: block.id, block: block, markdownIndex: nil, taskBaseInSection: taskCount))
@@ -1969,7 +1975,7 @@ struct ReaderSectionPlan {
                         )
                         taskIdxInSection += 1
                     }
-                case .fencedCode, .callout:
+                case .fencedCode, .callout, .embed:
                     break
                 }
             }

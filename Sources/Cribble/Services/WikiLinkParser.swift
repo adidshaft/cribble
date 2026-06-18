@@ -9,6 +9,9 @@ enum WikiLinkParser {
             guard !codeRanges.contains(where: { NSIntersectionRange($0, match.range(at: 0)).length > 0 }) else {
                 return nil
             }
+            guard !isEmbedMatch(match, in: markdown) else {
+                return nil
+            }
             guard let innerRange = Range(match.range(at: 1), in: markdown),
                   let outerRange = Range(match.range(at: 0), in: markdown) else {
                 return nil
@@ -27,6 +30,7 @@ enum WikiLinkParser {
         let codeRanges = Self.codeRanges(in: markdown)
         let matches = regex.matches(in: markdown, range: nsRange).filter { match in
             !codeRanges.contains { NSIntersectionRange($0, match.range(at: 0)).length > 0 }
+                && !isEmbedMatch(match, in: markdown)
         }
         guard !matches.isEmpty else { return markdown }
 
@@ -40,6 +44,26 @@ enum WikiLinkParser {
             result.replaceSubrange(outerRange, with: replacement(for: link, index: index))
         }
         return result
+    }
+
+    static func parseEmbeds(_ markdown: String) -> [EmbedReference] {
+        guard let regex = Self.embedRegex else { return [] }
+        let nsRange = NSRange(markdown.startIndex..<markdown.endIndex, in: markdown)
+        let codeRanges = Self.codeRanges(in: markdown)
+        return regex.matches(in: markdown, range: nsRange).compactMap { match in
+            guard !codeRanges.contains(where: { NSIntersectionRange($0, match.range(at: 0)).length > 0 }) else {
+                return nil
+            }
+            guard let innerRange = Range(match.range(at: 1), in: markdown),
+                  let outerRange = Range(match.range(at: 0), in: markdown) else {
+                return nil
+            }
+            return parseEmbedInner(
+                String(markdown[innerRange]),
+                original: String(markdown[outerRange]),
+                sourceRange: match.range(at: 0)
+            )
+        }
     }
 
     private static func replacement(for link: WikiLink, index: LinkIndex?) -> String {
@@ -91,6 +115,40 @@ enum WikiLinkParser {
         )
     }
 
+    private static func parseEmbedInner(_ inner: String, original: String, sourceRange: NSRange? = nil) -> EmbedReference {
+        let parts = inner.components(separatedBy: "|")
+        let targetPart = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let label = parts.dropFirst().joined(separator: "|").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let parsedTarget = parseEmbedTarget(targetPart)
+        return EmbedReference(
+            original: original,
+            target: parsedTarget.target,
+            label: label.isEmpty ? targetPart : label,
+            heading: parsedTarget.heading,
+            blockID: parsedTarget.blockID,
+            sourceRange: sourceRange
+        )
+    }
+
+    private static func parseEmbedTarget(_ targetPart: String) -> (target: String, heading: String?, blockID: String?) {
+        let hashPieces = targetPart.components(separatedBy: "#")
+        let targetAndInlineBlock = hashPieces[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let anchor = hashPieces.dropFirst().joined(separator: "#").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let targetPieces = targetAndInlineBlock.components(separatedBy: "^")
+        let target = targetPieces[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let inlineBlock = targetPieces.dropFirst().joined(separator: "^").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !inlineBlock.isEmpty {
+            return (target, nil, inlineBlock)
+        }
+        if anchor.hasPrefix("^") {
+            return (target, nil, String(anchor.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return (target, anchor.isEmpty ? nil : anchor, nil)
+    }
+
     private static func escapeMarkdownLabel(_ label: String) -> String {
         label
             .replacingOccurrences(of: "[", with: "\\[")
@@ -100,6 +158,18 @@ enum WikiLinkParser {
     private static let regex: NSRegularExpression? = {
         try? NSRegularExpression(pattern: #"\[\[([^\]\n]+)\]\]"#)
     }()
+
+    private static let embedRegex: NSRegularExpression? = {
+        try? NSRegularExpression(pattern: #"!\[\[([^\]\n]+)\]\]"#)
+    }()
+
+    private static func isEmbedMatch(_ match: NSTextCheckingResult, in markdown: String) -> Bool {
+        guard let range = Range(match.range(at: 0), in: markdown),
+              range.lowerBound > markdown.startIndex else {
+            return false
+        }
+        return markdown[markdown.index(before: range.lowerBound)] == "!"
+    }
 
     private static func codeRanges(in markdown: String) -> [NSRange] {
         var ranges: [NSRange] = []

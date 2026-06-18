@@ -94,6 +94,36 @@ final class RichMarkdownBlockTests: XCTestCase {
         )
     }
 
+    func testSplitsStandaloneEmbedsIntoEmbedBlocks() {
+        let blocks = RichMarkdownBlock.blocks(
+            from: """
+            Intro
+
+            ![[Design Notes#Decisions|decision section]]
+
+            ![[Tasks^next-action]]
+
+            Outro ![[Inline Embed]]
+            """
+        )
+
+        XCTAssertEqual(blocks.count, 4)
+        XCTAssertEqual(blocks[0], .markdown(id: "markdown-0", text: "Intro"))
+        guard case .embed(_, let headingEmbed) = blocks[1] else {
+            return XCTFail("expected heading embed")
+        }
+        XCTAssertEqual(headingEmbed.target, "Design Notes")
+        XCTAssertEqual(headingEmbed.heading, "Decisions")
+        XCTAssertEqual(headingEmbed.label, "decision section")
+
+        guard case .embed(_, let blockEmbed) = blocks[2] else {
+            return XCTFail("expected block embed")
+        }
+        XCTAssertEqual(blockEmbed.target, "Tasks")
+        XCTAssertEqual(blockEmbed.blockID, "next-action")
+        XCTAssertEqual(blocks[3], .markdown(id: "markdown-3", text: "Outro ![[Inline Embed]]"))
+    }
+
     func testParsesObsidianCalloutBlocks() {
         let blocks = RichMarkdownBlock.blocks(
             from: """

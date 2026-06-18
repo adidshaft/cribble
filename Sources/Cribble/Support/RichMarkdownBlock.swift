@@ -5,10 +5,11 @@ enum RichMarkdownBlock: Identifiable, Equatable {
     case fencedCode(id: String, language: String?, code: String)
     case taskList(id: String, items: [TaskListItem])
     case callout(id: String, callout: CalloutBlock)
+    case embed(id: String, reference: EmbedReference)
 
     var id: String {
         switch self {
-        case .markdown(let id, _), .fencedCode(let id, _, _), .taskList(let id, _), .callout(let id, _):
+        case .markdown(let id, _), .fencedCode(let id, _, _), .taskList(let id, _), .callout(let id, _), .embed(let id, _):
             id
         }
     }
@@ -61,7 +62,12 @@ enum RichMarkdownBlock: Identifiable, Equatable {
                         continue
                     }
 
-                    if line.isStandaloneMarkdownImageLine {
+                    if let embed = line.standaloneEmbedReference() {
+                        emit(current)
+                        current.removeAll(keepingCapacity: true)
+                        blocks.append(.embed(id: "embed-\(blockIndex)", reference: embed))
+                        blockIndex += 1
+                    } else if line.isStandaloneMarkdownImageLine {
                         emit(current)
                         current.removeAll(keepingCapacity: true)
                         emit([line])
@@ -163,6 +169,27 @@ private extension String {
         guard trimmed.hasPrefix(">") else { return false }
         let stripped = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces)
         return stripped.range(of: #"^\[![\w-]+\][+-]?\s*.*$"#, options: .regularExpression) != nil
+    }
+
+    func standaloneEmbedReference() -> EmbedReference? {
+        let trimmed = trimmingCharacters(in: .whitespaces)
+        let embeds = WikiLinkParser.parseEmbeds(trimmed)
+        guard trimmed.hasPrefix("![["),
+              trimmed.hasSuffix("]]"),
+              embeds.count == 1,
+              let embed = embeds.first,
+              embed.original == trimmed
+        else {
+            return nil
+        }
+        return EmbedReference(
+            original: embed.original,
+            target: embed.target,
+            label: embed.label,
+            heading: embed.heading,
+            blockID: embed.blockID,
+            sourceRange: embed.sourceRange
+        )
     }
 }
 

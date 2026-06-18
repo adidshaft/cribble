@@ -20,6 +20,8 @@ All notable changes to Cribble are documented here. The format follows
   nested Markdown body rendering.
 - Added foldable callout behavior for `[!type]+` / `[!type]-`, including
   Reduce Motion-aware toggles and expanded/collapsed accessibility labels.
+- Added the Transclusion parser foundation for Obsidian-style `![[note]]`,
+  `![[note#heading]]`, and `![[note^block]]` embeds.
 
 ## 1.4.0 — Night Shift
 

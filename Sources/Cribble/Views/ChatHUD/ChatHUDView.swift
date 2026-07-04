@@ -55,9 +55,31 @@ struct ChatHUDView: View {
                 help: "Open Project Intelligence"
             ) { IntelligenceHUDController.shared.toggle() }
 
+            if !viewModel.recentConversations.isEmpty {
+                Menu {
+                    ForEach(viewModel.recentConversations.prefix(10)) { conversation in
+                        Button {
+                            viewModel.restoreConversation(conversation)
+                        } label: {
+                            Text(conversation.title)
+                            Text(conversation.savedAt.formatted(date: .abbreviated, time: .shortened))
+                        }
+                    }
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .frame(width: 30, height: 30)
+                .disabled(viewModel.isGenerating)
+                .help("Restore a recent conversation")
+                .pointingHandOnHover()
+            }
+
             HeaderIcon(
                 systemName: "square.and.pencil",
-                help: "New chat",
+                help: "New chat (current conversation is kept in history)",
                 disabled: viewModel.isGenerating || !viewModel.hasConversation
             ) { viewModel.newChat() }
 

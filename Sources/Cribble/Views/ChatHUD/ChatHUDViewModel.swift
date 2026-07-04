@@ -141,6 +141,7 @@ final class ChatHUDViewModel: ObservableObject {
         if let restored = transcriptStore?.load(), !restored.isEmpty {
             self.messages = restored
         }
+        refreshRecentConversations()
     }
 
     func syncEngineChoiceFromDefaults() {
@@ -296,7 +297,33 @@ final class ChatHUDViewModel: ObservableObject {
         messages = []
         statusMessage = nil
         lastContextReceipt = nil
-        transcriptStore?.clear()
+        // Park the conversation in history rather than destroying it — it
+        // stays restorable from the header's history menu.
+        transcriptStore?.archiveCurrentAndClear()
+        refreshRecentConversations()
+    }
+
+    /// Recent archived conversations for the header history menu. Cached so
+    /// header re-renders never hit the disk; refreshed whenever the history
+    /// can change.
+    @Published private(set) var recentConversations: [ChatTranscriptStore.ArchivedConversation] = []
+
+    private func refreshRecentConversations() {
+        recentConversations = transcriptStore?.recentConversations() ?? []
+    }
+
+    /// Swaps an archived conversation back in. The current conversation (if
+    /// any) is archived first, and the restored one leaves the history so a
+    /// later New Chat can't duplicate it.
+    func restoreConversation(_ conversation: ChatTranscriptStore.ArchivedConversation) {
+        guard !isGenerating, let transcriptStore else { return }
+        transcriptStore.archiveCurrentAndClear()
+        transcriptStore.removeFromHistory(id: conversation.id)
+        messages = conversation.messages
+        statusMessage = nil
+        lastContextReceipt = nil
+        transcriptStore.save(messages)
+        refreshRecentConversations()
     }
 
     /// Writes the settled conversation to disk (a no-op without a store).

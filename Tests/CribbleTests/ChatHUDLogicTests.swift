@@ -665,6 +665,64 @@ final class ChatHUDLogicTests: XCTestCase {
     }
 
     @MainActor
+    func testNewChatArchivesConversationAndRestoreRoundTrips() async throws {
+        let store = makeTemporaryTranscriptStore()
+        defer { store.clear() }
+
+        let viewModel = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: ScriptedChatEngine(responses: ["first answer", "second answer"]),
+            transcriptStore: store
+        )
+
+        viewModel.updateDraft("first question")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+
+        // New Chat parks the conversation instead of destroying it.
+        viewModel.newChat()
+        XCTAssertTrue(viewModel.messages.isEmpty)
+        XCTAssertEqual(viewModel.recentConversations.count, 1)
+        XCTAssertEqual(viewModel.recentConversations.first?.title, "first question")
+
+        // Start a second conversation, then restore the first.
+        viewModel.updateDraft("second question")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+
+        let archived = try XCTUnwrap(viewModel.recentConversations.first)
+        viewModel.restoreConversation(archived)
+
+        XCTAssertEqual(viewModel.messages.first?.text, "first question")
+        XCTAssertEqual(viewModel.messages.last?.text, "first answer")
+        // The second conversation took the first's place in history.
+        XCTAssertEqual(viewModel.recentConversations.count, 1)
+        XCTAssertEqual(viewModel.recentConversations.first?.title, "second question")
+
+        // Restoring persisted the swap: a recreated view model sees the same.
+        let recreated = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: ScriptedChatEngine(responses: []),
+            transcriptStore: store
+        )
+        XCTAssertEqual(recreated.messages.first?.text, "first question")
+        XCTAssertEqual(recreated.recentConversations.count, 1)
+    }
+
+    @MainActor
+    func testEmptyConversationIsNotArchived() {
+        let store = makeTemporaryTranscriptStore()
+        defer { store.clear() }
+
+        store.save([ChatMessage(role: .assistant, text: "orphaned answer")])
+        store.archiveCurrentAndClear()
+
+        // No user turn — nothing worth restoring.
+        XCTAssertTrue(store.recentConversations().isEmpty)
+        XCTAssertTrue(store.load().isEmpty)
+    }
+
+    @MainActor
     private func makeTemporaryTranscriptStore() -> ChatTranscriptStore {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("cribble-tests-\(UUID().uuidString)", isDirectory: true)

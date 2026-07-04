@@ -58,8 +58,9 @@ All notable changes to Cribble are documented here. The format follows
   keyboard focus, and VoiceOver labels.
 
 ### Local Chat
-- Conversations now survive closing the chat panel and restarting Cribble;
-  New Chat still starts clean and clears the saved transcript.
+- Conversations now survive closing the chat panel and restarting Cribble.
+- New Chat parks the conversation in history instead of destroying it; a new
+  header menu restores any of the last 20 conversations.
 - The chat empty state now offers a one-tap "Use in answers" opt-in when the
   project has an intelligence index but answers aren't using it yet, so
   project intelligence is no longer hidden behind the small header toggle.

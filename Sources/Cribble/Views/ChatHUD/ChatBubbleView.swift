@@ -124,13 +124,18 @@ struct ChatBubbleView: View, Equatable {
     /// Lightweight Markdown rendering for inline emphasis / code / links. Falls
     /// back to the raw string when the Markdown can't be parsed.
     ///
-    /// While a turn is streaming we render the raw string with no Markdown parse:
-    /// the text changes on every token, so parsing here would re-run the parser
-    /// hundreds of times per answer (and mid-stream Markdown is often malformed
-    /// anyway). The parse — memoized by text — runs once the turn settles.
+    /// Streaming turns get the same inline parse, uncached: the view model
+    /// coalesces deltas to ~10–20 updates/sec, so parsing is affordable and the
+    /// answer reads formatted as it arrives instead of snapping from raw
+    /// symbols to rich text on settle. Transient streaming strings skip the
+    /// cache so they can't evict settled entries; the full block-Markdown
+    /// render still happens once the turn settles.
     private var renderedText: AttributedString {
         if message.isStreaming {
-            return AttributedString(message.text)
+            return (try? AttributedString(
+                markdown: message.text,
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+            )) ?? AttributedString(message.text)
         }
         return Self.renderMarkdown(message.text)
     }

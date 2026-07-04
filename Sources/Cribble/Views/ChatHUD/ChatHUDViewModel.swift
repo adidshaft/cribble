@@ -75,6 +75,18 @@ final class ChatHUDViewModel: ObservableObject {
         didSet { if useProjectIntelligence != oldValue { onIntelligenceToggle?(useProjectIntelligence) } }
     }
     var onIntelligenceToggle: ((Bool) -> Void)?
+
+    /// Whether project intelligence *could* contribute to answers right now
+    /// (index built, engine enabled) — independent of the user's opt-in. Set by
+    /// `ChatHUDController` alongside `intelligenceContextProvider`.
+    var intelligenceAvailabilityProvider: (@MainActor () -> Bool)?
+
+    /// True when intelligence context exists but the user hasn't opted in yet —
+    /// drives the one-tap "Turn On" hint in the empty state, because the tiny
+    /// header brain toggle alone left the feature mostly undiscovered.
+    var canOfferIntelligence: Bool {
+        !useProjectIntelligence && (intelligenceAvailabilityProvider?() ?? false)
+    }
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?

@@ -221,8 +221,41 @@ struct ChatEmptyState: View {
             quickActions
             commandHint
             extensionLaneHint
+            intelligenceOffer
 
             modelHint
+        }
+    }
+
+    /// One-tap opt-in shown only when a project intelligence index exists but
+    /// answers aren't using it yet — the header brain toggle alone was too
+    /// easy to miss.
+    @ViewBuilder
+    private var intelligenceOffer: some View {
+        if viewModel.canOfferIntelligence {
+            Button {
+                viewModel.useProjectIntelligence = true
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "brain")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                    Text("This project has an intelligence index")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.72))
+                    Text("Use in answers")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .cribbleMaterialSurface(in: Capsule())
+            .padding(.horizontal, 24)
+            .help("Fold this project's generated index into chat answers (same as the brain toggle above)")
+            .pointingHandOnHover()
         }
     }
 

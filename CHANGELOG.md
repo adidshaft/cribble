@@ -60,6 +60,9 @@ All notable changes to Cribble are documented here. The format follows
 ### Local Chat
 - Conversations now survive closing the chat panel and restarting Cribble;
   New Chat still starts clean and clears the saved transcript.
+- The chat empty state now offers a one-tap "Use in answers" opt-in when the
+  project has an intelligence index but answers aren't using it yet, so
+  project intelligence is no longer hidden behind the small header toggle.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

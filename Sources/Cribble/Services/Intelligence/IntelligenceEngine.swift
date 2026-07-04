@@ -1010,6 +1010,13 @@ final class IntelligenceEngine: ObservableObject {
 
     // MARK: - Chat HUD context injection
 
+    /// Whether a project index exists that chat *could* fold into answers —
+    /// independent of the `useInChat` opt-in. Drives the Chat HUD's
+    /// discoverability hint for turning project intelligence on.
+    var hasChatContext: Bool {
+        isEnabled && artifacts.contains { $0.type == .projectIndex }
+    }
+
     /// Project-intelligence context to fold into the Chat HUD prompt as "related"
     /// files (design plan Phase 1). Returns the project index plus a few summaries.
     func chatContext() -> [ResolvedFile] {

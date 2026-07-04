@@ -598,6 +598,28 @@ final class ChatHUDLogicTests: XCTestCase {
         return ChatTranscriptStore(fileURL: url)
     }
 
+    // MARK: - Intelligence offer
+
+    @MainActor
+    func testIntelligenceOfferShownOnlyWhenAvailableAndOff() {
+        let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+
+        // No provider wired (no intelligence engine): never offer.
+        XCTAssertFalse(viewModel.canOfferIntelligence)
+
+        viewModel.intelligenceAvailabilityProvider = { true }
+        XCTAssertTrue(viewModel.canOfferIntelligence)
+
+        // Once the user opts in, the offer disappears.
+        viewModel.useProjectIntelligence = true
+        XCTAssertFalse(viewModel.canOfferIntelligence)
+
+        // No index available: nothing to offer even when off.
+        viewModel.useProjectIntelligence = false
+        viewModel.intelligenceAvailabilityProvider = { false }
+        XCTAssertFalse(viewModel.canOfferIntelligence)
+    }
+
     // MARK: - Regenerate
 
     @MainActor

@@ -6,13 +6,16 @@ import Textual
 /// streaming caret.
 struct ChatBubbleView: View, Equatable {
     let message: ChatMessage
+    /// True for the transcript's final turn — the only one offering Regenerate.
+    var isLast: Bool = false
     var viewModel: ChatHUDViewModel?
 
-    /// Diff on the message alone. `viewModel` is identity-stable for the panel's
-    /// lifetime, so excluding it lets `.equatable()` skip re-rendering every
-    /// settled bubble when only the streaming turn's text changes.
+    /// Diff on the message and its last-turn status. `viewModel` is
+    /// identity-stable for the panel's lifetime, so excluding it lets
+    /// `.equatable()` skip re-rendering every settled bubble when only the
+    /// streaming turn's text changes.
     nonisolated static func == (lhs: ChatBubbleView, rhs: ChatBubbleView) -> Bool {
-        lhs.message == rhs.message
+        lhs.message == rhs.message && lhs.isLast == rhs.isLast
     }
 
     private var showActions: Bool {
@@ -46,6 +49,11 @@ struct ChatBubbleView: View, Equatable {
             if viewModel?.canInsertIntoCurrentNote == true {
                 BubbleAction(icon: "text.insert", help: "Insert into current note") {
                     viewModel?.insertMessageIntoCurrentNote(message)
+                }
+            }
+            if isLast {
+                BubbleAction(icon: "arrow.clockwise", help: "Regenerate answer") {
+                    viewModel?.regenerateLastAnswer()
                 }
             }
         }

@@ -221,6 +221,11 @@ struct ChatInputBar: View {
                 .lineLimit(1...6)
                 .focused($inputFocused)
                 .onSubmit(submit)
+                // ↑ in an empty input recalls the last question for editing;
+                // with text present the key keeps its normal cursor behavior.
+                .onKeyPress(.upArrow) {
+                    viewModel.recallLastQuestion() ? .handled : .ignored
+                }
 
             ModelPickerButton(viewModel: viewModel)
             sendButton

@@ -89,6 +89,11 @@ final class ChatHUDViewModel: ObservableObject {
     /// but-progressing answer is never cut off.
     private let generationStallLimit: TimeInterval = 240
     private var lastGenerationActivity = Date()
+
+    /// Per-answer generation cap. Local models routinely need more than 1k
+    /// tokens for structured answers (tables, diffs, multi-note summaries);
+    /// cutting them off mid-sentence was a top satisfaction complaint.
+    static let answerTokenLimit = 2048
     init(library: MarkdownLibraryStore, semanticIndex: SemanticSearchIndex? = nil, engine: LocalChatEngine? = nil) {
         self.library = library
         self.semanticIndex = semanticIndex
@@ -254,6 +259,42 @@ final class ChatHUDViewModel: ObservableObject {
         messages = []
         statusMessage = nil
         lastContextReceipt = nil
+    }
+
+    /// True when the last settled turn is an assistant answer that can be
+    /// re-run against the same question.
+    var canRegenerate: Bool {
+        guard !isGenerating, messages.last?.role == .assistant else { return false }
+        return messages.contains { $0.role == .user }
+    }
+
+    /// Recalls the most recent question into an empty draft (↑ in the input),
+    /// so it can be edited and re-sent without retyping. Returns whether the
+    /// recall happened, so the key press can fall through to normal cursor
+    /// movement when it didn't.
+    @discardableResult
+    func recallLastQuestion() -> Bool {
+        guard draft.isEmpty, !isGenerating,
+              let last = messages.last(where: { $0.role == .user }) else { return false }
+        updateDraft(last.text)
+        return true
+    }
+
+    /// Re-answers the last user question: drops the final assistant turn and
+    /// streams a fresh answer in its place. This is also the retry path after a
+    /// failed, stopped, or unsatisfying generation — no retyping needed.
+    func regenerateLastAnswer() {
+        guard canRegenerate else { return }
+        messages.removeLast()
+        statusMessage = nil
+
+        let placeholder = ChatMessage(role: .assistant, text: "", isStreaming: true)
+        messages.append(placeholder)
+        isGenerating = true
+
+        generationTask = Task { [weak self] in
+            await self?.runGeneration(assistantID: placeholder.id, quickActionSource: nil)
+        }
     }
 
     // MARK: - Message actions
@@ -448,7 +489,7 @@ final class ChatHUDViewModel: ObservableObject {
         let (stream, continuation) = AsyncStream<String>.makeStream()
         let producer = Task<Result<String, Error>, Never> {
             do {
-                let full = try await engine.generate(messages: prompt, maxTokens: 1024) { delta in
+                let full = try await engine.generate(messages: prompt, maxTokens: Self.answerTokenLimit) { delta in
                     continuation.yield(delta)
                 }
                 continuation.finish()

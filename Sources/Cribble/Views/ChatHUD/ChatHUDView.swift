@@ -84,9 +84,13 @@ struct ChatHUDView: View {
                 } else {
                     LazyVStack(alignment: .leading, spacing: 14) {
                         ForEach(viewModel.messages) { message in
-                            ChatBubbleView(message: message, viewModel: viewModel)
-                                .equatable()
-                                .id(message.id)
+                            ChatBubbleView(
+                                message: message,
+                                isLast: message.id == viewModel.messages.last?.id,
+                                viewModel: viewModel
+                            )
+                            .equatable()
+                            .id(message.id)
                         }
                     }
                     .padding(.horizontal, 14)

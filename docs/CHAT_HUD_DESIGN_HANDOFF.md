@@ -41,6 +41,8 @@ profile) **without changing any behavior**.
 **Call (on user actions):**
 - `updateDraft(_:)` (bind the text field through this — it powers `@` detection)
 - `send()`, `cancel()`, `newChat()`
+- `regenerateLastAnswer()` (re-answers the last question; gate on `canRegenerate`)
+- `recallLastQuestion()` (↑ in an empty input restores the last question)
 - `applyAutocomplete(_:)`, `dismissAutocomplete()`
 - `addAttachment(_:)`, `removeAttachment(_:)`, `selectModel(_:)`
 

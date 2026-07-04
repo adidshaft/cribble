@@ -57,6 +57,14 @@ All notable changes to Cribble are documented here. The format follows
 - Made local graph nodes native controls with click-to-navigate behavior,
   keyboard focus, and VoiceOver labels.
 
+### Local Chat
+- Added a Regenerate action on the latest answer, which also acts as one-click
+  retry after a failed or stopped generation.
+- Pressing ↑ in an empty chat input recalls the last question for editing and
+  resending.
+- Doubled the per-answer generation limit (1k → 2k tokens) so structured
+  answers (tables, diffs, multi-note summaries) no longer cut off mid-thought.
+
 ## 1.4.0 — Night Shift
 
 Cribble 1.4.0 is the "Night Shift" release: a smoother, safer, more

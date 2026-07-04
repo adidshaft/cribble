@@ -1,6 +1,45 @@
 import XCTest
 @testable import Cribble
 
+/// Deterministic engine for view-model tests: replies with scripted answers
+/// and records the prompts / limits it was handed.
+private final class ScriptedChatEngine: LocalChatEngine, @unchecked Sendable {
+    private let lock = NSLock()
+    private var responses: [String]
+    private var prompts: [[EngineMessage]] = []
+    private var maxTokensSeen: [Int] = []
+
+    init(responses: [String]) {
+        self.responses = responses
+    }
+
+    var recordedPrompts: [[EngineMessage]] { lock.withLock { prompts } }
+    var recordedMaxTokens: [Int] { lock.withLock { maxTokensSeen } }
+
+    func prepare(
+        model: LocalModel,
+        onProgress: @escaping @Sendable (ModelLoadProgress) -> Void
+    ) async throws {
+        onProgress(ModelLoadProgress(fraction: 1))
+    }
+
+    func generate(
+        messages: [EngineMessage],
+        maxTokens: Int,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String {
+        let next: String = lock.withLock {
+            prompts.append(messages)
+            maxTokensSeen.append(maxTokens)
+            return responses.isEmpty ? "" : responses.removeFirst()
+        }
+        onToken(next)
+        return next
+    }
+
+    func cancelGeneration() async {}
+}
+
 final class ChatHUDLogicTests: XCTestCase {
 
     // MARK: - @mention detection
@@ -474,6 +513,96 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(prompt.contains("User: hello"))
         XCTAssertTrue(prompt.contains("Assistant: hi"))
         XCTAssertTrue(prompt.hasSuffix("Assistant:"))
+    }
+
+    // MARK: - Regenerate
+
+    @MainActor
+    func testRegenerateReplacesLastAssistantAnswer() async throws {
+        let engine = ScriptedChatEngine(responses: ["first answer", "second answer"])
+        let viewModel = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: engine
+        )
+
+        XCTAssertFalse(viewModel.canRegenerate)
+
+        viewModel.updateDraft("hello there")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.last?.text, "first answer")
+        XCTAssertTrue(viewModel.canRegenerate)
+
+        viewModel.regenerateLastAnswer()
+        try await waitUntilSettled(viewModel)
+
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.last?.text, "second answer")
+        XCTAssertTrue(viewModel.canRegenerate)
+
+        // The regenerated prompt must end at the original user turn — the
+        // discarded first answer must not leak back into the conversation.
+        let resentPrompt = engine.recordedPrompts.last ?? []
+        XCTAssertEqual(resentPrompt.last?.role, .user)
+        XCTAssertEqual(resentPrompt.last?.content, "hello there")
+        XCTAssertFalse(resentPrompt.contains { $0.content == "first answer" })
+    }
+
+    @MainActor
+    func testRecallLastQuestionRestoresDraft() async throws {
+        let engine = ScriptedChatEngine(responses: ["an answer"])
+        let viewModel = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: engine
+        )
+
+        // Nothing to recall on a fresh chat.
+        XCTAssertFalse(viewModel.recallLastQuestion())
+
+        viewModel.updateDraft("what links these notes?")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+        XCTAssertTrue(viewModel.draft.isEmpty)
+
+        XCTAssertTrue(viewModel.recallLastQuestion())
+        XCTAssertEqual(viewModel.draft, "what links these notes?")
+
+        // A non-empty draft is never clobbered by recall.
+        viewModel.updateDraft("edited question")
+        XCTAssertFalse(viewModel.recallLastQuestion())
+        XCTAssertEqual(viewModel.draft, "edited question")
+    }
+
+    @MainActor
+    func testGenerationUsesRaisedAnswerTokenLimit() async throws {
+        let engine = ScriptedChatEngine(responses: ["ok"])
+        let viewModel = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: engine
+        )
+
+        viewModel.updateDraft("hi")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+
+        XCTAssertEqual(engine.recordedMaxTokens.last, ChatHUDViewModel.answerTokenLimit)
+        XCTAssertGreaterThanOrEqual(ChatHUDViewModel.answerTokenLimit, 2048)
+    }
+
+    @MainActor
+    private func waitUntilSettled(
+        _ viewModel: ChatHUDViewModel,
+        timeout: TimeInterval = 5
+    ) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while viewModel.isGenerating {
+            if Date() > deadline {
+                return XCTFail("Generation did not settle within \(timeout)s")
+            }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
     }
 
     private func withCleanEngineChoiceDefaults(_ body: () -> Void) {

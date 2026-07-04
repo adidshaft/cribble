@@ -65,6 +65,11 @@ All notable changes to Cribble are documented here. The format follows
   SwiftUI scroll-position APIs instead of a custom AppKit bridge.
 
 ### Intelligence
+- Project Pulse no longer cries wolf: the orange "Contradictions flagged"
+  chip only appears when the report actually lists conflicts (the empty
+  "no contradictions" fallback used to trigger it on every clean vault), and
+  the contradiction / glossary / timeline chips now jump straight to their
+  reports in the Artifacts tab.
 - The Ask tab now shows the question it answered above the answer, shows a
   clear in-progress state while answering, clears the input on submit, and
   Copy Answer always pairs the answer with the question that produced it

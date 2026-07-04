@@ -731,6 +731,37 @@ struct IntelligenceHUDView: View {
         engine.artifacts.contains { $0.type == type }
     }
 
+    private func artifact(_ type: IntelligenceArtifactType) -> IntelligenceArtifact? {
+        engine.artifacts.first { $0.type == type }
+    }
+
+    /// The contradiction report, but only when it actually flags something.
+    private var flaggedContradictionReport: IntelligenceArtifact? {
+        guard let report = artifact(.contradictionReport),
+              let content = engine.content(for: report),
+              IntelligenceEngine.isSubstantiveInsight(content) else { return nil }
+        return report
+    }
+
+    /// A pulse chip that jumps to its artifact in the Artifacts tab.
+    private func artifactPulseChip(
+        icon: String,
+        text: String,
+        tint: Color,
+        artifact: IntelligenceArtifact,
+        help: String
+    ) -> some View {
+        Button {
+            selectedArtifactID = artifact.id
+            selectedTab = .artifacts
+        } label: {
+            pulseChip(icon: icon, text: text, tint: tint)
+        }
+        .buttonStyle(.plain)
+        .pointingHandOnHover()
+        .help(help)
+    }
+
     /// A glanceable health + progress card rolling up signals the engine already
     /// produces. Domain-agnostic, so it reads the same for code or prose vaults.
     private var projectPulseCard: some View {
@@ -762,16 +793,37 @@ struct IntelligenceHUDView: View {
             }
 
             HStack(spacing: 8) {
-                pulseChip(
-                    icon: hasArtifact(.contradictionReport) ? "exclamationmark.bubble.fill" : "checkmark.seal",
-                    text: hasArtifact(.contradictionReport) ? "Contradictions flagged" : "No conflicts found",
-                    tint: hasArtifact(.contradictionReport) ? .orange : .green
-                )
-                if hasArtifact(.glossary) {
-                    pulseChip(icon: "character.book.closed", text: "Glossary", tint: .white.opacity(0.6))
+                // "Flagged" only when the report actually lists conflicts —
+                // the "No contradictions found" fallback used to light this
+                // chip orange on every clean vault.
+                if let report = flaggedContradictionReport {
+                    artifactPulseChip(
+                        icon: "exclamationmark.bubble.fill",
+                        text: "Contradictions flagged — review",
+                        tint: .orange,
+                        artifact: report,
+                        help: "Open the contradiction report"
+                    )
+                } else {
+                    pulseChip(icon: "checkmark.seal", text: "No conflicts found", tint: .green)
                 }
-                if hasArtifact(.timeline) {
-                    pulseChip(icon: "calendar.day.timeline.left", text: "Timeline", tint: .white.opacity(0.6))
+                if let glossary = artifact(.glossary) {
+                    artifactPulseChip(
+                        icon: "character.book.closed",
+                        text: "Glossary",
+                        tint: .white.opacity(0.6),
+                        artifact: glossary,
+                        help: "Open the glossary"
+                    )
+                }
+                if let timeline = artifact(.timeline) {
+                    artifactPulseChip(
+                        icon: "calendar.day.timeline.left",
+                        text: "Timeline",
+                        tint: .white.opacity(0.6),
+                        artifact: timeline,
+                        help: "Open the timeline"
+                    )
                 }
             }
 

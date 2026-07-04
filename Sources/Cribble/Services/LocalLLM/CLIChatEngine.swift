@@ -42,12 +42,17 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         let prompt = Self.flatten(messages)
         switch provider {
         case .claude:
-            // `claude --print` streams plain text; prompt comes from $CRIBBLE_PROMPT.
+            // `--output-format text` prints the whole answer only at the end,
+            // which left the HUD on "Thinking…" for the entire generation.
+            // stream-json with partial messages emits real text deltas, parsed
+            // by ClaudeCLIStreamParser. (`--verbose` is required by the CLI
+            // for stream-json in print mode.)
             return try await run(
-                command: "claude --print --output-format text \"$CRIBBLE_PROMPT\"",
+                command: "claude --print --verbose --include-partial-messages --output-format stream-json \"$CRIBBLE_PROMPT\"",
                 prompt: prompt,
                 streaming: true,
-                onToken: onToken
+                onToken: onToken,
+                claudeParser: ClaudeCLIStreamParser()
             )
         case .codex:
             // Codex prints progress chatter to stdout, so capture the clean final
@@ -86,7 +91,8 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         prompt: String,
         streaming: Bool,
         onToken: @escaping @Sendable (String) -> Void,
-        outputFile: URL? = nil
+        outputFile: URL? = nil,
+        claudeParser: ClaudeCLIStreamParser? = nil
     ) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
@@ -119,7 +125,13 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
                 let text = stdoutReader.consume(chunk)
-                if streaming, !text.isEmpty { onToken(text) }
+                guard !text.isEmpty else { return }
+                if let claudeParser {
+                    let delta = claudeParser.consume(text)
+                    if !delta.isEmpty { onToken(delta) }
+                } else if streaming {
+                    onToken(text)
+                }
             }
             errorPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
@@ -134,9 +146,15 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
                 // Drain whatever was buffered between the last read and exit, then
                 // flush any bytes held back at a partial UTF-8 boundary.
                 let tailOut = stdoutReader.consume(outputPipe.fileHandleForReading.readDataToEndOfFile())
-                if streaming, !tailOut.isEmpty { onToken(tailOut) }
-                let streamedTail = stdoutReader.finish()
-                if streaming, !streamedTail.isEmpty { onToken(streamedTail) }
+                let flushedTail = stdoutReader.finish()
+                if let claudeParser {
+                    var delta = claudeParser.consume(tailOut + flushedTail)
+                    delta += claudeParser.finish()
+                    if !delta.isEmpty { onToken(delta) }
+                } else if streaming {
+                    if !tailOut.isEmpty { onToken(tailOut) }
+                    if !flushedTail.isEmpty { onToken(flushedTail) }
+                }
 
                 _ = stderrReader.consume(errorPipe.fileHandleForReading.readDataToEndOfFile())
                 _ = stderrReader.finish()
@@ -147,8 +165,13 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
                 let fileText = outputFile.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
                 if let outputFile { try? FileManager.default.removeItem(at: outputFile) }
 
-                let output = (fileText?.isEmpty == false ? fileText! : stdoutReader.value)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let output: String
+                if let claudeParser {
+                    output = claudeParser.answer.trimmingCharacters(in: .whitespacesAndNewlines)
+                } else {
+                    output = (fileText?.isEmpty == false ? fileText! : stdoutReader.value)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                }
 
                 if proc.terminationStatus != 0 && output.isEmpty {
                     continuation.resume(throwing: LocalChatEngineError.generationFailed(

@@ -67,6 +67,9 @@ All notable changes to Cribble are documented here. The format follows
   (instead of masquerading as a semantic match), outranks loose related notes
   when context is tight, and shows as "Intelligence index" in the context
   receipt.
+- Claude CLI answers now stream into the chat live, token by token. Previously
+  the HUD sat on "Thinking…" for the whole generation and then dumped the
+  entire answer at once.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

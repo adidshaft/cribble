@@ -9,6 +9,7 @@ locally installed Claude / Codex CLI — never a hosted Cribble service.
 | `MLXChatEngine.swift` | On-device inference using MLX models. |
 | `CLIChatEngine.swift` | Streams answers from a local Claude/Codex CLI. |
 | `ChatOutputParser.swift` | Parses streamed tokens (UTF-8 chunk-safe). |
+| `ClaudeCLIStreamParser.swift` | Extracts live text deltas from claude stream-json. |
 | `ContextAssembler.swift` | Builds vault-aware context from the current notes. |
 | `ChatModels.swift` | Chat message / session value types. |
 | `ChatTranscriptStore.swift` | Persists the HUD conversation across restarts. |

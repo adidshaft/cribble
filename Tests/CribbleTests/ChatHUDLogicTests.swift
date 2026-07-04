@@ -502,6 +502,54 @@ final class ChatHUDLogicTests: XCTestCase {
         }
     }
 
+    // MARK: - Claude CLI stream-json parsing
+
+    func testClaudeStreamParserExtractsDeltasAcrossChunkBoundaries() {
+        let parser = ClaudeCLIStreamParser()
+        let lines = """
+        {"type":"system","subtype":"init"}
+        {"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hel"}}}
+        {"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"lo world"}}}
+        {"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ignored"}}}
+        {"type":"result","subtype":"success","result":"Hello world"}
+        """ + "\n"
+
+        // Feed awkward chunk sizes so JSON lines split across reads.
+        var emitted = ""
+        var remaining = Substring(lines)
+        while !remaining.isEmpty {
+            emitted += parser.consume(String(remaining.prefix(17)))
+            remaining = remaining.dropFirst(17)
+        }
+        emitted += parser.finish()
+
+        XCTAssertEqual(emitted, "Hello world")
+        XCTAssertEqual(parser.answer, "Hello world")
+    }
+
+    func testClaudeStreamParserFallsBackToRawText() {
+        let parser = ClaudeCLIStreamParser()
+        var emitted = parser.consume("Plain answer from an older CLI\n")
+        emitted += parser.finish()
+
+        // Nothing streamed live, but the raw output still becomes the answer.
+        XCTAssertTrue(emitted.isEmpty)
+        XCTAssertEqual(
+            parser.answer.trimmingCharacters(in: .whitespacesAndNewlines),
+            "Plain answer from an older CLI"
+        )
+    }
+
+    func testClaudeStreamParserUsesAssistantMessageWithoutPartialDeltas() {
+        let parser = ClaudeCLIStreamParser()
+        _ = parser.consume(
+            "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Full answer\"}]}}\n"
+        )
+        _ = parser.finish()
+
+        XCTAssertEqual(parser.answer, "Full answer")
+    }
+
     func testCLIFlattenIncludesSystemAndTurns() {
         let prompt = CLIChatEngine.flatten([
             EngineMessage(role: .system, content: "RULES"),

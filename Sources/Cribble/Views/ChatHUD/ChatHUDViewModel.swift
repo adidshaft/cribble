@@ -94,16 +94,29 @@ final class ChatHUDViewModel: ObservableObject {
     /// tokens for structured answers (tables, diffs, multi-note summaries);
     /// cutting them off mid-sentence was a top satisfaction complaint.
     static let answerTokenLimit = 2048
-    init(library: MarkdownLibraryStore, semanticIndex: SemanticSearchIndex? = nil, engine: LocalChatEngine? = nil) {
+    /// Persists the conversation across panel closes and app restarts. `nil`
+    /// (tests, previews) disables persistence entirely.
+    private let transcriptStore: ChatTranscriptStore?
+
+    init(
+        library: MarkdownLibraryStore,
+        semanticIndex: SemanticSearchIndex? = nil,
+        engine: LocalChatEngine? = nil,
+        transcriptStore: ChatTranscriptStore? = nil
+    ) {
         self.library = library
         self.semanticIndex = semanticIndex
         self.injectedEngine = engine
+        self.transcriptStore = transcriptStore
         let defaults = UserDefaults.standard
         let savedID = defaults.string(forKey: ModelDefaultsKey.selectedModelID)
         self.selectedModel = savedID.flatMap(ModelCatalog.model(withID:)) ?? ModelCatalog.defaultModel
         self.needsEngineChoice = !Self.hasCompletedEngineChoice(defaults: defaults)
         let fullName = NSFullUserName()
         self.greetingName = fullName.split(separator: " ").first.map(String.init) ?? fullName
+        if let restored = transcriptStore?.load(), !restored.isEmpty {
+            self.messages = restored
+        }
     }
 
     func syncEngineChoiceFromDefaults() {
@@ -259,6 +272,12 @@ final class ChatHUDViewModel: ObservableObject {
         messages = []
         statusMessage = nil
         lastContextReceipt = nil
+        transcriptStore?.clear()
+    }
+
+    /// Writes the settled conversation to disk (a no-op without a store).
+    private func persistTranscript() {
+        transcriptStore?.save(messages)
     }
 
     /// True when the last settled turn is an assistant answer that can be
@@ -420,6 +439,9 @@ final class ChatHUDViewModel: ObservableObject {
         attachments = []
         autocomplete = nil
         slashCommands = []
+        // Persist the question immediately so it survives a crash or quit
+        // while the answer is still streaming.
+        persistTranscript()
 
         let placeholder = ChatMessage(role: .assistant, text: "", isStreaming: true)
         messages.append(placeholder)
@@ -581,6 +603,7 @@ final class ChatHUDViewModel: ObservableObject {
             messages[index].isStreaming = false
         }
         isGenerating = false
+        persistTranscript()
         routeActionableOutput(finalText.isEmpty ? currentText(of: assistantID) : finalText)
     }
 
@@ -594,6 +617,7 @@ final class ChatHUDViewModel: ObservableObject {
         }
         isGenerating = false
         statusMessage = "Stopped"
+        persistTranscript()
     }
 
     private func failGeneration(_ message: String, assistantID: UUID) {
@@ -606,6 +630,7 @@ final class ChatHUDViewModel: ObservableObject {
         }
         isGenerating = false
         statusMessage = message
+        persistTranscript()
     }
 
     /// Routes a completed answer into the existing safe write pipeline. The HUD

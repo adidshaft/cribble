@@ -11,6 +11,7 @@ locally installed Claude / Codex CLI — never a hosted Cribble service.
 | `ChatOutputParser.swift` | Parses streamed tokens (UTF-8 chunk-safe). |
 | `ContextAssembler.swift` | Builds vault-aware context from the current notes. |
 | `ChatModels.swift` | Chat message / session value types. |
+| `ChatTranscriptStore.swift` | Persists the HUD conversation across restarts. |
 | `QuickAction.swift` | Predefined prompts (summarize, explain, link…). |
 | `ModelCatalog.swift` | Known downloadable models + metadata. |
 | `ModelInventory.swift` | Tracks installed models and download progress. |

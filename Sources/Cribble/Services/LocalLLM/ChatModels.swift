@@ -9,7 +9,7 @@ enum ChatRole: String, Codable, Hashable {
 /// A single message in a HUD conversation. The `attachments` are the `@file`
 /// tokens the user pinned to a user turn; they are rendered as badges and their
 /// contents are folded into the model prompt by `ContextAssembler`.
-struct ChatMessage: Identifiable, Hashable {
+struct ChatMessage: Identifiable, Hashable, Codable {
     let id: UUID
     let role: ChatRole
     var text: String
@@ -34,7 +34,7 @@ struct ChatMessage: Identifiable, Hashable {
 
 /// A reference to a workspace Markdown file that the user tagged with `@`.
 /// Lightweight and `Hashable` so it can drive SwiftUI lists and dedup sets.
-struct TaggedFileToken: Identifiable, Hashable {
+struct TaggedFileToken: Identifiable, Hashable, Codable {
     let id: UUID
     let filename: String
     let fileURL: URL

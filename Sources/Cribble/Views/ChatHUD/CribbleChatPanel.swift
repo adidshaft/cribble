@@ -179,7 +179,11 @@ final class ChatHUDController {
             return viewModel
         }
         guard let library else { return nil }
-        let vm = ChatHUDViewModel(library: library, semanticIndex: semanticIndex)
+        let vm = ChatHUDViewModel(
+            library: library,
+            semanticIndex: semanticIndex,
+            transcriptStore: ChatTranscriptStore()
+        )
         vm.updateExtensionQuickActions(extensionRegistry?.quickActions ?? [])
         vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }
         vm.useProjectIntelligence = intelligence?.settings.useInChat ?? false

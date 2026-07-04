@@ -58,6 +58,8 @@ All notable changes to Cribble are documented here. The format follows
   keyboard focus, and VoiceOver labels.
 
 ### Local Chat
+- Conversations now survive closing the chat panel and restarting Cribble;
+  New Chat still starts clean and clears the saved transcript.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

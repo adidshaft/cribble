@@ -515,6 +515,89 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertTrue(prompt.hasSuffix("Assistant:"))
     }
 
+    // MARK: - Transcript persistence
+
+    @MainActor
+    func testTranscriptRoundTripSettlesStreamingTurns() {
+        let store = makeTemporaryTranscriptStore()
+        defer { store.clear() }
+
+        store.save([
+            ChatMessage(role: .user, text: "question"),
+            ChatMessage(role: .assistant, text: "partial answer", isStreaming: true),
+            ChatMessage(role: .assistant, text: "", isStreaming: true)
+        ])
+        let restored = store.load()
+
+        // The empty in-flight placeholder is dropped; the partial answer is
+        // kept but settled so the HUD never restores mid-generation.
+        XCTAssertEqual(restored.count, 2)
+        XCTAssertEqual(restored[0].text, "question")
+        XCTAssertEqual(restored[1].text, "partial answer")
+        XCTAssertFalse(restored.contains { $0.isStreaming })
+    }
+
+    @MainActor
+    func testTranscriptBoundsPersistedLength() {
+        let store = makeTemporaryTranscriptStore()
+        defer { store.clear() }
+
+        let long = (0..<(ChatTranscriptStore.maxPersistedMessages + 40)).map {
+            ChatMessage(role: $0.isMultiple(of: 2) ? .user : .assistant, text: "turn \($0)")
+        }
+        store.save(long)
+        let restored = store.load()
+
+        XCTAssertEqual(restored.count, ChatTranscriptStore.maxPersistedMessages)
+        XCTAssertEqual(restored.last?.text, long.last?.text)
+    }
+
+    @MainActor
+    func testTranscriptClearedBySavingEmptyConversation() {
+        let store = makeTemporaryTranscriptStore()
+        store.save([ChatMessage(role: .user, text: "hi")])
+        XCTAssertFalse(store.load().isEmpty)
+
+        store.save([])
+        XCTAssertTrue(store.load().isEmpty)
+    }
+
+    @MainActor
+    func testConversationSurvivesViewModelRecreation() async throws {
+        let store = makeTemporaryTranscriptStore()
+        defer { store.clear() }
+
+        let first = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: ScriptedChatEngine(responses: ["remembered answer"]),
+            transcriptStore: store
+        )
+        first.updateDraft("remember me")
+        first.send()
+        try await waitUntilSettled(first)
+
+        let recreated = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: ScriptedChatEngine(responses: []),
+            transcriptStore: store
+        )
+        XCTAssertEqual(recreated.messages.count, 2)
+        XCTAssertEqual(recreated.messages.first?.text, "remember me")
+        XCTAssertEqual(recreated.messages.last?.text, "remembered answer")
+
+        // New Chat clears the persisted transcript too.
+        recreated.newChat()
+        XCTAssertTrue(store.load().isEmpty)
+    }
+
+    @MainActor
+    private func makeTemporaryTranscriptStore() -> ChatTranscriptStore {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cribble-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("ChatTranscript.json")
+        return ChatTranscriptStore(fileURL: url)
+    }
+
     // MARK: - Regenerate
 
     @MainActor

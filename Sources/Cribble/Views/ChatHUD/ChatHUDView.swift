@@ -240,34 +240,57 @@ struct ChatEmptyState: View {
 
     /// One-tap opt-in shown only when a project intelligence index exists but
     /// answers aren't using it yet — the header brain toggle alone was too
-    /// easy to miss.
+    /// easy to miss. When intelligence isn't set up for this project at all,
+    /// points at the Intelligence window instead (setup keeps its own consent
+    /// preflight; chat never auto-enables anything).
     @ViewBuilder
     private var intelligenceOffer: some View {
         if viewModel.canOfferIntelligence {
-            Button {
+            intelligenceCapsule(
+                message: "This project has an intelligence index",
+                actionLabel: "Use in answers",
+                help: "Fold this project's generated index into chat answers (same as the brain toggle above)"
+            ) {
                 viewModel.useProjectIntelligence = true
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "brain")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                    Text("This project has an intelligence index")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.72))
-                    Text("Use in answers")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
-            .cribbleMaterialSurface(in: Capsule())
-            .padding(.horizontal, 24)
-            .help("Fold this project's generated index into chat answers (same as the brain toggle above)")
-            .pointingHandOnHover()
+        } else if viewModel.canOfferIntelligenceSetup {
+            intelligenceCapsule(
+                message: "Answers can use a project intelligence index",
+                actionLabel: "Set up",
+                help: "Open Project Intelligence to enable analysis for this folder — you review what runs before anything starts"
+            ) {
+                IntelligenceHUDController.shared.show()
+            }
         }
+    }
+
+    private func intelligenceCapsule(
+        message: String,
+        actionLabel: String,
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: "brain")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(message)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
+                Text(actionLabel)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .cribbleMaterialSurface(in: Capsule())
+        .padding(.horizontal, 24)
+        .help(help)
+        .pointingHandOnHover()
     }
 
     private var quickActions: some View {

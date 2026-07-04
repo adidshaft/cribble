@@ -187,6 +187,9 @@ final class ChatHUDController {
         vm.updateExtensionQuickActions(extensionRegistry?.quickActions ?? [])
         vm.intelligenceContextProvider = { [weak intelligence] in intelligence?.chatContext() ?? [] }
         vm.intelligenceAvailabilityProvider = { [weak intelligence] in intelligence?.hasChatContext ?? false }
+        vm.intelligenceSetupAvailableProvider = { [weak intelligence] in
+            intelligence.map { !$0.isEnabled } ?? false
+        }
         vm.useProjectIntelligence = intelligence?.settings.useInChat ?? false
         vm.onIntelligenceToggle = { [weak intelligence] on in intelligence?.settings.useInChat = on }
         viewModel = vm

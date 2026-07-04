@@ -63,6 +63,9 @@ All notable changes to Cribble are documented here. The format follows
 - The chat empty state now offers a one-tap "Use in answers" opt-in when the
   project has an intelligence index but answers aren't using it yet, so
   project intelligence is no longer hidden behind the small header toggle.
+- When intelligence isn't set up for the project at all, the chat empty state
+  points to the Project Intelligence window instead — setup still goes through
+  its normal consent preflight; chat never auto-enables analysis.
 - Project intelligence now rides in its own clearly labeled prompt lane
   (instead of masquerading as a semantic match), outranks loose related notes
   when context is tight, and shows as "Intelligence index" in the context

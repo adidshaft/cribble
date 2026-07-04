@@ -87,6 +87,18 @@ final class ChatHUDViewModel: ObservableObject {
     var canOfferIntelligence: Bool {
         !useProjectIntelligence && (intelligenceAvailabilityProvider?() ?? false)
     }
+
+    /// Whether the intelligence engine exists but is not enabled for the
+    /// current project. Set by `ChatHUDController`.
+    var intelligenceSetupAvailableProvider: (@MainActor () -> Bool)?
+
+    /// True when intelligence hasn't been set up for this project at all —
+    /// drives the empty-state pointer to the Intelligence window (setup keeps
+    /// its own consent preflight; chat never auto-enables anything).
+    var canOfferIntelligenceSetup: Bool {
+        guard !(intelligenceAvailabilityProvider?() ?? false) else { return false }
+        return intelligenceSetupAvailableProvider?() ?? false
+    }
     /// Test/preview override; when set it's used for every model.
     private let injectedEngine: LocalChatEngine?
     private var loadedModelID: String?

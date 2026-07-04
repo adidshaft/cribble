@@ -735,6 +735,23 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertFalse(viewModel.canOfferIntelligence)
     }
 
+    @MainActor
+    func testIntelligenceSetupOfferShownOnlyWhenEngineIsOff() {
+        let viewModel = ChatHUDViewModel(library: MarkdownLibraryStore(restore: false, includeBundledDemo: false))
+
+        // No engine wired at all: no setup pointer.
+        XCTAssertFalse(viewModel.canOfferIntelligenceSetup)
+
+        // Engine exists but intelligence is off for this project.
+        viewModel.intelligenceSetupAvailableProvider = { true }
+        XCTAssertTrue(viewModel.canOfferIntelligenceSetup)
+
+        // Once an index is available, the direct opt-in supersedes setup.
+        viewModel.intelligenceAvailabilityProvider = { true }
+        XCTAssertFalse(viewModel.canOfferIntelligenceSetup)
+        XCTAssertTrue(viewModel.canOfferIntelligence)
+    }
+
     // MARK: - Regenerate
 
     @MainActor

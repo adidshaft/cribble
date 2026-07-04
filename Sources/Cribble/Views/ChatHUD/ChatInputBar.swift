@@ -226,6 +226,13 @@ struct ChatInputBar: View {
                 .onKeyPress(.upArrow) {
                     viewModel.recallLastQuestion() ? .handled : .ignored
                 }
+                // Esc stops a running generation before it can close the
+                // panel — matching the send button's stop affordance.
+                .onKeyPress(.escape) {
+                    guard viewModel.isGenerating else { return .ignored }
+                    viewModel.cancel()
+                    return .handled
+                }
 
             ModelPickerButton(viewModel: viewModel)
             sendButton

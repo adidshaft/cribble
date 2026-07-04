@@ -576,6 +576,31 @@ final class ChatHUDLogicTests: XCTestCase {
         XCTAssertEqual(parser.answer, "Full answer")
     }
 
+    func testCLIAuthFailuresGetSignInHint() {
+        // "not logged in" must trigger the hint — an earlier version excluded
+        // any stderr containing "logged in", which skipped exactly this case.
+        let notLoggedIn = CLIChatEngine.friendlyError(
+            provider: .claude, status: 1, stderr: "Error: You are not logged in."
+        )
+        XCTAssertTrue(notLoggedIn.contains("isn't signed in"))
+        XCTAssertTrue(notLoggedIn.contains("not logged in"))
+
+        let unauthorized = CLIChatEngine.friendlyError(
+            provider: .codex, status: 1, stderr: "HTTP 401 Unauthorized"
+        )
+        XCTAssertTrue(unauthorized.contains("codex isn't signed in"))
+
+        // Non-auth failures pass through untouched.
+        let crash = CLIChatEngine.friendlyError(
+            provider: .claude, status: 1, stderr: "network unreachable"
+        )
+        XCTAssertEqual(crash, "network unreachable")
+
+        // Empty stderr falls back to the exit code.
+        let silent = CLIChatEngine.friendlyError(provider: .claude, status: 7, stderr: "")
+        XCTAssertEqual(silent, "claude exited with code 7.")
+    }
+
     func testCLIFlattenIncludesSystemAndTurns() {
         let prompt = CLIChatEngine.flatten([
             EngineMessage(role: .system, content: "RULES"),

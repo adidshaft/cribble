@@ -99,6 +99,11 @@ All notable changes to Cribble are documented here. The format follows
   no longer force hundreds of layout passes per second.
 - Answers now render Markdown live while streaming (emphasis, inline code,
   links) instead of showing raw symbols until the turn finishes.
+- Esc now stops a running generation (same as the stop button) instead of
+  closing the panel mid-answer.
+- Fixed the sign-in hint for cloud CLI failures: "You are not logged in"
+  errors now actually show the "run `claude` in Terminal to log in" guidance
+  instead of the raw error.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

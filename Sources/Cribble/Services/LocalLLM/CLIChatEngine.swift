@@ -207,11 +207,18 @@ final class CLIChatEngine: LocalChatEngine, @unchecked Sendable {
         return parts.joined(separator: "\n\n")
     }
 
-    private static func friendlyError(provider: Provider, status: Int32, stderr: String) -> String {
+    /// Internal (not private) so the auth-detection logic stays unit-tested:
+    /// an earlier version excluded any stderr containing "logged in", which
+    /// skipped the sign-in hint precisely on "You are not logged in".
+    static func friendlyError(provider: Provider, status: Int32, stderr: String) -> String {
         let raw = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-        if raw.localizedCaseInsensitiveContains("logged in") == false,
-           raw.localizedCaseInsensitiveContains("login") || raw.localizedCaseInsensitiveContains("auth")
-            || raw.localizedCaseInsensitiveContains("401") {
+        let looksLikeAuthFailure =
+            raw.localizedCaseInsensitiveContains("not logged in")
+            || raw.localizedCaseInsensitiveContains("login")
+            || raw.localizedCaseInsensitiveContains("log in")
+            || raw.localizedCaseInsensitiveContains("auth")
+            || raw.localizedCaseInsensitiveContains("401")
+        if looksLikeAuthFailure {
             return "\(provider.executableName) isn't signed in. Run `\(provider.executableName)` in Terminal to log in, then try again.\n\n\(raw)"
         }
         return raw.isEmpty ? "\(provider.executableName) exited with code \(status)." : raw

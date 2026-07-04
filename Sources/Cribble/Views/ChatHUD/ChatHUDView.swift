@@ -10,6 +10,7 @@ struct ChatHUDView: View {
     let onClose: () -> Void
     var onToggleMode: () -> Void = {}
     var onOpenExtensionContributionGuide: (() -> Void)?
+    @State private var lastAutoScroll = Date.distantPast
 
     var body: some View {
         VStack(spacing: 0) {
@@ -99,9 +100,19 @@ struct ChatHUDView: View {
             }
             .onChange(of: viewModel.messages.last?.text) {
                 guard let last = viewModel.messages.last else { return }
-                // No animation while streaming: an animated scrollTo per token
-                // floods the run loop with overlapping animations and forces a
-                // full ScrollView content-frame recompute on every delta.
+                // No animation while streaming, and at most ~10 scrolls/sec: an
+                // animated or per-delta scrollTo floods the run loop and forces
+                // a full ScrollView content-frame recompute on every update.
+                let now = Date()
+                guard last.isStreaming == false
+                        || now.timeIntervalSince(lastAutoScroll) > 0.1 else { return }
+                lastAutoScroll = now
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
+            .onChange(of: viewModel.isGenerating) {
+                // Settle the view on the completed answer even if the last
+                // throttled window swallowed the final delta scroll.
+                guard let last = viewModel.messages.last else { return }
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
         }

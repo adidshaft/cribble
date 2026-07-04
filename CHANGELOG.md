@@ -70,6 +70,9 @@ All notable changes to Cribble are documented here. The format follows
 - Claude CLI answers now stream into the chat live, token by token. Previously
   the HUD sat on "Thinking…" for the whole generation and then dumped the
   entire answer at once.
+- Streaming got much lighter on the UI: per-character deltas are coalesced
+  before the transcript updates and auto-scroll is throttled, so long answers
+  no longer force hundreds of layout passes per second.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

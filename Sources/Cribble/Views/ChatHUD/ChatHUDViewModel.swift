@@ -551,9 +551,26 @@ final class ChatHUDViewModel: ObservableObject {
         }
         defer { watchdog.cancel() }
 
+        // Coalesce deltas before touching `messages`: the Claude CLI streams
+        // per-character, and publishing + re-laying-out the transcript for
+        // every character costs far more than the generation itself. The first
+        // delta after any lull flushes immediately (fast perceived first
+        // token); rapid-fire deltas batch up to a small run. Anything left
+        // over is flushed after the loop, and the final text overwrite in
+        // `completeGeneration` is the ultimate backstop.
+        var pendingDelta = ""
+        var lastAppend = Date.distantPast
         for await delta in stream {
             lastGenerationActivity = Date()
-            appendToken(delta, assistantID: assistantID)
+            pendingDelta += delta
+            if pendingDelta.count >= 24 || Date().timeIntervalSince(lastAppend) >= 0.05 {
+                appendToken(pendingDelta, assistantID: assistantID)
+                pendingDelta = ""
+                lastAppend = Date()
+            }
+        }
+        if !pendingDelta.isEmpty {
+            appendToken(pendingDelta, assistantID: assistantID)
         }
 
         switch await producer.value {

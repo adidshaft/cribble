@@ -8,9 +8,13 @@ private final class ScriptedChatEngine: LocalChatEngine, @unchecked Sendable {
     private var responses: [String]
     private var prompts: [[EngineMessage]] = []
     private var maxTokensSeen: [Int] = []
+    /// When true, `generate` emits one onToken call per character — mimicking
+    /// the Claude CLI's per-character stream — instead of a single chunk.
+    private let emitsPerCharacter: Bool
 
-    init(responses: [String]) {
+    init(responses: [String], emitsPerCharacter: Bool = false) {
         self.responses = responses
+        self.emitsPerCharacter = emitsPerCharacter
     }
 
     var recordedPrompts: [[EngineMessage]] { lock.withLock { prompts } }
@@ -33,7 +37,11 @@ private final class ScriptedChatEngine: LocalChatEngine, @unchecked Sendable {
             maxTokensSeen.append(maxTokens)
             return responses.isEmpty ? "" : responses.removeFirst()
         }
-        onToken(next)
+        if emitsPerCharacter {
+            for character in next { onToken(String(character)) }
+        } else {
+            onToken(next)
+        }
         return next
     }
 
@@ -500,6 +508,24 @@ final class ChatHUDLogicTests: XCTestCase {
             XCTAssertTrue(viewModel.needsEngineChoice)
             XCTAssertEqual(viewModel.selectedModel.id, chosen.id)
         }
+    }
+
+    @MainActor
+    func testPerCharacterStreamLosesNoText() async throws {
+        // Mimics the Claude CLI's per-character deltas; the view model
+        // coalesces them before publishing, and no text may be dropped.
+        let answer = "A reasonably long answer that spans multiple coalescing windows and batches."
+        let engine = ScriptedChatEngine(responses: [answer], emitsPerCharacter: true)
+        let viewModel = ChatHUDViewModel(
+            library: MarkdownLibraryStore(restore: false, includeBundledDemo: false),
+            engine: engine
+        )
+
+        viewModel.updateDraft("stream it")
+        viewModel.send()
+        try await waitUntilSettled(viewModel)
+
+        XCTAssertEqual(viewModel.messages.last?.text, answer)
     }
 
     // MARK: - Claude CLI stream-json parsing

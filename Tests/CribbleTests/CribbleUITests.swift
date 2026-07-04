@@ -1164,7 +1164,7 @@ final class CribbleUITests: XCTestCase {
 
         XCTAssertTrue(readerView.contains("(\"S\", \"Search files\")"))
         XCTAssertTrue(readerView.contains("(\"C\", \"AI chat\")"))
-        XCTAssertTrue(readerView.contains("(\"N\", \"New note\")"))
+        XCTAssertTrue(readerView.contains("(\"N\", \"Add note to hovered highlight / New note\")"))
         XCTAssertTrue(readerView.contains("(\"T\", \"Open Tasks\")"))
         XCTAssertTrue(readerView.contains("(\"Space\", \"Focus Mode\")"))
         XCTAssertTrue(readerView.contains("(\"Command N\", \"Open today's note\")"))

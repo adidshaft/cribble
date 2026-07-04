@@ -348,10 +348,12 @@ enum ContextAssembler {
             }
             if !rendered.isEmpty {
                 sections.append(
-                    "PROJECT INTELLIGENCE — a generated, regularly refreshed index of this "
-                    + "workspace (its structure, key notes, and how they connect). Prefer it for "
-                    + "questions about the project as a whole, and cite specific notes from it "
-                    + "rather than guessing:"
+                    "PROJECT INTELLIGENCE — generated, regularly refreshed reference documents "
+                    + "about this workspace: an index of its structure and key notes, and "
+                    + "possibly a contradiction report, glossary, or timeline. Prefer these for "
+                    + "questions about the project as a whole (\"what is this workspace about?\", "
+                    + "\"where do my notes disagree?\"), and cite specific notes from them rather "
+                    + "than guessing:"
                 )
                 sections.append(contentsOf: rendered)
             }

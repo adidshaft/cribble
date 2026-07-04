@@ -58,6 +58,10 @@ All notable changes to Cribble are documented here. The format follows
   keyboard focus, and VoiceOver labels.
 
 ### Intelligence
+- The Ask tab now shows the question it answered above the answer, shows a
+  clear in-progress state while answering, clears the input on submit, and
+  Copy Answer always pairs the answer with the question that produced it
+  (previously it paired whatever was currently typed in the field).
 - Chat answers with intelligence enabled now also receive the contradiction
   report, glossary, and timeline insights (when they contain something), not
   just the project index — so "where do my notes disagree?" works in chat.

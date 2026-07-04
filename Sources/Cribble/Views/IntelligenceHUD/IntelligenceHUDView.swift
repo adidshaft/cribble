@@ -26,6 +26,9 @@ struct IntelligenceHUDView: View {
     @State private var provenance: [ArtifactProvenance] = []
     @State private var askText = ""
     @State private var askAnswer: String?
+    /// The question the current `askAnswer` actually answered — kept separate
+    /// from `askText` so editing the field can't mislabel a copied answer.
+    @State private var askedQuestion = ""
     @State private var isAsking = false
     @State private var isEnabling = false
     @State private var showModelPicker = false
@@ -1513,12 +1516,25 @@ struct IntelligenceHUDView: View {
 
     private var askTab: some View {
         VStack(spacing: 10) {
-            if let answer = askAnswer {
+            if isAsking {
+                VStack(spacing: 10) {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Answering from this project's intelligence…")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let answer = askAnswer {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Project Answer")
+                        Text(askedQuestion.isEmpty ? "Project Answer" : askedQuestion)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.55))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                         Spacer()
                         Button {
                             copyAskAnswer(answer)
@@ -1570,7 +1586,10 @@ struct IntelligenceHUDView: View {
 
     private func copyAskAnswer(_ answer: String) {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(IntelligenceAskHandoff.markdown(question: askText, answer: answer), forType: .string)
+        NSPasteboard.general.setString(
+            IntelligenceAskHandoff.markdown(question: askedQuestion, answer: answer),
+            forType: .string
+        )
     }
 
     private var askSuggestionChips: some View {
@@ -1630,6 +1649,8 @@ struct IntelligenceHUDView: View {
     private func ask(question: String) {
         guard !question.isEmpty, !isAsking else { return }
         isAsking = true
+        askedQuestion = question
+        askText = ""
         Task {
             let answer = await engine.ask(question)
             askAnswer = answer ?? "No answer available — is a model configured?"

@@ -4,9 +4,15 @@ enum LocalGraphLayout {
     static func positions(for graph: LocalNoteGraph, in size: CGSize) -> [URL: CGPoint] {
         guard size.width > 0, size.height > 0 else { return [:] }
         let centerPoint = CGPoint(x: size.width / 2, y: size.height / 2)
-        let radiusBase = min(size.width, size.height)
         let grouped = Dictionary(grouping: graph.nodes, by: \.distance)
         var positions: [URL: CGPoint] = [:]
+
+        // Elliptical rings: the horizontal radius uses the card's width and
+        // the vertical radius its height. The old circle sized off
+        // min(width, height) crammed every 92pt-wide label into the middle
+        // of a wide card, smearing them into an unreadable pile.
+        let horizontalMax = max(40, size.width / 2 - 64)
+        let verticalMax = max(30, size.height / 2 - 26)
 
         for node in grouped[0] ?? [] {
             positions[node.url] = centerPoint
@@ -18,12 +24,12 @@ enum LocalGraphLayout {
                 if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
                 return $0.url.path.localizedCaseInsensitiveCompare($1.url.path) == .orderedAscending
             }
-            let radius = radiusBase * min(0.44, 0.22 + (Double(distance) * 0.12))
+            let fraction = min(1.0, 0.62 + (Double(distance) - 1) * 0.38)
             for (index, node) in nodes.enumerated() {
                 let angle = (-Double.pi / 2) + (2 * Double.pi * Double(index) / Double(max(1, nodes.count)))
                 positions[node.url] = CGPoint(
-                    x: centerPoint.x + CGFloat(cos(angle) * radius),
-                    y: centerPoint.y + CGFloat(sin(angle) * radius)
+                    x: centerPoint.x + CGFloat(cos(angle) * fraction) * horizontalMax,
+                    y: centerPoint.y + CGFloat(sin(angle) * fraction) * verticalMax
                 )
             }
         }
@@ -81,9 +87,16 @@ struct LocalGraphView: View {
                     }
                     .accessibilityHidden(true)
 
+                    // Dense graphs thin second-hop labels so first-hop titles
+                    // stay legible; every node keeps its tooltip and
+                    // accessibility label.
+                    let showsAllLabels = graph.nodes.count <= 12
                     ForEach(graph.nodes) { node in
                         if let point = positions[node.url] {
-                            LocalGraphNodeButton(node: node) {
+                            LocalGraphNodeButton(
+                                node: node,
+                                showsLabel: showsAllLabels || node.distance <= 1
+                            ) {
                                 guard !node.isCurrent else { return }
                                 onSelect(node.url)
                             }
@@ -113,6 +126,7 @@ struct LocalGraphView: View {
 
 private struct LocalGraphNodeButton: View {
     let node: LocalNoteGraph.Node
+    var showsLabel: Bool = true
     let onSelect: () -> Void
 
     var body: some View {
@@ -125,12 +139,14 @@ private struct LocalGraphNodeButton: View {
                     }
                     .frame(width: node.isCurrent ? 26 : 20, height: node.isCurrent ? 26 : 20)
 
-                Text(node.title)
-                    .font(.caption2.weight(node.isCurrent ? .semibold : .regular))
-                    .foregroundStyle(node.isCurrent ? .primary : .secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(width: 92)
+                if showsLabel {
+                    Text(node.title)
+                        .font(.caption2.weight(node.isCurrent ? .semibold : .regular))
+                        .foregroundStyle(node.isCurrent ? .primary : .secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(width: 92)
+                }
             }
         }
         .buttonStyle(.plain)

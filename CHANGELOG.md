@@ -57,6 +57,13 @@ All notable changes to Cribble are documented here. The format follows
 - Made local graph nodes native controls with click-to-navigate behavior,
   keyboard focus, and VoiceOver labels.
 
+### Reader
+- The Local Graph now lays notes out on an ellipse that uses the card's full
+  width, and thins second-hop labels on dense graphs — labels no longer smear
+  into an unreadable pile in the middle of the card.
+- Reader scroll tracking and bookmark scroll restore now use the native
+  SwiftUI scroll-position APIs instead of a custom AppKit bridge.
+
 ### Intelligence
 - The Ask tab now shows the question it answered above the answer, shows a
   clear in-progress state while answering, clears the input on submit, and

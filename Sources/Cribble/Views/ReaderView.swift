@@ -192,7 +192,7 @@ private struct ReaderDocumentView: View {
     // this view's body (which used to re-trigger LazyVStack diffing and
     // updateNSView on every pixel of scrolling — the dominant lag source).
     @State private var scrollState = ReaderScrollState()
-    @State private var restoreScrollOffsetY: Double?
+    @State private var scrollPosition = ScrollPosition()
     @State private var currentSectionTitle: String?
     @State private var restoredDocumentURL: URL?
     @State private var isHighlightMode = false
@@ -253,12 +253,6 @@ private struct ReaderDocumentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        ScrollPositionBridge(
-                            scrollState: scrollState,
-                            targetOffsetY: $restoreScrollOffsetY
-                        )
-                        .frame(width: 0, height: 0)
-
                         if let bookmark = readingAnnotations.bookmark(for: document.url) {
                             ReadingBookmarkStrip(
                                 bookmark: bookmark,
@@ -371,6 +365,18 @@ private struct ReaderDocumentView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .coordinateSpace(name: "readerScroll")
+                // Native scroll tracking + programmatic restore. The previous
+                // NSViewRepresentable bridge scrolled the AppKit clip view
+                // directly, which desynced SwiftUI's scroll geometry from the
+                // compositor on macOS 26 — content tiles rendered for one
+                // offset were displayed at another, ghosting a displaced copy
+                // of the note over the header.
+                .scrollPosition($scrollPosition)
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, offsetY in
+                    scrollState.offsetY = offsetY
+                }
                 .onPreferenceChange(SectionVisibilityPreferenceKey.self) { frames in
                     updateCurrentSection(from: frames)
                 }
@@ -593,7 +599,7 @@ private struct ReaderDocumentView: View {
         }
 
         if bookmark.scrollOffsetY > 0 {
-            restoreScrollOffsetY = bookmark.scrollOffsetY
+            scrollPosition.scrollTo(y: bookmark.scrollOffsetY)
             library.statusMessage = "Bookmarked section gone — restored to approximate scroll position"
             return
         }
@@ -2358,90 +2364,6 @@ private struct SectionVisibilityPreferenceKey: PreferenceKey {
             } else {
                 value = [frame]
             }
-        }
-    }
-}
-
-private struct ScrollPositionBridge: NSViewRepresentable {
-    let scrollState: ReaderScrollState
-    @Binding var targetOffsetY: Double?
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(scrollState: scrollState)
-    }
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        DispatchQueue.main.async {
-            context.coordinator.attach(to: view.enclosingScrollView)
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        // Skip the async hop when nothing has changed: attach() is idempotent
-        // and re-firing it on every SwiftUI invalidation kept enqueuing
-        // identical work that the coordinator just no-ops. Only re-dispatch
-        // when there's a scroll target to consume.
-        guard let targetOffsetY else {
-            context.coordinator.attach(to: nsView.enclosingScrollView)
-            return
-        }
-        DispatchQueue.main.async {
-            context.coordinator.attach(to: nsView.enclosingScrollView)
-            context.coordinator.scroll(to: targetOffsetY)
-            self.targetOffsetY = nil
-        }
-    }
-
-    @MainActor
-    final class Coordinator: NSObject {
-        // Reference, not Binding — boundsDidChange fires on every scroll
-        // tick. Writing to a SwiftUI @State/Binding here invalidated the
-        // entire ReaderDocumentView body once per pixel of scroll.
-        private let scrollState: ReaderScrollState
-        private weak var scrollView: NSScrollView?
-
-        init(scrollState: ReaderScrollState) {
-            self.scrollState = scrollState
-        }
-
-        func attach(to scrollView: NSScrollView?) {
-            guard self.scrollView !== scrollView, let scrollView else { return }
-            self.scrollView = scrollView
-            scrollView.contentView.postsBoundsChangedNotifications = true
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(boundsDidChange),
-                name: NSView.boundsDidChangeNotification,
-                object: scrollView.contentView
-            )
-            scrollState.offsetY = scrollView.contentView.bounds.origin.y
-        }
-
-        func scroll(to offsetY: Double) {
-            guard let scrollView else { return }
-            let documentHeight = scrollView.documentView?.bounds.height ?? 0
-            let maxY = max(0, documentHeight - scrollView.contentView.bounds.height)
-            let y = min(max(0, offsetY), maxY)
-            scrollView.contentView.scroll(to: NSPoint(x: 0, y: y))
-            scrollView.reflectScrolledClipView(scrollView.contentView)
-            scrollState.offsetY = y
-        }
-
-        @objc nonisolated private func boundsDidChange(_ notification: Notification) {
-            // NSScrollView always posts bounds-changed on the main thread,
-            // so MainActor.assumeIsolated is sound. We deliberately avoid
-            // pulling `notification.object` across the actor boundary (Swift
-            // 6 sendability) by reading our own cached scrollView reference.
-            MainActor.assumeIsolated {
-                guard let scrollView else { return }
-                scrollState.offsetY = scrollView.contentView.bounds.origin.y
-            }
-        }
-
-        deinit {
-            NotificationCenter.default.removeObserver(self)
         }
     }
 }

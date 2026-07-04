@@ -46,16 +46,46 @@ enum Prompts {
         ]
     }
 
+    /// How the project index should read, inferred from what was summarized.
+    /// A vault of Markdown notes gets a knowledge-base map; "Components" and
+    /// "Entry points" only make sense when most files are source code.
+    enum ProjectIndexStyle: Equatable {
+        case code
+        case knowledgeBase
+    }
+
+    private static let codeExtensions: Set<String> = [
+        "swift", "ts", "tsx", "js", "jsx", "py", "rb", "go", "rs", "java",
+        "kt", "c", "cc", "cpp", "h", "hpp", "m", "mm", "cs", "sh", "bash",
+        "zsh", "sql", "scala", "php", "lua", "pl", "ex", "exs"
+    ]
+
+    static func projectIndexStyle(paths: [String]) -> ProjectIndexStyle {
+        let codeCount = paths.count { path in
+            codeExtensions.contains((path as NSString).pathExtension.lowercased())
+        }
+        // Majority code → architecture report; otherwise notes-first map.
+        return codeCount * 2 > paths.count ? .code : .knowledgeBase
+    }
+
     static func projectIndex(projectName: String, summaries: [(path: String, summary: String)]) -> [EngineMessage] {
         let body = summaries
             .map { "### \($0.path)\n\($0.summary)" }
             .joined(separator: "\n\n")
+        let structure = switch projectIndexStyle(paths: summaries.map(\.path)) {
+        case .code:
+            "a one-paragraph overview, a \"## Components\" section grouping related files, "
+            + "and a \"## Entry points\" section"
+        case .knowledgeBase:
+            "a one-paragraph overview of what this workspace is about, a \"## Themes\" section "
+            + "grouping related notes with one line on how they connect, and a \"## Key notes\" "
+            + "section calling out the notes someone should read first and why"
+        }
         return [
             EngineMessage(role: .system, content: """
             You are assembling a project index from per-file summaries. \(antiHallucination) \
             Produce a single Markdown document titled "# \(projectName) — Project Index" with: \
-            a one-paragraph overview, a "## Components" section grouping related files, and a \
-            "## Entry points" section. Reference only the files listed below.
+            \(structure). Reference only the files listed below.
 
             Output Markdown only. Do not include analysis, scratchpad text, chain-of-thought, \
             plans, or phrases like "The user wants me":

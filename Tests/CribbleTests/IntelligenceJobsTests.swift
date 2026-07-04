@@ -496,7 +496,9 @@ final class IntelligenceJobsTests: XCTestCase {
         let index = try XCTUnwrap(produced.first)
         let content = try XCTUnwrap(artifacts.content(for: index))
         XCTAssertTrue(content.hasPrefix("# cribble-index-fallback-"))
-        XCTAssertTrue(content.contains("## Components"))
+        // A Markdown-only workspace gets knowledge-base sections, not a code
+        // architecture report.
+        XCTAssertTrue(content.contains("## Themes"))
         XCTAssertTrue(content.contains("`Alpha.md`"))
         XCTAssertTrue(content.contains("`Beta.md`"))
         let failed = await db.jobs(projectID: "p", status: .failed)
@@ -754,5 +756,37 @@ final class IntelligenceJobsTests: XCTestCase {
         // No jobs left failed.
         let failed = await db.jobs(projectID: "p", status: .failed).count
         XCTAssertEqual(failed, 0)
+    }
+
+    // MARK: - Project index style
+
+    func testProjectIndexStyleAdaptsToVaultContents() {
+        XCTAssertEqual(
+            Prompts.projectIndexStyle(paths: ["Notes/a.md", "Notes/b.md", "Sources/App.swift"]),
+            .knowledgeBase
+        )
+        XCTAssertEqual(
+            Prompts.projectIndexStyle(paths: ["Sources/App.swift", "Sources/Store.swift", "README.md"]),
+            .code
+        )
+        // Empty and prose-only workspaces read as knowledge bases.
+        XCTAssertEqual(Prompts.projectIndexStyle(paths: []), .knowledgeBase)
+    }
+
+    func testProjectIndexPromptUsesNotesLanguageForMarkdownVaults() {
+        let notesPrompt = Prompts.projectIndex(
+            projectName: "Vault",
+            summaries: [("a.md", "s"), ("b.md", "s")]
+        ).first?.content ?? ""
+        XCTAssertTrue(notesPrompt.contains("## Themes"))
+        XCTAssertTrue(notesPrompt.contains("## Key notes"))
+        XCTAssertFalse(notesPrompt.contains("## Entry points"))
+
+        let codePrompt = Prompts.projectIndex(
+            projectName: "App",
+            summaries: [("App.swift", "s"), ("Store.swift", "s"), ("README.md", "s")]
+        ).first?.content ?? ""
+        XCTAssertTrue(codePrompt.contains("## Components"))
+        XCTAssertTrue(codePrompt.contains("## Entry points"))
     }
 }

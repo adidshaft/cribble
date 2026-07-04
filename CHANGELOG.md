@@ -57,6 +57,12 @@ All notable changes to Cribble are documented here. The format follows
 - Made local graph nodes native controls with click-to-navigate behavior,
   keyboard focus, and VoiceOver labels.
 
+### Intelligence
+- The generated project index now adapts to what the workspace actually is:
+  Markdown vaults get a knowledge-base map (Themes / Key notes) instead of a
+  code architecture report (Components / Entry points), which only appears
+  when most indexed files are source code.
+
 ### Local Chat
 - Conversations now survive closing the chat panel and restarting Cribble.
 - New Chat parks the conversation in history instead of destroying it; a new

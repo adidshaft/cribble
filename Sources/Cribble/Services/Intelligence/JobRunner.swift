@@ -562,26 +562,31 @@ actor JobRunner {
 
     private func deterministicProjectIndex(from summaries: [(path: String, summary: String)]) -> String {
         let overview = "Generated from \(summaries.count) indexed file summary\(summaries.count == 1 ? "" : "ies") because the local model did not return a usable project index."
-        let components = summaries
+        let files = summaries
             .prefix(40)
             .map { summary in
                 "- `\(summary.path)`: \(firstSummarySentence(summary.summary))"
             }
             .joined(separator: "\n")
-        let entryPoints = summaries
+        let highlights = summaries
             .prefix(8)
             .map { "- `\($0.path)`" }
             .joined(separator: "\n")
+        // Section names mirror Prompts.projectIndexStyle so the fallback reads
+        // like the model-written index would for the same workspace.
+        let isCode = Prompts.projectIndexStyle(paths: summaries.map(\.path)) == .code
+        let filesHeading = isCode ? "## Components" : "## Themes"
+        let highlightsHeading = isCode ? "## Entry points" : "## Key notes"
         return """
         # \(projectName) — Project Index
 
         \(overview)
 
-        ## Components
-        \(components.isEmpty ? "- No file summaries are available yet." : components)
+        \(filesHeading)
+        \(files.isEmpty ? "- No file summaries are available yet." : files)
 
-        ## Entry points
-        \(entryPoints.isEmpty ? "- No entry points inferred yet." : entryPoints)
+        \(highlightsHeading)
+        \(highlights.isEmpty ? "- Nothing highlighted yet." : highlights)
         """
     }
 

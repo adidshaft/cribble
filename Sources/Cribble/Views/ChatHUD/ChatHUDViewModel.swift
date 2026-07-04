@@ -387,6 +387,7 @@ final class ChatHUDViewModel: ObservableObject {
         case .currentNote: "Current note"
         case .explicitAttachment: "Attachment"
         case .relatedNote: "Related note"
+        case .projectIntelligence: "Intelligence index"
         }
         let status = switch item.status {
         case .included: "included"
@@ -514,7 +515,8 @@ final class ChatHUDViewModel: ObservableObject {
             modelName: selectedModel.name,
             currentNote: context.current,
             attachments: context.attachments,
-            related: context.related
+            related: context.related,
+            intelligence: context.intelligence
         )
         lastContextReceipt = packet.receipt
 
@@ -685,7 +687,12 @@ final class ChatHUDViewModel: ObservableObject {
     private func resolveContext(
         engine: LocalChatEngine,
         includesAmbientContext: Bool
-    ) async -> (current: ResolvedFile?, attachments: [ContextAttachment], related: [ResolvedFile]) {
+    ) async -> (
+        current: ResolvedFile?,
+        attachments: [ContextAttachment],
+        related: [ResolvedFile],
+        intelligence: [ResolvedFile]
+    ) {
         var seen = Set<URL>()
 
         // Explicit `@`/`+` attachments are the authoritative context for the
@@ -745,13 +752,15 @@ final class ChatHUDViewModel: ObservableObject {
             related = await resolveRelatedNotes(excluding: seen)
         }
 
-        // Fold in generated project intelligence (project index) when available,
-        // so chat answers benefit from the living knowledge base.
+        // Generated project intelligence (project index) rides in its own
+        // prompt lane so the model knows it's a curated workspace map, not a
+        // loose semantic match — and so the receipt labels it honestly.
+        var intelligence: [ResolvedFile] = []
         if includesAmbientContext, let intelligenceContextProvider {
-            related.append(contentsOf: intelligenceContextProvider())
+            intelligence = intelligenceContextProvider()
         }
 
-        return (current, attachments, related)
+        return (current, attachments, related, intelligence)
     }
 
     private func digestForAttachment(token: TaggedFileToken, content: String, engine: LocalChatEngine) async -> String? {

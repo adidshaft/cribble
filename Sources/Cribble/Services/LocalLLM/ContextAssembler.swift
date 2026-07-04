@@ -36,6 +36,7 @@ enum ContextSourceKind: String, Equatable {
     case currentNote = "current_note"
     case explicitAttachment = "explicit_attachment"
     case relatedNote = "related_note"
+    case projectIntelligence = "project_intelligence"
 }
 
 enum ContextReceiptStatus: String, Equatable {
@@ -135,7 +136,8 @@ enum ContextAssembler {
         modelName: String,
         currentNote: ResolvedFile?,
         attachments: [ContextAttachment],
-        related: [ResolvedFile] = []
+        related: [ResolvedFile] = [],
+        intelligence: [ResolvedFile] = []
     ) -> ContextPacket {
         var sections: [String] = []
         var receiptItems: [ContextReceipt.Item] = []
@@ -318,6 +320,43 @@ enum ContextAssembler {
             }
         }
 
+        // Curated project intelligence outranks loose semantic matches in the
+        // shared budget: it's a generated map of the whole workspace, so it
+        // answers "big picture" questions the related-note lane can't.
+        if !intelligence.isEmpty {
+            var rendered: [String] = []
+            for file in intelligence {
+                if let body = budgetedAmbient(file, source: .projectIntelligence) {
+                    rendered.append(
+                        "--- BEGIN INTELLIGENCE: \(file.filename) ---\n\(body)\n--- END INTELLIGENCE: \(file.filename) ---"
+                    )
+                } else {
+                    appendReceipt(
+                        source: .projectIntelligence,
+                        filename: file.filename,
+                        status: .omitted,
+                        originalCharacters: file.content.count,
+                        includedCharacters: 0,
+                        reason: "context budget exhausted"
+                    )
+                    warnings.append(ContextWarning(
+                        kind: .contextBudgetExceeded,
+                        filename: file.filename,
+                        message: "\(file.filename) was omitted because the context budget was exhausted."
+                    ))
+                }
+            }
+            if !rendered.isEmpty {
+                sections.append(
+                    "PROJECT INTELLIGENCE — a generated, regularly refreshed index of this "
+                    + "workspace (its structure, key notes, and how they connect). Prefer it for "
+                    + "questions about the project as a whole, and cite specific notes from it "
+                    + "rather than guessing:"
+                )
+                sections.append(contentsOf: rendered)
+            }
+        }
+
         if !related.isEmpty {
             var rendered: [String] = []
             for file in related {
@@ -355,7 +394,7 @@ enum ContextAssembler {
             sections.append(renderReceipt(ContextReceipt(items: receiptItems)))
         }
 
-        if currentNote == nil && attachments.isEmpty && related.isEmpty {
+        if currentNote == nil && attachments.isEmpty && related.isEmpty && intelligence.isEmpty {
             sections.append("No notes are attached to this message yet.")
         }
 

@@ -63,6 +63,10 @@ All notable changes to Cribble are documented here. The format follows
 - The chat empty state now offers a one-tap "Use in answers" opt-in when the
   project has an intelligence index but answers aren't using it yet, so
   project intelligence is no longer hidden behind the small header toggle.
+- Project intelligence now rides in its own clearly labeled prompt lane
+  (instead of masquerading as a semantic match), outranks loose related notes
+  when context is tight, and shows as "Intelligence index" in the context
+  receipt.
 - Added a Regenerate action on the latest answer, which also acts as one-click
   retry after a failed or stopped generation.
 - Pressing ↑ in an empty chat input recalls the last question for editing and

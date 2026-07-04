@@ -598,6 +598,47 @@ final class ChatHUDLogicTests: XCTestCase {
         return ChatTranscriptStore(fileURL: url)
     }
 
+    func testProjectIntelligenceGetsDedicatedPromptLane() {
+        let packet = ContextAssembler.contextPacket(
+            modelName: "M",
+            currentNote: nil,
+            attachments: [],
+            related: [ResolvedFile(filename: "Loose.md", content: "semantic match")],
+            intelligence: [ResolvedFile(filename: "Project — Intelligence Index", content: "workspace map")]
+        )
+        let prompt = packet.systemPrompt
+
+        XCTAssertTrue(prompt.contains("PROJECT INTELLIGENCE"))
+        XCTAssertTrue(prompt.contains("BEGIN INTELLIGENCE: Project — Intelligence Index"))
+        XCTAssertTrue(prompt.contains("workspace map"))
+        // The loose semantic lane stays separate.
+        XCTAssertTrue(prompt.contains("BEGIN RELATED: Loose.md"))
+        XCTAssertTrue(packet.receipt.items.contains {
+            $0.source == .projectIntelligence && $0.status == .included
+        })
+    }
+
+    func testProjectIntelligenceOutranksRelatedNotesInBudget() {
+        // Attachments leave 10k of budget; the 8k curated index must fit whole
+        // while the 4k loose semantic match gets squeezed (truncated), proving
+        // the intelligence lane is budgeted first.
+        let attachments = (0..<5).map {
+            ContextAttachment(filename: "A\($0).md", content: String(repeating: "a", count: 10_000))
+        }
+        let packet = ContextAssembler.contextPacket(
+            modelName: "M",
+            currentNote: nil,
+            attachments: attachments,
+            related: [ResolvedFile(filename: "Loose.md", content: String(repeating: "r", count: 4_000))],
+            intelligence: [ResolvedFile(filename: "Index.md", content: String(repeating: "i", count: 8_000))]
+        )
+
+        let intelligenceItem = packet.receipt.items.first { $0.source == .projectIntelligence }
+        let relatedItem = packet.receipt.items.first { $0.source == .relatedNote }
+        XCTAssertEqual(intelligenceItem?.status, .included)
+        XCTAssertNotEqual(relatedItem?.status, .included)
+    }
+
     // MARK: - Intelligence offer
 
     @MainActor

@@ -1023,11 +1023,39 @@ final class IntelligenceEngine: ObservableObject {
         // Off unless the user explicitly turned it on in the Chat HUD — otherwise
         // chat answers get polluted by project context the user didn't ask for.
         guard settings.useInChat, isEnabled else { return [] }
+        let projectName = enabledProjectName ?? "Project"
         var files: [ResolvedFile] = []
         if let index = artifacts.first(where: { $0.type == .projectIndex }), let content = artifactStore?.content(for: index) {
-            files.append(ResolvedFile(filename: "\(enabledProjectName ?? "Project") — Intelligence Index", content: content))
+            files.append(ResolvedFile(filename: "\(projectName) — Intelligence Index", content: content))
+        }
+        // Generic insight artifacts answer questions the index can't ("where
+        // do my notes disagree?", "what does X mean here?", "what happened
+        // when?"). Fallback stubs ("No contradictions found…") are skipped —
+        // they'd spend context budget to say nothing.
+        let insightTypes: [(IntelligenceArtifactType, String)] = [
+            (.contradictionReport, "Contradiction Report"),
+            (.glossary, "Glossary"),
+            (.timeline, "Timeline")
+        ]
+        for (type, label) in insightTypes {
+            guard let artifact = artifacts.first(where: { $0.type == type }),
+                  let content = artifactStore?.content(for: artifact),
+                  Self.isSubstantiveInsight(content)
+            else { continue }
+            files.append(ResolvedFile(filename: "\(projectName) — \(label)", content: content))
         }
         return files
+    }
+
+    /// False for fallback stubs — a title plus a "nothing found" line.
+    nonisolated static func isSubstantiveInsight(_ content: String) -> Bool {
+        let lower = content.lowercased()
+        if lower.contains("no contradictions found") { return false }
+        let bodyLines = content
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("#") }
+        return bodyLines.count >= 2
     }
 
     // MARK: - Model selection

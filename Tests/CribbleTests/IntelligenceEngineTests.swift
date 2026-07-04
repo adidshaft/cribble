@@ -890,4 +890,22 @@ final class IntelligenceEngineTests: XCTestCase {
         let pendingCount = await db.pendingJobCount(projectID: "p")
         XCTAssertEqual(pendingCount, 1)
     }
+
+    // MARK: - Chat context insight filtering
+
+    func testSubstantiveInsightFilterSkipsFallbackStubs() {
+        // Fallback stubs would spend chat context budget to say nothing.
+        XCTAssertFalse(IntelligenceEngine.isSubstantiveInsight(
+            "# Contradiction Report\nNo contradictions found across the current documents."
+        ))
+        XCTAssertFalse(IntelligenceEngine.isSubstantiveInsight("# Glossary\nNothing extracted yet."))
+        XCTAssertFalse(IntelligenceEngine.isSubstantiveInsight(""))
+
+        XCTAssertTrue(IntelligenceEngine.isSubstantiveInsight("""
+        # Contradiction Report
+
+        - `Pricing.md` says the launch price is $6.99, but `AppStore.md` says $4.99.
+        - `Roadmap.md` marks Tasks export as shipped; `Backlog.md` lists it as open.
+        """))
+    }
 }

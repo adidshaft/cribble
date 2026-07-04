@@ -64,20 +64,12 @@ struct ExtensionTrustDecisionStoreTests {
     }
 
     private final class Fixture {
+        /// In-memory (see `EphemeralDefaults`): persistent test suites leaked
+        /// stub plists into ~/Library/Preferences on every run.
         let defaults: UserDefaults
-        private let suiteName: String
 
         init() throws {
-            suiteName = "ExtensionTrustDecisionStoreTests-\(UUID().uuidString)"
-            guard let defaults = UserDefaults(suiteName: suiteName) else {
-                throw NSError(domain: "ExtensionTrustDecisionStoreTests", code: 1)
-            }
-            defaults.removePersistentDomain(forName: suiteName)
-            self.defaults = defaults
-        }
-
-        deinit {
-            defaults.removePersistentDomain(forName: suiteName)
+            defaults = EphemeralDefaults()
         }
     }
 }

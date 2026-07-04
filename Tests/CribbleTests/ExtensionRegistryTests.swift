@@ -599,25 +599,20 @@ struct ExtensionRegistryTests {
 private struct ExtensionRegistryFixture {
     let root: URL
     let userExtensions: URL
+    /// In-memory (see `EphemeralDefaults`): persistent test suites leaked
+    /// hundreds of stub plists into ~/Library/Preferences.
     let defaults: UserDefaults
-    let suiteName: String
 
     init() throws {
         root = FileManager.default.temporaryDirectory
             .appendingPathComponent("CribbleExtensionRegistryTests-\(UUID().uuidString)", isDirectory: true)
         userExtensions = root.appendingPathComponent("UserExtensions", isDirectory: true)
         try FileManager.default.createDirectory(at: userExtensions, withIntermediateDirectories: true)
-        suiteName = "CribbleExtensionRegistryTests-\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-        self.defaults = defaults
-        defaults.removePersistentDomain(forName: suiteName)
+        defaults = EphemeralDefaults()
     }
 
     func cleanUp() {
         try? FileManager.default.removeItem(at: root)
-        defaults.removePersistentDomain(forName: suiteName)
     }
 
     @MainActor
